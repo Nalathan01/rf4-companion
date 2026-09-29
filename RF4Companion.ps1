@@ -974,7 +974,7 @@ function Format-Coords($lake, $nx, $ny) {
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="220"/>
-                                <DataGridTextColumn Header="t:spot" Binding="{Binding Spot}" Width="170"/>
+                                <DataGridTextColumn Header="t:spot" Binding="{Binding Spot}" Width="230"/>
                                 <DataGridTextColumn Header="t:notes" Binding="{Binding Notes}" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
@@ -1345,6 +1345,10 @@ function Get-Spot([string]$id) {
     return $null
 }
 
+function Get-SpotCast($s) {
+    ((@("$($s.dist)".Trim(), "$($s.dir)".Trim()) | Where-Object { $_ }) -join " ")
+}
+
 function Get-SpotLabel($s) {
     if ($s.name) { return $s.name }
     if ($s.fish) { return (N $s.fish) }
@@ -1557,7 +1561,7 @@ function Draw-Markers {
         else { $e.Stroke = [System.Windows.Media.Brushes]::Black; $e.StrokeThickness = 2 / $sc }
         $e.Tag = $s.id
         $e.Cursor = [System.Windows.Input.Cursors]::Hand
-        $e.ToolTip = (Get-SpotLabel $s) + "  " + (Format-Coords $lake $s.nx $s.ny)
+        $e.ToolTip = ((Get-SpotLabel $s) + "  " + (Format-Coords $lake $s.nx $s.ny) + "  " + (Get-SpotCast $s)).TrimEnd()
         [System.Windows.Controls.Canvas]::SetLeft($e, ([double]$s.nx * 2048)-($size / 2))
         [System.Windows.Controls.Canvas]::SetTop($e, ([double]$s.ny * 2048)-($size / 2))
         $canvasMarkers.Children.Add($e) | Out-Null
@@ -1787,7 +1791,7 @@ function Refresh-LakeSpotList {
     if ($script:curMapLake) {
         foreach ($s in $script:spots) {
             if ($s.lake -ne $script:curMapLake.id) { continue }
-            $items += New-Choice $s.id ((Get-SpotLabel $s) + "   " + (Format-Coords $script:curMapLake $s.nx $s.ny))
+            $items += New-Choice $s.id (((Get-SpotLabel $s) + "   " + (Format-Coords $script:curMapLake $s.nx $s.ny) + "   " + (Get-SpotCast $s)).TrimEnd())
         }
     }
     $lstLakeSpots.ItemsSource = @($items | Sort-Object Label)
@@ -2043,6 +2047,8 @@ function Refresh-Catches {
                 $spotName = Get-SpotLabel $sp
                 $lk = $script:lakeById[$sp.lake]
                 if ($lk -and $lk.bounds) { $spotName = "{0}  {1}" -f $spotName, (Format-Coords $lk $sp.nx $sp.ny) }
+                $cast = Get-SpotCast $sp
+                if ($cast) { $spotName = "{0}  {1}" -f $spotName, $cast }
             }
         } elseif ($null -ne $c.x -and "$($c.x)" -ne "") { $spotName = "{0}:{1}" -f $c.x, $c.y }
         $row = [pscustomobject]@{
