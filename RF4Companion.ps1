@@ -4429,9 +4429,18 @@ $script:trackerLake = $null
 $script:trackerLakeManual = $false
 $script:trackerSession = [guid]::NewGuid().ToString("N").Substring(0, 8)
 
+$script:trackerCast = [pscustomobject]@{ Clip = ""; Dir = "" }
+
 function Start-TrackerSession {
     $script:trackerSession = [guid]::NewGuid().ToString("N").Substring(0, 8)
     $script:trackerHud = ""
+    $script:trackerCast = [pscustomobject]@{ Clip = ""; Dir = "" }
+}
+
+function Set-TrackerCast($session, [string]$clip, [string]$dir) {
+    if ($session -ne $script:trackerSession) { return }
+    if ($clip.Trim()) { $script:trackerCast.Clip = $clip.Trim() }
+    if ($dir.Trim()) { $script:trackerCast.Dir = $dir.Trim() }
 }
 
 function Set-TrackerLakeAuto([string]$lakeId) {
@@ -5151,6 +5160,7 @@ function Save-TrackerState {
         session = $script:trackerSession; lake = $script:trackerLake; temp = $script:trackerTemp
         pos = $(if ($script:trackerPos) { [ordered]@{ x = $script:trackerPos.X; y = $script:trackerPos.Y } } else { $null })
         hud = [string]$script:trackerHud
+        cast = [ordered]@{ clip = [string]$script:trackerCast.Clip; dir = [string]$script:trackerCast.Dir }
         setup = $(if ($st) { [ordered]@{ baits = @($st.Baits); dip = $st.Dip; pva = $st.Pva; rig = $st.Rig; tech = $st.Tech } } else { $null })
     }
     for ($try = 0; $try -lt 5; $try++) {
@@ -5169,6 +5179,7 @@ function Load-TrackerState {
         if ($d.lake) { $script:trackerLake = [string]$d.lake }
         if ($d.temp) { $script:trackerTemp = [string]$d.temp }
         if ($d.hud) { $script:trackerHud = [string]$d.hud }
+        if ($d.cast) { $script:trackerCast = [pscustomobject]@{ Clip = [string]$d.cast.clip; Dir = [string]$d.cast.dir } }
         if ($d.pos) { $script:trackerPos = [pscustomobject]@{ X = [int]$d.pos.x; Y = [int]$d.pos.y } }
         if ($d.setup) { $script:trackerSetup = [pscustomobject]@{ Kind = "setup"; Baits = @($d.setup.baits | Where-Object { $_ }); Dip = [string]$d.setup.dip; Pva = [string]$d.setup.pva; Rig = [string]$d.setup.rig; Tech = [string]$d.setup.tech }
             if (-not $script:trackerSetup.Tech -and ($script:trackerSetup.Dip -or $script:trackerSetup.Pva -or @($script:trackerSetup.Baits).Count -ge 2)) { $script:trackerSetup.Tech = "bottom" }
@@ -6176,7 +6187,7 @@ $btnCatchAdd.Add_Click({
     $fish = $f.fish
     $w = $f.weight
     $script:catches.Add($c) | Out-Null
-    if ($script:formPending) { $script:trackerPending.Remove($script:formPending); $script:formPending = $null; Update-TrackerUi }
+    if ($script:formPending) { Set-TrackerCast $script:formPending.Session "$($f.clip)" "$($f.dir)"; $script:trackerPending.Remove($script:formPending); $script:formPending = $null; Update-TrackerUi }
     Set-CatchEditMode $false
     Refresh-AfterDataChange
     Save-User
@@ -6563,6 +6574,10 @@ function Build-TrackerCatch($p, $shared, [bool]$override) {
         $f.fish = $p.Fish
         $f.weight = $p.Weight
     }
+    if ($p.Session -eq $script:trackerSession) {
+        if (-not "$($f.clip)".Trim() -and $script:trackerCast.Clip) { $f.clip = $script:trackerCast.Clip }
+        if (-not "$($f.dir)".Trim() -and $script:trackerCast.Dir) { $f.dir = $script:trackerCast.Dir }
+    }
     $f
 }
 
@@ -6584,6 +6599,7 @@ function Accept-TrackerItems($refs, $shared = $null, [bool]$override = $true) {
         }
         $script:catches.Add($c) | Out-Null
         $script:trackerPending.Remove($p)
+        Set-TrackerCast $p.Session "$($f.clip)" "$($f.dir)"
     }
     return $true
 }
@@ -6654,7 +6670,7 @@ $lstTrackerPending.Add_SelectionChanged({
     Set-GroupFormMode $false 0
     Fill-CatchForm ([pscustomobject]@{
         Date = $p.Time; Lake = $p.Lake; Fish = $p.Fish; Weight = $p.Weight; Baits = @($p.Baits); Dip = $p.Dip; Pva = $p.Pva
-        X = $p.X; Y = $p.Y; SpotName = ""; Clip = $txtCatchClip.Text; Depth = $txtCatchDepth.Text; Notes = "Tracker"; Temp = $p.Temp; Tech = $p.Tech; Dir = $txtCatchDir.Text
+        X = $p.X; Y = $p.Y; SpotName = ""; Clip = $(if (-not $txtCatchClip.Text.Trim() -and $p.Session -eq $script:trackerSession) { $script:trackerCast.Clip } else { $txtCatchClip.Text }); Depth = $txtCatchDepth.Text; Notes = "Tracker"; Temp = $p.Temp; Tech = $p.Tech; Dir = $(if (-not $txtCatchDir.Text.Trim() -and $p.Session -eq $script:trackerSession) { $script:trackerCast.Dir } else { $txtCatchDir.Text })
     })
     if ($g.Count -gt 1) {
         $script:formPending = $null
