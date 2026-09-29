@@ -289,7 +289,9 @@
   "shareNoToken": "{0} Spots zum Teilen markiert, Teilen noch nicht eingerichtet",
   "companionSource": "Companion ✓",
   "spotImgPick": "Bild wählen",
-  "spotImgRemove": "Bild entfernen"
+  "spotImgRemove": "Bild entfernen",
+  "noImages": "Keine Bilder in dieser Meldung",
+  "imgLoading": "Lade Bilder ..."
  },
  "en": {
   "langName": "English",
@@ -581,7 +583,9 @@
   "shareNoToken": "{0} spots marked for sharing, sharing not set up yet",
   "companionSource": "Companion ✓",
   "spotImgPick": "Choose image",
-  "spotImgRemove": "Remove image"
+  "spotImgRemove": "Remove image",
+  "noImages": "No images in this report",
+  "imgLoading": "Loading images ..."
  },
  "ru": {
   "langName": "Русский",
@@ -870,7 +874,9 @@
   "shareNoToken": "Отмечено для обмена: {0}, обмен ещё не настроен",
   "companionSource": "Companion ✓",
   "spotImgPick": "Выбрать фото",
-  "spotImgRemove": "Удалить фото"
+  "spotImgRemove": "Удалить фото",
+  "noImages": "В этом сообщении нет изображений",
+  "imgLoading": "Загрузка изображений ..."
  },
  "fr": {
   "langName": "Français",
@@ -1159,7 +1165,9 @@
   "shareNoToken": "{0} spots marqués pour le partage, partage pas encore configuré",
   "companionSource": "Companion ✓",
   "spotImgPick": "Choisir une image",
-  "spotImgRemove": "Retirer l'image"
+  "spotImgRemove": "Retirer l'image",
+  "noImages": "Aucune image dans ce signalement",
+  "imgLoading": "Chargement des images ..."
  },
  "es": {
   "langName": "Español",
@@ -1448,7 +1456,9 @@
   "shareNoToken": "{0} spots marcados para compartir, aún sin configurar",
   "companionSource": "Companion ✓",
   "spotImgPick": "Elegir imagen",
-  "spotImgRemove": "Quitar imagen"
+  "spotImgRemove": "Quitar imagen",
+  "noImages": "No hay imágenes en este reporte",
+  "imgLoading": "Cargando imágenes ..."
  },
  "it": {
   "langName": "Italiano",
@@ -1737,7 +1747,9 @@
   "shareNoToken": "{0} spot segnati per la condivisione, condivisione non ancora configurata",
   "companionSource": "Companion ✓",
   "spotImgPick": "Scegli immagine",
-  "spotImgRemove": "Rimuovi immagine"
+  "spotImgRemove": "Rimuovi immagine",
+  "noImages": "Nessuna immagine in questa segnalazione",
+  "imgLoading": "Caricamento immagini ..."
  },
  "pl": {
   "langName": "Polski",
@@ -2026,7 +2038,9 @@
   "shareNoToken": "{0} miejscówek do udostępnienia, udostępnianie nieskonfigurowane",
   "companionSource": "Companion ✓",
   "spotImgPick": "Wybierz obraz",
-  "spotImgRemove": "Usuń obraz"
+  "spotImgRemove": "Usuń obraz",
+  "noImages": "Brak zdjęć w tym zgłoszeniu",
+  "imgLoading": "Ładowanie zdjęć ..."
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2315,7 +2329,9 @@
   "shareNoToken": "{0} pontos marcados para compartilhar, ainda não configurado",
   "companionSource": "Companion ✓",
   "spotImgPick": "Escolher imagem",
-  "spotImgRemove": "Remover imagem"
+  "spotImgRemove": "Remover imagem",
+  "noImages": "Nenhuma imagem neste relato",
+  "imgLoading": "Carregando imagens ..."
  },
  "nl": {
   "langName": "Nederlands",
@@ -2604,7 +2620,9 @@
   "shareNoToken": "{0} stekken gemarkeerd om te delen, delen nog niet ingesteld",
   "companionSource": "Companion ✓",
   "spotImgPick": "Afbeelding kiezen",
-  "spotImgRemove": "Afbeelding verwijderen"
+  "spotImgRemove": "Afbeelding verwijderen",
+  "noImages": "Geen afbeeldingen in deze melding",
+  "imgLoading": "Afbeeldingen laden ..."
  },
  "tr": {
   "langName": "Türkçe",
@@ -2893,7 +2911,9 @@
   "shareNoToken": "{0} nokta paylaşım için işaretli, paylaşım henüz ayarlanmadı",
   "companionSource": "Companion ✓",
   "spotImgPick": "Resim seç",
-  "spotImgRemove": "Resmi kaldır"
+  "spotImgRemove": "Resmi kaldır",
+  "noImages": "Bu bildirimde resim yok",
+  "imgLoading": "Resimler yükleniyor ..."
  },
  "ro": {
   "langName": "Română",
@@ -3182,7 +3202,9 @@
   "shareNoToken": "{0} locuri marcate pentru partajare, partajarea nu e configurată",
   "companionSource": "Companion ✓",
   "spotImgPick": "Alege imagine",
-  "spotImgRemove": "Elimină imaginea"
+  "spotImgRemove": "Elimină imaginea",
+  "noImages": "Nicio imagine în acest raport",
+  "imgLoading": "Se încarcă imaginile ..."
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3471,7 +3493,9 @@
   "shareNoToken": "{0} spot ditandai untuk dibagikan, berbagi belum diatur",
   "companionSource": "Companion ✓",
   "spotImgPick": "Pilih gambar",
-  "spotImgRemove": "Hapus gambar"
+  "spotImgRemove": "Hapus gambar",
+  "noImages": "Tidak ada gambar dalam laporan ini",
+  "imgLoading": "Memuat gambar ..."
  },
  "ja": {
   "langName": "日本語",
@@ -3760,7 +3784,9 @@
   "shareNoToken": "共有予定のスポット {0} 件、共有は未設定",
   "companionSource": "Companion ✓",
   "spotImgPick": "画像を選択",
-  "spotImgRemove": "画像を削除"
+  "spotImgRemove": "画像を削除",
+  "noImages": "このレポートに画像はありません",
+  "imgLoading": "画像を読み込み中 ..."
  },
  "ko": {
   "langName": "한국어",
@@ -4049,7 +4075,9 @@
   "shareNoToken": "공유 표시 포인트 {0}개, 공유가 아직 설정되지 않음",
   "companionSource": "Companion ✓",
   "spotImgPick": "이미지 선택",
-  "spotImgRemove": "이미지 삭제"
+  "spotImgRemove": "이미지 삭제",
+  "noImages": "이 보고에는 이미지가 없습니다",
+  "imgLoading": "이미지 불러오는 중 ..."
  },
  "zh": {
   "langName": "简体中文",
@@ -4338,7 +4366,9 @@
   "shareNoToken": "已标记分享 {0} 个钓点，尚未设置分享",
   "companionSource": "Companion ✓",
   "spotImgPick": "选择图片",
-  "spotImgRemove": "移除图片"
+  "spotImgRemove": "移除图片",
+  "noImages": "此报告中没有图片",
+  "imgLoading": "正在加载图片 ..."
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4627,6 +4657,8 @@
   "shareNoToken": "已標記分享 {0} 個釣點，尚未設定分享",
   "companionSource": "Companion ✓",
   "spotImgPick": "選擇圖片",
-  "spotImgRemove": "移除圖片"
+  "spotImgRemove": "移除圖片",
+  "noImages": "此報告中沒有圖片",
+  "imgLoading": "正在載入圖片 ..."
  }
 }
