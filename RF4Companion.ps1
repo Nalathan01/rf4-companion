@@ -549,7 +549,22 @@ function Format-Coords($lake, $nx, $ny) {
                                                     <StackPanel>
                                                         <TextBlock Text="{Binding Label}" TextWrapping="Wrap" Foreground="{DynamicResource AppInk}" FontSize="12" Margin="0,2,0,2"/>
                                                         <Border BorderBrush="{DynamicResource AppAccent}" BorderThickness="2,0,0,0" Padding="10,4,4,6" Margin="0,2,0,6" Visibility="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}, Converter={StaticResource BoolToVis}}">
-                                                            <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Foreground="{DynamicResource AppInk}" FontSize="12" LineHeight="19"/>
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Foreground="{DynamicResource AppInk}" FontSize="12" LineHeight="19"/>
+                                                                <TextBlock Text="{Binding ImgState}" Foreground="{DynamicResource AppInkDim}" FontSize="11" Margin="0,4,0,0"/>
+                                                                <ItemsControl ItemsSource="{Binding Images}" Margin="0,4,0,0">
+                                                                    <ItemsControl.ItemsPanel>
+                                                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                                    </ItemsControl.ItemsPanel>
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <Border BorderBrush="{DynamicResource AppLine}" BorderThickness="1" Margin="0,0,6,6" Cursor="Hand" ToolTip="{Binding Url}">
+                                                                                <Image Source="{Binding Img}" Width="148" Stretch="Uniform" Tag="{Binding Url}"/>
+                                                                            </Border>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </StackPanel>
                                                         </Border>
                                                     </StackPanel>
                                                 </DataTemplate>
@@ -3820,6 +3835,112 @@ function Test-PvaStick([string]$t) {
     return ($t -match "^\s*stick or PVA stringer\s*$")
 }
 
+if (-not ("RF4Comp.ReportItem" -as [type])) {
+    Add-Type -TypeDefinition @"
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+namespace RF4Comp {
+    public class ReportImage {
+        public object Img { get; set; }
+        public string Url { get; set; }
+    }
+    public class ReportItem : INotifyPropertyChanged {
+        private string imgState = "";
+        public string Label { get; set; }
+        public string Url { get; set; }
+        public string Detail { get; set; }
+        public ObservableCollection<ReportImage> Images { get; private set; }
+        public ReportItem() { Images = new ObservableCollection<ReportImage>(); }
+        public string ImgState {
+            get { return imgState; }
+            set { imgState = value; if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs("ImgState")); }
+        }
+        public event PropertyChangedEventHandler PropertyChanged;
+    }
+}
+"@
+}
+
+$script:repImgCache = @{}
+$script:repImgJobs = New-Object System.Collections.ArrayList
+$script:repImgTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:repImgTimer.Interval = [TimeSpan]::FromMilliseconds(300)
+
+function Get-ReportImageSource([string]$url) {
+    if ($url -match "^https://t\.me/([^/?]+)/(\d+)") { return ("https://t.me/{0}/{1}?embed=1&mode=tme" -f $Matches[1], $Matches[2]) }
+    return ""
+}
+
+function Parse-ReportImages([string]$html) {
+    $out = New-Object System.Collections.ArrayList
+    foreach ($m in [regex]::Matches($html, "tgme_widget_message_photo_wrap[^>]*?background-image:url\('([^']+)'\)")) {
+        $u = $m.Groups[1].Value
+        if ($u.StartsWith("//")) { $u = "https:" + $u }
+        if ($u -match "^https://" -and -not $out.Contains($u)) { $out.Add($u) | Out-Null }
+        if ($out.Count -ge 8) { break }
+    }
+    $out.ToArray()
+}
+
+$script:repBmpCache = @{}
+
+function New-BitmapFromBytes([byte[]]$bytes, [int]$width) {
+    $ms = New-Object System.IO.MemoryStream (, $bytes)
+    $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
+    $bmp.BeginInit()
+    $bmp.StreamSource = $ms
+    $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+    $bmp.DecodePixelWidth = $width
+    $bmp.EndInit()
+    $bmp.Freeze()
+    $ms.Dispose()
+    $bmp
+}
+
+function Add-ReportImages($item, $urls) {
+    $item.Images.Clear()
+    foreach ($u in @($urls)) {
+        if ($script:repBmpCache.ContainsKey($u)) { $item.Images.Add((New-Object RF4Comp.ReportImage -Property @{ Img = $script:repBmpCache[$u]; Url = $u })); continue }
+        $script:repImgJobs.Add([pscustomobject]@{ Item = $item; Src = $u; Kind = "img"; Task = $script:http.GetByteArrayAsync($u) }) | Out-Null
+    }
+    if ($script:repImgJobs.Count -gt 0) { $script:repImgTimer.Start() }
+    $item.ImgState = $(if (@($urls).Count) { "" } else { T "noImages" })
+}
+
+function Start-ReportImages($item) {
+    if (-not $item -or $item.Images.Count -gt 0 -or $item.ImgState) { return }
+    $src = Get-ReportImageSource $item.Url
+    if (-not $src) { return }
+    if ($script:repImgCache.ContainsKey($src)) { Add-ReportImages $item $script:repImgCache[$src]; return }
+    $item.ImgState = T "imgLoading"
+    $script:repImgJobs.Add([pscustomobject]@{ Item = $item; Src = $src; Kind = "page"; Task = $script:http.GetStringAsync($src) }) | Out-Null
+    $script:repImgTimer.Start()
+}
+
+$script:repImgTimer.Add_Tick({
+    foreach ($j in @($script:repImgJobs)) {
+        if (-not $j.Task.IsCompleted) { continue }
+        $script:repImgJobs.Remove($j)
+        if ($j.Kind -eq "img") {
+            if (-not $j.Task.IsFaulted -and -not $j.Task.IsCanceled) {
+                try {
+                    $bmp = New-BitmapFromBytes $j.Task.Result 340
+                    $script:repBmpCache[$j.Src] = $bmp
+                    $j.Item.Images.Add((New-Object RF4Comp.ReportImage -Property @{ Img = $bmp; Url = $j.Src }))
+                } catch { }
+            }
+            continue
+        }
+        $urls = @()
+        if (-not $j.Task.IsFaulted -and -not $j.Task.IsCanceled) {
+            try { $urls = @(Parse-ReportImages $j.Task.Result) } catch { $urls = @() }
+            $script:repImgCache[$j.Src] = $urls
+        }
+        Add-ReportImages $j.Item $urls
+    }
+    if ($script:repImgJobs.Count -eq 0) { $script:repImgTimer.Stop() }
+})
+
 function Open-ReportUrl([string]$url) {
     if (-not $url) { return }
     if ($url -match "^https://t\.me/([^/?]+)/(\d+)") { $url = "https://t.me/{0}/{1}?embed=1&mode=tme" -f $Matches[1], $Matches[2] }
@@ -4057,7 +4178,11 @@ function Show-CommCluster($cl) {
         if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $parts += ("{0} {1:0.#} m {2}" -f (T "distance"), [double]$r["clip"], ([string]$r["dir"]).Trim()).TrimEnd() }
         elseif (([string]$r["dir"]).Trim()) { $parts += ([string]$r["dir"]).Trim() }
         $parts += Get-ReportHost ([string]$r["url"])
-        $items += [pscustomobject]@{ Label = ($parts -join "  |  "); Url = [string]$r["url"]; Detail = (Get-CommReportText $r) }
+        $ri = New-Object RF4Comp.ReportItem
+        $ri.Label = ($parts -join "  |  ")
+        $ri.Url = [string]$r["url"]
+        $ri.Detail = Get-CommReportText $r
+        $items += $ri
     }
     $lstCommReports.ItemsSource = $items
     $panelSpotForm.Visibility = "Collapsed"
@@ -6754,6 +6879,16 @@ $lstCommReports.Add_PreviewMouseWheel({
     $a.Source = $sender
     $sender.Parent.RaiseEvent($a)
 })
+
+$lstCommReports.Add_SelectionChanged({
+    $it = $lstCommReports.SelectedItem
+    if ($it) { Start-ReportImages $it }
+})
+$lstCommReports.AddHandler([System.Windows.UIElement]::MouseLeftButtonUpEvent, [System.Windows.Input.MouseButtonEventHandler]{
+    param($sender, $e)
+    $src = $e.OriginalSource
+    if ($src -is [System.Windows.Controls.Image] -and $src.Tag) { Open-External ([string]$src.Tag); $e.Handled = $true }
+}, $true)
 
 $lstCommReports.Add_MouseDoubleClick({
     $it = $lstCommReports.SelectedItem
