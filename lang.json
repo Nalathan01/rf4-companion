@@ -277,7 +277,10 @@
   "closeForm": "Schließen",
   "tgtKinds": "{0} Arten",
   "castDir": "Wurfrichtung",
-  "castDirHint": "z. B. NO oder Richtung Boje"
+  "castDirHint": "z. B. NO oder Richtung Boje",
+  "shareSpot": "Für alle teilen",
+  "shareNewSpot": "Neuen Spot teilen",
+  "sharedCol": "Geteilt"
  },
  "en": {
   "langName": "English",
@@ -557,7 +560,10 @@
   "closeForm": "Close",
   "tgtKinds": "{0} species",
   "castDir": "Cast direction",
-  "castDirHint": "e.g. NE or towards the buoy"
+  "castDirHint": "e.g. NE or towards the buoy",
+  "shareSpot": "Share with everyone",
+  "shareNewSpot": "Share new spot",
+  "sharedCol": "Shared"
  },
  "ru": {
   "langName": "Русский",
@@ -834,7 +840,10 @@
   "closeForm": "Закрыть",
   "tgtKinds": "{0} видов",
   "castDir": "Направление заброса",
-  "castDirHint": "напр. СВ или к бую"
+  "castDirHint": "напр. СВ или к бую",
+  "shareSpot": "Поделиться со всеми",
+  "shareNewSpot": "Поделиться новой точкой",
+  "sharedCol": "Общая"
  },
  "fr": {
   "langName": "Français",
@@ -1111,7 +1120,10 @@
   "closeForm": "Fermer",
   "tgtKinds": "{0} espèces",
   "castDir": "Direction du lancer",
-  "castDirHint": "ex. NE ou vers la bouée"
+  "castDirHint": "ex. NE ou vers la bouée",
+  "shareSpot": "Partager avec tous",
+  "shareNewSpot": "Partager le nouveau spot",
+  "sharedCol": "Partagé"
  },
  "es": {
   "langName": "Español",
@@ -1388,7 +1400,10 @@
   "closeForm": "Cerrar",
   "tgtKinds": "{0} especies",
   "castDir": "Dirección del lance",
-  "castDirHint": "p. ej. NE o hacia la boya"
+  "castDirHint": "p. ej. NE o hacia la boya",
+  "shareSpot": "Compartir con todos",
+  "shareNewSpot": "Compartir spot nuevo",
+  "sharedCol": "Compartido"
  },
  "it": {
   "langName": "Italiano",
@@ -1665,7 +1680,10 @@
   "closeForm": "Chiudi",
   "tgtKinds": "{0} specie",
   "castDir": "Direzione di lancio",
-  "castDirHint": "es. NE o verso la boa"
+  "castDirHint": "es. NE o verso la boa",
+  "shareSpot": "Condividi con tutti",
+  "shareNewSpot": "Condividi nuovo spot",
+  "sharedCol": "Condiviso"
  },
  "pl": {
   "langName": "Polski",
@@ -1942,7 +1960,10 @@
   "closeForm": "Zamknij",
   "tgtKinds": "{0} gatunków",
   "castDir": "Kierunek rzutu",
-  "castDirHint": "np. NE lub w stronę boi"
+  "castDirHint": "np. NE lub w stronę boi",
+  "shareSpot": "Udostępnij wszystkim",
+  "shareNewSpot": "Udostępnij nową miejscówkę",
+  "sharedCol": "Udostępniona"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2219,7 +2240,10 @@
   "closeForm": "Fechar",
   "tgtKinds": "{0} espécies",
   "castDir": "Direção do arremesso",
-  "castDirHint": "ex. NE ou em direção à boia"
+  "castDirHint": "ex. NE ou em direção à boia",
+  "shareSpot": "Compartilhar com todos",
+  "shareNewSpot": "Compartilhar novo ponto",
+  "sharedCol": "Compartilhado"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2496,7 +2520,10 @@
   "closeForm": "Sluiten",
   "tgtKinds": "{0} soorten",
   "castDir": "Werprichting",
-  "castDirHint": "bijv. NO of richting boei"
+  "castDirHint": "bijv. NO of richting boei",
+  "shareSpot": "Met iedereen delen",
+  "shareNewSpot": "Nieuwe stek delen",
+  "sharedCol": "Gedeeld"
  },
  "tr": {
   "langName": "Türkçe",
@@ -2773,7 +2800,10 @@
   "closeForm": "Kapat",
   "tgtKinds": "{0} tür",
   "castDir": "Atış yönü",
-  "castDirHint": "ör. KD veya şamandıraya doğru"
+  "castDirHint": "ör. KD veya şamandıraya doğru",
+  "shareSpot": "Herkesle paylaş",
+  "shareNewSpot": "Yeni noktayı paylaş",
+  "sharedCol": "Paylaşıldı"
  },
  "ro": {
   "langName": "Română",
@@ -3050,7 +3080,10 @@
   "closeForm": "Închide",
   "tgtKinds": "{0} specii",
   "castDir": "Direcția aruncării",
-  "castDirHint": "de ex. NE sau spre geamandură"
+  "castDirHint": "de ex. NE sau spre geamandură",
+  "shareSpot": "Distribuie tuturor",
+  "shareNewSpot": "Distribuie locul nou",
+  "sharedCol": "Distribuit"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3327,7 +3360,10 @@
   "closeForm": "Tutup",
   "tgtKinds": "{0} jenis",
   "castDir": "Arah lemparan",
-  "castDirHint": "mis. TL atau ke arah pelampung"
+  "castDirHint": "mis. TL atau ke arah pelampung",
+  "shareSpot": "Bagikan ke semua",
+  "shareNewSpot": "Bagikan spot baru",
+  "sharedCol": "Dibagikan"
  },
  "ja": {
   "langName": "日本語",
@@ -3604,7 +3640,10 @@
   "closeForm": "閉じる",
   "tgtKinds": "{0} 種",
   "castDir": "キャスト方向",
-  "castDirHint": "例: 北東、ブイの方向"
+  "castDirHint": "例: 北東、ブイの方向",
+  "shareSpot": "全員と共有",
+  "shareNewSpot": "新しいスポットを共有",
+  "sharedCol": "共有"
  },
  "ko": {
   "langName": "한국어",
@@ -3881,7 +3920,10 @@
   "closeForm": "닫기",
   "tgtKinds": "{0}종",
   "castDir": "캐스팅 방향",
-  "castDirHint": "예: 북동 또는 부표 방향"
+  "castDirHint": "예: 북동 또는 부표 방향",
+  "shareSpot": "모두와 공유",
+  "shareNewSpot": "새 포인트 공유",
+  "sharedCol": "공유됨"
  },
  "zh": {
   "langName": "简体中文",
@@ -4158,7 +4200,10 @@
   "closeForm": "关闭",
   "tgtKinds": "{0} 种",
   "castDir": "抛投方向",
-  "castDirHint": "例如：东北或朝浮标"
+  "castDirHint": "例如：东北或朝浮标",
+  "shareSpot": "与所有人分享",
+  "shareNewSpot": "分享新钓点",
+  "sharedCol": "已分享"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4435,6 +4480,9 @@
   "closeForm": "關閉",
   "tgtKinds": "{0} 種",
   "castDir": "拋投方向",
-  "castDirHint": "例如：東北或朝浮標"
+  "castDirHint": "例如：東北或朝浮標",
+  "shareSpot": "與所有人分享",
+  "shareNewSpot": "分享新釣點",
+  "sharedCol": "已分享"
  }
 }
