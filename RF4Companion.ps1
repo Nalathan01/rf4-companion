@@ -569,6 +569,13 @@ function Format-Coords($lake, $nx, $ny) {
                                 <TextBlock x:Name="txtSpotFormTitle" Tag="t:spot" Style="{StaticResource Heading}"/>
                                 <TextBlock Tag="t:spotName" Style="{StaticResource Label}"/>
                                 <TextBox x:Name="txtSpotName"/>
+                                <Border x:Name="bdSpotImg" Visibility="Collapsed" BorderBrush="{DynamicResource AppLine}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,6" Cursor="Hand">
+                                    <Image x:Name="imgSpot" Stretch="Uniform" MaxHeight="180"/>
+                                </Border>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <Button x:Name="btnSpotImg" Tag="t:spotImgPick"/>
+                                    <Button x:Name="btnSpotImgClear" Tag="t:spotImgRemove"/>
+                                </StackPanel>
                                 <TextBlock Tag="t:fish" Style="{StaticResource Label}"/>
                                 <ComboBox x:Name="cmbSpotFish" IsEditable="True" TextSearch.TextPath="Label"/>
                                 <TextBlock x:Name="lblSpotBait" Tag="t:bait" Style="{StaticResource Label}"/>
@@ -1344,6 +1351,173 @@ function Get-SpotLabel($s) {
     return (T "spot")
 }
 
+$script:dirTable = @{ "N" = 0; "NNE" = 22.5; "NE" = 45; "ENE" = 67.5; "E" = 90; "ESE" = 112.5; "SE" = 135; "SSE" = 157.5; "S" = 180; "SSW" = 202.5; "SW" = 225; "WSW" = 247.5; "W" = 270; "WNW" = 292.5; "NW" = 315; "NNW" = 337.5 }
+
+function Get-DirDegrees([string]$dir) {
+    $t = "$dir".Trim()
+    if (-not $t) { return $null }
+    $m = [regex]::Match($t, "^(\d{1,3})\s*\u00B0?$")
+    if ($m.Success) { return ([double]$m.Groups[1].Value % 360) }
+    $map = @{ "N" = "N"; "S" = "S"; "E" = "E"; "W" = "W"; "O" = "E" }
+    foreach ($pair in @(@(0x0421, "N"), @(0x042E, "S"), @(0x0412, "E"), @(0x0417, "W"), @(0x5317, "N"), @(0x5357, "S"), @(0x4E1C, "E"), @(0x6771, "E"), @(0x897F, "W"), @(0xBD81, "N"), @(0xB0A8, "S"), @(0xB3D9, "E"), @(0xC11C, "W"))) { $map[[string][char]$pair[0]] = $pair[1] }
+    $norm = ""
+    foreach ($ch in $t.ToUpper().ToCharArray()) {
+        $k = [string]$ch
+        if ($map.ContainsKey($k)) { $norm += $map[$k] }
+        elseif ($ch -match "[\s\-/.]") { continue }
+        else { return $null }
+    }
+    if (-not $norm -or $norm.Length -gt 3) { return $null }
+    if ($script:dirTable.ContainsKey($norm)) { return [double]$script:dirTable[$norm] }
+    $vx = 0.0; $vy = 0.0
+    foreach ($ch in $norm.ToCharArray()) {
+        $a = [double]$script:dirTable[[string]$ch] * [math]::PI / 180
+        $vx += [math]::Sin($a); $vy += [math]::Cos($a)
+    }
+    if ([math]::Abs($vx) -lt 0.001 -and [math]::Abs($vy) -lt 0.001) { return $null }
+    $deg = [math]::Atan2($vx, $vy) * 180 / [math]::PI
+    if ($deg -lt 0) { $deg += 360 }
+    $deg
+}
+
+function Add-CastArrow([double]$nx, [double]$ny, [string]$dir, [string]$clip, [string]$color) {
+    $deg = Get-DirDegrees $dir
+    if ($null -eq $deg) { return }
+    $lake = $script:curMapLake
+    $sc = $script:scale
+    $b = $lake.bounds
+    $a = $deg * [math]::PI / 180
+    $ux = [math]::Sin($a)
+    $uy = -[math]::Cos($a)
+    $len = 70 / $sc
+    $cn = Get-ClipNum $clip
+    if ($cn) {
+        $gu = [double]$cn / 5
+        $px = $gu * [math]::Sqrt([math]::Pow($ux * 2048 / ([double]$b.xMax-[double]$b.xMin), 2) + [math]::Pow($uy * 2048 / ([double]$b.yNorth-[double]$b.ySouth), 2))
+        $len = [math]::Max($px, 40 / $sc)
+    }
+    $x1 = $nx * 2048
+    $y1 = $ny * 2048
+    $x2 = $x1 + ($ux * $len)
+    $y2 = $y1 + ($uy * $len)
+    $brush = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString($color))
+    foreach ($pass in 0, 1) {
+        $ln = New-Object System.Windows.Shapes.Line
+        $ln.X1 = $x1; $ln.Y1 = $y1; $ln.X2 = $x2-($ux * 9 / $sc); $ln.Y2 = $y2-($uy * 9 / $sc)
+        if ($pass -eq 0) { $ln.Stroke = [System.Windows.Media.Brushes]::Black; $ln.StrokeThickness = 6 / $sc }
+        else { $ln.Stroke = $brush; $ln.StrokeThickness = 3 / $sc }
+        $ln.StrokeStartLineCap = "Round"
+        $ln.IsHitTestVisible = $false
+        $canvasMarkers.Children.Add($ln) | Out-Null
+    }
+    $hl = 14 / $sc
+    $hw = 8 / $sc
+    $bx = $x2-($ux * $hl)
+    $by = $y2-($uy * $hl)
+    $head = New-Object System.Windows.Shapes.Polygon
+    $head.Points.Add((New-Object System.Windows.Point $x2, $y2))
+    $head.Points.Add((New-Object System.Windows.Point ($bx-($uy * $hw)), ($by + ($ux * $hw))))
+    $head.Points.Add((New-Object System.Windows.Point ($bx + ($uy * $hw)), ($by-($ux * $hw))))
+    $head.Fill = $brush
+    $head.Stroke = [System.Windows.Media.Brushes]::Black
+    $head.StrokeThickness = 1.5 / $sc
+    $head.IsHitTestVisible = $false
+    $canvasMarkers.Children.Add($head) | Out-Null
+    $lbl = New-Object System.Windows.Controls.Border
+    $lbl.Background = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(210, 12, 16, 20))
+    $lbl.CornerRadius = New-Object System.Windows.CornerRadius (4 / $sc)
+    $lbl.Padding = New-Object System.Windows.Thickness (5 / $sc), (1 / $sc), (5 / $sc), (1 / $sc)
+    $lbl.IsHitTestVisible = $false
+    $tb = New-Object System.Windows.Controls.TextBlock
+    $tb.Text = (@($(if ($cn) { "$cn m" } else { "" }), "$dir".Trim()) | Where-Object { $_ }) -join " "
+    $tb.FontSize = 12 / $sc
+    $tb.Foreground = $brush
+    $lbl.Child = $tb
+    [System.Windows.Controls.Canvas]::SetLeft($lbl, $x2 + ($ux * 6 / $sc) + $(if ($ux -lt -0.3) { -60 / $sc } else { 0 }))
+    [System.Windows.Controls.Canvas]::SetTop($lbl, $y2 + ($uy * 6 / $sc)-(9 / $sc))
+    $canvasMarkers.Children.Add($lbl) | Out-Null
+}
+
+function Draw-CastArrows {
+    $lake = $script:curMapLake
+    if (-not $lake -or -not $lake.bounds) { return }
+    $sel = $null
+    if ($script:selSpotId) { $sel = Get-Spot $script:selSpotId }
+    if ($sel -and $sel.lake -eq $lake.id) { Add-CastArrow ([double]$sel.nx) ([double]$sel.ny) "$($sel.dir)" "$($sel.dist)" "#FFFFD54F" }
+    if ($script:commSel -and $script:commSel.Lake -eq $lake.id) {
+        $n = From-Game $lake $script:commSel.X $script:commSel.Y
+        $seen = @{}
+        foreach ($r in @($script:commSel.Reports | Where-Object { [string]$_["dir"] } | Sort-Object { [int]$_["catches"] } -Descending)) {
+            $k = "{0}|{1}" -f ([string]$r["dir"]).Trim().ToUpper(), [string]$r["clip"]
+            if ($seen.ContainsKey($k)) { continue }
+            $seen[$k] = $true
+            Add-CastArrow ([double]$n.NX) ([double]$n.NY) ([string]$r["dir"]) ([string]$r["clip"]) "#FF81C784"
+            if ($seen.Count -ge 3) { break }
+        }
+    }
+}
+
+$script:spotImgDir = Join-Path $userDir "spotimg"
+
+function Get-SpotImagePath($s) {
+    if (-not $s -or -not "$($s.img)") { return "" }
+    $f = Join-Path $script:spotImgDir "$($s.img)"
+    if (Test-Path -LiteralPath $f) { return $f }
+    return ""
+}
+
+function Set-SpotImage($s, [string]$src) {
+    try {
+        if (-not (Test-Path -LiteralPath $script:spotImgDir)) { New-Item -ItemType Directory -Path $script:spotImgDir | Out-Null }
+        $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
+        $bmp.BeginInit()
+        $bmp.UriSource = New-Object System.Uri $src
+        $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+        $bmp.CreateOptions = [System.Windows.Media.Imaging.BitmapCreateOptions]::IgnoreImageCache
+        $bmp.DecodePixelWidth = 1280
+        $bmp.EndInit()
+        $enc = New-Object System.Windows.Media.Imaging.JpegBitmapEncoder
+        $enc.QualityLevel = 85
+        $enc.Frames.Add([System.Windows.Media.Imaging.BitmapFrame]::Create($bmp))
+        $name = "$($s.id).jpg"
+        $fs = [System.IO.File]::Create((Join-Path $script:spotImgDir $name))
+        try { $enc.Save($fs) } finally { $fs.Close() }
+        $s | Add-Member -NotePropertyName img -NotePropertyValue $name -Force
+        return $true
+    } catch {
+        Write-ErrorLog ("Spotbild: " + $_.Exception.Message)
+        return $false
+    }
+}
+
+function Remove-SpotImage($s) {
+    $f = Get-SpotImagePath $s
+    if ($f) { try { Remove-Item -LiteralPath $f -Force } catch { } }
+    if ($s) { $s | Add-Member -NotePropertyName img -NotePropertyValue "" -Force }
+}
+
+function Show-SpotImage($s) {
+    $f = Get-SpotImagePath $s
+    $btnSpotImg.IsEnabled = [bool]$s
+    $btnSpotImgClear.IsEnabled = [bool]$f
+    if (-not $f) { $imgSpot.Source = $null; $bdSpotImg.Visibility = "Collapsed"; return }
+    try {
+        $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
+        $bmp.BeginInit()
+        $bmp.UriSource = New-Object System.Uri $f
+        $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+        $bmp.CreateOptions = [System.Windows.Media.Imaging.BitmapCreateOptions]::IgnoreImageCache
+        $bmp.DecodePixelWidth = 640
+        $bmp.EndInit()
+        $bmp.Freeze()
+        $imgSpot.Source = $bmp
+        $bdSpotImg.Visibility = "Visible"
+    } catch {
+        $imgSpot.Source = $null
+        $bdSpotImg.Visibility = "Collapsed"
+    }
+}
+
 function Fit-Map {
     $svMap.UpdateLayout()
     $vw = $svMap.ActualWidth
@@ -1366,6 +1540,7 @@ function Draw-Markers {
     $lake = $script:curMapLake
     if (-not $lake) { return }
     Draw-CommMarkers
+    Draw-CastArrows
     $sc = $script:scale
     foreach ($s in $script:spots) {
         if ($s.lake -ne $lake.id) { continue }
@@ -1577,6 +1752,7 @@ function Clear-SpotForm {
     $txtSpotX.Text = ""
     $txtSpotY.Text = ""
     $btnSpotDelete.IsEnabled = $false
+    Show-SpotImage $null
     $script:spotFormOpen = $false
     Update-MapPanel
 }
@@ -1601,6 +1777,7 @@ function Fill-SpotForm($s) {
     $txtSpotX.Text = [string][int][math]::Round($g.X)
     $txtSpotY.Text = [string][int][math]::Round($g.Y)
     $btnSpotDelete.IsEnabled = $true
+    Show-SpotImage $s
     Update-MapPanel
 }
 
@@ -2453,7 +2630,7 @@ $script:harvCheckTimer.Add_Tick({
             Start-CommunitySync
         }
     }
-    if (-not $script:cloudTask -and -not $script:cloudCur -and (-not $script:cloudLast -or ((Get-Date)-$script:cloudLast).TotalMinutes -ge 30)) { Start-CloudSync }
+    if (-not $script:cloudTask -and -not $script:cloudCur -and (-not $script:cloudFailAt -or ((Get-Date)-$script:cloudFailAt).TotalMinutes -ge 10) -and (-not $script:cloudLast -or ((Get-Date)-$script:cloudLast).TotalMinutes -ge 30)) { Start-CloudSync }
     if (-not $script:cloudError -and $script:cloudLast -and ((Get-Date)-$script:cloudLast).TotalHours -lt 6) { return }
     if ($script:harvCur -or $script:harvQueue.Count -gt 0 -or $script:weekLoading) { return }
     $iv = Get-HarvestIntervalMinutes
@@ -2689,6 +2866,7 @@ function Next-CloudFile {
     if ($script:cloudQueue.Count -eq 0) {
         $script:cloudCur = $null
         $script:cloudLast = Get-Date
+        $script:cloudFailAt = $null
         $script:cloudError = ""
         Save-CloudState
         Save-ArchWeeks
@@ -2740,7 +2918,7 @@ $script:cloudTimer.Add_Tick({
     try {
         if ($t.IsFaulted -or $t.IsCanceled) { throw "Verbindung fehlgeschlagen" }
         $resp = $t.Result
-        if (-not $resp.IsSuccessStatusCode) { throw ("HTTP " + [int]$resp.StatusCode) }
+        if (-not $resp.IsSuccessStatusCode -and -not ($script:cloudCur.Kind -eq "sharedlist" -and [int]$resp.StatusCode -eq 404)) { throw ("HTTP " + [int]$resp.StatusCode) }
         if ($script:cloudCur.Kind -eq "sharedlist") {
             $script:sharedNew = New-Object System.Collections.ArrayList
             if ($resp.IsSuccessStatusCode) {
@@ -2800,6 +2978,7 @@ $script:cloudTimer.Add_Tick({
     } catch {
         $script:cloudError = "$($_.Exception.Message)"
         Write-ErrorLog ("Cloud-Archiv: " + $script:cloudError)
+        $script:cloudFailAt = Get-Date
         $script:cloudCur = $null
         $script:cloudQueue.Clear()
         Update-PrefState
@@ -3180,6 +3359,15 @@ function Start-ShareUpload([switch]$Force) {
     $script:shareTimer.Start()
 }
 
+function Get-GhErrorText($resp) {
+    try {
+        $txt = [string]$resp.Content.ReadAsStringAsync().Result
+        $m = (New-Serializer).DeserializeObject($txt)
+        if ($m -and $m["message"]) { return [string]$m["message"] }
+        return $txt.Substring(0, [Math]::Min(200, $txt.Length))
+    } catch { return "" }
+}
+
 $script:shareTimer = New-Object System.Windows.Threading.DispatcherTimer
 $script:shareTimer.Interval = [TimeSpan]::FromMilliseconds(400)
 $script:shareTimer.Add_Tick({
@@ -3193,7 +3381,7 @@ $script:shareTimer.Add_Tick({
         if ($script:shareStep -eq "get") {
             $sha = ""
             if ($resp.IsSuccessStatusCode) { $sha = [string]((New-Serializer).DeserializeObject($resp.Content.ReadAsStringAsync().Result))["sha"] }
-            elseif ([int]$resp.StatusCode -ne 404) { throw ("HTTP " + [int]$resp.StatusCode) }
+            elseif ([int]$resp.StatusCode -ne 404) { throw ("HTTP " + [int]$resp.StatusCode + " (GET) " + (Get-GhErrorText $resp)) }
             $body = @{ message = "Companion spots"; content = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($script:sharePayload)) }
             if ($sha) { $body["sha"] = $sha }
             $script:shareStep = "put"
@@ -3201,7 +3389,7 @@ $script:shareTimer.Add_Tick({
             $script:shareTimer.Start()
             return
         }
-        if (-not $resp.IsSuccessStatusCode) { throw ("HTTP " + [int]$resp.StatusCode) }
+        if (-not $resp.IsSuccessStatusCode) { throw ("HTTP " + [int]$resp.StatusCode + " (PUT) " + (Get-GhErrorText $resp)) }
         $script:shareLastHash = $script:sharePayloadHash
         $script:shareLast = Get-Date
         $script:shareError = ""
@@ -4243,6 +4431,7 @@ $script:trackerSession = [guid]::NewGuid().ToString("N").Substring(0, 8)
 
 function Start-TrackerSession {
     $script:trackerSession = [guid]::NewGuid().ToString("N").Substring(0, 8)
+    $script:trackerHud = ""
 }
 
 function Set-TrackerLakeAuto([string]$lakeId) {
@@ -4961,6 +5150,7 @@ function Save-TrackerState {
     $o = [ordered]@{
         session = $script:trackerSession; lake = $script:trackerLake; temp = $script:trackerTemp
         pos = $(if ($script:trackerPos) { [ordered]@{ x = $script:trackerPos.X; y = $script:trackerPos.Y } } else { $null })
+        hud = [string]$script:trackerHud
         setup = $(if ($st) { [ordered]@{ baits = @($st.Baits); dip = $st.Dip; pva = $st.Pva; rig = $st.Rig; tech = $st.Tech } } else { $null })
     }
     for ($try = 0; $try -lt 5; $try++) {
@@ -4978,6 +5168,7 @@ function Load-TrackerState {
         if ($null -ne $d.session) { $script:trackerSession = [string]$d.session }
         if ($d.lake) { $script:trackerLake = [string]$d.lake }
         if ($d.temp) { $script:trackerTemp = [string]$d.temp }
+        if ($d.hud) { $script:trackerHud = [string]$d.hud }
         if ($d.pos) { $script:trackerPos = [pscustomobject]@{ X = [int]$d.pos.x; Y = [int]$d.pos.y } }
         if ($d.setup) { $script:trackerSetup = [pscustomobject]@{ Kind = "setup"; Baits = @($d.setup.baits | Where-Object { $_ }); Dip = [string]$d.setup.dip; Pva = [string]$d.setup.pva; Rig = [string]$d.setup.rig; Tech = [string]$d.setup.tech }
             if (-not $script:trackerSetup.Tech -and ($script:trackerSetup.Dip -or $script:trackerSetup.Pva -or @($script:trackerSetup.Baits).Count -ge 2)) { $script:trackerSetup.Tech = "bottom" }
@@ -5119,6 +5310,7 @@ function Complete-TrackerOcr {
         } else {
             [System.Media.SystemSounds]::Exclamation.Play()
         }
+        if ($job.Mode -eq "mini" -and ($pos -or $script:hudTempFound)) { $script:trackerHud = $job.Path }
         Update-TrackerUi
         return
     }
@@ -5721,10 +5913,32 @@ $btnSpotDelete.Add_Click({
     $s = Get-Spot $script:selSpotId
     if (-not $s) { return }
     if (-not (Confirm-Delete)) { return }
+    Remove-SpotImage $s
     $script:spots.Remove($s)
     Save-User
     Clear-SpotForm
     Refresh-AfterDataChange
+})
+
+$btnSpotImg.Add_Click({
+    $s = Get-Spot $script:selSpotId
+    if (-not $s) { return }
+    $dlg = New-Object Microsoft.Win32.OpenFileDialog
+    $dlg.Filter = "Bilder|*.png;*.jpg;*.jpeg;*.bmp"
+    if (Test-Path -LiteralPath $script:trackerDir) { $dlg.InitialDirectory = $script:trackerDir }
+    if (-not $dlg.ShowDialog($window)) { return }
+    if (Set-SpotImage $s $dlg.FileName) { Save-User; Show-SpotImage $s }
+})
+$btnSpotImgClear.Add_Click({
+    $s = Get-Spot $script:selSpotId
+    if (-not $s) { return }
+    Remove-SpotImage $s
+    Save-User
+    Show-SpotImage $s
+})
+$bdSpotImg.Add_MouseLeftButtonUp({
+    $f = Get-SpotImagePath (Get-Spot $script:selSpotId)
+    if ($f) { Start-Process -FilePath $f }
 })
 
 $lstLakeSpots.Add_SelectionChanged({
@@ -6359,6 +6573,10 @@ function Accept-TrackerItems($refs, $shared = $null, [bool]$override = $true) {
     foreach ($p in @($refs)) {
         $f = Build-TrackerCatch $p $shared $override
         $sid = Resolve-CatchSpot $f
+        if ($sid -and $p.Session -eq $script:trackerSession -and $script:trackerHud -and (Test-Path -LiteralPath $script:trackerHud)) {
+            $sp = Get-Spot $sid
+            if ($sp -and -not (Get-SpotImagePath $sp)) { Set-SpotImage $sp $script:trackerHud | Out-Null }
+        }
         $c = [pscustomobject]@{
             id = (New-Id); date = $p.Time.ToString("yyyy-MM-dd"); lake = $f.lake; fish = $p.Fish; weight = $p.Weight
             bait = $f.bait; bait2 = $f.bait2
