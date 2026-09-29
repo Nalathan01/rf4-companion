@@ -275,7 +275,9 @@
   "mapIdleHint": "Auf die Karte klicken, um einen neuen Spot zu setzen. Einen Spot in der Liste unten anklicken, um ihn zu bearbeiten.",
   "mapNewSpot": "Neuer Spot",
   "closeForm": "Schließen",
-  "tgtKinds": "{0} Arten"
+  "tgtKinds": "{0} Arten",
+  "castDir": "Wurfrichtung",
+  "castDirHint": "z. B. NO oder Richtung Boje"
  },
  "en": {
   "langName": "English",
@@ -553,7 +555,9 @@
   "mapIdleHint": "Click the map to set a new spot. Click a spot in the list below to edit it.",
   "mapNewSpot": "New spot",
   "closeForm": "Close",
-  "tgtKinds": "{0} species"
+  "tgtKinds": "{0} species",
+  "castDir": "Cast direction",
+  "castDirHint": "e.g. NE or towards the buoy"
  },
  "ru": {
   "langName": "Русский",
@@ -828,7 +832,9 @@
   "mapIdleHint": "Щёлкните по карте, чтобы поставить новую точку. Щёлкните по точке в списке ниже, чтобы изменить её.",
   "mapNewSpot": "Новая точка",
   "closeForm": "Закрыть",
-  "tgtKinds": "{0} видов"
+  "tgtKinds": "{0} видов",
+  "castDir": "Направление заброса",
+  "castDirHint": "напр. СВ или к бую"
  },
  "fr": {
   "langName": "Français",
@@ -1103,7 +1109,9 @@
   "mapIdleHint": "Cliquez sur la carte pour placer un nouveau spot. Cliquez sur un spot dans la liste ci-dessous pour le modifier.",
   "mapNewSpot": "Nouveau spot",
   "closeForm": "Fermer",
-  "tgtKinds": "{0} espèces"
+  "tgtKinds": "{0} espèces",
+  "castDir": "Direction du lancer",
+  "castDirHint": "ex. NE ou vers la bouée"
  },
  "es": {
   "langName": "Español",
@@ -1378,7 +1386,9 @@
   "mapIdleHint": "Haz clic en el mapa para colocar un spot nuevo. Haz clic en un spot de la lista para editarlo.",
   "mapNewSpot": "Nuevo spot",
   "closeForm": "Cerrar",
-  "tgtKinds": "{0} especies"
+  "tgtKinds": "{0} especies",
+  "castDir": "Dirección del lance",
+  "castDirHint": "p. ej. NE o hacia la boya"
  },
  "it": {
   "langName": "Italiano",
@@ -1653,7 +1663,9 @@
   "mapIdleHint": "Clicca sulla mappa per creare un nuovo spot. Clicca uno spot nella lista sotto per modificarlo.",
   "mapNewSpot": "Nuovo spot",
   "closeForm": "Chiudi",
-  "tgtKinds": "{0} specie"
+  "tgtKinds": "{0} specie",
+  "castDir": "Direzione di lancio",
+  "castDirHint": "es. NE o verso la boa"
  },
  "pl": {
   "langName": "Polski",
@@ -1928,7 +1940,9 @@
   "mapIdleHint": "Kliknij mapę, aby dodać nową miejscówkę. Kliknij miejscówkę na liście poniżej, aby ją edytować.",
   "mapNewSpot": "Nowa miejscówka",
   "closeForm": "Zamknij",
-  "tgtKinds": "{0} gatunków"
+  "tgtKinds": "{0} gatunków",
+  "castDir": "Kierunek rzutu",
+  "castDirHint": "np. NE lub w stronę boi"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2203,7 +2217,9 @@
   "mapIdleHint": "Clique no mapa para criar um novo ponto. Clique num ponto da lista abaixo para editá-lo.",
   "mapNewSpot": "Novo ponto",
   "closeForm": "Fechar",
-  "tgtKinds": "{0} espécies"
+  "tgtKinds": "{0} espécies",
+  "castDir": "Direção do arremesso",
+  "castDirHint": "ex. NE ou em direção à boia"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2478,7 +2494,9 @@
   "mapIdleHint": "Klik op de kaart om een nieuwe stek te zetten. Klik op een stek in de lijst hieronder om hem te bewerken.",
   "mapNewSpot": "Nieuwe stek",
   "closeForm": "Sluiten",
-  "tgtKinds": "{0} soorten"
+  "tgtKinds": "{0} soorten",
+  "castDir": "Werprichting",
+  "castDirHint": "bijv. NO of richting boei"
  },
  "tr": {
   "langName": "Türkçe",
@@ -2753,7 +2771,9 @@
   "mapIdleHint": "Yeni nokta koymak için haritaya tıklayın. Düzenlemek için aşağıdaki listeden bir noktaya tıklayın.",
   "mapNewSpot": "Yeni nokta",
   "closeForm": "Kapat",
-  "tgtKinds": "{0} tür"
+  "tgtKinds": "{0} tür",
+  "castDir": "Atış yönü",
+  "castDirHint": "ör. KD veya şamandıraya doğru"
  },
  "ro": {
   "langName": "Română",
@@ -3028,7 +3048,9 @@
   "mapIdleHint": "Dă clic pe hartă pentru un loc nou. Dă clic pe un loc din lista de mai jos pentru a-l edita.",
   "mapNewSpot": "Loc nou",
   "closeForm": "Închide",
-  "tgtKinds": "{0} specii"
+  "tgtKinds": "{0} specii",
+  "castDir": "Direcția aruncării",
+  "castDirHint": "de ex. NE sau spre geamandură"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3303,7 +3325,9 @@
   "mapIdleHint": "Klik peta untuk menaruh spot baru. Klik spot di daftar bawah untuk mengeditnya.",
   "mapNewSpot": "Spot baru",
   "closeForm": "Tutup",
-  "tgtKinds": "{0} jenis"
+  "tgtKinds": "{0} jenis",
+  "castDir": "Arah lemparan",
+  "castDirHint": "mis. TL atau ke arah pelampung"
  },
  "ja": {
   "langName": "日本語",
@@ -3578,7 +3602,9 @@
   "mapIdleHint": "地図をクリックして新しいスポットを設定。下のリストのスポットをクリックで編集。",
   "mapNewSpot": "新しいスポット",
   "closeForm": "閉じる",
-  "tgtKinds": "{0} 種"
+  "tgtKinds": "{0} 種",
+  "castDir": "キャスト方向",
+  "castDirHint": "例: 北東、ブイの方向"
  },
  "ko": {
   "langName": "한국어",
@@ -3853,7 +3879,9 @@
   "mapIdleHint": "지도를 클릭해 새 포인트를 만드세요. 아래 목록의 포인트를 클릭하면 편집합니다.",
   "mapNewSpot": "새 포인트",
   "closeForm": "닫기",
-  "tgtKinds": "{0}종"
+  "tgtKinds": "{0}종",
+  "castDir": "캐스팅 방향",
+  "castDirHint": "예: 북동 또는 부표 방향"
  },
  "zh": {
   "langName": "简体中文",
@@ -4128,7 +4156,9 @@
   "mapIdleHint": "点击地图设置新钓点。点击下方列表中的钓点进行编辑。",
   "mapNewSpot": "新钓点",
   "closeForm": "关闭",
-  "tgtKinds": "{0} 种"
+  "tgtKinds": "{0} 种",
+  "castDir": "抛投方向",
+  "castDirHint": "例如：东北或朝浮标"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4403,6 +4433,8 @@
   "mapIdleHint": "點擊地圖設定新釣點。點擊下方清單中的釣點進行編輯。",
   "mapNewSpot": "新釣點",
   "closeForm": "關閉",
-  "tgtKinds": "{0} 種"
+  "tgtKinds": "{0} 種",
+  "castDir": "拋投方向",
+  "castDirHint": "例如：東北或朝浮標"
  }
 }
