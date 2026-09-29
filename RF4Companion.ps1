@@ -4054,7 +4054,8 @@ function Show-CommCluster($cl) {
         $fl = (@($r["fish"]) | Select-Object -First 3 | ForEach-Object { N $_ }) -join ", "
         if ($fl) { $parts += $fl }
         if ($null -ne $r["weight"] -and "$($r["weight"])" -ne "") { $parts += Format-Weight ([double]$r["weight"] * 1000) }
-        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $parts += "{0} {1:0.#} m" -f (T "distance"), [double]$r["clip"] }
+        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $parts += ("{0} {1:0.#} m {2}" -f (T "distance"), [double]$r["clip"], ([string]$r["dir"]).Trim()).TrimEnd() }
+        elseif (([string]$r["dir"]).Trim()) { $parts += ([string]$r["dir"]).Trim() }
         $parts += Get-ReportHost ([string]$r["url"])
         $items += [pscustomobject]@{ Label = ($parts -join "  |  "); Url = [string]$r["url"]; Detail = (Get-CommReportText $r) }
     }
@@ -4099,6 +4100,7 @@ function Get-CommReportText($r) {
     if ($null -ne $r["weight"] -and "$($r["weight"])" -ne "") { $lines += "{0}: {1}" -f (T "weight"), (Format-Weight ([double]$r["weight"] * 1000)) }
     if ([string]$r["method"]) { $lines += "{0}: {1}" -f (T "technique"), (Format-Method ([string]$r["method"])) }
     if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $lines += "{0}: {1:0.#} m" -f (T "distance"), [double]$r["clip"] }
+    if (([string]$r["dir"]).Trim()) { $lines += "{0}: {1}" -f (T "castDir"), ([string]$r["dir"]).Trim() }
     if ($null -ne $r["depth"] -and "$($r["depth"])" -ne "") { $lines += "{0}: {1:0.#} m" -f (T "depth"), [double]$r["depth"] }
     $bl = (@($r["bait"]) | Where-Object { $_ } | ForEach-Object { N $_ }) -join ", "
     if ($bl) { $lines += "{0}: {1}" -f (T "bait"), $bl }
