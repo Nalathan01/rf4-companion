@@ -641,6 +641,7 @@ function Format-Coords($lake, $nx, $ny) {
                                 <ComboBox x:Name="cmbSpotTemp"/>
                                 <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
                                 <TextBox x:Name="txtSpotDir" Tag="w:castDirHint"/>
+                                <CheckBox x:Name="chkSpotShare" Tag="t:shareSpot" Margin="0,0,0,10"/>
                                 <TextBlock Tag="t:notes" Style="{StaticResource Label}"/>
                                 <TextBox x:Name="txtSpotNotes" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,14">
@@ -939,6 +940,7 @@ function Format-Coords($lake, $nx, $ny) {
                                         <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
                                         <TextBox x:Name="txtCatchDir" Tag="w:castDirHint"/>
                                     </StackPanel>
+                                    <CheckBox x:Name="chkCatchShare" DockPanel.Dock="Left" Tag="t:shareNewSpot" Margin="0,18,10,0" VerticalAlignment="Top"/>
                                     <StackPanel>
                                         <TextBlock Tag="t:notes" Style="{StaticResource Label}"/>
                                         <TextBox x:Name="txtCatchNotes"/>
@@ -1019,7 +1021,8 @@ function Format-Coords($lake, $nx, $ny) {
                             <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="150"/>
                             <DataGridTextColumn Header="t:technique" Binding="{Binding Tech}" Width="100"/>
                             <DataGridTextColumn Header="t:coords" Binding="{Binding Coords}" Width="100"/>
-                            <DataGridTextColumn Header="t:depthClip" Binding="{Binding Depth}" Width="90"/>
+                            <DataGridTextColumn Header="t:depthClip" Binding="{Binding Depth}" Width="120"/>
+                            <DataGridTextColumn Header="t:sharedCol" Binding="{Binding Shared}" Width="75"/>
                             <DataGridTextColumn Header="t:notes" Binding="{Binding Notes}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -1073,6 +1076,7 @@ function Format-Coords($lake, $nx, $ny) {
                                     <ComboBox x:Name="cmbSeTemp"/>
                                     <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
                                     <TextBox x:Name="txtSeDir" Tag="w:castDirHint"/>
+                                    <CheckBox x:Name="chkSeShare" Tag="t:shareSpot" Margin="0,0,0,10"/>
                                     <TextBlock Tag="t:notes" Style="{StaticResource Label}"/>
                                     <TextBox x:Name="txtSeNotes" Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -1563,6 +1567,7 @@ function Clear-SpotForm {
     Set-ComboKey $cmbSpotTech ""
     Set-ComboKey $cmbSpotTemp ""
     $txtSpotDir.Text = ""
+    $chkSpotShare.IsChecked = $false
     $txtSpotDepth.Text = ""
     $txtSpotDist.Text = ""
     $txtSpotNotes.Text = ""
@@ -1580,6 +1585,7 @@ function Fill-SpotForm($s) {
     Set-ComboKey $cmbSpotTech "$($s.tech)"
     Set-ComboKey $cmbSpotTemp "$($s.temp)"
     $txtSpotDir.Text = "$($s.dir)"
+    $chkSpotShare.IsChecked = [bool]$s.share
     $txtSpotDepth.Text = "$($s.depth)"
     $txtSpotDist.Text = "$($s.dist)"
     $txtSpotNotes.Text = "$($s.notes)"
@@ -1686,7 +1692,7 @@ function Refresh-SpotsGrid {
         if ($s.dip) { $baitText = "{0}  ({1}: {2})" -f $baitText, (T "dipL"), (N $s.dip) }
         $row = [pscustomobject]@{
             Id = $s.id; Lake = (Get-LakeName $s.lake); Name = "$($s.name)"; Fish = (N $s.fish); Bait = $baitText
-            Tech = $tech; Coords = (Format-Coords $lake $s.nx $s.ny); Depth = (((@("$($s.dist)".Trim(), "$($s.depth)".Trim()) -join " / ").TrimEnd(" /")) + $(if ("$($s.dir)".Trim()) { "  " + "$($s.dir)".Trim() } else { "" })); Notes = "$($s.notes)"
+            Tech = $tech; Shared = $(if ($s.share) { [string][char]0x2713 } else { "" }); Coords = (Format-Coords $lake $s.nx $s.ny); Depth = (((@("$($s.dist)".Trim(), "$($s.depth)".Trim()) -join " / ").TrimEnd(" /")) + $(if ("$($s.dir)".Trim()) { "  " + "$($s.dir)".Trim() } else { "" })); Notes = "$($s.notes)"
         }
         if ($q -and -not $cq) {
             $hay = ("{0} {1} {2} {3} {4} {5} {6}" -f $row.Lake, $row.Name, $row.Fish, $row.Bait, $row.Tech, $row.Notes, $s.fish).ToLower()
@@ -1820,7 +1826,7 @@ function Resolve-CatchSpot($f) {
     if (-not $tech -and ($f.bait2 -or $f.dip -or $f.pva)) { $tech = "bottom" }
     $sp = [pscustomobject]@{
         id = (New-Id); lake = $f.lake; name = $autoName; fish = $f.fish; bait = $f.bait; bait2 = "$($f.bait2)"; dip = "$($f.dip)"
-        groundbait = ""; pva = "$($f.pva)"; tech = $tech; depth = "$($f.depth)"; dist = "$($f.clip)"; temp = "$($f.temp)"; dir = "$($f.dir)"; notes = ""; nx = [double]$n.NX; ny = [double]$n.NY
+        groundbait = ""; pva = "$($f.pva)"; tech = $tech; depth = "$($f.depth)"; dist = "$($f.clip)"; temp = "$($f.temp)"; dir = "$($f.dir)"; share = [bool]$chkCatchShare.IsChecked; notes = ""; nx = [double]$n.NX; ny = [double]$n.NY
     }
     $script:spots.Add($sp) | Out-Null
     return $sp.id
@@ -5101,6 +5107,7 @@ function Show-SpotEdit([string]$id) {
     Set-Choices $cmbSeTemp (Get-TempChoices)
     Set-ComboKey $cmbSeTemp "$($sp.temp)"
     $txtSeDir.Text = "$($sp.dir)"
+    $chkSeShare.IsChecked = [bool]$sp.share
     $txtSeNotes.Text = "$($sp.notes)"
     $txtSeHint.Visibility = "Collapsed"
     $svSpotEdit.Visibility = "Visible"
@@ -5419,6 +5426,7 @@ $btnSpotSave.Add_Click({
     $s.tech = Get-ComboKey $cmbSpotTech
     $s | Add-Member -NotePropertyName temp -NotePropertyValue (Get-ComboKey $cmbSpotTemp) -Force
     $s | Add-Member -NotePropertyName dir -NotePropertyValue $txtSpotDir.Text.Trim() -Force
+    $s | Add-Member -NotePropertyName share -NotePropertyValue ([bool]$chkSpotShare.IsChecked) -Force
     $s.depth = $txtSpotDepth.Text.Trim()
     $s.dist = $txtSpotDist.Text.Trim()
     $s.notes = $txtSpotNotes.Text.Trim()
@@ -5506,7 +5514,7 @@ $btnSeSave.Add_Click({
         name = $txtSeName.Text.Trim(); tech = (Get-ComboKey $cmbSeTech); fish = (Get-ComboKey $cmbSeFish)
         bait = (Get-ComboKey $cmbSeBait); bait2 = (Get-ComboKey $cmbSeBait2); dip = (Get-ComboKey $cmbSeDip)
         groundbait = (Get-RecipeFieldValue $cmbSeGround); pva = (Get-RecipeFieldValue $cmbSePva)
-        dist = $txtSeDist.Text.Trim(); depth = $txtSeDepth.Text.Trim(); notes = $txtSeNotes.Text.Trim(); temp = (Get-ComboKey $cmbSeTemp); dir = $txtSeDir.Text.Trim()
+        dist = $txtSeDist.Text.Trim(); depth = $txtSeDepth.Text.Trim(); notes = $txtSeNotes.Text.Trim(); temp = (Get-ComboKey $cmbSeTemp); dir = $txtSeDir.Text.Trim(); share = [bool]$chkSeShare.IsChecked
     }
     foreach ($k in $vals.Keys) { $sp | Add-Member -NotePropertyName $k -NotePropertyValue $vals[$k] -Force }
     Save-User
