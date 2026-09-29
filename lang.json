@@ -293,7 +293,10 @@
   "noImages": "Keine Bilder in dieser Meldung",
   "imgLoading": "Lade Bilder ...",
   "shareSpotImg": "Spotbild mit teilen (linker Rand mit Chat wird abgeschnitten)",
-  "imgViaSource": "Bilder dieser Quelle nur über „Quelle öffnen“"
+  "imgViaSource": "Bilder dieser Quelle nur über „Quelle öffnen“",
+  "dirFromImages": "aus Bildern erkannt",
+  "scanProgress": "Bildauswertung: noch {0} Meldungen",
+  "dirFromHistory": "aus älteren Meldungen an dieser Stelle"
  },
  "en": {
   "langName": "English",
@@ -589,7 +592,10 @@
   "noImages": "No images in this report",
   "imgLoading": "Loading images ...",
   "shareSpotImg": "Share spot image too (left edge with chat is cut off)",
-  "imgViaSource": "Images from this source only via “Open source”"
+  "imgViaSource": "Images from this source only via “Open source”",
+  "dirFromImages": "detected from images",
+  "scanProgress": "Image analysis: {0} reports left",
+  "dirFromHistory": "from older reports at this spot"
  },
  "ru": {
   "langName": "Русский",
@@ -882,7 +888,10 @@
   "noImages": "В этом сообщении нет изображений",
   "imgLoading": "Загрузка изображений ...",
   "shareSpotImg": "Делиться фото места (левый край с чатом обрезается)",
-  "imgViaSource": "Изображения этого источника только через «Открыть источник»"
+  "imgViaSource": "Изображения этого источника только через «Открыть источник»",
+  "dirFromImages": "определено по изображениям",
+  "scanProgress": "Анализ изображений: осталось {0} сообщений",
+  "dirFromHistory": "по более ранним сообщениям с этого места"
  },
  "fr": {
   "langName": "Français",
@@ -1175,7 +1184,10 @@
   "noImages": "Aucune image dans ce signalement",
   "imgLoading": "Chargement des images ...",
   "shareSpotImg": "Partager aussi l'image du spot (le bord gauche avec le chat est coupé)",
-  "imgViaSource": "Images de cette source uniquement via « Ouvrir la source »"
+  "imgViaSource": "Images de cette source uniquement via « Ouvrir la source »",
+  "dirFromImages": "détecté sur les images",
+  "scanProgress": "Analyse des images : encore {0} signalements",
+  "dirFromHistory": "d'après des signalements plus anciens à cet endroit"
  },
  "es": {
   "langName": "Español",
@@ -1468,7 +1480,10 @@
   "noImages": "No hay imágenes en este reporte",
   "imgLoading": "Cargando imágenes ...",
   "shareSpotImg": "Compartir también la imagen del spot (se recorta el borde izquierdo con el chat)",
-  "imgViaSource": "Imágenes de esta fuente solo mediante «Abrir fuente»"
+  "imgViaSource": "Imágenes de esta fuente solo mediante «Abrir fuente»",
+  "dirFromImages": "detectado en las imágenes",
+  "scanProgress": "Análisis de imágenes: quedan {0} reportes",
+  "dirFromHistory": "según reportes anteriores en este lugar"
  },
  "it": {
   "langName": "Italiano",
@@ -1761,7 +1776,10 @@
   "noImages": "Nessuna immagine in questa segnalazione",
   "imgLoading": "Caricamento immagini ...",
   "shareSpotImg": "Condividi anche l'immagine dello spot (il bordo sinistro con la chat viene tagliato)",
-  "imgViaSource": "Immagini di questa fonte solo tramite «Apri fonte»"
+  "imgViaSource": "Immagini di questa fonte solo tramite «Apri fonte»",
+  "dirFromImages": "rilevato dalle immagini",
+  "scanProgress": "Analisi immagini: ancora {0} segnalazioni",
+  "dirFromHistory": "da segnalazioni precedenti in questo punto"
  },
  "pl": {
   "langName": "Polski",
@@ -2054,7 +2072,10 @@
   "noImages": "Brak zdjęć w tym zgłoszeniu",
   "imgLoading": "Ładowanie zdjęć ...",
   "shareSpotImg": "Udostępnij też zdjęcie miejsca (lewa krawędź z czatem jest przycinana)",
-  "imgViaSource": "Zdjęcia z tego źródła tylko przez „Otwórz źródło”"
+  "imgViaSource": "Zdjęcia z tego źródła tylko przez „Otwórz źródło”",
+  "dirFromImages": "wykryto na zdjęciach",
+  "scanProgress": "Analiza zdjęć: pozostało {0} zgłoszeń",
+  "dirFromHistory": "ze starszych zgłoszeń z tego miejsca"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2347,7 +2368,10 @@
   "noImages": "Nenhuma imagem neste relato",
   "imgLoading": "Carregando imagens ...",
   "shareSpotImg": "Compartilhar também a imagem do spot (a borda esquerda com o chat é cortada)",
-  "imgViaSource": "Imagens desta fonte apenas via “Abrir fonte”"
+  "imgViaSource": "Imagens desta fonte apenas via “Abrir fonte”",
+  "dirFromImages": "detectado nas imagens",
+  "scanProgress": "Análise de imagens: faltam {0} relatos",
+  "dirFromHistory": "de relatos anteriores neste local"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2640,7 +2664,10 @@
   "noImages": "Geen afbeeldingen in deze melding",
   "imgLoading": "Afbeeldingen laden ...",
   "shareSpotImg": "Ook spotafbeelding delen (linkerrand met chat wordt weggesneden)",
-  "imgViaSource": "Afbeeldingen van deze bron alleen via “Bron openen”"
+  "imgViaSource": "Afbeeldingen van deze bron alleen via “Bron openen”",
+  "dirFromImages": "herkend uit afbeeldingen",
+  "scanProgress": "Beeldanalyse: nog {0} meldingen",
+  "dirFromHistory": "uit oudere meldingen op deze plek"
  },
  "tr": {
   "langName": "Türkçe",
@@ -2933,7 +2960,10 @@
   "noImages": "Bu bildirimde resim yok",
   "imgLoading": "Resimler yükleniyor ...",
   "shareSpotImg": "Nokta resmini de paylaş (sohbetli sol kenar kesilir)",
-  "imgViaSource": "Bu kaynağın resimleri yalnızca “Kaynağı aç” ile"
+  "imgViaSource": "Bu kaynağın resimleri yalnızca “Kaynağı aç” ile",
+  "dirFromImages": "resimlerden algılandı",
+  "scanProgress": "Resim analizi: {0} bildirim kaldı",
+  "dirFromHistory": "bu noktadaki eski bildirimlerden"
  },
  "ro": {
   "langName": "Română",
@@ -3226,7 +3256,10 @@
   "noImages": "Nicio imagine în acest raport",
   "imgLoading": "Se încarcă imaginile ...",
   "shareSpotImg": "Partajează și imaginea locului (marginea stângă cu chatul este tăiată)",
-  "imgViaSource": "Imaginile acestei surse doar prin „Deschide sursa”"
+  "imgViaSource": "Imaginile acestei surse doar prin „Deschide sursa”",
+  "dirFromImages": "detectat din imagini",
+  "scanProgress": "Analiza imaginilor: mai sunt {0} rapoarte",
+  "dirFromHistory": "din rapoarte mai vechi din acest loc"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3519,7 +3552,10 @@
   "noImages": "Tidak ada gambar dalam laporan ini",
   "imgLoading": "Memuat gambar ...",
   "shareSpotImg": "Bagikan juga gambar spot (tepi kiri dengan obrolan dipotong)",
-  "imgViaSource": "Gambar dari sumber ini hanya lewat “Buka sumber”"
+  "imgViaSource": "Gambar dari sumber ini hanya lewat “Buka sumber”",
+  "dirFromImages": "terdeteksi dari gambar",
+  "scanProgress": "Analisis gambar: {0} laporan tersisa",
+  "dirFromHistory": "dari laporan lama di lokasi ini"
  },
  "ja": {
   "langName": "日本語",
@@ -3812,7 +3848,10 @@
   "noImages": "このレポートに画像はありません",
   "imgLoading": "画像を読み込み中 ...",
   "shareSpotImg": "スポット画像も共有（チャットのある左端は切り取られます）",
-  "imgViaSource": "このソースの画像は「ソースを開く」からのみ"
+  "imgViaSource": "このソースの画像は「ソースを開く」からのみ",
+  "dirFromImages": "画像から検出",
+  "scanProgress": "画像解析: 残り {0} 件",
+  "dirFromHistory": "この場所の過去のレポートから"
  },
  "ko": {
   "langName": "한국어",
@@ -4105,7 +4144,10 @@
   "noImages": "이 보고에는 이미지가 없습니다",
   "imgLoading": "이미지 불러오는 중 ...",
   "shareSpotImg": "스팟 이미지도 공유 (채팅이 있는 왼쪽 가장자리는 잘립니다)",
-  "imgViaSource": "이 출처의 이미지는 '출처 열기'로만 볼 수 있습니다"
+  "imgViaSource": "이 출처의 이미지는 '출처 열기'로만 볼 수 있습니다",
+  "dirFromImages": "이미지에서 감지됨",
+  "scanProgress": "이미지 분석: {0}개 남음",
+  "dirFromHistory": "이 위치의 이전 보고에서"
  },
  "zh": {
   "langName": "简体中文",
@@ -4398,7 +4440,10 @@
   "noImages": "此报告中没有图片",
   "imgLoading": "正在加载图片 ...",
   "shareSpotImg": "同时分享钓点图片（左侧带聊天的边缘会被裁掉）",
-  "imgViaSource": "此来源的图片只能通过“打开来源”查看"
+  "imgViaSource": "此来源的图片只能通过“打开来源”查看",
+  "dirFromImages": "从图片识别",
+  "scanProgress": "图片分析：剩余 {0} 条报告",
+  "dirFromHistory": "来自此处较早的报告"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4691,6 +4736,9 @@
   "noImages": "此報告中沒有圖片",
   "imgLoading": "正在載入圖片 ...",
   "shareSpotImg": "同時分享釣點圖片（左側帶聊天的邊緣會被裁掉）",
-  "imgViaSource": "此來源的圖片只能透過「開啟來源」查看"
+  "imgViaSource": "此來源的圖片只能透過「開啟來源」查看",
+  "dirFromImages": "從圖片辨識",
+  "scanProgress": "圖片分析：剩餘 {0} 則報告",
+  "dirFromHistory": "來自此處較早的報告"
  }
 }

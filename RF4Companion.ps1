@@ -1,4 +1,4 @@
-param([switch]$Minimized)
+param([switch]$Minimized, [string]$OpenSpot)
 
 $ErrorActionPreference = "Stop"
 
@@ -541,6 +541,10 @@ function Format-Coords($lake, $nx, $ny) {
                                 </WrapPanel>
                                 <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel>
+                                        <Border x:Name="bdCommImg" Visibility="Collapsed" BorderBrush="{DynamicResource AppLine}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,8" Cursor="Hand">
+                                            <Image x:Name="imgCommSpot" Stretch="Uniform" MaxHeight="230"/>
+                                        </Border>
+                                        <TextBlock x:Name="txtCommDir" Visibility="Collapsed" Foreground="{DynamicResource AppAccent}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
                                         <TextBlock x:Name="txtCommInfo" Foreground="{DynamicResource AppInk}" TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,12"/>
                                         <TextBlock Tag="t:singleReports" Style="{StaticResource Label}" Margin="0,0,0,6" TextWrapping="Wrap"/>
                                         <ListBox x:Name="lstCommReports" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -1466,13 +1470,17 @@ function Draw-CastArrows {
     if ($sel -and $sel.lake -eq $lake.id) { Add-CastArrow ([double]$sel.nx) ([double]$sel.ny) "$($sel.dir)" "$($sel.dist)" "#FFFFD54F" }
     if ($script:commSel -and $script:commSel.Lake -eq $lake.id) {
         $n = From-Game $lake $script:commSel.X $script:commSel.Y
-        $seen = @{}
-        foreach ($r in @($script:commSel.Reports | Where-Object { [string]$_["dir"] } | Sort-Object { [int]$_["catches"] } -Descending)) {
-            $k = "{0}|{1}" -f ([string]$r["dir"]).Trim().ToUpper(), [string]$r["clip"]
-            if ($seen.ContainsKey($k)) { continue }
-            $seen[$k] = $true
-            Add-CastArrow ([double]$n.NX) ([double]$n.NY) ([string]$r["dir"]) ([string]$r["clip"]) "#FF81C784"
-            if ($seen.Count -ge 3) { break }
+        $dirs = Get-ClusterDirs $script:commSel
+        $drawn = @()
+        foreach ($lbl in @($dirs.Counts.Keys | Sort-Object { $dirs.Counts[$_] } -Descending)) {
+            $dg = Get-DirDegrees $lbl
+            if ($null -eq $dg) { continue }
+            $near = $false
+            foreach ($o in $drawn) { $df = [math]::Abs($dg-$o) % 360; if ($df -gt 180) { $df = 360-$df }; if ($df -lt 45) { $near = $true } }
+            if ($near) { continue }
+            $drawn += $dg
+            Add-CastArrow ([double]$n.NX) ([double]$n.NY) $lbl ([string]$dirs.Clips[$lbl]) "#FF81C784"
+            if ($drawn.Count -ge 3) { break }
         }
     }
 }
@@ -1926,6 +1934,11 @@ function Find-SpotAt([string]$lakeId, $x, $y, [string]$clip = "", [string]$dir =
         $sd = "$($sp.dir)".Trim().ToLower()
         $clipOk = (-not $cn -or -not $sc -or $cn -eq $sc)
         $dirOk = (-not $dn -or -not $sd -or $dn -eq $sd)
+        if (-not $dirOk) {
+            $da = Get-DirDegrees $dn
+            $db = Get-DirDegrees $sd
+            if ($null -ne $da -and $null -ne $db) { $dd = [math]::Abs($da-$db) % 360; if ($dd -gt 180) { $dd = 360-$dd }; $dirOk = ($dd -le 30) }
+        }
         if (-not ($clipOk -and $dirOk)) { continue }
         if ($cn -eq $sc -and $dn -eq $sd) { return $sp }
         if (-not $loose) { $loose = $sp }
@@ -3960,6 +3973,716 @@ namespace RF4Comp {
 "@
 }
 
+if (-not ("RF4Comp.PostScanner" -as [type])) {
+    Add-Type -AssemblyName System.Drawing, System.Net.Http
+    Add-Type -ReferencedAssemblies System.Drawing, System.Net.Http -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+
+namespace RF4Comp {
+    public class DirResult {
+        public double Deg = -1;
+        public string Kind = "";
+        public double Score;
+        public bool Hud;
+        public bool Ok;
+        public bool MapShot;
+        public double Ui;
+        public double UiBottom;
+        public double Paper;
+        public double Grey;
+        public double Cx;
+        public double Cy;
+        public double Size;
+        public int Width;
+        public int Height;
+    }
+
+    public static class DirDetect {
+        class Comp { public double X, Y; public int N, X0, Y0, X1, Y1; public List<int> Px; }
+
+        public static Task<DirResult> DetectAsync(byte[] data) { return Task.Run(() => Detect(data)); }
+
+        public static DirResult DetectFile(string path) { return Detect(File.ReadAllBytes(path)); }
+
+        public static DirResult Detect(byte[] data) {
+            var res = new DirResult();
+            try {
+                using (var ms = new MemoryStream(data))
+                using (var src = new Bitmap(ms)) {
+                    int w = src.Width, h = src.Height;
+                    double f = w > 1280 ? 1280.0 / w : 1.0;
+                    w = Math.Max(1, (int)(w * f)); h = Math.Max(1, (int)(h * f));
+                    res.Width = w; res.Height = h;
+                    using (var bmp = new Bitmap(w, h, PixelFormat.Format24bppRgb)) {
+                        using (var g = Graphics.FromImage(bmp)) {
+                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                            g.DrawImage(src, 0, 0, w, h);
+                        }
+                        var px = ReadPixels(bmp);
+                        res.Ok = true;
+                        Run(px, w, h, res);
+                    }
+                }
+            } catch { }
+            return res;
+        }
+
+        static int[] ReadPixels(Bitmap bmp) {
+            int w = bmp.Width, h = bmp.Height;
+            var bd = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            var raw = new byte[bd.Stride * h];
+            Marshal.Copy(bd.Scan0, raw, 0, raw.Length);
+            bmp.UnlockBits(bd);
+            var px = new int[w * h];
+            for (int y = 0; y < h; y++) {
+                int o = y * bd.Stride;
+                for (int x = 0; x < w; x++) {
+                    int b = raw[o + x * 3], g = raw[o + x * 3 + 1], r = raw[o + x * 3 + 2];
+                    px[y * w + x] = (r << 16) | (g << 8) | b;
+                }
+            }
+            return px;
+        }
+
+        static int R(int p) { return (p >> 16) & 255; }
+        static int G(int p) { return (p >> 8) & 255; }
+        static int B(int p) { return p & 255; }
+
+        static bool IsBlue(int p) { int r = R(p), g = G(p), b = B(p); return b > 150 && b-r > 100 && g > 60 && g < b-40; }
+        static bool IsRed(int p) { int r = R(p), g = G(p), b = B(p); return r > 150 && r-g > 75 && r-b > 75 && g < 130; }
+        static bool IsArrowGreen(int p) { int r = R(p), g = G(p), b = B(p); return g > 150 && g-r > 70 && g-b > 70; }
+
+        static List<Comp> Comps(bool[] mask, int w, int h, int minPx, bool keepPx) {
+            var seen = new bool[w * h];
+            var list = new List<Comp>();
+            var stack = new Stack<int>();
+            for (int i = 0; i < w * h; i++) {
+                if (!mask[i] || seen[i]) continue;
+                var c = new Comp { X0 = int.MaxValue, Y0 = int.MaxValue, X1 = -1, Y1 = -1 };
+                if (keepPx) c.Px = new List<int>();
+                double sx = 0, sy = 0;
+                seen[i] = true; stack.Push(i);
+                while (stack.Count > 0) {
+                    int j = stack.Pop();
+                    int x = j % w, y = j / w;
+                    sx += x; sy += y; c.N++;
+                    if (keepPx) c.Px.Add(j);
+                    if (x < c.X0) c.X0 = x;
+                    if (x > c.X1) c.X1 = x;
+                    if (y < c.Y0) c.Y0 = y;
+                    if (y > c.Y1) c.Y1 = y;
+                    if (x > 0 && mask[j-1] && !seen[j-1]) { seen[j-1] = true; stack.Push(j-1); }
+                    if (x < w-1 && mask[j+1] && !seen[j+1]) { seen[j+1] = true; stack.Push(j+1); }
+                    if (y > 0 && mask[j-w] && !seen[j-w]) { seen[j-w] = true; stack.Push(j-w); }
+                    if (y < h-1 && mask[j+w] && !seen[j+w]) { seen[j+w] = true; stack.Push(j+w); }
+                }
+                if (c.N >= minPx) { c.X = sx / c.N; c.Y = sy / c.N; list.Add(c); }
+            }
+            return list;
+        }
+
+        static List<Comp> MergeNear(List<Comp> cs, int w) {
+            bool merged = true;
+            while (merged) {
+                merged = false;
+                for (int i = 0; i < cs.Count && !merged; i++) for (int k = i + 1; k < cs.Count && !merged; k++) {
+                    var a = cs[i]; var b = cs[k];
+                    int sa = Math.Max(a.X1-a.X0, a.Y1-a.Y0), sb = Math.Max(b.X1-b.X0, b.Y1-b.Y0);
+                    if (sa > w / 6 || sb > w / 6) continue;
+                    int gx = Math.Max(0, Math.Max(a.X0, b.X0)-Math.Min(a.X1, b.X1)), gy = Math.Max(0, Math.Max(a.Y0, b.Y0)-Math.Min(a.Y1, b.Y1));
+                    double gap = Math.Sqrt(gx * gx + gy * gy);
+                    if (gap > Math.Max(6, 1.0 * Math.Min(Math.Max(sa, sb), 40))) continue;
+                    if (Math.Min(sa, sb) < 5) continue;
+                    var m = new Comp { Px = new List<int>(a.Px), X0 = Math.Min(a.X0, b.X0), Y0 = Math.Min(a.Y0, b.Y0), X1 = Math.Max(a.X1, b.X1), Y1 = Math.Max(a.Y1, b.Y1) };
+                    m.Px.AddRange(b.Px); m.N = m.Px.Count;
+                    m.X = (a.X * a.N + b.X * b.N) / m.N; m.Y = (a.Y * a.N + b.Y * b.N) / m.N;
+                    cs[i] = m; cs.RemoveAt(k); merged = true;
+                }
+            }
+            return cs;
+        }
+
+        static List<Comp> DilComps(bool[] mask, int w, int h, int minPx, int rad) {
+            var dil = new bool[w * h];
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+                if (!mask[y * w + x]) continue;
+                for (int dy = -rad; dy <= rad; dy++) for (int dx = -rad; dx <= rad; dx++) {
+                    int xx = x + dx, yy = y + dy;
+                    if (xx >= 0 && yy >= 0 && xx < w && yy < h) dil[yy * w + xx] = true;
+                }
+            }
+            var cs = Comps(dil, w, h, 1, true);
+            var outList = new List<Comp>();
+            foreach (var c in cs) {
+                var keep = new List<int>();
+                double sx = 0, sy = 0;
+                int x0 = int.MaxValue, y0 = int.MaxValue, x1 = -1, y1 = -1;
+                foreach (int j in c.Px) if (mask[j]) {
+                    keep.Add(j); int x = j % w, y = j / w; sx += x; sy += y;
+                    if (x < x0) x0 = x;
+                    if (x > x1) x1 = x;
+                    if (y < y0) y0 = y;
+                    if (y > y1) y1 = y;
+                }
+                if (keep.Count < minPx) continue;
+                c.Px = keep; c.N = keep.Count; c.X = sx / c.N; c.Y = sy / c.N; c.X0 = x0; c.Y0 = y0; c.X1 = x1; c.Y1 = y1;
+                outList.Add(c);
+            }
+            return outList;
+        }
+
+        static double RingScore(int[] px, int w, int h, double cx, double cy, double rad, double axis) {
+            var lum = new List<double>();
+            int grey = 0, tot = 0;
+            for (int a = 0; a < 360; a += 5) {
+                double ad = ((a-axis) % 180 + 180) % 180;
+                if (ad < 20 || ad > 160) continue;
+                double t = a * Math.PI / 180;
+                int x = (int)Math.Round(cx + rad * Math.Sin(t)), y = (int)Math.Round(cy-rad * Math.Cos(t));
+                if (x < 0 || y < 0 || x >= w || y >= h) return 0;
+                tot++;
+                int p = px[y * w + x];
+                int r = R(p), g = G(p), b = B(p);
+                int mx = Math.Max(r, Math.Max(g, b)), mn = Math.Min(r, Math.Min(g, b));
+                if (mx > 25 && mx < 200 && mx-mn < 90) { grey++; lum.Add(r); lum.Add(g); lum.Add(b); }
+            }
+            if (tot == 0 || lum.Count < 24) return 0;
+            double mr = 0, mg = 0, mb = 0; int k = lum.Count / 3;
+            for (int i = 0; i < k; i++) { mr += lum[i * 3]; mg += lum[i * 3 + 1]; mb += lum[i * 3 + 2]; }
+            mr /= k; mg /= k; mb /= k;
+            int near = 0;
+            for (int i = 0; i < k; i++) { double dr = lum[i * 3]-mr, dg = lum[i * 3 + 1]-mg, db = lum[i * 3 + 2]-mb; if (Math.Sqrt(dr * dr + dg * dg + db * db) < 34) near++; }
+            return ((double)grey / tot) * ((double)near / k);
+        }
+
+        static bool BadgeShape(Comp c) {
+            int bw = c.X1-c.X0+1, bh = c.Y1-c.Y0+1;
+            if (bw < 4 || bh < 4) return false;
+            if (Math.Max(bw, bh) > 2.0 * Math.Min(bw, bh)) return false;
+            double fill = (double)c.N / (bw * bh);
+            return fill > 0.3;
+        }
+
+        static double Norm(double d) { d %= 360; if (d < 0) d += 360; return d; }
+
+        static void Run(int[] px, int w, int h, DirResult res) {
+            int n = w * h;
+            int ui = 0, ut = 0;
+            for (int i = 0; i < n; i += 7) {
+                ut++;
+                int p = px[i]; int r0 = R(p), g0 = G(p), b0 = B(p);
+                int mx0 = Math.Max(r0, Math.Max(g0, b0)), mn0 = Math.Min(r0, Math.Min(g0, b0));
+                if (mx0-mn0 < 16 && mx0 > 20 && mx0 < 100) ui++;
+            }
+            res.Ui = ut > 0 ? (double)ui / ut : 0;
+            int ub = 0, ubt = 0, pp = 0, pt = 0, gr = 0;
+            for (int y = 0; y < h; y += 3) for (int x = 0; x < w; x += 3) {
+                int p = px[y * w + x]; int r0 = R(p), g0 = G(p), b0 = B(p);
+                int mx0 = Math.Max(r0, Math.Max(g0, b0)), mn0 = Math.Min(r0, Math.Min(g0, b0));
+                pt++;
+                if (mx0-mn0 < 14 && mx0 > 20 && mx0 < 225) gr++;
+                if ((r0 > 175 && r0 < 235 && g0 > 160 && g0 < 215 && b0 > 120 && b0 < 185 && r0 > b0 + 25) || (r0 > 85 && r0 < 150 && g0 > 110 && g0 < 165 && b0 > 100 && b0 < 150 && g0 > r0 + 8 && Math.Abs(g0-b0) < 30)) pp++;
+                if (x >= w * 3 / 10 && x < w * 7 / 10 && y >= h * 7 / 10 && y < h * 92 / 100) { ubt++; if (mx0-mn0 < 16 && mx0 > 20 && mx0 < 100) ub++; }
+            }
+            res.UiBottom = ubt > 0 ? (double)ub / ubt : 0;
+            res.Paper = pt > 0 ? (double)pp / pt : 0;
+            res.Grey = pt > 0 ? (double)gr / pt : 0;
+            int minPx = Math.Max(5, n / 400000);
+            var blueMask = new bool[n]; var redMask = new bool[n]; var greenMask = new bool[n];
+            for (int i = 0; i < n; i++) { int p = px[i]; blueMask[i] = IsBlue(p); redMask[i] = IsRed(p); greenMask[i] = IsArrowGreen(p); }
+            var blues = DilComps(blueMask, w, h, minPx, 1);
+            var reds = DilComps(redMask, w, h, minPx, 1);
+            double bestScore = 0;
+            foreach (var b in blues) {
+                int bw = b.X1-b.X0+1, bh = b.Y1-b.Y0+1;
+                if (!BadgeShape(b) || Math.Max(bw, bh) > w / 20) continue;
+                foreach (var r in reds) {
+                    int rw = r.X1-r.X0+1, rh = r.Y1-r.Y0+1;
+                    if (!BadgeShape(r) || Math.Max(rw, rh) > w / 20) continue;
+                    double ratio = (double)b.N / r.N;
+                    if (ratio < 0.5 || ratio > 2.0) continue;
+                    double sb = (bw + bh) / 2.0, sr = (rw + rh) / 2.0;
+                    if (Math.Max(sb, sr) > 1.5 * Math.Min(sb, sr)) continue;
+                    double d = Math.Sqrt((b.X-r.X) * (b.X-r.X) + (b.Y-r.Y) * (b.Y-r.Y));
+                    double size = (sb + sr) / 2.0;
+                    if (d / size < 4.5 || d / size > 10) continue;
+                    double cx = (b.X + r.X) / 2, cy = (b.Y + r.Y) / 2;
+                    double axis = Math.Atan2(b.X-r.X, r.Y-b.Y) * 180 / Math.PI;
+                    double rs = Math.Max(RingScore(px, w, h, cx, cy, d / 2, axis), Math.Max(RingScore(px, w, h, cx, cy, d / 2 * 0.95, axis), RingScore(px, w, h, cx, cy, d / 2 * 1.05, axis)));
+                    if (rs < 0.6 || rs <= bestScore) continue;
+                    bestScore = rs;
+                    double ang = Math.Atan2(b.X-r.X, r.Y-b.Y) * 180 / Math.PI;
+                    res.Deg = Norm(360-ang); res.Kind = "minimap"; res.Score = rs; res.Hud = true; res.Cx = cx / w; res.Cy = cy / h; res.Size = d / w;
+                }
+            }
+            if (res.Deg >= 0) return;
+            var darkMask = new bool[n];
+            for (int i = 0; i < n; i++) { int p = px[i]; int r = R(p), g = G(p), b = B(p); int mx = Math.Max(r, Math.Max(g, b)), mn = Math.Min(r, Math.Min(g, b)); darkMask[i] = r + g + b < 200 && mx-mn < 45; }
+            var labels = new List<Comp>();
+            foreach (var c in DilComps(darkMask, w, h, 30, 1)) {
+                int lw = c.X1-c.X0+1, lh = c.Y1-c.Y0+1;
+                if (lw < w * 0.025 || lw > w * 0.16 || lh < w * 0.01 || lh > w * 0.05) continue;
+                double asp = (double)lw / lh;
+                if (asp < 1.6 || asp > 6.5) continue;
+                if ((double)c.N / (lw * lh) < 0.45) continue;
+                labels.Add(c);
+            }
+            var greens = MergeNear(DilComps(greenMask, w, h, 8, 3), w);
+            foreach (var lb in labels) {
+                var touch = new List<Comp>();
+                foreach (var c in greens) {
+                    if (Math.Max(c.X1-c.X0, c.Y1-c.Y0) > w / 6) continue;
+                    if (c.X1 >= lb.X0-5 && c.X0 <= lb.X1 + 5 && c.Y1 >= lb.Y0-5 && c.Y0 <= lb.Y1 + 5) touch.Add(c);
+                }
+                if (touch.Count < 2) continue;
+                var m = new Comp { Px = new List<int>(), X0 = int.MaxValue, Y0 = int.MaxValue, X1 = -1, Y1 = -1 };
+                double sx = 0, sy = 0;
+                foreach (var c in touch) {
+                    m.Px.AddRange(c.Px); sx += c.X * c.N; sy += c.Y * c.N;
+                    m.X0 = Math.Min(m.X0, c.X0); m.Y0 = Math.Min(m.Y0, c.Y0); m.X1 = Math.Max(m.X1, c.X1); m.Y1 = Math.Max(m.Y1, c.Y1);
+                    greens.Remove(c);
+                }
+                m.N = m.Px.Count; m.X = sx / m.N; m.Y = sy / m.N;
+                greens.Add(m);
+            }
+            greens.RemoveAll(c => c.N < Math.Max(minPx, 20));
+
+            Comp best = null; double bestDeg = -1, bestLen = 0;
+            string bestHow = "";
+            foreach (var c in greens) {
+                int cw = c.X1-c.X0+1, ch = c.Y1-c.Y0+1;
+                if (Math.Max(cw, ch) < 12 || Math.Max(cw, ch) > w / 5) continue;
+                double fillR = (double)c.N / (cw * ch), ml = MapLike(px, w, h, c);
+                double deg = -1, len = 0; string how = "";
+                double ex1, ey1, ex2, ey2, L;
+                if (!Ends(w, c, out ex1, out ey1, out ex2, out ey2, out L)) continue;
+                double d1 = 1e9, d2 = 1e9;
+                foreach (var lb in labels) {
+                    double axp = lb.X0-0.2 * (lb.Y1-lb.Y0), ayp = lb.Y1;
+                    double a1 = Math.Sqrt((ex1-axp) * (ex1-axp) + (ey1-ayp) * (ey1-ayp)), a2 = Math.Sqrt((ex2-axp) * (ex2-axp) + (ey2-ayp) * (ey2-ayp));
+                    if (Math.Min(a1, a2) > L * 1.1) continue;
+                    if (Math.Min(a1, a2) < Math.Min(d1, d2)) { d1 = a1; d2 = a2; }
+                }
+                double hx, hy, hr;
+                bool hole = FindHole(w, h, c, out hx, out hy, out hr) && hr >= 1.5;
+                if (d1 < 1e8 && Math.Min(d1, d2) < 0.65 * Math.Max(d1, d2)) {
+                    if (d1 < d2) deg = Norm(Math.Atan2(ex2-ex1, -(ey2-ey1)) * 180 / Math.PI);
+                    else deg = Norm(Math.Atan2(ex1-ex2, -(ey1-ey2)) * 180 / Math.PI);
+                    len = L; how = "label";
+                }
+                if (fillR > 0.6 || ml < 0.5) { deg = -1; continue; }
+                if (deg < 0 && hole) {
+                    double far = 0; int tip = -1;
+                    foreach (int j in c.Px) { double dx = j % w-hx, dy = j / w-hy; double dd = dx * dx + dy * dy; if (dd > far) { far = dd; tip = j; } }
+                    far = Math.Sqrt(far);
+                    if (far >= hr * 2.6) { deg = Norm(Math.Atan2(tip % w-hx, -(tip / w-hy)) * 180 / Math.PI); len = far; how = "hole"; }
+                }
+                if (deg < 0) continue;
+                if (best == null || c.N > best.N) { best = c; bestDeg = deg; bestLen = len; bestHow = how; }
+            }
+            if (best != null) { res.Deg = bestDeg; res.Kind = "map" + bestHow; res.Score = bestLen; res.MapShot = true; res.Cx = best.X / w; res.Cy = best.Y / h; res.Size = Math.Max(best.X1-best.X0, best.Y1-best.Y0) / (double)w; }
+        }
+
+        static bool Ends(int w, Comp c, out double ex1, out double ey1, out double ex2, out double ey2, out double L) {
+            double mx = c.X, my = c.Y, sxx = 0, syy = 0, sxy = 0;
+            foreach (int j in c.Px) { double dx = j % w-mx, dy = j / w-my; sxx += dx * dx; syy += dy * dy; sxy += dx * dy; }
+            double th = 0.5 * Math.Atan2(2 * sxy, sxx-syy);
+            double ax = Math.Cos(th), ay = Math.Sin(th);
+            double tmin = double.MaxValue, tmax = double.MinValue;
+            foreach (int j in c.Px) { double t = (j % w-mx) * ax + (j / w-my) * ay; if (t < tmin) tmin = t; if (t > tmax) tmax = t; }
+            L = tmax-tmin;
+            ex1 = mx + ax * tmin; ey1 = my + ay * tmin; ex2 = mx + ax * tmax; ey2 = my + ay * tmax;
+            return L >= 12;
+        }
+
+        static bool IsPaper(int r, int g, int b) {
+            int mx = Math.Max(r, Math.Max(g, b)), mn = Math.Min(r, Math.Min(g, b));
+            if (mx < 30 || mx > 245 || mx-mn > 120) return false;
+            return g-b >= 10 || r-b >= 18;
+        }
+
+        static double MapLike(int[] px, int w, int h, Comp c) {
+            int cw = c.X1-c.X0+1, ch = c.Y1-c.Y0+1;
+            int m = Math.Max(cw, ch);
+            int x0 = c.X0-m / 2, x1 = c.X1 + m / 2, y0 = c.Y0-m / 2, y1 = c.Y1 + m / 2;
+            int good = 0, tot = 0;
+            for (int y = y0; y <= y1; y += 2) for (int x = x0; x <= x1; x += 2) {
+                if (x >= c.X0 && x <= c.X1 && y >= c.Y0 && y <= c.Y1) continue;
+                if (x < 0 || y < 0 || x >= w || y >= h) continue;
+                tot++;
+                int p = px[y * w + x];
+                int r = R(p), g = G(p), b = B(p);
+                if (IsPaper(r, g, b)) good++;
+            }
+            return tot > 0 ? (double)good / tot : 0;
+        }
+
+        static bool FindHole(int w, int h, Comp c, out double hx, out double hy, out double hr) {
+            hx = hy = hr = 0;
+            int x0 = Math.Max(0, c.X0-1), y0 = Math.Max(0, c.Y0-1), x1 = Math.Min(w-1, c.X1+1), y1 = Math.Min(h-1, c.Y1+1);
+            int bw = x1-x0+1, bh = y1-y0+1;
+            var mine = new bool[bw * bh];
+            foreach (int j in c.Px) mine[(j / w-y0) * bw + (j % w-x0)] = true;
+            var outside = new bool[bw * bh];
+            var st = new Stack<int>();
+            for (int x = 0; x < bw; x++) { st.Push(x); st.Push((bh-1) * bw + x); }
+            for (int y = 0; y < bh; y++) { st.Push(y * bw); st.Push(y * bw + bw-1); }
+            while (st.Count > 0) {
+                int k = st.Pop();
+                if (outside[k] || mine[k]) continue;
+                outside[k] = true;
+                int x = k % bw, y = k / bw;
+                if (x > 0) st.Push(k-1);
+                if (x < bw-1) st.Push(k+1);
+                if (y > 0) st.Push(k-bw);
+                if (y < bh-1) st.Push(k+bw);
+            }
+            double sx = 0, sy = 0; int cnt = 0;
+            for (int k = 0; k < bw * bh; k++) if (!mine[k] && !outside[k]) { sx += k % bw; sy += k / bw; cnt++; }
+            if (cnt < 4 || cnt < c.N * 0.03) return false;
+            hx = x0 + sx / cnt; hy = y0 + sy / cnt; hr = Math.Sqrt(cnt / Math.PI);
+            return true;
+        }
+    }
+
+    public class PostScan {
+        public List<string> Images = new List<string>();
+        public int Best = -1;
+        public double Deg = -1;
+        public string Kind = "";
+        public int DirImage = -1;
+        public bool BestIsView;
+        public string Error = "";
+    }
+
+    public static class PostScanner {
+        static readonly Regex PhotoRx = new Regex(@"tgme_widget_message_photo_wrap[^>]*?background-image:url\('([^']+)'\)");
+
+        public static Task<PostScan> ScanAsync(HttpClient http, string embedUrl) { return Task.Run(() => Scan(http, embedUrl)); }
+
+        public static PostScan Scan(HttpClient http, string embedUrl) {
+            var ps = new PostScan();
+            try {
+                string html = http.GetStringAsync(embedUrl).Result;
+                foreach (Match m in PhotoRx.Matches(html)) {
+                    string u = m.Groups[1].Value;
+                    if (u.StartsWith("//")) u = "https:" + u;
+                    if (!u.StartsWith("https://") || ps.Images.Contains(u)) continue;
+                    ps.Images.Add(u);
+                    if (ps.Images.Count >= 8) break;
+                }
+                double bestView = -1;
+                for (int i = 0; i < ps.Images.Count; i++) {
+                    byte[] b;
+                    try { b = http.GetByteArrayAsync(ps.Images[i]).Result; } catch { continue; }
+                    var r = DirDetect.Detect(b);
+                    if (r.Deg >= 0 && (ps.Deg < 0 || (r.MapShot && ps.Kind == "minimap"))) { ps.Deg = r.Deg; ps.Kind = r.Kind; ps.DirImage = i; }
+                    if (!r.Ok) continue;
+                    double view = r.Hud ? 3 : (!r.MapShot && r.Ui < 0.35 && r.UiBottom < 0.2 && r.Paper < 0.06 && r.Grey < 0.45 ? (i == 0 ? 1.5 : 2) : 0);
+                    if (view > bestView) { bestView = view; ps.Best = i; }
+                }
+                ps.BestIsView = bestView >= 1.5;
+                if (bestView <= 0 && ps.DirImage >= 0) ps.Best = ps.DirImage;
+            } catch (Exception e) { ps.Error = e.GetBaseException().Message; }
+            return ps;
+        }
+    }
+}
+'@
+}
+
+$script:scanFile = Join-Path $userDir "scan_cache.json"
+$script:scans = @{}
+$script:scanQueue = New-Object System.Collections.ArrayList
+$script:scanCur = $null
+$script:scanDirty = 0
+$script:scanDone = 0
+$script:scanLastDraw = [datetime]::MinValue
+$script:tgIndex = $null
+$script:posIndex = @{}
+$script:tgIndexCount = -1
+$script:crossCache = @{}
+$script:dirNames = @("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")
+
+function Format-Dir16([double]$deg) {
+    $n = $script:dirNames[[int][math]::Floor((($deg + 11.25) % 360) / 22.5)]
+    if ($script:lang -eq "de" -or $script:lang -eq "nl") { $n = $n.Replace("E", "O") }
+    $n
+}
+
+function Load-Scans {
+    if (-not (Test-Path -LiteralPath $script:scanFile)) { return }
+    try {
+        $d = (New-Serializer).DeserializeObject([System.IO.File]::ReadAllText($script:scanFile, [System.Text.Encoding]::UTF8))
+        foreach ($k in $d.Keys) { $script:scans[[string]$k] = $d[$k] }
+    } catch { }
+}
+
+function Save-Scans {
+    try { [System.IO.File]::WriteAllText($script:scanFile, (New-Serializer).Serialize($script:scans), (New-Object System.Text.UTF8Encoding $false)) } catch { }
+    $script:scanDirty = 0
+}
+
+function Get-TgKey([string]$url) {
+    if ($url -match "^https://t\.me/([^/?]+)/(\d+)") { return ("https://t.me/{0}/{1}" -f $Matches[1], $Matches[2]) }
+    return ""
+}
+
+function Get-PostedTime($r) {
+    try { return [datetimeoffset]::Parse([string]$r["posted"], [System.Globalization.CultureInfo]::InvariantCulture).UtcDateTime } catch { return $null }
+}
+
+function Ensure-PosIndex {
+    $cnt = $script:commReports.Count + $script:sharedReports.Count
+    if ($script:tgIndex -and $script:tgIndexCount -eq $cnt) { return }
+    $script:tgIndex = @{}
+    $script:posIndex = @{}
+    foreach ($t in (Get-AllCommReports)) {
+        $k = "{0}|{1}|{2}" -f $t["lake"], $t["x"], $t["y"]
+        if (-not $script:posIndex.ContainsKey($k)) { $script:posIndex[$k] = New-Object System.Collections.ArrayList }
+        $script:posIndex[$k].Add($t) | Out-Null
+        if (-not (Get-TgKey ([string]$t["url"]))) { continue }
+        if (-not $script:tgIndex.ContainsKey($k)) { $script:tgIndex[$k] = New-Object System.Collections.ArrayList }
+        $script:tgIndex[$k].Add($t) | Out-Null
+    }
+    $script:tgIndexCount = $cnt
+    $script:crossCache = @{}
+}
+
+function Get-NearbyReports([string]$lake, [int]$x, [int]$y, [int]$rad = 2) {
+    Ensure-PosIndex
+    $out = New-Object System.Collections.ArrayList
+    for ($dx = -$rad; $dx -le $rad; $dx++) {
+        for ($dy = -$rad; $dy -le $rad; $dy++) {
+            $k = "{0}|{1}|{2}" -f $lake, ($x + $dx), ($y + $dy)
+            if ($script:posIndex.ContainsKey($k)) { $out.AddRange($script:posIndex[$k]) }
+        }
+    }
+    $out
+}
+
+function Find-CrossPost($r) {
+    $id = [string]$r["id"]
+    Ensure-PosIndex
+    if ($script:crossCache.ContainsKey($id)) { return $script:crossCache[$id] }
+    $pt = Get-PostedTime $r
+    $best = $null
+    $bestDiff = 99999.0
+    if ($pt) {
+        $fr = @($r["fish"] | Where-Object { $_ })
+        for ($dx = -1; $dx -le 1; $dx++) {
+            for ($dy = -1; $dy -le 1; $dy++) {
+                $k = "{0}|{1}|{2}" -f $r["lake"], ([int]$r["x"] + $dx), ([int]$r["y"] + $dy)
+                if (-not $script:tgIndex.ContainsKey($k)) { continue }
+                foreach ($t in $script:tgIndex[$k]) {
+                    $tt = Get-PostedTime $t
+                    if (-not $tt) { continue }
+                    $diff = [math]::Abs(($tt-$pt).TotalHours)
+                    if ($diff -gt 12 -or $diff -ge $bestDiff) { continue }
+                    $ft = @($t["fish"] | Where-Object { $_ })
+                    if ($fr.Count -gt 0 -and $ft.Count -gt 0 -and -not (@($fr | Where-Object { $ft -contains $_ }).Count)) { continue }
+                    $best = $t
+                    $bestDiff = $diff
+                }
+            }
+        }
+    }
+    $script:crossCache[$id] = $best
+    $best
+}
+
+function Get-ReportScan($r) {
+    $k = Get-TgKey ([string]$r["url"])
+    if (-not $k -and [string]$r["src"] -ne "companion") {
+        $p = Find-CrossPost $r
+        if ($p) { $k = Get-TgKey ([string]$p["url"]) }
+    }
+    if ($k -and $script:scans.ContainsKey($k)) { return $script:scans[$k] }
+    return $null
+}
+
+function Get-ReportDir($r) {
+    if ([string]$r["src"] -eq "companion") {
+        $d = Get-DirDegrees ([string]$r["dir"])
+        if ($null -ne $d) { return [pscustomobject]@{ Deg = $d; Img = $false } }
+        return $null
+    }
+    $sc = Get-ReportScan $r
+    if ($sc -and $null -ne $sc["deg"] -and [double]$sc["deg"] -ge 0) { return [pscustomobject]@{ Deg = [double]$sc["deg"]; Img = $true } }
+    return $null
+}
+
+function Get-ClusterDirs($cl) {
+    $d = Get-DirsOf $cl.Reports
+    if ($d.Counts.Count -gt 0) { return $d }
+    $ids = @{}
+    foreach ($r in $cl.Reports) { $ids[[string]$r["id"]] = $true }
+    $old = @(Get-NearbyReports $cl.Lake $cl.X $cl.Y 1 | Where-Object { -not $ids.ContainsKey([string]$_["id"]) })
+    $d = Get-DirsOf $old
+    $d | Add-Member -NotePropertyName FromHistory -NotePropertyValue ($d.Counts.Count -gt 0) -Force
+    $d
+}
+
+function Get-DirsOf($reports) {
+    $cnt = @{}
+    $img = $false
+    $clips = @{}
+    foreach ($r in $reports) {
+        $d = Get-ReportDir $r
+        if (-not $d) { continue }
+        $lbl = Format-Dir16 $d.Deg
+        $cnt[$lbl] = 1 + [int]$cnt[$lbl]
+        if ($d.Img) { $img = $true }
+        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "" -and -not $clips.ContainsKey($lbl)) { $clips[$lbl] = [string]$r["clip"] }
+    }
+    [pscustomobject]@{ Counts = $cnt; FromImages = $img; Clips = $clips; FromHistory = $false }
+}
+
+function Test-ScanFresh($e) {
+    if (-not $e -or [int]$e["v"] -ne 2) { return $false }
+    if (-not [string]$e["err"]) { return $true }
+    try { return (((Get-Date).ToUniversalTime()-[datetime]::Parse([string]$e["t"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()).TotalHours -lt 12) } catch { return $false }
+}
+
+function Start-ScanQueue {
+    $days = [math]::Max(7, (Get-KeyDays (Get-ComboKey $cmbCommPeriod)))
+    $since = (Get-Date).ToUniversalTime().AddDays(-$days).ToString("yyyy-MM-ddTHH:mm:ss")
+    $cur = $(if ($script:curMapLake) { $script:curMapLake.id } else { "" })
+    $items = New-Object System.Collections.ArrayList
+    $seen = @{}
+    foreach ($r in (Get-AllCommReports)) {
+        $k = Get-TgKey ([string]$r["url"])
+        if (-not $k -or $seen.ContainsKey($k) -or [string]$r["posted"] -lt $since) { continue }
+        $seen[$k] = $true
+        if (Test-ScanFresh $script:scans[$k]) { continue }
+        $items.Add([pscustomobject]@{ K = $k; P = $(if ($r["lake"] -eq $cur) { 0 } else { 1 }); T = [string]$r["posted"] }) | Out-Null
+    }
+    $coords = @{}
+    foreach ($r in (Get-AllCommReports)) { if ([string]$r["posted"] -ge $since) { $coords["{0}|{1}|{2}" -f $r["lake"], $r["x"], $r["y"]] = [string]$r["lake"] } }
+    foreach ($ck in @($coords.Keys)) {
+        $pp = $ck.Split("|")
+        foreach ($r in (Get-NearbyReports $pp[0] ([int]$pp[1]) ([int]$pp[2]) 1)) {
+            $k = Get-TgKey ([string]$r["url"])
+            if (-not $k -or $seen.ContainsKey($k)) { continue }
+            $seen[$k] = $true
+            if (Test-ScanFresh $script:scans[$k]) { continue }
+            $items.Add([pscustomobject]@{ K = $k; P = $(if ($pp[0] -eq $cur) { 2 } else { 3 }); T = [string]$r["posted"] }) | Out-Null
+        }
+    }
+    $script:scanQueue.Clear()
+    foreach ($it in ($items | Sort-Object P, @{ Expression = "T"; Descending = $true })) { $script:scanQueue.Add($it.K) | Out-Null }
+    if ($script:scanQueue.Count -gt 0) { $script:scanTimer.Start() }
+    Update-CommState
+}
+
+function Push-ScanFront($cl) {
+    $keys = @()
+    foreach ($r in $cl.Reports) {
+        $k = Get-TgKey ([string]$r["url"])
+        if (-not $k -and [string]$r["src"] -ne "companion") { $p = Find-CrossPost $r; if ($p) { $k = Get-TgKey ([string]$p["url"]) } }
+        if ($k -and -not (Test-ScanFresh $script:scans[$k]) -and $keys -notcontains $k) { $keys += $k }
+    }
+    for ($i = $keys.Count-1; $i -ge 0; $i--) {
+        $script:scanQueue.Remove($keys[$i])
+        $script:scanQueue.Insert(0, $keys[$i])
+    }
+    if ($keys.Count -gt 0) { $script:scanTimer.Start() }
+}
+
+$script:scanTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:scanTimer.Interval = [TimeSpan]::FromMilliseconds(500)
+$script:scanTimer.Add_Tick({
+    if ($script:scanCur) {
+        if (-not $script:scanCur.Task.IsCompleted) { return }
+        $key = $script:scanCur.Key
+        $res = $null
+        try { $res = $script:scanCur.Task.Result } catch { }
+        $script:scanCur = $null
+        if ($res) {
+            $script:scans[$key] = @{ v = 2; imgs = @($res.Images); best = $res.Best; bv = $res.BestIsView; deg = [math]::Round($res.Deg, 1); kind = $res.Kind; di = $res.DirImage; t = (Get-Date).ToUniversalTime().ToString("o"); err = $res.Error }
+            $script:scanDirty++
+            $script:scanDone++
+        }
+        if ($script:scanDirty -ge 10) { Save-Scans }
+        if ($script:commSel -and @($script:commSel.Reports | Where-Object { (Get-TgKey ([string]$_["url"])) -eq $key -or ((-not (Get-TgKey ([string]$_["url"]))) -and (Find-CrossPost $_) -and (Get-TgKey ([string](Find-CrossPost $_)["url"])) -eq $key) }).Count) {
+            Update-CommSpotHeader $script:commSel
+            Draw-Markers
+            $script:scanLastDraw = Get-Date
+        } elseif (((Get-Date)-$script:scanLastDraw).TotalSeconds -gt 6) {
+            $script:scanLastDraw = Get-Date
+            Draw-Markers
+            Update-CommState
+        }
+        return
+    }
+    while ($script:scanQueue.Count -gt 0) {
+        $k = [string]$script:scanQueue[0]
+        $script:scanQueue.RemoveAt(0)
+        if (Test-ScanFresh $script:scans[$k]) { continue }
+        $script:scanCur = [pscustomobject]@{ Key = $k; Task = [RF4Comp.PostScanner]::ScanAsync($script:http, ($k + "?embed=1&mode=tme")) }
+        return
+    }
+    if ($script:scanDirty -gt 0) { Save-Scans }
+    $script:scanTimer.Stop()
+    Update-CommState
+    Draw-Markers
+})
+
+$script:commHeaderUrl = ""
+
+function Update-CommSpotHeader($cl) {
+    $dirs = Get-ClusterDirs $cl
+    if ($dirs.Counts.Count -gt 0) {
+        $parts = @($dirs.Counts.Keys | Sort-Object { $dirs.Counts[$_] } -Descending | ForEach-Object { "{0} ({1}x)" -f $_, $dirs.Counts[$_] })
+        $txt = "{0}: {1}" -f (T "castDir"), ($parts -join ", ")
+        if ($dirs.FromImages) { $txt = $txt + "   " + (T "dirFromImages") }
+        if ($dirs.FromHistory) { $txt = $txt + "   " + (T "dirFromHistory") }
+        $txtCommDir.Text = $txt
+        $txtCommDir.Visibility = "Visible"
+    } else {
+        $txtCommDir.Visibility = "Collapsed"
+    }
+    $url = ""
+    $fallback = ""
+    foreach ($r in @($cl.Reports | Sort-Object { [string]$_["posted"] } -Descending)) {
+        if ([string]$r["img"]) { $url = [string]$r["img"]; break }
+        $sc = Get-ReportScan $r
+        if (-not $sc -or $null -eq $sc["best"] -or [int]$sc["best"] -lt 0) { continue }
+        $imgs = @($sc["imgs"])
+        if ([int]$sc["best"] -ge $imgs.Count) { continue }
+        if ($sc["bv"]) { $url = [string]$imgs[[int]$sc["best"]]; break }
+        if (-not $fallback) { $fallback = [string]$imgs[[int]$sc["best"]] }
+    }
+    if (-not $url) { $url = $fallback }
+    if (-not $url) {
+        $ids = @{}
+        foreach ($r in $cl.Reports) { $ids[[string]$r["id"]] = $true }
+        foreach ($r in @(Get-NearbyReports $cl.Lake $cl.X $cl.Y 1 | Where-Object { -not $ids.ContainsKey([string]$_["id"]) } | Sort-Object { [string]$_["posted"] } -Descending)) {
+            $sc = Get-ReportScan $r
+            if (-not $sc -or $null -eq $sc["best"] -or [int]$sc["best"] -lt 0) { continue }
+            $imgs = @($sc["imgs"])
+            if ([int]$sc["best"] -ge $imgs.Count) { continue }
+            if ($sc["bv"]) { $url = [string]$imgs[[int]$sc["best"]]; break }
+            if (-not $fallback) { $fallback = [string]$imgs[[int]$sc["best"]] }
+        }
+        if (-not $url) { $url = $fallback }
+    }
+    if ($url -eq $script:commHeaderUrl -and $imgCommSpot.Source) { return }
+    $script:commHeaderUrl = $url
+    if (-not $url) { $imgCommSpot.Source = $null; $bdCommImg.Visibility = "Collapsed"; return }
+    if ($script:repBmpCache.ContainsKey("H|" + $url)) { $imgCommSpot.Source = $script:repBmpCache["H|" + $url]; $bdCommImg.Visibility = "Visible"; return }
+    $script:repImgJobs.Add([pscustomobject]@{ Item = $null; Src = $url; Kind = "header"; Task = $script:http.GetByteArrayAsync($url) }) | Out-Null
+    $script:repImgTimer.Start()
+}
+
 $script:repImgCache = @{}
 $script:repImgJobs = New-Object System.Collections.ArrayList
 $script:repImgTimer = New-Object System.Windows.Threading.DispatcherTimer
@@ -4021,6 +4744,16 @@ $script:repImgTimer.Add_Tick({
     foreach ($j in @($script:repImgJobs)) {
         if (-not $j.Task.IsCompleted) { continue }
         $script:repImgJobs.Remove($j)
+        if ($j.Kind -eq "header") {
+            if (-not $j.Task.IsFaulted -and -not $j.Task.IsCanceled) {
+                try {
+                    $bmp = New-BitmapFromBytes $j.Task.Result 900
+                    $script:repBmpCache["H|" + $j.Src] = $bmp
+                    if ($script:commHeaderUrl -eq $j.Src) { $imgCommSpot.Source = $bmp; $bdCommImg.Visibility = "Visible" }
+                } catch { }
+            } elseif ($script:commHeaderUrl -eq $j.Src) { $bdCommImg.Visibility = "Collapsed" }
+            continue
+        }
         if ($j.Kind -eq "img") {
             if (-not $j.Task.IsFaulted -and -not $j.Task.IsCanceled) {
                 try {
@@ -4113,6 +4846,8 @@ function Update-CommState {
         $since = (Get-Date).ToUniversalTime().AddDays(-7).ToString("yyyy-MM-ddTHH:mm:ss")
         foreach ($r in (Get-AllCommReports)) { if ([string]$r["posted"] -ge $since) { $week++ } }
         $txtCommState.Text = "{0} {1}, {2} {3}   {4}: {5}" -f $script:commReports.Count, (T "reports"), $week, (T "thisWeekShort"), (T "lastUpdate"), $(if ($script:commSynced) { Format-LocalDate $script:commSynced.ToLocalTime() } else { "?" })
+        $left = $script:scanQueue.Count + $(if ($script:scanCur) { 1 } else { 0 })
+        if ($left -gt 0) { $txtCommState.Text = $txtCommState.Text + "   " + ((T "scanProgress") -f $left) }
     } else {
         $txtCommState.Text = T "noCommData"
     }
@@ -4204,6 +4939,7 @@ function Finish-CommunitySync([bool]$ok) {
         $script:commClusterCache = @{}
         Update-CommState
         Draw-Markers
+        Start-ScanQueue
         if ((Get-ComboKey $cmbSpotsSource) -ne "mine") { Refresh-SpotsGrid }
         Set-Status ("{0}: {1} {2}" -f (T "syncDone"), $script:syncAdded, (T "newReports"))
     } else {
@@ -4275,8 +5011,10 @@ function Show-CommCluster($cl) {
         $fl = (@($r["fish"]) | Select-Object -First 3 | ForEach-Object { N $_ }) -join ", "
         if ($fl) { $parts += $fl }
         if ($null -ne $r["weight"] -and "$($r["weight"])" -ne "") { $parts += Format-Weight ([double]$r["weight"] * 1000) }
-        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $parts += ("{0} {1:0.#} m {2}" -f (T "distance"), [double]$r["clip"], ([string]$r["dir"]).Trim()).TrimEnd() }
-        elseif (([string]$r["dir"]).Trim()) { $parts += ([string]$r["dir"]).Trim() }
+        $rd = Get-ReportDir $r
+        $dl = $(if ($rd) { Format-Dir16 $rd.Deg } else { "" })
+        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $parts += ("{0} {1:0.#} m {2}" -f (T "distance"), [double]$r["clip"], $dl).TrimEnd() }
+        elseif ($dl) { $parts += $dl }
         $parts += Get-ReportHost ([string]$r["url"])
         $ri = New-Object RF4Comp.ReportItem
         $ri.Label = ($parts -join "  |  ")
@@ -4286,6 +5024,11 @@ function Show-CommCluster($cl) {
         $items += $ri
     }
     $lstCommReports.ItemsSource = $items
+    $script:commHeaderUrl = ""
+    $imgCommSpot.Source = $null
+    $bdCommImg.Visibility = "Collapsed"
+    Update-CommSpotHeader $cl
+    Push-ScanFront $cl
     $panelSpotForm.Visibility = "Collapsed"
     $svSpotForm.Visibility = "Collapsed"
     $panelMapIdle.Visibility = "Collapsed"
@@ -4327,6 +5070,7 @@ function Get-CommReportText($r) {
     if ([string]$r["method"]) { $lines += "{0}: {1}" -f (T "technique"), (Format-Method ([string]$r["method"])) }
     if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $lines += "{0}: {1:0.#} m" -f (T "distance"), [double]$r["clip"] }
     if (([string]$r["dir"]).Trim()) { $lines += "{0}: {1}" -f (T "castDir"), ([string]$r["dir"]).Trim() }
+    elseif (($rdi = Get-ReportDir $r)) { $lines += "{0}: {1}  ({2})" -f (T "castDir"), (Format-Dir16 $rdi.Deg), (T "dirFromImages") }
     if ($null -ne $r["depth"] -and "$($r["depth"])" -ne "") { $lines += "{0}: {1:0.#} m" -f (T "depth"), [double]$r["depth"] }
     $bl = (@($r["bait"]) | Where-Object { $_ } | ForEach-Object { N $_ }) -join ", "
     if ($bl) { $lines += "{0}: {1}" -f (T "bait"), $bl }
@@ -4383,6 +5127,24 @@ function Draw-CommMarkers {
         [System.Windows.Controls.Canvas]::SetLeft($r, ([double]$n.NX * 2048)-($size / 2))
         [System.Windows.Controls.Canvas]::SetTop($r, ([double]$n.NY * 2048)-($size / 2))
         $canvasMarkers.Children.Add($r) | Out-Null
+        $cd = Get-ClusterDirs $cl
+        if ($cd.Counts.Count -gt 0) {
+            $top = @($cd.Counts.Keys | Sort-Object { $cd.Counts[$_] } -Descending)[0]
+            $deg = Get-DirDegrees $top
+            if ($null -ne $deg) {
+                $a = $deg * [math]::PI / 180
+                $cx = [double]$n.NX * 2048
+                $cy = [double]$n.NY * 2048
+                foreach ($pass in 0, 1) {
+                    $tk = New-Object System.Windows.Shapes.Line
+                    $tk.X1 = $cx; $tk.Y1 = $cy; $tk.X2 = $cx + ([math]::Sin($a) * 20 / $sc); $tk.Y2 = $cy-([math]::Cos($a) * 20 / $sc)
+                    if ($pass -eq 0) { $tk.Stroke = [System.Windows.Media.Brushes]::Black; $tk.StrokeThickness = 5 / $sc } else { $tk.Stroke = [System.Windows.Media.Brushes]::White; $tk.StrokeThickness = 2.5 / $sc }
+                    $tk.StrokeEndLineCap = "Triangle"
+                    $tk.IsHitTestVisible = $false
+                    $canvasMarkers.Children.Add($tk) | Out-Null
+                }
+            }
+        }
         $script:commDrawn["c:$i"] = $cl
         $i++
     }
@@ -5555,7 +6317,18 @@ function Complete-TrackerOcr {
         } else {
             [System.Media.SystemSounds]::Exclamation.Play()
         }
-        if ($job.Mode -eq "mini" -and ($pos -or $script:hudTempFound)) { $script:trackerHud = $job.Path }
+        if ($job.Mode -eq "mini" -and ($pos -or $script:hudTempFound)) {
+            $script:trackerHud = $job.Path
+            try {
+                $dr = [RF4Comp.DirDetect]::DetectFile($job.Path)
+                if ($dr.Deg -ge 0 -and $dr.Hud) {
+                    $dl = Format-Dir16 $dr.Deg
+                    Set-TrackerCast $script:trackerSession "" $dl
+                    if (-not $script:selCatchId) { $txtCatchDir.Text = $dl }
+                    Set-Status ("{0}: {1}" -f (T "castDir"), $dl)
+                }
+            } catch { }
+        }
         Update-TrackerUi
         return
     }
@@ -6741,6 +7514,8 @@ $btnWebSave.Add_Click({
 })
 
 Load-Community
+Load-Scans
+$bdCommImg.Add_MouseLeftButtonUp({ if ($script:commHeaderUrl) { Open-External $script:commHeaderUrl } })
 
 $chkCommunity.Add_Click({ if (-not $chkCommunity.IsChecked -and $script:commSel) { Hide-CommCluster }; Draw-Markers })
 $cmbCommPeriod.Add_SelectionChanged({ if (-not $script:busy) { if ($script:commSel) { Hide-CommCluster }; Draw-Markers } })
@@ -7054,11 +7829,40 @@ if ($window.Top -lt 0) { $window.Top = 0 }
 $window.Add_ContentRendered({
     $k = Get-ComboKey $cmbMapLake
     if (-not $k) { $k = "mosquito_lake" }
+    if ($OpenSpot -match "^([a-z_]+):(\d+):(\d+)$") { $k = $Matches[1] }
     $script:busy = $true
     Set-ComboKey $cmbMapLake $k
     $script:busy = $false
     Load-MapLake $k
+    if ($OpenSpot -match "^([a-z_]+):(\d+):(\d+)$") { Open-CommSpot $Matches[1] ([int]$Matches[2]) ([int]$Matches[3]) }
+    $script:scanStartTimer = New-Object System.Windows.Threading.DispatcherTimer
+    $script:scanStartTimer.Interval = [TimeSpan]::FromSeconds(8)
+    $script:scanStartTimer.Add_Tick({ $script:scanStartTimer.Stop(); Start-ScanQueue })
+    $script:scanStartTimer.Start()
 })
+
+function Open-CommSpot([string]$lakeId, [int]$x, [int]$y) {
+    $tabs.SelectedIndex = 0
+    $chkCommunity.IsChecked = $true
+    $script:busy = $true
+    Set-ComboKey $cmbCommPeriod "d7"
+    Set-ComboKey $cmbCommFish ""
+    $script:busy = $false
+    $cl = Get-CommClusters $lakeId (Get-CommPeriodStart) "" | Sort-Object { [math]::Abs($_.X-$x) + [math]::Abs($_.Y-$y) } | Select-Object -First 1
+    if (-not $cl -or ([math]::Abs($cl.X-$x) + [math]::Abs($cl.Y-$y)) -gt 4) { return }
+    Show-CommCluster $cl
+    Set-MapScale ([math]::Max($script:scale, 0.9))
+    $n = From-Game $script:curMapLake $cl.X $cl.Y
+    Center-On ([double]$n.NX) ([double]$n.NY)
+    $pick = $null
+    foreach ($it in @($lstCommReports.ItemsSource)) {
+        $sc = $null
+        foreach ($r in $cl.Reports) { if ([string]$r["url"] -eq $it.Url -and $it.Url) { $sc = Get-ReportScan $r; break } }
+        if ($sc -and $null -ne $sc["deg"] -and [double]$sc["deg"] -ge 0) { $pick = $it; break }
+    }
+    if (-not $pick) { $pick = @($lstCommReports.ItemsSource | Where-Object { Get-ReportImageSource $_.Url } | Select-Object -First 1)[0] }
+    if ($pick) { $lstCommReports.SelectedItem = $pick; $lstCommReports.ScrollIntoView($pick) }
+}
 
 $window.Dispatcher.Add_UnhandledException({
     param($sender, $e)
