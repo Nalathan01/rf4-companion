@@ -71,6 +71,7 @@ if (Test-Path $userFile) {
 function New-Id { [guid]::NewGuid().ToString("N").Substring(0, 10) }
 
 function Save-User {
+    $script:shareDirty = $true
     $obj = [ordered]@{
         lang = $script:lang
         weekRegion = $script:weekRegion
@@ -1001,6 +1002,8 @@ function Format-Coords($lake, $nx, $ny) {
                     </Grid.RowDefinitions>
                     <DockPanel Grid.Row="0">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                            <TextBlock x:Name="txtShareState" Foreground="{DynamicResource AppInkDim}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Button x:Name="btnShareSetup" Tag="t:shareSetup"/>
                             <Button x:Name="btnSpotsShow" Tag="t:openOnMap" Style="{StaticResource PrimaryButton}"/>
                             <Button x:Name="btnSpotsDelete" Tag="t:delete" Style="{StaticResource DangerButton}" Margin="0"/>
                         </StackPanel>
@@ -2440,6 +2443,10 @@ $script:harvCheckTimer = New-Object System.Windows.Threading.DispatcherTimer
 $script:harvCheckTimer.Interval = [TimeSpan]::FromSeconds(60)
 $script:commAutoTry = $null
 $script:harvCheckTimer.Add_Tick({
+    if ((Get-ShareToken) -and $script:shareDirty -and -not $script:shareTask -and (-not $script:shareTry -or ((Get-Date)-$script:shareTry).TotalMinutes -ge 10)) {
+        $script:shareDirty = $false
+        Start-ShareUpload
+    }
     if (-not $script:commSyncing -and (-not $script:commAutoTry -or ((Get-Date)-$script:commAutoTry).TotalMinutes -ge 10)) {
         if (-not $script:commSynced -or ((Get-Date).ToUniversalTime()-$script:commSynced.ToUniversalTime()).TotalMinutes -ge 30) {
             $script:commAutoTry = Get-Date
@@ -2664,12 +2671,21 @@ function Start-CloudSync {
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
     $script:cloudQueue.Clear()
     $script:cloudRebuilt = @{}
+    $script:sharedListed = $false
+    $script:sharedNew = $null
     $script:cloudCur = @{ Kind = "list" }
     $script:cloudTask = $script:http.SendAsync((New-CloudRequest ("https://api.github.com/repos/{0}/contents/archive" -f $script:cloudRepo)))
     $script:cloudTimer.Start()
 }
 
 function Next-CloudFile {
+    if ($script:cloudQueue.Count -eq 0 -and -not $script:sharedListed) {
+        $script:sharedListed = $true
+        $script:cloudCur = @{ Kind = "sharedlist" }
+        $script:cloudTask = $script:http.SendAsync((New-CloudRequest ("https://api.github.com/repos/{0}/contents/shared" -f $script:cloudRepo)))
+        $script:cloudTimer.Start()
+        return
+    }
     if ($script:cloudQueue.Count -eq 0) {
         $script:cloudCur = $null
         $script:cloudLast = Get-Date
@@ -2725,6 +2741,37 @@ $script:cloudTimer.Add_Tick({
         if ($t.IsFaulted -or $t.IsCanceled) { throw "Verbindung fehlgeschlagen" }
         $resp = $t.Result
         if (-not $resp.IsSuccessStatusCode) { throw ("HTTP " + [int]$resp.StatusCode) }
+        if ($script:cloudCur.Kind -eq "sharedlist") {
+            $script:sharedNew = New-Object System.Collections.ArrayList
+            if ($resp.IsSuccessStatusCode) {
+                $own = "spots_" + (Get-ShareId) + ".json"
+                foreach ($f in (New-Serializer).DeserializeObject($resp.Content.ReadAsStringAsync().Result)) {
+                    $n = [string]$f["name"]
+                    if ($n -notmatch "^spots_[0-9a-f]+\.json$" -or $n -eq $own) { continue }
+                    $script:cloudQueue.Add(@{ Kind = "shared"; Name = $n; Url = [string]$f["download_url"] }) | Out-Null
+                }
+            }
+            if ($script:cloudQueue.Count -eq 0) { $script:sharedReports.Clear(); $script:commClusterCache = @{} }
+            Next-CloudFile
+            return
+        }
+        if ($script:cloudCur.Kind -eq "shared") {
+            if ($resp.IsSuccessStatusCode) {
+                if ($null -eq $script:sharedNew) { $script:sharedNew = New-Object System.Collections.ArrayList }
+                $keep = $script:sharedReports
+                $script:sharedReports = $script:sharedNew
+                try { Import-SharedFile $script:cloudCur.Name ($resp.Content.ReadAsStringAsync().Result) } catch { Write-ErrorLog ("Geteilte Spots: " + $_.Exception.Message) }
+                $script:sharedNew = $script:sharedReports
+                $script:sharedReports = $keep
+            }
+            if ($script:cloudQueue.Count -eq 0 -or -not (@($script:cloudQueue) | Where-Object { $_.Kind -eq "shared" })) {
+                $script:sharedReports = $script:sharedNew
+                $script:commClusterCache = @{}
+                Draw-Markers
+            }
+            Next-CloudFile
+            return
+        }
         if ($script:cloudCur.Kind -eq "list") {
             $arr = (New-Serializer).DeserializeObject($resp.Content.ReadAsStringAsync().Result)
             $present = @{}
@@ -2834,7 +2881,7 @@ function Refresh-Target {
         }
     }
     $repLake = @{}
-    foreach ($r in $script:commReports) { foreach ($f in @($r["fish"])) { if ($set -contains [string]$f) { $k = [string]$r["lake"]; $repLake[$k] = 1 + [int]$repLake[$k]; break } } }
+    foreach ($r in (Get-AllCommReports)) { foreach ($f in @($r["fish"])) { if ($set -contains [string]$f) { $k = [string]$r["lake"]; $repLake[$k] = 1 + [int]$repLake[$k]; break } } }
     if (-not $lake) {
         if ($lakeCount.Count -gt 0) { $lake = @($lakeCount.Keys | Sort-Object { $lakeCount[$_] } -Descending)[0] }
         elseif ($repLake.Count -gt 0) { $lake = @($repLake.Keys | Sort-Object { $repLake[$_] } -Descending)[0] }
@@ -2883,13 +2930,13 @@ function Refresh-Target {
     $brows = @($brows | Sort-Object CountSort -Descending)
     $dgTgtBaits.ItemsSource = $brows
     $reports = New-Object System.Collections.ArrayList
-    foreach ($r in $script:commReports) {
+    foreach ($r in (Get-AllCommReports)) {
         if ($lake -and $r["lake"] -ne $lake) { continue }
         $hit = @(@($r["fish"]) | Where-Object { $set -contains [string]$_ })
         if ($hit.Count -eq 0 -or $null -eq $r["x"]) { continue }
         $bd = Clean-CommDetail ([string]$r["baitDetail"])
         if (-not $bd) { $bd = (@($r["bait"]) | Where-Object { $_ }) -join ", " }
-        $reports.Add([pscustomobject]@{ X = [int]$r["x"]; Y = [int]$r["y"]; Age = (Get-IsoAgeDays ([string]$r["posted"])); Clip = $r["clip"]; Bait = $bd; Own = $false; Url = [string]$r["url"] }) | Out-Null
+        $reports.Add([pscustomobject]@{ X = [int]$r["x"]; Y = [int]$r["y"]; Age = (Get-IsoAgeDays ([string]$r["posted"])); Clip = $r["clip"]; Bait = $bd; Own = $false; Url = [string]$r["url"]; Comp = ([string]$r["src"] -eq "companion") }) | Out-Null
     }
     foreach ($c in $script:catches) {
         if ($set -notcontains [string]$c.fish -or ($lake -and $c.lake -ne $lake) -or $null -eq $c.x -or "$($c.x)" -eq "") { continue }
@@ -2907,7 +2954,7 @@ function Refresh-Target {
     $srows = @()
     foreach ($c in $clusters) {
         $score = 0.0
-        foreach ($r in $c.Items) { $score += [math]::Exp(-[math]::Max(0, $r.Age) / 2.5) }
+        foreach ($r in $c.Items) { $score += [math]::Exp(-[math]::Max(0, $r.Age) / 2.5) * $(if ($r.Comp) { 2 } else { 1 }) }
         $minAge = ($c.Items | Measure-Object Age -Minimum).Minimum
         $status = T "tgtOld"
         if ($minAge -le 3) { $status = T "tgtActive" } elseif ($minAge -le 7) { $status = T "tgtRecent" }
@@ -2923,6 +2970,7 @@ function Refresh-Target {
         $url = $null
         $hostTxt = ""
         if ($link.Count) { $url = New-Object System.Uri $link[0].Url; $hostTxt = (Get-ReportHost $link[0].Url) + " " + [char]0x2197 }
+        elseif (@($c.Items | Where-Object { $_.Comp }).Count) { $hostTxt = T "companionSource" }
         elseif ($newest.Own) { $hostTxt = T "tgtOwn" }
         $srows += [pscustomobject]@{
             Coords = ("{0}:{1}" -f $c.X, $c.Y); X = $c.X; Y = $c.Y; Status = $status; ScoreSort = $score
@@ -2956,7 +3004,7 @@ function Refresh-Target {
             if ((Get-ComboKey $cmbTgtFish) -ne "grp:koi") {
                 $koi = @(Get-KoiInGame)
                 $act = @{}
-                foreach ($r in $script:commReports) {
+                foreach ($r in (Get-AllCommReports)) {
                     if ($lake -and $r["lake"] -ne $lake) { continue }
                     if (-not (@(@($r["fish"]) | Where-Object { $koi -contains [string]$_ }).Count)) { continue }
                     if ((Get-IsoAgeDays ([string]$r["posted"])) -gt 3 -or $null -eq $r["x"]) { continue }
@@ -2998,6 +3046,203 @@ function Show-SpotOnMapAt([string]$lakeId, [int]$x, [int]$y, [string]$fish) {
         $window.Dispatcher.BeginInvoke([action]{ Center-On ([double]$n.NX) ([double]$n.NY) }, [System.Windows.Threading.DispatcherPriority]::ApplicationIdle) | Out-Null
         Set-Status ("{0}: {1}:{2}" -f (T "tgtSpots"), $script:jumpXY[0], $script:jumpXY[1])
     }, [System.Windows.Threading.DispatcherPriority]::Background) | Out-Null
+}
+
+Add-Type -AssemblyName System.Security
+$script:shareTokenFile = Join-Path $userDir "share_token.dat"
+$script:shareIdFile = Join-Path $userDir "share_id.txt"
+$script:shareStateFile = Join-Path $userDir "share_state.json"
+$script:shareLastHash = ""
+$script:shareLast = $null
+$script:shareTry = $null
+$script:shareError = ""
+$script:shareTask = $null
+$script:shareStep = ""
+$script:sharePayload = ""
+$script:sharedReports = New-Object System.Collections.ArrayList
+$script:sharedShas = @{}
+
+function Get-ShareId {
+    if (Test-Path -LiteralPath $script:shareIdFile) { $v = ([System.IO.File]::ReadAllText($script:shareIdFile)).Trim(); if ($v) { return $v } }
+    $v = [guid]::NewGuid().ToString("N").Substring(0, 12)
+    [System.IO.File]::WriteAllText($script:shareIdFile, $v)
+    $v
+}
+
+function Get-ShareToken {
+    if (-not (Test-Path -LiteralPath $script:shareTokenFile)) { return "" }
+    try {
+        $raw = [System.Security.Cryptography.ProtectedData]::Unprotect([Convert]::FromBase64String([System.IO.File]::ReadAllText($script:shareTokenFile).Trim()), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+        return [System.Text.Encoding]::UTF8.GetString($raw)
+    } catch { return "" }
+}
+
+function Set-ShareToken([string]$tok) {
+    $enc = [System.Security.Cryptography.ProtectedData]::Protect([System.Text.Encoding]::UTF8.GetBytes($tok), $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+    [System.IO.File]::WriteAllText($script:shareTokenFile, [Convert]::ToBase64String($enc), (New-Object System.Text.UTF8Encoding $false))
+}
+
+function Load-ShareState {
+    if (-not (Test-Path -LiteralPath $script:shareStateFile)) { return }
+    try {
+        $d = (New-Serializer).DeserializeObject([System.IO.File]::ReadAllText($script:shareStateFile, [System.Text.Encoding]::UTF8))
+        $script:shareLastHash = [string]$d["hash"]
+        if ($d["last"]) { $script:shareLast = [datetime]::Parse([string]$d["last"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToLocalTime() }
+    } catch { }
+}
+
+function Save-ShareState {
+    $o = @{ hash = $script:shareLastHash; last = $(if ($script:shareLast) { $script:shareLast.ToUniversalTime().ToString("o") } else { "" }) }
+    try { [System.IO.File]::WriteAllText($script:shareStateFile, (New-Serializer).Serialize($o), (New-Object System.Text.UTF8Encoding $false)) } catch { }
+}
+
+function Get-RecipeComposition([string]$name) {
+    if (-not $name) { return "" }
+    $r = @($script:recipes | Where-Object { $_.name -eq $name } | Select-Object -First 1)
+    if ($r.Count -eq 0) { return "" }
+    $parts = @(@($r[0].base) + @($r[0].additives) | Where-Object { $_ })
+    $t = ($parts -join ", ")
+    if ($r[0].attractant) { $t = $t + ", " + $r[0].attractant }
+    $t
+}
+
+function Get-SharedPayload {
+    $sid = Get-ShareId
+    $sha1 = [System.Security.Cryptography.SHA1]::Create()
+    $out = New-Object System.Collections.ArrayList
+    foreach ($sp in $script:spots) {
+        if (-not $sp.share) { continue }
+        $lake = $script:lakeById[$sp.lake]
+        if (-not $lake -or -not $lake.bounds) { continue }
+        $g = To-Game $lake ([double]$sp.nx) ([double]$sp.ny)
+        $cs = @($script:catches | Where-Object { $_.spotId -eq $sp.id })
+        $fish = @{}
+        $baits = @{}
+        $dips = @{}
+        $pvas = @{}
+        $last = ""
+        $temp = "$($sp.temp)"
+        foreach ($c in $cs) {
+            $f = [string]$c.fish
+            if (-not $fish.ContainsKey($f)) { $fish[$f] = @{ n = 0; max = 0 } }
+            $fish[$f].n = $fish[$f].n + 1
+            if ($c.weight -and [int]$c.weight -gt $fish[$f].max) { $fish[$f].max = [int]$c.weight }
+            $bk = ((@($c.bait, $c.bait2) | Where-Object { $_ }) -join " + ")
+            if ($bk) { $baits[$bk] = 1 + [int]$baits[$bk] }
+            if ($c.dip) { $dips[[string]$c.dip] = 1 + [int]$dips[[string]$c.dip] }
+            $pc = Get-RecipeComposition ([string]$c.pva)
+            if ($pc) { $pvas[$pc] = 1 + [int]$pvas[$pc] }
+            if ([string]$c.date -gt $last) { $last = [string]$c.date }
+            if (-not $temp -and $c.temp) { $temp = [string]$c.temp }
+        }
+        if ($fish.Count -eq 0 -and $sp.fish) { $fish[[string]$sp.fish] = @{ n = 0; max = 0 } }
+        if ($baits.Count -eq 0) { $bk = ((@($sp.bait, $sp.bait2) | Where-Object { $_ }) -join " + "); if ($bk) { $baits[$bk] = 1 } }
+        if ($dips.Count -eq 0 -and $sp.dip) { $dips[[string]$sp.dip] = 1 }
+        if ($pvas.Count -eq 0) { $pc = Get-RecipeComposition ([string]$sp.pva); if ($pc) { $pvas[$pc] = 1 } }
+        $hid = ([System.BitConverter]::ToString($sha1.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($sid + "|" + $sp.id)))).Replace("-", "").Substring(0, 12).ToLower()
+        $out.Add([ordered]@{
+            id = $hid; lake = [string]$sp.lake; x = [int][math]::Round($g.X); y = [int][math]::Round($g.Y)
+            clip = (Get-ClipNum "$($sp.dist)"); dir = "$($sp.dir)".Trim(); depth = "$($sp.depth)".Trim(); tech = "$($sp.tech)"; temp = $temp
+            fish = @($fish.Keys | ForEach-Object { [ordered]@{ f = $_; n = $fish[$_].n; max = $fish[$_].max } })
+            baits = @($baits.Keys | Sort-Object { $baits[$_] } -Descending); dip = @($dips.Keys | Sort-Object { $dips[$_] } -Descending | Select-Object -First 1) -join ""
+            pva = @($pvas.Keys | Sort-Object { $pvas[$_] } -Descending | Select-Object -First 1) -join ""
+            groundbait = (Get-RecipeComposition ([string]$sp.groundbait)); last = $last; catches = $cs.Count
+        }) | Out-Null
+    }
+    ConvertTo-Json -InputObject ([ordered]@{ v = 1; source = "companion"; spots = @($out | Sort-Object { $_.id }) }) -Depth 6 -Compress
+}
+
+function Get-TextHash([string]$t) {
+    $h = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($t))
+    ([System.BitConverter]::ToString($h)).Replace("-", "")
+}
+
+function New-GhRequest([string]$method, [string]$url, [string]$body) {
+    $req = New-Object System.Net.Http.HttpRequestMessage ([System.Net.Http.HttpMethod]$method), $url
+    $req.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue "Bearer", (Get-ShareToken)
+    $req.Headers.Add("X-GitHub-Api-Version", "2022-11-28")
+    $req.Headers.Add("Accept", "application/vnd.github+json")
+    if ($body) { $req.Content = New-Object System.Net.Http.StringContent ($body, [System.Text.Encoding]::UTF8, "application/json") }
+    $req
+}
+
+function Start-ShareUpload([switch]$Force) {
+    if ($script:shareTask -or -not (Get-ShareToken)) { Update-ShareState; return }
+    $payload = Get-SharedPayload
+    $h = Get-TextHash $payload
+    if (-not $Force -and $h -eq $script:shareLastHash) { return }
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    $script:sharePayload = $payload
+    $script:sharePayloadHash = $h
+    $script:shareTry = Get-Date
+    $script:shareStep = "get"
+    $script:shareTask = $script:http.SendAsync((New-GhRequest "GET" ("https://api.github.com/repos/{0}/contents/shared/spots_{1}.json" -f $script:cloudRepo, (Get-ShareId)) ""))
+    $script:shareTimer.Start()
+}
+
+$script:shareTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:shareTimer.Interval = [TimeSpan]::FromMilliseconds(400)
+$script:shareTimer.Add_Tick({
+    $t = $script:shareTask
+    if (-not $t -or -not $t.IsCompleted) { return }
+    $script:shareTimer.Stop()
+    $script:shareTask = $null
+    try {
+        if ($t.IsFaulted -or $t.IsCanceled) { throw "Verbindung fehlgeschlagen" }
+        $resp = $t.Result
+        if ($script:shareStep -eq "get") {
+            $sha = ""
+            if ($resp.IsSuccessStatusCode) { $sha = [string]((New-Serializer).DeserializeObject($resp.Content.ReadAsStringAsync().Result))["sha"] }
+            elseif ([int]$resp.StatusCode -ne 404) { throw ("HTTP " + [int]$resp.StatusCode) }
+            $body = @{ message = "Companion spots"; content = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($script:sharePayload)) }
+            if ($sha) { $body["sha"] = $sha }
+            $script:shareStep = "put"
+            $script:shareTask = $script:http.SendAsync((New-GhRequest "PUT" ("https://api.github.com/repos/{0}/contents/shared/spots_{1}.json" -f $script:cloudRepo, (Get-ShareId)) ((New-Serializer).Serialize($body))))
+            $script:shareTimer.Start()
+            return
+        }
+        if (-not $resp.IsSuccessStatusCode) { throw ("HTTP " + [int]$resp.StatusCode) }
+        $script:shareLastHash = $script:sharePayloadHash
+        $script:shareLast = Get-Date
+        $script:shareError = ""
+        Save-ShareState
+    } catch {
+        $script:shareError = "$($_.Exception.Message)"
+        Write-ErrorLog ("Spots teilen: " + $script:shareError)
+    }
+    Update-ShareState
+})
+
+function Update-ShareState {
+    if (-not $txtShareState) { return }
+    $n = @($script:spots | Where-Object { $_.share }).Count
+    if (-not (Get-ShareToken)) { $txtShareState.Text = (T "shareNoToken") -f $n; return }
+    if ($script:shareError) { $txtShareState.Text = (T "shareFailed") -f $script:shareError; return }
+    $txtShareState.Text = (T "shareOk") -f $n, $(if ($script:shareLast) { $script:shareLast.ToString("dd.MM. HH:mm") } else { "?" })
+}
+
+function Get-AllCommReports {
+    if ($script:sharedReports.Count -eq 0) { return $script:commReports }
+    @($script:commReports) + @($script:sharedReports)
+}
+
+function Import-SharedFile([string]$name, [string]$text) {
+    $d = (New-Serializer).DeserializeObject($text)
+    $methods = @{ bottom = "Bottom Fishing"; float = "Float Fishing"; spin = "Spinning"; marine = "Marine Fishing"; trolling = "Trolling" }
+    foreach ($sp in @($d["spots"])) {
+        $fishes = @($sp["fish"] | ForEach-Object { [string]$_["f"] })
+        $maxW = ($sp["fish"] | ForEach-Object { [int]$_["max"] } | Measure-Object -Maximum).Maximum
+        $bl = @($sp["baits"])
+        $posted = $(if ($sp["last"]) { [string]$sp["last"] + "T12:00:00Z" } else { "" })
+        $r = @{
+            id = "cp-" + [string]$sp["id"]; fish = $fishes; lake = [string]$sp["lake"]; x = [int]$sp["x"]; y = [int]$sp["y"]
+            clip = $(if ($sp["clip"]) { [double]([string]$sp["clip"]) } else { $null }); depth = $(if (Get-ClipNum ([string]$sp["depth"])) { [double](Get-ClipNum ([string]$sp["depth"])) } else { $null })
+            method = [string]$methods[[string]$sp["tech"]]; bait = @(); baitDetail = $(if ($bl.Count) { [string]$bl[0] } else { "" }); dip = [string]$sp["dip"]
+            pva = [string]$sp["pva"]; groundbait = [string]$sp["groundbait"]; dryMix = ""; lure = ""; rig = ""; reelSpeed = ""
+            posted = $posted; url = ""; weight = $(if ($maxW) { $maxW / 1000.0 } else { $null }); src = "companion"; dir = [string]$sp["dir"]; catches = [int]$sp["catches"]
+        }
+        $script:sharedReports.Add($r) | Out-Null
+    }
 }
 
 function Start-WeeklyLoad {
@@ -3301,7 +3546,7 @@ function Get-CommClusters([string]$lakeId, [string]$since, [string]$fish) {
     $key = "{0}|{1}|{2}" -f $lakeId, $since.Substring(0, [math]::Min(13, $since.Length)), $fish
     if ($script:commClusterCache.ContainsKey($key)) { return $script:commClusterCache[$key] }
     $byCoord = @{}
-    foreach ($r in $script:commReports) {
+    foreach ($r in (Get-AllCommReports)) {
         if ($lakeId -and $r["lake"] -ne $lakeId) { continue }
         if ($since -and [string]$r["posted"] -lt $since) { continue }
         if ($fish -and -not (@($r["fish"]) -contains $fish)) { continue }
@@ -3451,7 +3696,7 @@ function Update-CommState {
     if ($script:commReports.Count -gt 0) {
         $week = 0
         $since = (Get-Date).ToUniversalTime().AddDays(-7).ToString("yyyy-MM-ddTHH:mm:ss")
-        foreach ($r in $script:commReports) { if ([string]$r["posted"] -ge $since) { $week++ } }
+        foreach ($r in (Get-AllCommReports)) { if ([string]$r["posted"] -ge $since) { $week++ } }
         $txtCommState.Text = "{0} {1}, {2} {3}   {4}: {5}" -f $script:commReports.Count, (T "reports"), $week, (T "thisWeekShort"), (T "lastUpdate"), $(if ($script:commSynced) { Format-LocalDate $script:commSynced.ToLocalTime() } else { "?" })
     } else {
         $txtCommState.Text = T "noCommData"
@@ -3629,6 +3874,7 @@ function Show-CommCluster($cl) {
 }
 
 function Get-ReportHost([string]$url) {
+    if (-not $url) { return (T "companionSource") }
     if ($url -match "t\.me/") { return "Telegram" }
     if ($url -match "vk\.com/") { return "VK" }
     if ($url -match "discord\.com/") { return "Discord" }
@@ -3689,6 +3935,7 @@ function Draw-CommMarkers {
     $sc = $script:scale
     $clusters = Get-CommClusters $lake.id (Get-CommPeriodStart) (Get-ComboKey $cmbCommFish)
     $fill = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(200, 255, 112, 67))
+    $compFill = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(220, 102, 187, 106))
     $selBrush = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString("#FFFFD54F"))
     $script:commDrawn = @{}
     $i = 0
@@ -3701,6 +3948,7 @@ function Draw-CommMarkers {
         $r.RadiusX = 2 / $sc
         $r.RadiusY = 2 / $sc
         $r.Fill = $fill
+        if (@($cl.Reports | Where-Object { $_["src"] -eq "companion" }).Count) { $r.Fill = $compFill }
         $isSel = ($script:commSel -and $script:commSel.Lake -eq $cl.Lake -and $script:commSel.X -eq $cl.X -and $script:commSel.Y -eq $cl.Y)
         if ($isSel) { $r.Stroke = $selBrush; $r.StrokeThickness = 4 / $sc }
         else { $r.Stroke = [System.Windows.Media.Brushes]::Black; $r.StrokeThickness = 1.5 / $sc }
@@ -3863,7 +4111,7 @@ function Invoke-MapSearch {
 
 function Get-BestLakeForFish([string]$fish) {
     $score = @{}
-    foreach ($r in $script:commReports) { if (@($r["fish"]) -contains $fish) { $k = [string]$r["lake"]; $score[$k] = 1 + [int]$score[$k] } }
+    foreach ($r in (Get-AllCommReports)) { if (@($r["fish"]) -contains $fish) { $k = [string]$r["lake"]; $score[$k] = 1 + [int]$score[$k] } }
     if ($script:archCurId) { foreach ($it in (Get-ArchWeek $script:archCurId).Values) { if ($it["f"] -eq $fish -and $it["l"]) { $k = [string]$it["l"]; $score[$k] = 1 + [int]$score[$k] } } }
     foreach ($k in ($score.Keys | Sort-Object { $score[$_] } -Descending)) { $l = $script:lakeById[$k]; if ($l -and $l.bounds) { return $k } }
     foreach ($l in @($game.lakes)) { if ($l.bounds -and (@($l.fish) -contains $fish)) { return $l.id } }
@@ -3906,7 +4154,7 @@ function Show-FishOnMap([string]$lakeId, [string]$fish) {
         $msg = "{0}: {1}, {2}   {3} {4}" -f (T "searchFound"), (N $script:jumpFish), (Get-LakeName $script:jumpLake), $cnt, (T "communitySpots")
         if ($widened) { $msg = $msg + "   " + (T "widenedAllTime") }
         $others = @{}
-        foreach ($r in $script:commReports) { if ($r["lake"] -ne $script:jumpLake -and (@($r["fish"]) -contains $script:jumpFish)) { $k = [string]$r["lake"]; $others[$k] = 1 + [int]$others[$k] } }
+        foreach ($r in (Get-AllCommReports)) { if ($r["lake"] -ne $script:jumpLake -and (@($r["fish"]) -contains $script:jumpFish)) { $k = [string]$r["lake"]; $others[$k] = 1 + [int]$others[$k] } }
         if ($others.Count -gt 0) { $msg = $msg + "   " + (T "alsoReportedAt") + " " + ((@($others.Keys | Sort-Object { $others[$_] } -Descending | Select-Object -First 3 | ForEach-Object { "{0} ({1})" -f (Get-LakeName $_), $others[$_] })) -join ", ") }
         Set-Status $msg
     }, [System.Windows.Threading.DispatcherPriority]::Background) | Out-Null
@@ -4032,7 +4280,7 @@ function Guess-TrackerLake($fishes) {
     $pickN = -1
     foreach ($id in $best) {
         $n = 0
-        foreach ($r in $script:commReports) {
+        foreach ($r in (Get-AllCommReports)) {
             if ($r["lake"] -ne $id -or [string]$r["posted"] -lt $since) { continue }
             foreach ($f in $fl) { if (@($r["fish"]) -contains $f) { $n++; break } }
         }
@@ -5945,6 +6193,18 @@ $dgTgtSpots.Add_PreviewMouseLeftButtonDown({
 $script:prefSelFish = ""
 
 Load-CloudState
+Load-ShareState
+Update-ShareState
+$btnShareSetup.Add_Click({
+    Add-Type -AssemblyName Microsoft.VisualBasic
+    $msg = T "sharePrompt"
+    if (Get-ShareToken) { $msg = $msg + [Environment]::NewLine + [Environment]::NewLine + (T "shareKeep") }
+    $tok = [Microsoft.VisualBasic.Interaction]::InputBox($msg, (T "shareSetup"), "")
+    if ($tok.Trim()) {
+        try { Set-ShareToken $tok.Trim() } catch { Write-ErrorLog ("Teilen-Token speichern: " + $_.Exception.Message); [System.Windows.MessageBox]::Show(((T "shareFailed") -f $_.Exception.Message), (T "appTitle")) | Out-Null; return }
+    }
+    if (Get-ShareToken) { $script:shareError = ""; $txtShareState.Text = T "loading"; Start-ShareUpload -Force }
+})
 $dgPrefs.Add_SelectionChanged({
     $rv = $dgPrefs.SelectedItem
     if (-not $rv) { return }
