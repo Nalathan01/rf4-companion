@@ -664,7 +664,8 @@ function Format-Coords($lake, $nx, $ny) {
                                 <ComboBox x:Name="cmbSpotTemp"/>
                                 <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
                                 <TextBox x:Name="txtSpotDir" Tag="w:castDirHint"/>
-                                <CheckBox x:Name="chkSpotShare" Tag="t:shareSpot" Margin="0,0,0,10"/>
+                                <CheckBox x:Name="chkSpotShare" Tag="t:shareSpot" Margin="0,0,0,4"/>
+                                <CheckBox x:Name="chkSpotShareImg" Tag="t:shareSpotImg" Margin="0,0,0,10"/>
                                 <TextBlock Tag="t:notes" Style="{StaticResource Label}"/>
                                 <TextBox x:Name="txtSpotNotes" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,14">
@@ -1765,6 +1766,7 @@ function Clear-SpotForm {
     Set-ComboKey $cmbSpotTemp ""
     $txtSpotDir.Text = ""
     $chkSpotShare.IsChecked = $false
+    $chkSpotShareImg.IsChecked = $false
     $txtSpotDepth.Text = ""
     $txtSpotDist.Text = ""
     $txtSpotNotes.Text = ""
@@ -1784,6 +1786,7 @@ function Fill-SpotForm($s) {
     Set-ComboKey $cmbSpotTemp "$($s.temp)"
     $txtSpotDir.Text = "$($s.dir)"
     $chkSpotShare.IsChecked = [bool]$s.share
+    $chkSpotShareImg.IsChecked = [bool]$s.shareImg
     $txtSpotDepth.Text = "$($s.depth)"
     $txtSpotDist.Text = "$($s.dist)"
     $txtSpotNotes.Text = "$($s.notes)"
@@ -3261,6 +3264,10 @@ $script:shareStep = ""
 $script:sharePayload = ""
 $script:sharedReports = New-Object System.Collections.ArrayList
 $script:sharedShas = @{}
+$script:shareImgs = @{}
+$script:shareImgCache = @{}
+$script:shareOps = New-Object System.Collections.ArrayList
+$script:shareOp = $null
 
 function Get-ShareId {
     if (Test-Path -LiteralPath $script:shareIdFile) { $v = ([System.IO.File]::ReadAllText($script:shareIdFile)).Trim(); if ($v) { return $v } }
@@ -3288,11 +3295,13 @@ function Load-ShareState {
         $d = (New-Serializer).DeserializeObject([System.IO.File]::ReadAllText($script:shareStateFile, [System.Text.Encoding]::UTF8))
         $script:shareLastHash = [string]$d["hash"]
         if ($d["last"]) { $script:shareLast = [datetime]::Parse([string]$d["last"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToLocalTime() }
+        $script:shareImgs = @{}
+        if ($d["imgs"]) { foreach ($k in $d["imgs"].Keys) { $script:shareImgs[[string]$k] = [string]$d["imgs"][$k] } }
     } catch { }
 }
 
 function Save-ShareState {
-    $o = @{ hash = $script:shareLastHash; last = $(if ($script:shareLast) { $script:shareLast.ToUniversalTime().ToString("o") } else { "" }) }
+    $o = @{ hash = $script:shareLastHash; last = $(if ($script:shareLast) { $script:shareLast.ToUniversalTime().ToString("o") } else { "" }); imgs = $script:shareImgs }
     try { [System.IO.File]::WriteAllText($script:shareStateFile, (New-Serializer).Serialize($o), (New-Object System.Text.UTF8Encoding $false)) } catch { }
 }
 
@@ -3306,9 +3315,59 @@ function Get-RecipeComposition([string]$name) {
     $t
 }
 
-function Get-SharedPayload {
-    $sid = Get-ShareId
+function Get-SharedSpotId([string]$sid, [string]$spotId) {
     $sha1 = [System.Security.Cryptography.SHA1]::Create()
+    ([System.BitConverter]::ToString($sha1.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($sid + "|" + $spotId)))).Replace("-", "").Substring(0, 12).ToLower()
+}
+
+function Get-SharedImgPath([string]$hid) {
+    "shared/img/{0}_{1}.jpg" -f (Get-ShareId), $hid
+}
+
+function Get-SharedImageBytes([string]$file) {
+    $key = "{0}|{1}" -f $file, (Get-Item -LiteralPath $file).LastWriteTimeUtc.Ticks
+    if ($script:shareImgCache.ContainsKey($key)) { return $script:shareImgCache[$key] }
+    $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
+    $bmp.BeginInit()
+    $bmp.UriSource = New-Object System.Uri $file
+    $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+    $bmp.CreateOptions = [System.Windows.Media.Imaging.BitmapCreateOptions]::IgnoreImageCache
+    $bmp.EndInit()
+    $x0 = [int]($bmp.PixelWidth * 0.14)
+    $crop = New-Object System.Windows.Media.Imaging.CroppedBitmap $bmp, (New-Object System.Windows.Int32Rect $x0, 0, ($bmp.PixelWidth-$x0), $bmp.PixelHeight)
+    $f = [math]::Min(1.0, 960.0 / $crop.PixelWidth)
+    $scaled = New-Object System.Windows.Media.Imaging.TransformedBitmap $crop, (New-Object System.Windows.Media.ScaleTransform $f, $f)
+    $enc = New-Object System.Windows.Media.Imaging.JpegBitmapEncoder
+    $enc.QualityLevel = 80
+    $enc.Frames.Add([System.Windows.Media.Imaging.BitmapFrame]::Create($scaled))
+    $ms = New-Object System.IO.MemoryStream
+    $enc.Save($ms)
+    $bytes = $ms.ToArray()
+    $ms.Dispose()
+    $h = ([System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes))).Replace("-", "")
+    $r = @{ Bytes = $bytes; Hash = $h }
+    $script:shareImgCache[$key] = $r
+    $r
+}
+
+function Get-SharedImages {
+    $sid = Get-ShareId
+    $out = @{}
+    foreach ($sp in $script:spots) {
+        if (-not $sp.share -or -not $sp.shareImg) { continue }
+        $f = Get-SpotImagePath $sp
+        if (-not $f) { continue }
+        try {
+            $hid = Get-SharedSpotId $sid $sp.id
+            $b = Get-SharedImageBytes $f
+            $out[$hid] = @{ Path = (Get-SharedImgPath $hid); Bytes = $b.Bytes; Hash = $b.Hash }
+        } catch { Write-ErrorLog ("Spotbild teilen: " + $_.Exception.Message) }
+    }
+    $out
+}
+
+function Get-SharedPayload($imgs = @{}) {
+    $sid = Get-ShareId
     $out = New-Object System.Collections.ArrayList
     foreach ($sp in $script:spots) {
         if (-not $sp.share) { continue }
@@ -3339,15 +3398,17 @@ function Get-SharedPayload {
         if ($baits.Count -eq 0) { $bk = ((@($sp.bait, $sp.bait2) | Where-Object { $_ }) -join " + "); if ($bk) { $baits[$bk] = 1 } }
         if ($dips.Count -eq 0 -and $sp.dip) { $dips[[string]$sp.dip] = 1 }
         if ($pvas.Count -eq 0) { $pc = Get-RecipeComposition ([string]$sp.pva); if ($pc) { $pvas[$pc] = 1 } }
-        $hid = ([System.BitConverter]::ToString($sha1.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($sid + "|" + $sp.id)))).Replace("-", "").Substring(0, 12).ToLower()
-        $out.Add([ordered]@{
+        $hid = Get-SharedSpotId $sid $sp.id
+        $o = [ordered]@{
             id = $hid; lake = [string]$sp.lake; x = [int][math]::Round($g.X); y = [int][math]::Round($g.Y)
             clip = (Get-ClipNum "$($sp.dist)"); dir = "$($sp.dir)".Trim(); depth = "$($sp.depth)".Trim(); tech = "$($sp.tech)"; temp = $temp
             fish = @($fish.Keys | ForEach-Object { [ordered]@{ f = $_; n = $fish[$_].n; max = $fish[$_].max } })
             baits = @($baits.Keys | Sort-Object { $baits[$_] } -Descending); dip = @($dips.Keys | Sort-Object { $dips[$_] } -Descending | Select-Object -First 1) -join ""
             pva = @($pvas.Keys | Sort-Object { $pvas[$_] } -Descending | Select-Object -First 1) -join ""
             groundbait = (Get-RecipeComposition ([string]$sp.groundbait)); last = $last; catches = $cs.Count
-        }) | Out-Null
+        }
+        if ($imgs.ContainsKey($hid)) { $o["img"] = $imgs[$hid].Path; $o["imgv"] = $imgs[$hid].Hash.Substring(0, 10).ToLower() }
+        $out.Add($o) | Out-Null
     }
     ConvertTo-Json -InputObject ([ordered]@{ v = 1; source = "companion"; spots = @($out | Sort-Object { $_.id }) }) -Depth 6 -Compress
 }
@@ -3367,16 +3428,39 @@ function New-GhRequest([string]$method, [string]$url, [string]$body) {
 }
 
 function Start-ShareUpload([switch]$Force) {
-    if ($script:shareTask -or -not (Get-ShareToken)) { Update-ShareState; return }
-    $payload = Get-SharedPayload
+    if ($script:shareTask -or $script:shareOp -or -not (Get-ShareToken)) { Update-ShareState; return }
+    $imgs = Get-SharedImages
+    $payload = Get-SharedPayload $imgs
     $h = Get-TextHash $payload
     if (-not $Force -and $h -eq $script:shareLastHash) { return }
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-    $script:sharePayload = $payload
+    $script:shareOps.Clear()
+    foreach ($k in $imgs.Keys) {
+        if ($Force -or [string]$script:shareImgs[$k] -ne $imgs[$k].Hash) { $script:shareOps.Add(@{ Kind = "put"; Path = $imgs[$k].Path; Bytes = $imgs[$k].Bytes; Hid = $k; Hash = $imgs[$k].Hash; Msg = "Companion spot image" }) | Out-Null }
+    }
+    foreach ($k in @($script:shareImgs.Keys)) {
+        if (-not $imgs.ContainsKey($k)) { $script:shareOps.Add(@{ Kind = "delete"; Path = (Get-SharedImgPath $k); Hid = $k; Msg = "Companion spot image removed" }) | Out-Null }
+    }
+    $script:shareOps.Add(@{ Kind = "put"; Path = ("shared/spots_{0}.json" -f (Get-ShareId)); Bytes = [System.Text.Encoding]::UTF8.GetBytes($payload); Hid = ""; Msg = "Companion spots" }) | Out-Null
     $script:sharePayloadHash = $h
     $script:shareTry = Get-Date
+    Next-ShareOp
+}
+
+function Next-ShareOp {
+    if ($script:shareOps.Count -eq 0) {
+        $script:shareOp = $null
+        $script:shareLastHash = $script:sharePayloadHash
+        $script:shareLast = Get-Date
+        $script:shareError = ""
+        Save-ShareState
+        Update-ShareState
+        return
+    }
+    $script:shareOp = $script:shareOps[0]
+    $script:shareOps.RemoveAt(0)
     $script:shareStep = "get"
-    $script:shareTask = $script:http.SendAsync((New-GhRequest "GET" ("https://api.github.com/repos/{0}/contents/shared/spots_{1}.json" -f $script:cloudRepo, (Get-ShareId)) ""))
+    $script:shareTask = $script:http.SendAsync((New-GhRequest "GET" ("https://api.github.com/repos/{0}/contents/{1}" -f $script:cloudRepo, $script:shareOp.Path) ""))
     $script:shareTimer.Start()
 }
 
@@ -3399,25 +3483,38 @@ $script:shareTimer.Add_Tick({
     try {
         if ($t.IsFaulted -or $t.IsCanceled) { throw "Verbindung fehlgeschlagen" }
         $resp = $t.Result
+        $op = $script:shareOp
         if ($script:shareStep -eq "get") {
             $sha = ""
             if ($resp.IsSuccessStatusCode) { $sha = [string]((New-Serializer).DeserializeObject($resp.Content.ReadAsStringAsync().Result))["sha"] }
             elseif ([int]$resp.StatusCode -ne 404) { throw ("HTTP " + [int]$resp.StatusCode + " (GET) " + (Get-GhErrorText $resp)) }
-            $body = @{ message = "Companion spots"; content = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($script:sharePayload)) }
+            if ($op.Kind -eq "delete" -and -not $sha) {
+                $script:shareImgs.Remove($op.Hid)
+                Save-ShareState
+                Next-ShareOp
+                return
+            }
+            $body = @{ message = $op.Msg }
+            if ($op.Kind -eq "put") { $body["content"] = [Convert]::ToBase64String([byte[]]$op.Bytes) }
             if ($sha) { $body["sha"] = $sha }
-            $script:shareStep = "put"
-            $script:shareTask = $script:http.SendAsync((New-GhRequest "PUT" ("https://api.github.com/repos/{0}/contents/shared/spots_{1}.json" -f $script:cloudRepo, (Get-ShareId)) ((New-Serializer).Serialize($body))))
+            $script:shareStep = "write"
+            $method = $(if ($op.Kind -eq "delete") { "DELETE" } else { "PUT" })
+            $script:shareTask = $script:http.SendAsync((New-GhRequest $method ("https://api.github.com/repos/{0}/contents/{1}" -f $script:cloudRepo, $op.Path) ((New-Serializer).Serialize($body))))
             $script:shareTimer.Start()
             return
         }
-        if (-not $resp.IsSuccessStatusCode) { throw ("HTTP " + [int]$resp.StatusCode + " (PUT) " + (Get-GhErrorText $resp)) }
-        $script:shareLastHash = $script:sharePayloadHash
-        $script:shareLast = Get-Date
-        $script:shareError = ""
-        Save-ShareState
+        if (-not $resp.IsSuccessStatusCode) { throw ("HTTP " + [int]$resp.StatusCode + " (" + $op.Kind + ") " + (Get-GhErrorText $resp)) }
+        if ($op.Hid) {
+            if ($op.Kind -eq "delete") { $script:shareImgs.Remove($op.Hid) } else { $script:shareImgs[$op.Hid] = $op.Hash }
+            Save-ShareState
+        }
+        Next-ShareOp
+        return
     } catch {
         $script:shareError = "$($_.Exception.Message)"
         Write-ErrorLog ("Spots teilen: " + $script:shareError)
+        $script:shareOp = $null
+        $script:shareOps.Clear()
     }
     Update-ShareState
 })
@@ -3449,6 +3546,7 @@ function Import-SharedFile([string]$name, [string]$text) {
             method = [string]$methods[[string]$sp["tech"]]; bait = @(); baitDetail = $(if ($bl.Count) { [string]$bl[0] } else { "" }); dip = [string]$sp["dip"]
             pva = [string]$sp["pva"]; groundbait = [string]$sp["groundbait"]; dryMix = ""; lure = ""; rig = ""; reelSpeed = ""
             posted = $posted; url = ""; weight = $(if ($maxW) { $maxW / 1000.0 } else { $null }); src = "companion"; dir = [string]$sp["dir"]; catches = [int]$sp["catches"]
+            img = $(if ([string]$sp["img"] -match "^shared/img/[0-9a-f]+_[0-9a-f]+\.jpg$") { "https://raw.githubusercontent.com/{0}/main/{1}?v={2}" -f $script:cloudRepo, [string]$sp["img"], ([string]$sp["imgv"] -replace "[^0-9a-f]", "") } else { "" })
         }
         $script:sharedReports.Add($r) | Out-Null
     }
@@ -3849,6 +3947,7 @@ namespace RF4Comp {
         public string Label { get; set; }
         public string Url { get; set; }
         public string Detail { get; set; }
+        public string ImgUrl { get; set; }
         public ObservableCollection<ReportImage> Images { get; private set; }
         public ReportItem() { Images = new ObservableCollection<ReportImage>(); }
         public string ImgState {
@@ -3909,8 +4008,9 @@ function Add-ReportImages($item, $urls) {
 
 function Start-ReportImages($item) {
     if (-not $item -or $item.Images.Count -gt 0 -or $item.ImgState) { return }
+    if ($item.ImgUrl) { Add-ReportImages $item @($item.ImgUrl); return }
     $src = Get-ReportImageSource $item.Url
-    if (-not $src) { return }
+    if (-not $src) { $item.ImgState = $(if ($item.Url) { T "imgViaSource" } else { T "noImages" }); return }
     if ($script:repImgCache.ContainsKey($src)) { Add-ReportImages $item $script:repImgCache[$src]; return }
     $item.ImgState = T "imgLoading"
     $script:repImgJobs.Add([pscustomobject]@{ Item = $item; Src = $src; Kind = "page"; Task = $script:http.GetStringAsync($src) }) | Out-Null
@@ -4182,6 +4282,7 @@ function Show-CommCluster($cl) {
         $ri.Label = ($parts -join "  |  ")
         $ri.Url = [string]$r["url"]
         $ri.Detail = Get-CommReportText $r
+        $ri.ImgUrl = [string]$r["img"]
         $items += $ri
     }
     $lstCommReports.ItemsSource = $items
@@ -6021,6 +6122,7 @@ $btnSpotSave.Add_Click({
     $s | Add-Member -NotePropertyName temp -NotePropertyValue (Get-ComboKey $cmbSpotTemp) -Force
     $s | Add-Member -NotePropertyName dir -NotePropertyValue $txtSpotDir.Text.Trim() -Force
     $s | Add-Member -NotePropertyName share -NotePropertyValue ([bool]$chkSpotShare.IsChecked) -Force
+    $s | Add-Member -NotePropertyName shareImg -NotePropertyValue ([bool]$chkSpotShareImg.IsChecked) -Force
     $s.depth = $txtSpotDepth.Text.Trim()
     $s.dist = $txtSpotDist.Text.Trim()
     $s.notes = $txtSpotNotes.Text.Trim()
