@@ -4353,6 +4353,11 @@ function Parse-CardItems($geo, $lists) {
         if ($l.Length -lt 3 -or $l.Length -gt 40) { continue }
         if ($l -match "\d+\s*min|kg|%|/\s*\d|^S\s*\d|\d[\.,]\d") { continue }
         $f = Match-Fish $l $lists
+        $above = @($g | Where-Object { $_ -ne $e -and [math]::Abs($_.X-$e.X) -lt ($e.H * 2) -and ($e.Y-$_.Y) -gt 0 -and ($e.Y-$_.Y) -lt ($e.H * 1.8) -and $_.Text.Trim() -notmatch "\d" } | Select-Object -First 1)
+        if ($above.Count -gt 0) {
+            $f2 = Match-Fish ($above[0].Text.Trim() + " " + $l) $lists
+            if ($f2 -and $f2.Score -ge 0.8 -and (-not $f -or $f2.Score -ge $f.Score-0.05)) { $f = $f2 }
+        }
         if (-not $f) { continue }
         $best = $null
         $bestD = 1e9
@@ -4396,10 +4401,15 @@ function Parse-KeepnetSequential([string[]]$lines, $lists) {
         if ($l.Length -lt 3 -or $l.Length -gt 40) { continue }
         if ($l -match "\d+\s*min|kg|%|/\s*\d|^S\s*\d") { continue }
         $f = Match-Fish $l $lists
+        $wi = $i-1
+        if ($i -gt $start -and $lines[$i-1].Trim() -notmatch "\d" -and $lines[$i-1].Trim().Length -ge 3) {
+            $f2 = Match-Fish ($lines[$i-1].Trim() + " " + $l) $lists
+            if ($f2 -and $f2.Score -ge 0.8 -and (-not $f -or $f2.Score -ge $f.Score-0.05)) { $f = $f2; $wi = $i-2 }
+        }
         if (-not $f) { continue }
         $w = $null
-        if ($i -gt 0) {
-            $m = [regex]::Match($lines[$i-1], "^\s*(\S*?)\s*(kg|g|кг|г|lb|lbs)\s*$")
+        if ($wi -ge 0) {
+            $m = [regex]::Match($lines[$wi], "^\s*(\S*?)\s*(kg|g|кг|г|lb|lbs)\s*$")
             if ($m.Success) {
                 $w = Convert-OcrWeight $m.Groups[1].Value $m.Groups[2].Value
                 if ($null -ne $w -and $w -le 0) { $w = $null }
