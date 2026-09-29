@@ -280,7 +280,14 @@
   "castDirHint": "z. B. NO oder Richtung Boje",
   "shareSpot": "Für alle teilen",
   "shareNewSpot": "Neuen Spot teilen",
-  "sharedCol": "Geteilt"
+  "sharedCol": "Geteilt",
+  "shareSetup": "Teilen einrichten",
+  "sharePrompt": "GitHub-Token mit Schreibrecht für das Repo rf4-companion-data einfügen. Er wird verschlüsselt nur auf diesem PC gespeichert.",
+  "shareKeep": "Ein Token ist schon gespeichert. Feld leer lassen und OK drücken, um nur neu hochzuladen.",
+  "shareOk": "{0} Spots geteilt, zuletzt {1}",
+  "shareFailed": "Teilen fehlgeschlagen: {0}",
+  "shareNoToken": "{0} Spots zum Teilen markiert, Teilen noch nicht eingerichtet",
+  "companionSource": "Companion ✓"
  },
  "en": {
   "langName": "English",
@@ -563,7 +570,14 @@
   "castDirHint": "e.g. NE or towards the buoy",
   "shareSpot": "Share with everyone",
   "shareNewSpot": "Share new spot",
-  "sharedCol": "Shared"
+  "sharedCol": "Shared",
+  "shareSetup": "Set up sharing",
+  "sharePrompt": "Paste a GitHub token with write access to the repo rf4-companion-data. It is stored encrypted on this PC only.",
+  "shareKeep": "A token is already stored. Leave the field empty and press OK to just upload again.",
+  "shareOk": "{0} spots shared, last {1}",
+  "shareFailed": "Sharing failed: {0}",
+  "shareNoToken": "{0} spots marked for sharing, sharing not set up yet",
+  "companionSource": "Companion ✓"
  },
  "ru": {
   "langName": "Русский",
@@ -843,7 +857,14 @@
   "castDirHint": "напр. СВ или к бую",
   "shareSpot": "Поделиться со всеми",
   "shareNewSpot": "Поделиться новой точкой",
-  "sharedCol": "Общая"
+  "sharedCol": "Общая",
+  "shareSetup": "Настроить обмен",
+  "sharePrompt": "Вставьте токен GitHub с правом записи для репозитория rf4-companion-data. Он хранится зашифрованным только на этом ПК.",
+  "shareKeep": "Токен уже сохранён. Оставьте поле пустым и нажмите OK, чтобы просто загрузить снова.",
+  "shareOk": "Общих точек: {0}, последний раз {1}",
+  "shareFailed": "Ошибка обмена: {0}",
+  "shareNoToken": "Отмечено для обмена: {0}, обмен ещё не настроен",
+  "companionSource": "Companion ✓"
  },
  "fr": {
   "langName": "Français",
@@ -1123,7 +1144,14 @@
   "castDirHint": "ex. NE ou vers la bouée",
   "shareSpot": "Partager avec tous",
   "shareNewSpot": "Partager le nouveau spot",
-  "sharedCol": "Partagé"
+  "sharedCol": "Partagé",
+  "shareSetup": "Configurer le partage",
+  "sharePrompt": "Collez un jeton GitHub avec droit d'écriture sur le dépôt rf4-companion-data. Il est stocké chiffré sur ce PC uniquement.",
+  "shareKeep": "Un jeton est déjà enregistré. Laissez le champ vide et appuyez sur OK pour simplement renvoyer.",
+  "shareOk": "{0} spots partagés, dernier envoi {1}",
+  "shareFailed": "Échec du partage : {0}",
+  "shareNoToken": "{0} spots marqués pour le partage, partage pas encore configuré",
+  "companionSource": "Companion ✓"
  },
  "es": {
   "langName": "Español",
@@ -1403,7 +1431,14 @@
   "castDirHint": "p. ej. NE o hacia la boya",
   "shareSpot": "Compartir con todos",
   "shareNewSpot": "Compartir spot nuevo",
-  "sharedCol": "Compartido"
+  "sharedCol": "Compartido",
+  "shareSetup": "Configurar compartir",
+  "sharePrompt": "Pega un token de GitHub con permiso de escritura para el repositorio rf4-companion-data. Se guarda cifrado solo en este PC.",
+  "shareKeep": "Ya hay un token guardado. Deja el campo vacío y pulsa OK para volver a subir.",
+  "shareOk": "{0} spots compartidos, último {1}",
+  "shareFailed": "Error al compartir: {0}",
+  "shareNoToken": "{0} spots marcados para compartir, aún sin configurar",
+  "companionSource": "Companion ✓"
  },
  "it": {
   "langName": "Italiano",
@@ -1683,7 +1718,14 @@
   "castDirHint": "es. NE o verso la boa",
   "shareSpot": "Condividi con tutti",
   "shareNewSpot": "Condividi nuovo spot",
-  "sharedCol": "Condiviso"
+  "sharedCol": "Condiviso",
+  "shareSetup": "Configura condivisione",
+  "sharePrompt": "Incolla un token GitHub con permesso di scrittura per il repository rf4-companion-data. Viene salvato cifrato solo su questo PC.",
+  "shareKeep": "Un token è già salvato. Lascia il campo vuoto e premi OK per caricare di nuovo.",
+  "shareOk": "{0} spot condivisi, ultimo {1}",
+  "shareFailed": "Condivisione non riuscita: {0}",
+  "shareNoToken": "{0} spot segnati per la condivisione, condivisione non ancora configurata",
+  "companionSource": "Companion ✓"
  },
  "pl": {
   "langName": "Polski",
@@ -1963,7 +2005,14 @@
   "castDirHint": "np. NE lub w stronę boi",
   "shareSpot": "Udostępnij wszystkim",
   "shareNewSpot": "Udostępnij nową miejscówkę",
-  "sharedCol": "Udostępniona"
+  "sharedCol": "Udostępniona",
+  "shareSetup": "Skonfiguruj udostępnianie",
+  "sharePrompt": "Wklej token GitHub z prawem zapisu do repozytorium rf4-companion-data. Jest zapisywany zaszyfrowany tylko na tym PC.",
+  "shareKeep": "Token jest już zapisany. Zostaw pole puste i naciśnij OK, aby tylko wysłać ponownie.",
+  "shareOk": "Udostępniono {0} miejscówek, ostatnio {1}",
+  "shareFailed": "Udostępnianie nie powiodło się: {0}",
+  "shareNoToken": "{0} miejscówek do udostępnienia, udostępnianie nieskonfigurowane",
+  "companionSource": "Companion ✓"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2243,7 +2292,14 @@
   "castDirHint": "ex. NE ou em direção à boia",
   "shareSpot": "Compartilhar com todos",
   "shareNewSpot": "Compartilhar novo ponto",
-  "sharedCol": "Compartilhado"
+  "sharedCol": "Compartilhado",
+  "shareSetup": "Configurar compartilhamento",
+  "sharePrompt": "Cole um token do GitHub com permissão de escrita no repositório rf4-companion-data. Ele é salvo criptografado só neste PC.",
+  "shareKeep": "Já existe um token salvo. Deixe o campo vazio e pressione OK para só enviar de novo.",
+  "shareOk": "{0} pontos compartilhados, último {1}",
+  "shareFailed": "Falha ao compartilhar: {0}",
+  "shareNoToken": "{0} pontos marcados para compartilhar, ainda não configurado",
+  "companionSource": "Companion ✓"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2523,7 +2579,14 @@
   "castDirHint": "bijv. NO of richting boei",
   "shareSpot": "Met iedereen delen",
   "shareNewSpot": "Nieuwe stek delen",
-  "sharedCol": "Gedeeld"
+  "sharedCol": "Gedeeld",
+  "shareSetup": "Delen instellen",
+  "sharePrompt": "Plak een GitHub-token met schrijfrechten voor de repo rf4-companion-data. Hij wordt versleuteld alleen op deze pc opgeslagen.",
+  "shareKeep": "Er is al een token opgeslagen. Laat het veld leeg en druk op OK om alleen opnieuw te uploaden.",
+  "shareOk": "{0} stekken gedeeld, laatst {1}",
+  "shareFailed": "Delen mislukt: {0}",
+  "shareNoToken": "{0} stekken gemarkeerd om te delen, delen nog niet ingesteld",
+  "companionSource": "Companion ✓"
  },
  "tr": {
   "langName": "Türkçe",
@@ -2803,7 +2866,14 @@
   "castDirHint": "ör. KD veya şamandıraya doğru",
   "shareSpot": "Herkesle paylaş",
   "shareNewSpot": "Yeni noktayı paylaş",
-  "sharedCol": "Paylaşıldı"
+  "sharedCol": "Paylaşıldı",
+  "shareSetup": "Paylaşımı ayarla",
+  "sharePrompt": "rf4-companion-data deposu için yazma yetkili bir GitHub jetonu yapıştırın. Yalnızca bu bilgisayarda şifreli saklanır.",
+  "shareKeep": "Kayıtlı bir jeton var. Yalnızca yeniden yüklemek için alanı boş bırakıp Tamam'a basın.",
+  "shareOk": "{0} nokta paylaşıldı, son {1}",
+  "shareFailed": "Paylaşım başarısız: {0}",
+  "shareNoToken": "{0} nokta paylaşım için işaretli, paylaşım henüz ayarlanmadı",
+  "companionSource": "Companion ✓"
  },
  "ro": {
   "langName": "Română",
@@ -3083,7 +3153,14 @@
   "castDirHint": "de ex. NE sau spre geamandură",
   "shareSpot": "Distribuie tuturor",
   "shareNewSpot": "Distribuie locul nou",
-  "sharedCol": "Distribuit"
+  "sharedCol": "Distribuit",
+  "shareSetup": "Configurează partajarea",
+  "sharePrompt": "Lipește un token GitHub cu drept de scriere pentru depozitul rf4-companion-data. Este salvat criptat doar pe acest PC.",
+  "shareKeep": "Un token este deja salvat. Lasă câmpul gol și apasă OK pentru a încărca din nou.",
+  "shareOk": "{0} locuri partajate, ultima dată {1}",
+  "shareFailed": "Partajarea a eșuat: {0}",
+  "shareNoToken": "{0} locuri marcate pentru partajare, partajarea nu e configurată",
+  "companionSource": "Companion ✓"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3363,7 +3440,14 @@
   "castDirHint": "mis. TL atau ke arah pelampung",
   "shareSpot": "Bagikan ke semua",
   "shareNewSpot": "Bagikan spot baru",
-  "sharedCol": "Dibagikan"
+  "sharedCol": "Dibagikan",
+  "shareSetup": "Atur berbagi",
+  "sharePrompt": "Tempel token GitHub dengan izin tulis untuk repo rf4-companion-data. Disimpan terenkripsi hanya di PC ini.",
+  "shareKeep": "Token sudah tersimpan. Biarkan kosong dan tekan OK untuk mengunggah ulang.",
+  "shareOk": "{0} spot dibagikan, terakhir {1}",
+  "shareFailed": "Berbagi gagal: {0}",
+  "shareNoToken": "{0} spot ditandai untuk dibagikan, berbagi belum diatur",
+  "companionSource": "Companion ✓"
  },
  "ja": {
   "langName": "日本語",
@@ -3643,7 +3727,14 @@
   "castDirHint": "例: 北東、ブイの方向",
   "shareSpot": "全員と共有",
   "shareNewSpot": "新しいスポットを共有",
-  "sharedCol": "共有"
+  "sharedCol": "共有",
+  "shareSetup": "共有を設定",
+  "sharePrompt": "リポジトリ rf4-companion-data への書き込み権限がある GitHub トークンを貼り付けてください。このPCにのみ暗号化して保存されます。",
+  "shareKeep": "トークンは保存済みです。空欄のままOKを押すと再アップロードだけ行います。",
+  "shareOk": "共有スポット {0} 件、最終 {1}",
+  "shareFailed": "共有に失敗: {0}",
+  "shareNoToken": "共有予定のスポット {0} 件、共有は未設定",
+  "companionSource": "Companion ✓"
  },
  "ko": {
   "langName": "한국어",
@@ -3923,7 +4014,14 @@
   "castDirHint": "예: 북동 또는 부표 방향",
   "shareSpot": "모두와 공유",
   "shareNewSpot": "새 포인트 공유",
-  "sharedCol": "공유됨"
+  "sharedCol": "공유됨",
+  "shareSetup": "공유 설정",
+  "sharePrompt": "rf4-companion-data 저장소에 쓰기 권한이 있는 GitHub 토큰을 붙여넣으세요. 이 PC에만 암호화되어 저장됩니다.",
+  "shareKeep": "토큰이 이미 저장되어 있습니다. 비워 두고 확인을 누르면 다시 업로드만 합니다.",
+  "shareOk": "공유 포인트 {0}개, 마지막 {1}",
+  "shareFailed": "공유 실패: {0}",
+  "shareNoToken": "공유 표시 포인트 {0}개, 공유가 아직 설정되지 않음",
+  "companionSource": "Companion ✓"
  },
  "zh": {
   "langName": "简体中文",
@@ -4203,7 +4301,14 @@
   "castDirHint": "例如：东北或朝浮标",
   "shareSpot": "与所有人分享",
   "shareNewSpot": "分享新钓点",
-  "sharedCol": "已分享"
+  "sharedCol": "已分享",
+  "shareSetup": "设置分享",
+  "sharePrompt": "粘贴对仓库 rf4-companion-data 有写入权限的 GitHub 令牌。它仅加密保存在这台电脑上。",
+  "shareKeep": "已保存令牌。留空并按确定即可重新上传。",
+  "shareOk": "已分享 {0} 个钓点，最后 {1}",
+  "shareFailed": "分享失败：{0}",
+  "shareNoToken": "已标记分享 {0} 个钓点，尚未设置分享",
+  "companionSource": "Companion ✓"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4483,6 +4588,13 @@
   "castDirHint": "例如：東北或朝浮標",
   "shareSpot": "與所有人分享",
   "shareNewSpot": "分享新釣點",
-  "sharedCol": "已分享"
+  "sharedCol": "已分享",
+  "shareSetup": "設定分享",
+  "sharePrompt": "貼上對儲存庫 rf4-companion-data 有寫入權限的 GitHub 權杖。它僅加密儲存在這台電腦上。",
+  "shareKeep": "已儲存權杖。留空並按確定即可重新上傳。",
+  "shareOk": "已分享 {0} 個釣點，最後 {1}",
+  "shareFailed": "分享失敗：{0}",
+  "shareNoToken": "已標記分享 {0} 個釣點，尚未設定分享",
+  "companionSource": "Companion ✓"
  }
 }
