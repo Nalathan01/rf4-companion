@@ -1,0 +1,4 @@
+dist/
+itch/
+*.bak
+*.tmp
