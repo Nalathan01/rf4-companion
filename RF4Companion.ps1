@@ -639,6 +639,8 @@ function Format-Coords($lake, $nx, $ny) {
                                 </Grid>
                                 <TextBlock Tag="t:temperature" Style="{StaticResource Label}"/>
                                 <ComboBox x:Name="cmbSpotTemp"/>
+                                <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
+                                <TextBox x:Name="txtSpotDir" Tag="w:castDirHint"/>
                                 <TextBlock Tag="t:notes" Style="{StaticResource Label}"/>
                                 <TextBox x:Name="txtSpotNotes" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,14">
@@ -933,6 +935,10 @@ function Format-Coords($lake, $nx, $ny) {
                                         <TextBlock Tag="t:temperature" Style="{StaticResource Label}"/>
                                         <ComboBox x:Name="cmbCatchTemp"/>
                                     </StackPanel>
+                                    <StackPanel DockPanel.Dock="Left" Width="170" Margin="0,0,10,0">
+                                        <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
+                                        <TextBox x:Name="txtCatchDir" Tag="w:castDirHint"/>
+                                    </StackPanel>
                                     <StackPanel>
                                         <TextBlock Tag="t:notes" Style="{StaticResource Label}"/>
                                         <TextBox x:Name="txtCatchNotes"/>
@@ -1065,6 +1071,8 @@ function Format-Coords($lake, $nx, $ny) {
                                     </Grid>
                                     <TextBlock Tag="t:temperature" Style="{StaticResource Label}"/>
                                     <ComboBox x:Name="cmbSeTemp"/>
+                                    <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
+                                    <TextBox x:Name="txtSeDir" Tag="w:castDirHint"/>
                                     <TextBlock Tag="t:notes" Style="{StaticResource Label}"/>
                                     <TextBox x:Name="txtSeNotes" Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -1554,6 +1562,7 @@ function Clear-SpotForm {
     $cmbSpotBait.Text = ""
     Set-ComboKey $cmbSpotTech ""
     Set-ComboKey $cmbSpotTemp ""
+    $txtSpotDir.Text = ""
     $txtSpotDepth.Text = ""
     $txtSpotDist.Text = ""
     $txtSpotNotes.Text = ""
@@ -1570,6 +1579,7 @@ function Fill-SpotForm($s) {
     Set-ComboKey $cmbSpotBait "$($s.bait)"
     Set-ComboKey $cmbSpotTech "$($s.tech)"
     Set-ComboKey $cmbSpotTemp "$($s.temp)"
+    $txtSpotDir.Text = "$($s.dir)"
     $txtSpotDepth.Text = "$($s.depth)"
     $txtSpotDist.Text = "$($s.dist)"
     $txtSpotNotes.Text = "$($s.notes)"
@@ -1676,7 +1686,7 @@ function Refresh-SpotsGrid {
         if ($s.dip) { $baitText = "{0}  ({1}: {2})" -f $baitText, (T "dipL"), (N $s.dip) }
         $row = [pscustomobject]@{
             Id = $s.id; Lake = (Get-LakeName $s.lake); Name = "$($s.name)"; Fish = (N $s.fish); Bait = $baitText
-            Tech = $tech; Coords = (Format-Coords $lake $s.nx $s.ny); Depth = ((@("$($s.dist)".Trim(), "$($s.depth)".Trim()) -join " / ").TrimEnd(" /")); Notes = "$($s.notes)"
+            Tech = $tech; Coords = (Format-Coords $lake $s.nx $s.ny); Depth = (((@("$($s.dist)".Trim(), "$($s.depth)".Trim()) -join " / ").TrimEnd(" /")) + $(if ("$($s.dir)".Trim()) { "  " + "$($s.dir)".Trim() } else { "" })); Notes = "$($s.notes)"
         }
         if ($q -and -not $cq) {
             $hay = ("{0} {1} {2} {3} {4} {5} {6}" -f $row.Lake, $row.Name, $row.Fish, $row.Bait, $row.Tech, $row.Notes, $s.fish).ToLower()
@@ -1687,15 +1697,32 @@ function Refresh-SpotsGrid {
     $dgSpots.ItemsSource = @($rows | Sort-Object Lake, Name)
 }
 
-function Find-SpotAt([string]$lakeId, $x, $y) {
+function Get-ClipNum([string]$t) {
+    $m = [regex]::Match("$t", "\d+([\.,]\d+)?")
+    if ($m.Success) { return $m.Value.Replace(",", ".") }
+    return ""
+}
+
+function Find-SpotAt([string]$lakeId, $x, $y, [string]$clip = "", [string]$dir = "", [switch]$AnyCast) {
     $lake = $script:lakeById[$lakeId]
     if (-not $lake -or -not $lake.bounds -or $null -eq $x -or $null -eq $y) { return $null }
+    $cn = Get-ClipNum $clip
+    $dn = "$dir".Trim().ToLower()
+    $loose = $null
     foreach ($sp in $script:spots) {
         if ($sp.lake -ne $lakeId) { continue }
         $g = To-Game $lake ([double]$sp.nx) ([double]$sp.ny)
-        if ([math]::Abs([math]::Round($g.X)-[double]$x) -le 2 -and [math]::Abs([math]::Round($g.Y)-[double]$y) -le 2) { return $sp }
+        if ([math]::Abs([math]::Round($g.X)-[double]$x) -gt 2 -or [math]::Abs([math]::Round($g.Y)-[double]$y) -gt 2) { continue }
+        if ($AnyCast) { return $sp }
+        $sc = Get-ClipNum "$($sp.dist)"
+        $sd = "$($sp.dir)".Trim().ToLower()
+        $clipOk = (-not $cn -or -not $sc -or $cn -eq $sc)
+        $dirOk = (-not $dn -or -not $sd -or $dn -eq $sd)
+        if (-not ($clipOk -and $dirOk)) { continue }
+        if ($cn -eq $sc -and $dn -eq $sd) { return $sp }
+        if (-not $loose) { $loose = $sp }
     }
-    return $null
+    return $loose
 }
 
 function Update-CatchSpotInfo {
@@ -1703,7 +1730,7 @@ function Update-CatchSpotInfo {
     $y = Parse-Num $txtCatchY.Text
     $lakeId = Get-ComboKey $cmbCatchLake
     if ($null -eq $x -or $null -eq $y) { $lblCatchSpot.Text = T "spotNameOpt"; return }
-    $sp = Find-SpotAt $lakeId $x $y
+    $sp = Find-SpotAt $lakeId $x $y $txtCatchClip.Text $txtCatchDir.Text
     if ($sp) {
         $lblCatchSpot.Text = (T "spotExisting") + ": " + (Get-SpotLabel $sp)
         if (-not "$($txtCatchSpotName.Text)".Trim()) { $txtCatchSpotName.Text = "$($sp.name)" }
@@ -1776,20 +1803,24 @@ function Resolve-CatchSpot($f) {
     if ($null -eq $f.x -or $null -eq $f.y -or "$($f.x)" -eq "" -or "$($f.y)" -eq "") { return "" }
     $lake = $script:lakeById[$f.lake]
     if (-not $lake -or -not $lake.bounds) { return "" }
-    $sp = Find-SpotAt $f.lake $f.x $f.y
+    $sp = Find-SpotAt $f.lake $f.x $f.y "$($f.clip)" "$($f.dir)"
     if ($sp) {
         if ($f.spotName -and -not $sp.name) { $sp.name = $f.spotName }
-        foreach ($pair in @(@("dist", $f.clip), @("depth", $f.depth), @("temp", $f.temp), @("fish", $f.fish), @("bait", $f.bait), @("tech", $f.tech))) {
+        foreach ($pair in @(@("dist", $f.clip), @("depth", $f.depth), @("temp", $f.temp), @("fish", $f.fish), @("bait", $f.bait), @("tech", $f.tech), @("dir", $f.dir))) {
             if ("$($pair[1])" -ne "" -and "$($sp.($pair[0]))" -eq "") { $sp | Add-Member -NotePropertyName $pair[0] -NotePropertyValue "$($pair[1])" -Force }
         }
         return $sp.id
     }
     $n = From-Game $lake ([double]$f.x) ([double]$f.y)
+    $autoName = "$($f.spotName)"
+    if (-not $autoName -and (Find-SpotAt $f.lake $f.x $f.y -AnyCast)) {
+        $autoName = (@($(if (Get-ClipNum "$($f.clip)") { (Get-ClipNum "$($f.clip)") + " m" } else { "" }), "$($f.dir)".Trim()) | Where-Object { $_ }) -join " "
+    }
     $tech = "$($f.tech)"
     if (-not $tech -and ($f.bait2 -or $f.dip -or $f.pva)) { $tech = "bottom" }
     $sp = [pscustomobject]@{
-        id = (New-Id); lake = $f.lake; name = "$($f.spotName)"; fish = $f.fish; bait = $f.bait; bait2 = "$($f.bait2)"; dip = "$($f.dip)"
-        groundbait = ""; pva = "$($f.pva)"; tech = $tech; depth = "$($f.depth)"; dist = "$($f.clip)"; temp = "$($f.temp)"; notes = ""; nx = [double]$n.NX; ny = [double]$n.NY
+        id = (New-Id); lake = $f.lake; name = $autoName; fish = $f.fish; bait = $f.bait; bait2 = "$($f.bait2)"; dip = "$($f.dip)"
+        groundbait = ""; pva = "$($f.pva)"; tech = $tech; depth = "$($f.depth)"; dist = "$($f.clip)"; temp = "$($f.temp)"; dir = "$($f.dir)"; notes = ""; nx = [double]$n.NX; ny = [double]$n.NY
     }
     $script:spots.Add($sp) | Out-Null
     return $sp.id
@@ -5069,6 +5100,7 @@ function Show-SpotEdit([string]$id) {
     $txtSeDepth.Text = "$($sp.depth)"
     Set-Choices $cmbSeTemp (Get-TempChoices)
     Set-ComboKey $cmbSeTemp "$($sp.temp)"
+    $txtSeDir.Text = "$($sp.dir)"
     $txtSeNotes.Text = "$($sp.notes)"
     $txtSeHint.Visibility = "Collapsed"
     $svSpotEdit.Visibility = "Visible"
@@ -5386,6 +5418,7 @@ $btnSpotSave.Add_Click({
     $s.bait = Get-ComboKey $cmbSpotBait
     $s.tech = Get-ComboKey $cmbSpotTech
     $s | Add-Member -NotePropertyName temp -NotePropertyValue (Get-ComboKey $cmbSpotTemp) -Force
+    $s | Add-Member -NotePropertyName dir -NotePropertyValue $txtSpotDir.Text.Trim() -Force
     $s.depth = $txtSpotDepth.Text.Trim()
     $s.dist = $txtSpotDist.Text.Trim()
     $s.notes = $txtSpotNotes.Text.Trim()
@@ -5473,7 +5506,7 @@ $btnSeSave.Add_Click({
         name = $txtSeName.Text.Trim(); tech = (Get-ComboKey $cmbSeTech); fish = (Get-ComboKey $cmbSeFish)
         bait = (Get-ComboKey $cmbSeBait); bait2 = (Get-ComboKey $cmbSeBait2); dip = (Get-ComboKey $cmbSeDip)
         groundbait = (Get-RecipeFieldValue $cmbSeGround); pva = (Get-RecipeFieldValue $cmbSePva)
-        dist = $txtSeDist.Text.Trim(); depth = $txtSeDepth.Text.Trim(); notes = $txtSeNotes.Text.Trim(); temp = (Get-ComboKey $cmbSeTemp)
+        dist = $txtSeDist.Text.Trim(); depth = $txtSeDepth.Text.Trim(); notes = $txtSeNotes.Text.Trim(); temp = (Get-ComboKey $cmbSeTemp); dir = $txtSeDir.Text.Trim()
     }
     foreach ($k in $vals.Keys) { $sp | Add-Member -NotePropertyName $k -NotePropertyValue $vals[$k] -Force }
     Save-User
@@ -5548,7 +5581,7 @@ function Read-CatchForm {
         bait = (Get-ComboKey $cmbCatchBait); bait2 = (Get-ComboKey $cmbCatchBait2); dip = (Get-ComboKey $cmbCatchDip); pva = $pva
         x = $(if ($null -ne $x) { [int][math]::Round($x) } else { $null }); y = $(if ($null -ne $y) { [int][math]::Round($y) } else { $null })
         spotName = "$($txtCatchSpotName.Text)".Trim(); clip = "$($txtCatchClip.Text)".Trim(); depth = "$($txtCatchDepth.Text)".Trim()
-        spotId = ""; notes = $txtCatchNotes.Text.Trim(); temp = (Get-ComboKey $cmbCatchTemp); tech = (Get-ComboKey $cmbCatchTech)
+        spotId = ""; notes = $txtCatchNotes.Text.Trim(); temp = (Get-ComboKey $cmbCatchTemp); tech = (Get-ComboKey $cmbCatchTech); dir = $txtCatchDir.Text.Trim()
     }
     $f
 }
@@ -5573,6 +5606,7 @@ function Fill-CatchForm($o) {
     $txtCatchSpotName.Text = "$($o.SpotName)"
     $txtCatchClip.Text = "$($o.Clip)"
     $txtCatchDepth.Text = "$($o.Depth)"
+    $txtCatchDir.Text = "$($o.Dir)"
     $txtCatchNotes.Text = "$($o.Notes)"
     $tk = "$($o.Temp)"
     if (-not $tk -and -not $o.Keep) { $tk = $script:trackerTemp }
@@ -5610,7 +5644,7 @@ $dgCatches.Add_SelectionChanged({
     }
     Fill-CatchForm ([pscustomobject]@{
         Date = $dt; Lake = $c.lake; Fish = $c.fish; Weight = $c.weight; Baits = @($c.bait, $c.bait2); Dip = $c.dip; Pva = $c.pva
-        X = $cx; Y = $cy; SpotName = $(if ($sp) { $sp.name } else { "" }); Clip = $c.clip; Depth = $c.depth; Notes = $c.notes; Temp = $c.temp; Tech = $(if ($c.tech) { $c.tech } elseif ($sp) { $sp.tech } else { "" }); Keep = $true
+        X = $cx; Y = $cy; SpotName = $(if ($sp) { $sp.name } else { "" }); Clip = $c.clip; Depth = $c.depth; Notes = $c.notes; Temp = $c.temp; Tech = $(if ($c.tech) { $c.tech } elseif ($sp) { $sp.tech } else { "" }); Dir = "$($c.dir)"; Keep = $true
     })
     $script:formPending = $null
     $script:selCatchId = $c.id
@@ -5657,7 +5691,7 @@ $btnCatchAdd.Add_Click({
     $c = [pscustomobject]@{
         id = (New-Id); date = $f.date; lake = $f.lake; fish = $f.fish; weight = $f.weight
         bait = $f.bait; bait2 = $f.bait2; dip = $f.dip; pva = $f.pva; x = $f.x; y = $f.y; clip = $f.clip; depth = $f.depth
-        spotId = $f.spotId; notes = $f.notes; temp = $f.temp; tech = $f.tech
+        spotId = $f.spotId; notes = $f.notes; temp = $f.temp; tech = $f.tech; dir = $f.dir
     }
     $fish = $f.fish
     $w = $f.weight
@@ -5706,6 +5740,8 @@ $txtCatchSearch.Add_TextChanged({ Refresh-Catches })
 $chkCatchGroup.Add_Click({ Refresh-Catches })
 $txtCatchX.Add_TextChanged({ Update-CatchSpotInfo })
 $txtCatchY.Add_TextChanged({ Update-CatchSpotInfo })
+$txtCatchClip.Add_TextChanged({ Update-CatchSpotInfo })
+$txtCatchDir.Add_TextChanged({ Update-CatchSpotInfo })
 
 $lstLakes.Add_SelectionChanged({ Show-Lake })
 
@@ -6025,7 +6061,7 @@ function Build-TrackerCatch($p, $shared, [bool]$override) {
     $b = @($p.Baits)
     $f = [pscustomobject]@{
         lake = $p.Lake; fish = $p.Fish; weight = $p.Weight; x = $p.X; y = $p.Y; spotName = ""; bait = $(if ($b.Count -ge 1) { $b[0] } else { "" })
-        bait2 = $(if ($b.Count -ge 2) { $b[1] } else { "" }); dip = $p.Dip; pva = $p.Pva; clip = ""; depth = ""; notes = "Tracker"; temp = "$($p.Temp)"; tech = "$($p.Tech)"
+        bait2 = $(if ($b.Count -ge 2) { $b[1] } else { "" }); dip = $p.Dip; pva = $p.Pva; clip = ""; depth = ""; notes = "Tracker"; temp = "$($p.Temp)"; tech = "$($p.Tech)"; dir = ""
     }
     if ($shared) {
         foreach ($prop in $shared.PSObject.Properties) {
@@ -6048,7 +6084,7 @@ function Accept-TrackerItems($refs, $shared = $null, [bool]$override = $true) {
         $c = [pscustomobject]@{
             id = (New-Id); date = $p.Time.ToString("yyyy-MM-dd"); lake = $f.lake; fish = $p.Fish; weight = $p.Weight
             bait = $f.bait; bait2 = $f.bait2
-            dip = $f.dip; pva = $f.pva; rig = $p.Rig; x = $f.x; y = $f.y; clip = $f.clip; depth = $f.depth; spotId = $sid; notes = $f.notes; temp = $f.temp; tech = $f.tech
+            dip = $f.dip; pva = $f.pva; rig = $p.Rig; x = $f.x; y = $f.y; clip = $f.clip; depth = $f.depth; spotId = $sid; notes = $f.notes; temp = $f.temp; tech = $f.tech; dir = $f.dir
         }
         $script:catches.Add($c) | Out-Null
         $script:trackerPending.Remove($p)
@@ -6058,11 +6094,10 @@ function Accept-TrackerItems($refs, $shared = $null, [bool]$override = $true) {
 
 $btnTrackerNewSpot.Add_Click({
     Start-TrackerSession
-    $script:trackerPos = $null
     if (-not $script:selCatchId -and -not $script:formPending -and -not $script:formGroup) {
-        $txtCatchX.Text = ""
-        $txtCatchY.Text = ""
         $txtCatchSpotName.Text = ""
+        $txtCatchClip.Text = ""
+        $txtCatchDir.Text = ""
     }
     Update-TrackerUi
     Set-Status (T "newSpotStarted")
@@ -6123,7 +6158,7 @@ $lstTrackerPending.Add_SelectionChanged({
     Set-GroupFormMode $false 0
     Fill-CatchForm ([pscustomobject]@{
         Date = $p.Time; Lake = $p.Lake; Fish = $p.Fish; Weight = $p.Weight; Baits = @($p.Baits); Dip = $p.Dip; Pva = $p.Pva
-        X = $p.X; Y = $p.Y; SpotName = ""; Clip = $txtCatchClip.Text; Depth = $txtCatchDepth.Text; Notes = "Tracker"; Temp = $p.Temp; Tech = $p.Tech
+        X = $p.X; Y = $p.Y; SpotName = ""; Clip = $txtCatchClip.Text; Depth = $txtCatchDepth.Text; Notes = "Tracker"; Temp = $p.Temp; Tech = $p.Tech; Dir = $txtCatchDir.Text
     })
     if ($g.Count -gt 1) {
         $script:formPending = $null
@@ -6144,7 +6179,7 @@ function Read-SharedForm {
         lake = (Get-ComboKey $cmbCatchLake); bait = (Get-ComboKey $cmbCatchBait); bait2 = (Get-ComboKey $cmbCatchBait2); dip = (Get-ComboKey $cmbCatchDip); pva = $pva
         x = $(if ($null -ne $x) { [int][math]::Round($x) } else { $null }); y = $(if ($null -ne $y) { [int][math]::Round($y) } else { $null })
         spotName = "$($txtCatchSpotName.Text)".Trim(); clip = "$($txtCatchClip.Text)".Trim(); depth = "$($txtCatchDepth.Text)".Trim(); notes = $txtCatchNotes.Text.Trim()
-        temp = (Get-ComboKey $cmbCatchTemp); tech = (Get-ComboKey $cmbCatchTech)
+        temp = (Get-ComboKey $cmbCatchTemp); tech = (Get-ComboKey $cmbCatchTech); dir = $txtCatchDir.Text.Trim()
     }
 }
 
