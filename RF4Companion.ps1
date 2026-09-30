@@ -287,10 +287,20 @@ function Get-TempChoices {
     $list
 }
 
+$script:lakeLevelOrder = @("mosquito_lake", "elk_lake", "winding_rivulet", "old_burg_lake", "belaya_river", "kuori_lake", "bear_lake", "volkhov_river", "seversky_donets_river", "sura_river", "ladoga_lake", "the_amber_lake", "ladoga_archipelago", "akhtuba_river", "copper_lake", "lower_tunguska_river", "yama_river", "norwegian_sea")
+
+function Get-LakeRank([string]$id) {
+    $i = [array]::IndexOf($script:lakeLevelOrder, $id)
+    if ($i -ge 0) { return $i }
+    $l = $script:lakeById[$id]
+    if ($l) { return 100 + [int]$l.order }
+    return 999
+}
+
 function Get-LakeChoices([switch]$MapsOnly, [switch]$WithAll) {
     $list = @()
     if ($WithAll) { $list += New-Choice "" (T "all") }
-    $sorted = @($game.lakes | Sort-Object @{ Expression = { [int]$_.order } })
+    $sorted = @($game.lakes | Sort-Object @{ Expression = { Get-LakeRank $_.id } })
     foreach ($l in $sorted) {
         if ($MapsOnly -and -not ($l.mapKey -and $l.bounds)) { continue }
         $list += New-Choice $l.id $l.name.($script:lang)
@@ -815,7 +825,7 @@ function Format-Coords($lake, $nx, $ny) {
                                         <Style TargetType="TextBlock"><Setter Property="Foreground" Value="#FFE0B040"/><Setter Property="FontSize" Value="15"/></Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" Width="150"/>
+                                <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" SortMemberPath="LakeSort" Width="150"/>
                                 <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*"/>
                                 <DataGridTextColumn Header="t:player" Binding="{Binding Player}" Width="120"/>
                                 <DataGridTextColumn Header="t:date" Binding="{Binding Date}" Width="75"/>
@@ -985,7 +995,7 @@ function Format-Coords($lake, $nx, $ny) {
                         <DataGrid x:Name="dgCatches" Grid.Row="3">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="t:date" Binding="{Binding Date}" SortMemberPath="DateSort" Width="95"/>
-                                <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" Width="150"/>
+                                <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" SortMemberPath="LakeSort" Width="150"/>
                                 <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}" Width="240"/>
                                 <DataGridTextColumn Header="t:weight" Binding="{Binding Weight}" SortMemberPath="WeightSort" Width="95"/>
                                 <DataGridTextColumn Header="t:trophy" Binding="{Binding Mark}" Width="80">
@@ -1045,7 +1055,7 @@ function Format-Coords($lake, $nx, $ny) {
                     </Grid.ColumnDefinitions>
                     <DataGrid x:Name="dgSpots" Grid.Column="0" Margin="0,0,14,0">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" Width="170"/>
+                            <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" SortMemberPath="LakeSort" Width="170"/>
                             <DataGridTextColumn Header="t:spotName" Binding="{Binding Name}" Width="170"/>
                             <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}" Width="150"/>
                             <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="150"/>
@@ -1901,7 +1911,7 @@ function Refresh-SpotsGrid {
         $baitText = (@($s.bait, $s.bait2) | Where-Object { $_ } | ForEach-Object { N $_ }) -join " + "
         if ($s.dip) { $baitText = "{0}  ({1}: {2})" -f $baitText, (T "dipL"), (N $s.dip) }
         $row = [pscustomobject]@{
-            Id = $s.id; Lake = (Get-LakeName $s.lake); Name = "$($s.name)"; Fish = (N $s.fish); Bait = $baitText
+            Id = $s.id; Lake = (Get-LakeName $s.lake); LakeSort = (Get-LakeRank $s.lake); Name = "$($s.name)"; Fish = (N $s.fish); Bait = $baitText
             Tech = $tech; Shared = $(if ($s.share) { [string][char]0x2713 } else { "" }); Coords = (Format-Coords $lake $s.nx $s.ny); Depth = (((@("$($s.dist)".Trim(), "$($s.depth)".Trim()) -join " / ").TrimEnd(" /")) + $(if ("$($s.dir)".Trim()) { "  " + "$($s.dir)".Trim() } else { "" })); Notes = "$($s.notes)"
         }
         if ($q -and -not $cq) {
@@ -1910,7 +1920,7 @@ function Refresh-SpotsGrid {
         }
         $rows += $row
     }
-    $dgSpots.ItemsSource = @($rows | Sort-Object Lake, Name)
+    $dgSpots.ItemsSource = @($rows | Sort-Object LakeSort, Name)
 }
 
 function Get-ClipNum([string]$t) {
@@ -2083,7 +2093,7 @@ function Refresh-Catches {
             }
         } elseif ($null -ne $c.x -and "$($c.x)" -ne "") { $spotName = "{0}:{1}" -f $c.x, $c.y }
         $row = [pscustomobject]@{
-            Id = $c.id; Date = (Format-Date $c.date); DateSort = "$($c.date)"; Lake = (Get-LakeName $c.lake); Fish = (N $c.fish)
+            Id = $c.id; Date = (Format-Date $c.date); DateSort = "$($c.date)"; Lake = (Get-LakeName $c.lake); LakeSort = (Get-LakeRank $c.lake); Fish = (N $c.fish)
             Weight = (Format-Weight $c.weight); WeightSort = [int]$c.weight; Mark = (Get-TrophyMark $c.fish $c.weight)
             Bait = ((@($c.bait, $c.bait2) | Where-Object { $_ } | ForEach-Object { N $_ }) -join " + ") + $(if ($c.dip) { "  (" + (T "dipL") + ": " + (N $c.dip) + ")" } else { "" }); Spot = $spotName; Notes = "$($c.notes)"
         }
@@ -2102,7 +2112,7 @@ function Refresh-Catches {
             $stars = @($g | Where-Object { $_.Mark }).Count
             $baitTop = @($g | Where-Object { $_.Bait } | Group-Object Bait | Sort-Object Count -Descending | Select-Object -First 1)
             $grows += [pscustomobject]@{
-                Id = "g|" + $grp.Name; Ids = @($g | ForEach-Object { $_.Id }); Date = $g[0].Date; DateSort = $g[0].DateSort; Lake = $g[0].Lake
+                Id = "g|" + $grp.Name; Ids = @($g | ForEach-Object { $_.Id }); Date = $g[0].Date; DateSort = $g[0].DateSort; Lake = $g[0].Lake; LakeSort = $g[0].LakeSort
                 Fish = ("{0} {1}: " -f $g.Count, (T "fishCount")) + ((@($g | Group-Object Fish | Sort-Object Count -Descending | ForEach-Object { "{0}× {1}" -f $_.Count, $_.Name })) -join ", ")
                 Weight = (Format-Weight $tot); WeightSort = [int]$tot; Mark = $(if ($stars -gt 0) { "★ " + $stars } else { "" })
                 Bait = $(if ($baitTop.Count -gt 0) { $baitTop[0].Name } else { "" }); Spot = $g[0].Spot; Notes = ""
@@ -3635,7 +3645,7 @@ function Refresh-Weekly {
         $rows.Add([pscustomobject]@{
             Fish = $fishL; Weight = (Format-Weight $r.weight); WeightSort = [int]$r.weight
             Mark = (Get-TrophyMark $r.fish $r.weight); Lake = $lakeL; Bait = $baitL; Player = $r.player; Date = $r.date
-            LakeId = $r.lake; FishKey = $r.fish
+            LakeId = $r.lake; LakeSort = (Get-LakeRank $r.lake); FishKey = $r.fish
         }) | Out-Null
     }
     $dgWeek.ItemsSource = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WeightSort"; Descending = $true })
@@ -5199,7 +5209,7 @@ function Get-SpotsGridCommunityRows([string]$lf, [string]$q) {
         $sum = Get-ClusterSummary $cl
         $meth = (@($sum.Methods) | ForEach-Object { Format-Method $_.Key }) -join ", "
         $row = [pscustomobject]@{
-            Id = ("c|{0}|{1}|{2}" -f $cl.Lake, $cl.X, $cl.Y); Lake = (Get-LakeName $cl.Lake)
+            Id = ("c|{0}|{1}|{2}" -f $cl.Lake, $cl.X, $cl.Y); Lake = (Get-LakeName $cl.Lake); LakeSort = (Get-LakeRank $cl.Lake)
             Name = ("{0} {1}" -f $cl.Reports.Count, (T "reports")); Count = $cl.Reports.Count
             Fish = (Format-TopCounts $sum.Fish 3); Bait = (Format-TopCounts $sum.Bait 3); Tech = $meth
             Coords = ("{0}:{1}" -f $cl.X, $cl.Y); Depth = (@($sum.Clips | Select-Object -First 2 | ForEach-Object { "{0} m" -f $_.Key }) -join ";  ")
