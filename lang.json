@@ -296,7 +296,11 @@
   "imgViaSource": "Bilder dieser Quelle nur über „Quelle öffnen“",
   "dirFromImages": "aus Bildern erkannt",
   "scanProgress": "Bildauswertung: noch {0} Meldungen",
-  "dirFromHistory": "aus älteren Meldungen an dieser Stelle"
+  "dirFromHistory": "aus älteren Meldungen an dieser Stelle",
+  "onWater": "Liegt auf dem Wasser: Boot oder Tippfehler",
+  "maybeMeant": "vielleicht gemeint: {0}",
+  "coordFixed": "Koordinate korrigiert: {0} → {1}",
+  "hiddenImplausible": "{0} unplausible Positionen ausgeblendet"
  },
  "en": {
   "langName": "English",
@@ -595,7 +599,11 @@
   "imgViaSource": "Images from this source only via “Open source”",
   "dirFromImages": "detected from images",
   "scanProgress": "Image analysis: {0} reports left",
-  "dirFromHistory": "from older reports at this spot"
+  "dirFromHistory": "from older reports at this spot",
+  "onWater": "On the water: boat or typo",
+  "maybeMeant": "maybe meant: {0}",
+  "coordFixed": "Coordinates corrected: {0} → {1}",
+  "hiddenImplausible": "{0} implausible positions hidden"
  },
  "ru": {
   "langName": "Русский",
@@ -891,7 +899,11 @@
   "imgViaSource": "Изображения этого источника только через «Открыть источник»",
   "dirFromImages": "определено по изображениям",
   "scanProgress": "Анализ изображений: осталось {0} сообщений",
-  "dirFromHistory": "по более ранним сообщениям с этого места"
+  "dirFromHistory": "по более ранним сообщениям с этого места",
+  "onWater": "На воде: лодка или опечатка",
+  "maybeMeant": "возможно: {0}",
+  "coordFixed": "Координаты исправлены: {0} → {1}",
+  "hiddenImplausible": "скрыто неправдоподобных позиций: {0}"
  },
  "fr": {
   "langName": "Français",
@@ -1187,7 +1199,11 @@
   "imgViaSource": "Images de cette source uniquement via « Ouvrir la source »",
   "dirFromImages": "détecté sur les images",
   "scanProgress": "Analyse des images : encore {0} signalements",
-  "dirFromHistory": "d'après des signalements plus anciens à cet endroit"
+  "dirFromHistory": "d'après des signalements plus anciens à cet endroit",
+  "onWater": "Sur l'eau : bateau ou faute de frappe",
+  "maybeMeant": "peut-être : {0}",
+  "coordFixed": "Coordonnées corrigées : {0} → {1}",
+  "hiddenImplausible": "{0} positions invraisemblables masquées"
  },
  "es": {
   "langName": "Español",
@@ -1483,7 +1499,11 @@
   "imgViaSource": "Imágenes de esta fuente solo mediante «Abrir fuente»",
   "dirFromImages": "detectado en las imágenes",
   "scanProgress": "Análisis de imágenes: quedan {0} reportes",
-  "dirFromHistory": "según reportes anteriores en este lugar"
+  "dirFromHistory": "según reportes anteriores en este lugar",
+  "onWater": "En el agua: barco o error tipográfico",
+  "maybeMeant": "quizá: {0}",
+  "coordFixed": "Coordenadas corregidas: {0} → {1}",
+  "hiddenImplausible": "{0} posiciones inverosímiles ocultas"
  },
  "it": {
   "langName": "Italiano",
@@ -1779,7 +1799,11 @@
   "imgViaSource": "Immagini di questa fonte solo tramite «Apri fonte»",
   "dirFromImages": "rilevato dalle immagini",
   "scanProgress": "Analisi immagini: ancora {0} segnalazioni",
-  "dirFromHistory": "da segnalazioni precedenti in questo punto"
+  "dirFromHistory": "da segnalazioni precedenti in questo punto",
+  "onWater": "Sull'acqua: barca o errore di battitura",
+  "maybeMeant": "forse: {0}",
+  "coordFixed": "Coordinate corrette: {0} → {1}",
+  "hiddenImplausible": "{0} posizioni non plausibili nascoste"
  },
  "pl": {
   "langName": "Polski",
@@ -2075,7 +2099,11 @@
   "imgViaSource": "Zdjęcia z tego źródła tylko przez „Otwórz źródło”",
   "dirFromImages": "wykryto na zdjęciach",
   "scanProgress": "Analiza zdjęć: pozostało {0} zgłoszeń",
-  "dirFromHistory": "ze starszych zgłoszeń z tego miejsca"
+  "dirFromHistory": "ze starszych zgłoszeń z tego miejsca",
+  "onWater": "Na wodzie: łódź lub literówka",
+  "maybeMeant": "może chodziło o: {0}",
+  "coordFixed": "Poprawiono współrzędne: {0} → {1}",
+  "hiddenImplausible": "ukryto nieprawdopodobne pozycje: {0}"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2371,7 +2399,11 @@
   "imgViaSource": "Imagens desta fonte apenas via “Abrir fonte”",
   "dirFromImages": "detectado nas imagens",
   "scanProgress": "Análise de imagens: faltam {0} relatos",
-  "dirFromHistory": "de relatos anteriores neste local"
+  "dirFromHistory": "de relatos anteriores neste local",
+  "onWater": "Na água: barco ou erro de digitação",
+  "maybeMeant": "talvez: {0}",
+  "coordFixed": "Coordenadas corrigidas: {0} → {1}",
+  "hiddenImplausible": "{0} posições implausíveis ocultas"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2667,7 +2699,11 @@
   "imgViaSource": "Afbeeldingen van deze bron alleen via “Bron openen”",
   "dirFromImages": "herkend uit afbeeldingen",
   "scanProgress": "Beeldanalyse: nog {0} meldingen",
-  "dirFromHistory": "uit oudere meldingen op deze plek"
+  "dirFromHistory": "uit oudere meldingen op deze plek",
+  "onWater": "Op het water: boot of typfout",
+  "maybeMeant": "misschien bedoeld: {0}",
+  "coordFixed": "Coördinaten gecorrigeerd: {0} → {1}",
+  "hiddenImplausible": "{0} onwaarschijnlijke posities verborgen"
  },
  "tr": {
   "langName": "Türkçe",
@@ -2963,7 +2999,11 @@
   "imgViaSource": "Bu kaynağın resimleri yalnızca “Kaynağı aç” ile",
   "dirFromImages": "resimlerden algılandı",
   "scanProgress": "Resim analizi: {0} bildirim kaldı",
-  "dirFromHistory": "bu noktadaki eski bildirimlerden"
+  "dirFromHistory": "bu noktadaki eski bildirimlerden",
+  "onWater": "Suyun üstünde: tekne veya yazım hatası",
+  "maybeMeant": "belki: {0}",
+  "coordFixed": "Koordinat düzeltildi: {0} → {1}",
+  "hiddenImplausible": "{0} mantıksız konum gizlendi"
  },
  "ro": {
   "langName": "Română",
@@ -3259,7 +3299,11 @@
   "imgViaSource": "Imaginile acestei surse doar prin „Deschide sursa”",
   "dirFromImages": "detectat din imagini",
   "scanProgress": "Analiza imaginilor: mai sunt {0} rapoarte",
-  "dirFromHistory": "din rapoarte mai vechi din acest loc"
+  "dirFromHistory": "din rapoarte mai vechi din acest loc",
+  "onWater": "Pe apă: barcă sau greșeală de tastare",
+  "maybeMeant": "poate: {0}",
+  "coordFixed": "Coordonate corectate: {0} → {1}",
+  "hiddenImplausible": "{0} poziții neplauzibile ascunse"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3555,7 +3599,11 @@
   "imgViaSource": "Gambar dari sumber ini hanya lewat “Buka sumber”",
   "dirFromImages": "terdeteksi dari gambar",
   "scanProgress": "Analisis gambar: {0} laporan tersisa",
-  "dirFromHistory": "dari laporan lama di lokasi ini"
+  "dirFromHistory": "dari laporan lama di lokasi ini",
+  "onWater": "Di atas air: perahu atau salah ketik",
+  "maybeMeant": "mungkin maksudnya: {0}",
+  "coordFixed": "Koordinat dikoreksi: {0} → {1}",
+  "hiddenImplausible": "{0} posisi tidak masuk akal disembunyikan"
  },
  "ja": {
   "langName": "日本語",
@@ -3851,7 +3899,11 @@
   "imgViaSource": "このソースの画像は「ソースを開く」からのみ",
   "dirFromImages": "画像から検出",
   "scanProgress": "画像解析: 残り {0} 件",
-  "dirFromHistory": "この場所の過去のレポートから"
+  "dirFromHistory": "この場所の過去のレポートから",
+  "onWater": "水上: ボートまたは入力ミス",
+  "maybeMeant": "もしかして: {0}",
+  "coordFixed": "座標を修正: {0} → {1}",
+  "hiddenImplausible": "不自然な位置 {0} 件を非表示"
  },
  "ko": {
   "langName": "한국어",
@@ -4147,7 +4199,11 @@
   "imgViaSource": "이 출처의 이미지는 '출처 열기'로만 볼 수 있습니다",
   "dirFromImages": "이미지에서 감지됨",
   "scanProgress": "이미지 분석: {0}개 남음",
-  "dirFromHistory": "이 위치의 이전 보고에서"
+  "dirFromHistory": "이 위치의 이전 보고에서",
+  "onWater": "물 위: 보트 또는 오타",
+  "maybeMeant": "혹시: {0}",
+  "coordFixed": "좌표 수정: {0} → {1}",
+  "hiddenImplausible": "비정상 위치 {0}개 숨김"
  },
  "zh": {
   "langName": "简体中文",
@@ -4443,7 +4499,11 @@
   "imgViaSource": "此来源的图片只能通过“打开来源”查看",
   "dirFromImages": "从图片识别",
   "scanProgress": "图片分析：剩余 {0} 条报告",
-  "dirFromHistory": "来自此处较早的报告"
+  "dirFromHistory": "来自此处较早的报告",
+  "onWater": "在水面上：船或输入错误",
+  "maybeMeant": "可能是：{0}",
+  "coordFixed": "坐标已修正：{0} → {1}",
+  "hiddenImplausible": "已隐藏 {0} 个不合理位置"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4739,6 +4799,10 @@
   "imgViaSource": "此來源的圖片只能透過「開啟來源」查看",
   "dirFromImages": "從圖片辨識",
   "scanProgress": "圖片分析：剩餘 {0} 則報告",
-  "dirFromHistory": "來自此處較早的報告"
+  "dirFromHistory": "來自此處較早的報告",
+  "onWater": "在水面上：船或輸入錯誤",
+  "maybeMeant": "可能是：{0}",
+  "coordFixed": "座標已修正：{0} → {1}",
+  "hiddenImplausible": "已隱藏 {0} 個不合理位置"
  }
 }
