@@ -14,7 +14,9 @@ RF4 Companion is a free Windows tool that runs next to the game. It combines the
 * **Preferences:** a fish by flavour table built from the weekly records of all regions, filterable by the first 6, 12, 24 or 48 hours after the weekly reset.
 * **Weekly records:** all three official weekly tables (records, light, bottom light) for all regions, updated automatically.
 * **Map:** all waterbodies with your own spots, community spots filtered by fish and period, a ruler and coordinate search. Double click a fish anywhere in the app to see it on the map.
-* **Catch log with screenshot tracker:** press F12 in the game as usual. The app reads setup, catch screen, keepnet, fish market, map and recipe screenshots and suggests catches with fish, weight, bait, dip, PVA, position and water temperature.
+* **Cast direction and spot photos:** the cast direction is read from the screenshots in community posts (the green marker on the game map and the minimap) and drawn as an arrow. Every community spot shows the best photo of the spot, and the images of Telegram posts appear right in the app.
+* **Plausibility check:** community positions are checked against the map. Broken coordinates are hidden, confirmed digit swaps are corrected, and spots on the water are marked as "boat or typo".
+* **Catch log with screenshot tracker:** press F12 in the game as usual. The app reads setup, catch screen, keepnet, fish market, map and recipe screenshots and suggests catches with fish, weight, bait, dip, PVA, position, water temperature and cast direction.
 * **Reference:** waterbodies, trophy weights and your own groundbait and PVA recipes.
 * **16 languages**, the same as the game.
 
@@ -40,7 +42,7 @@ To run it from this repository instead: start `Start RF4 Companion.vbs`. `Build-
 
 ## Privacy
 
-Everything you enter stays on your PC in `%APPDATA%\RF4Companion`. No account, no tracking, no telemetry. The tracker only reads the RF4 screenshot folder. The app downloads public data only: the anonymised weekly records archive ([rf4-companion-data](https://github.com/Nalathan01/rf4-companion-data)) and public community reports.
+Everything you enter stays on your PC in `%APPDATA%\RF4Companion`. No account, no tracking, no telemetry. The tracker only reads the RF4 screenshot folder. The app downloads public data only: the anonymised weekly records archive ([rf4-companion-data](https://github.com/Nalathan01/rf4-companion-data)) public community reports and the images of public Telegram posts.
 
 ## Data sources and credits
 
@@ -57,6 +59,6 @@ RF4 Companion is an unofficial fan tool. It is not affiliated with, endorsed by 
 
 ## Deutsch
 
-RF4 Companion ist ein kostenloses Windows-Tool, das neben Russian Fishing 4 läuft. Es verbindet die offiziellen Wochenrekorde, Community-Spots und deine eigenen Fänge und sagt dir in Klartext, wo und womit es sich gerade lohnt: Zielfisch mit Spots und Ködern, Vorlieben nach Aroma, Wochenrekorde aller Regionen, Karte mit Spots und ein Fangbuch, das deine F12-Screenshots automatisch ausliest.
+RF4 Companion ist ein kostenloses Windows-Tool, das neben Russian Fishing 4 läuft. Es verbindet die offiziellen Wochenrekorde, Community-Spots und deine eigenen Fänge und sagt dir in Klartext, wo und womit es sich gerade lohnt: Zielfisch mit Spots und Ködern, Vorlieben nach Aroma, Wochenrekorde aller Regionen, Karte mit Spots, Wurfrichtung und Spotbildern und ein Fangbuch, das deine F12-Screenshots automatisch ausliest.
 
 Download und Installation über [itch.io](https://nalathan.itch.io/rf4-companion): Zip entpacken, `Setup.cmd` starten. Alle Daten bleiben auf deinem PC. Inoffizielles Fan-Tool ohne Verbindung zu Fishsoft.
