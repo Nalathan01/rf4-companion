@@ -300,7 +300,9 @@
   "onWater": "Liegt auf dem Wasser: Boot oder Tippfehler",
   "maybeMeant": "vielleicht gemeint: {0}",
   "coordFixed": "Koordinate korrigiert: {0} → {1}",
-  "hiddenImplausible": "{0} unplausible Positionen ausgeblendet"
+  "hiddenImplausible": "{0} unplausible Positionen ausgeblendet",
+  "imgFromSource": "Bild: {0}, Klick öffnet den Originalpost",
+  "imgsFromSource": "Bilder: {0}, Klick auf ein Bild öffnet den Originalpost"
  },
  "en": {
   "langName": "English",
@@ -603,7 +605,9 @@
   "onWater": "On the water: boat or typo",
   "maybeMeant": "maybe meant: {0}",
   "coordFixed": "Coordinates corrected: {0} → {1}",
-  "hiddenImplausible": "{0} implausible positions hidden"
+  "hiddenImplausible": "{0} implausible positions hidden",
+  "imgFromSource": "Image: {0}, click opens the original post",
+  "imgsFromSource": "Images: {0}, click an image to open the original post"
  },
  "ru": {
   "langName": "Русский",
@@ -903,7 +907,9 @@
   "onWater": "На воде: лодка или опечатка",
   "maybeMeant": "возможно: {0}",
   "coordFixed": "Координаты исправлены: {0} → {1}",
-  "hiddenImplausible": "скрыто неправдоподобных позиций: {0}"
+  "hiddenImplausible": "скрыто неправдоподобных позиций: {0}",
+  "imgFromSource": "Изображение: {0}, щелчок открывает оригинальный пост",
+  "imgsFromSource": "Изображения: {0}, щелчок по изображению открывает оригинальный пост"
  },
  "fr": {
   "langName": "Français",
@@ -1203,7 +1209,9 @@
   "onWater": "Sur l'eau : bateau ou faute de frappe",
   "maybeMeant": "peut-être : {0}",
   "coordFixed": "Coordonnées corrigées : {0} → {1}",
-  "hiddenImplausible": "{0} positions invraisemblables masquées"
+  "hiddenImplausible": "{0} positions invraisemblables masquées",
+  "imgFromSource": "Image : {0}, un clic ouvre la publication d'origine",
+  "imgsFromSource": "Images : {0}, cliquer sur une image ouvre la publication d'origine"
  },
  "es": {
   "langName": "Español",
@@ -1503,7 +1511,9 @@
   "onWater": "En el agua: barco o error tipográfico",
   "maybeMeant": "quizá: {0}",
   "coordFixed": "Coordenadas corregidas: {0} → {1}",
-  "hiddenImplausible": "{0} posiciones inverosímiles ocultas"
+  "hiddenImplausible": "{0} posiciones inverosímiles ocultas",
+  "imgFromSource": "Imagen: {0}, clic abre la publicación original",
+  "imgsFromSource": "Imágenes: {0}, clic en una imagen abre la publicación original"
  },
  "it": {
   "langName": "Italiano",
@@ -1803,7 +1813,9 @@
   "onWater": "Sull'acqua: barca o errore di battitura",
   "maybeMeant": "forse: {0}",
   "coordFixed": "Coordinate corrette: {0} → {1}",
-  "hiddenImplausible": "{0} posizioni non plausibili nascoste"
+  "hiddenImplausible": "{0} posizioni non plausibili nascoste",
+  "imgFromSource": "Immagine: {0}, clic apre il post originale",
+  "imgsFromSource": "Immagini: {0}, clic su un'immagine apre il post originale"
  },
  "pl": {
   "langName": "Polski",
@@ -2103,7 +2115,9 @@
   "onWater": "Na wodzie: łódź lub literówka",
   "maybeMeant": "może chodziło o: {0}",
   "coordFixed": "Poprawiono współrzędne: {0} → {1}",
-  "hiddenImplausible": "ukryto nieprawdopodobne pozycje: {0}"
+  "hiddenImplausible": "ukryto nieprawdopodobne pozycje: {0}",
+  "imgFromSource": "Obraz: {0}, kliknięcie otwiera oryginalny post",
+  "imgsFromSource": "Obrazy: {0}, kliknięcie obrazu otwiera oryginalny post"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2403,7 +2417,9 @@
   "onWater": "Na água: barco ou erro de digitação",
   "maybeMeant": "talvez: {0}",
   "coordFixed": "Coordenadas corrigidas: {0} → {1}",
-  "hiddenImplausible": "{0} posições implausíveis ocultas"
+  "hiddenImplausible": "{0} posições implausíveis ocultas",
+  "imgFromSource": "Imagem: {0}, clique abre a publicação original",
+  "imgsFromSource": "Imagens: {0}, clique numa imagem para abrir a publicação original"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2703,7 +2719,9 @@
   "onWater": "Op het water: boot of typfout",
   "maybeMeant": "misschien bedoeld: {0}",
   "coordFixed": "Coördinaten gecorrigeerd: {0} → {1}",
-  "hiddenImplausible": "{0} onwaarschijnlijke posities verborgen"
+  "hiddenImplausible": "{0} onwaarschijnlijke posities verborgen",
+  "imgFromSource": "Afbeelding: {0}, klik opent het originele bericht",
+  "imgsFromSource": "Afbeeldingen: {0}, klik op een afbeelding opent het originele bericht"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3003,7 +3021,9 @@
   "onWater": "Suyun üstünde: tekne veya yazım hatası",
   "maybeMeant": "belki: {0}",
   "coordFixed": "Koordinat düzeltildi: {0} → {1}",
-  "hiddenImplausible": "{0} mantıksız konum gizlendi"
+  "hiddenImplausible": "{0} mantıksız konum gizlendi",
+  "imgFromSource": "Resim: {0}, tıklamak orijinal gönderiyi açar",
+  "imgsFromSource": "Resimler: {0}, bir resme tıklamak orijinal gönderiyi açar"
  },
  "ro": {
   "langName": "Română",
@@ -3303,7 +3323,9 @@
   "onWater": "Pe apă: barcă sau greșeală de tastare",
   "maybeMeant": "poate: {0}",
   "coordFixed": "Coordonate corectate: {0} → {1}",
-  "hiddenImplausible": "{0} poziții neplauzibile ascunse"
+  "hiddenImplausible": "{0} poziții neplauzibile ascunse",
+  "imgFromSource": "Imagine: {0}, clic deschide postarea originală",
+  "imgsFromSource": "Imagini: {0}, clic pe o imagine deschide postarea originală"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3603,7 +3625,9 @@
   "onWater": "Di atas air: perahu atau salah ketik",
   "maybeMeant": "mungkin maksudnya: {0}",
   "coordFixed": "Koordinat dikoreksi: {0} → {1}",
-  "hiddenImplausible": "{0} posisi tidak masuk akal disembunyikan"
+  "hiddenImplausible": "{0} posisi tidak masuk akal disembunyikan",
+  "imgFromSource": "Gambar: {0}, klik membuka postingan asli",
+  "imgsFromSource": "Gambar: {0}, klik gambar untuk membuka postingan asli"
  },
  "ja": {
   "langName": "日本語",
@@ -3903,7 +3927,9 @@
   "onWater": "水上: ボートまたは入力ミス",
   "maybeMeant": "もしかして: {0}",
   "coordFixed": "座標を修正: {0} → {1}",
-  "hiddenImplausible": "不自然な位置 {0} 件を非表示"
+  "hiddenImplausible": "不自然な位置 {0} 件を非表示",
+  "imgFromSource": "画像: {0}、クリックで元の投稿を開きます",
+  "imgsFromSource": "画像: {0}、画像をクリックすると元の投稿を開きます"
  },
  "ko": {
   "langName": "한국어",
@@ -4203,7 +4229,9 @@
   "onWater": "물 위: 보트 또는 오타",
   "maybeMeant": "혹시: {0}",
   "coordFixed": "좌표 수정: {0} → {1}",
-  "hiddenImplausible": "비정상 위치 {0}개 숨김"
+  "hiddenImplausible": "비정상 위치 {0}개 숨김",
+  "imgFromSource": "이미지: {0}, 클릭하면 원본 게시물이 열립니다",
+  "imgsFromSource": "이미지: {0}, 이미지를 클릭하면 원본 게시물이 열립니다"
  },
  "zh": {
   "langName": "简体中文",
@@ -4503,7 +4531,9 @@
   "onWater": "在水面上：船或输入错误",
   "maybeMeant": "可能是：{0}",
   "coordFixed": "坐标已修正：{0} → {1}",
-  "hiddenImplausible": "已隐藏 {0} 个不合理位置"
+  "hiddenImplausible": "已隐藏 {0} 个不合理位置",
+  "imgFromSource": "图片：{0}，点击打开原帖",
+  "imgsFromSource": "图片：{0}，点击图片打开原帖"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4803,6 +4833,8 @@
   "onWater": "在水面上：船或輸入錯誤",
   "maybeMeant": "可能是：{0}",
   "coordFixed": "座標已修正：{0} → {1}",
-  "hiddenImplausible": "已隱藏 {0} 個不合理位置"
+  "hiddenImplausible": "已隱藏 {0} 個不合理位置",
+  "imgFromSource": "圖片：{0}，點擊開啟原帖",
+  "imgsFromSource": "圖片：{0}，點擊圖片開啟原帖"
  }
 }
