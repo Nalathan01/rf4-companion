@@ -1548,6 +1548,8 @@ function Draw-CastArrows {
     if ($script:commSel -and $script:commSel.Lake -eq $lake.id) {
         $n = From-Game $lake $script:commSel.X $script:commSel.Y
         $dirs = Get-ClusterDirs $script:commSel
+        $ownClip = ""
+        if ($dirs.FromHistory) { $oc = @((Get-ClusterSummary $script:commSel).Clips); if ($oc.Count) { $ownClip = [string]$oc[0].Key } }
         $drawn = @()
         foreach ($lbl in @($dirs.Counts.Keys | Sort-Object { $dirs.Counts[$_] } -Descending)) {
             $dg = Get-DirDegrees $lbl
@@ -1556,7 +1558,8 @@ function Draw-CastArrows {
             foreach ($o in $drawn) { $df = [math]::Abs($dg-$o) % 360; if ($df -gt 180) { $df = 360-$df }; if ($df -lt 45) { $near = $true } }
             if ($near) { continue }
             $drawn += $dg
-            Add-CastArrow ([double]$n.NX) ([double]$n.NY) $lbl ([string]$dirs.Clips[$lbl]) "#FF81C784"
+            $ac = $(if ($ownClip) { $ownClip } else { [string]$dirs.Clips[$lbl] })
+            Add-CastArrow ([double]$n.NX) ([double]$n.NY) $lbl $ac "#FF81C784"
             if ($drawn.Count -ge 3) { break }
         }
     }
@@ -4975,15 +4978,21 @@ function Get-ClusterDirs($cl) {
 function Get-DirsOf($reports) {
     $cnt = @{}
     $img = $false
-    $clips = @{}
-    foreach ($r in $reports) {
-        $d = Get-ReportDir $r
+    $cc = @{}
+    foreach ($r0 in $reports) {
+        $d = Get-ReportDir $r0
         if (-not $d) { continue }
+        $r = Get-ReportFull $r0
         $lbl = Format-Dir16 $d.Deg
         $cnt[$lbl] = 1 + [int]$cnt[$lbl]
         if ($d.Img) { $img = $true }
-        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "" -and -not $clips.ContainsKey($lbl)) { $clips[$lbl] = [string]$r["clip"] }
+        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") {
+            if (-not $cc.ContainsKey($lbl)) { $cc[$lbl] = @() }
+            $cc[$lbl] += ("{0:0.#}" -f [double]$r["clip"])
+        }
     }
+    $clips = @{}
+    foreach ($lbl in $cc.Keys) { $clips[$lbl] = [string](@(Get-TopCounts $cc[$lbl] 1)[0].Key) }
     [pscustomobject]@{ Counts = $cnt; FromImages = $img; Clips = $clips; FromHistory = $false }
 }
 
