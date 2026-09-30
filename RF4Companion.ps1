@@ -1329,6 +1329,59 @@ function Format-Coords($lake, $nx, $ny) {
 
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [System.Windows.Markup.XamlReader]::Load($reader)
+$appIcon = Join-Path $root "app.ico"
+if (Test-Path -LiteralPath $appIcon) { try { $window.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create((New-Object System.Uri $appIcon)) } catch { } }
+if (-not ("RF4Comp.TaskbarId" -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+namespace RF4Comp {
+    public static class TaskbarId {
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        struct PropertyKey { public Guid fmtid; public uint pid; public PropertyKey(Guid g, uint p) { fmtid = g; pid = p; } }
+        [StructLayout(LayoutKind.Explicit)]
+        struct PropVariant { [FieldOffset(0)] public ushort vt; [FieldOffset(8)] public IntPtr p; [FieldOffset(16)] public IntPtr pad; }
+        [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        interface IPropertyStore {
+            void GetCount(out uint c);
+            void GetAt(uint i, out PropertyKey k);
+            void GetValue(ref PropertyKey k, out PropVariant v);
+            void SetValue(ref PropertyKey k, ref PropVariant v);
+            void Commit();
+        }
+        [DllImport("shell32.dll")]
+        static extern int SHGetPropertyStoreForWindow(IntPtr hwnd, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out IPropertyStore store);
+        static readonly Guid Fmt = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3");
+        static void Set(IPropertyStore st, uint pid, string val) {
+            var k = new PropertyKey(Fmt, pid);
+            var v = new PropVariant { vt = 31, p = Marshal.StringToCoTaskMemUni(val) };
+            try { st.SetValue(ref k, ref v); } finally { Marshal.FreeCoTaskMem(v.p); }
+        }
+        public static bool Apply(IntPtr hwnd, string appId, string icon, string command, string name) {
+            var iid = new Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
+            IPropertyStore st;
+            if (SHGetPropertyStoreForWindow(hwnd, ref iid, out st) != 0 || st == null) return false;
+            try {
+                Set(st, 2, command);
+                Set(st, 3, icon);
+                Set(st, 4, name);
+                Set(st, 5, appId);
+                st.Commit();
+            } finally { Marshal.ReleaseComObject(st); }
+            return true;
+        }
+    }
+}
+'@
+}
+$window.Add_SourceInitialized({
+    try {
+        $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper $window).Handle
+        $vbs = Get-ChildItem -LiteralPath $root -Filter "*.vbs" | Where-Object { $_.Name -like "Start*" } | Select-Object -First 1
+        $cmd = $(if ($vbs) { "wscript.exe `"" + $vbs.FullName + "`"" } else { "powershell.exe -STA -WindowStyle Hidden -File `"" + (Join-Path $root "RF4Companion.ps1") + "`"" })
+        [RF4Comp.TaskbarId]::Apply($hwnd, "Nalathan.RF4Companion", ($appIcon + ",0"), $cmd, "RF4 Companion") | Out-Null
+    } catch { }
+})
 
 $xaml.SelectNodes("//*[@*[local-name()='Name']]") | ForEach-Object {
     $n = $_.GetAttribute("Name", "http://schemas.microsoft.com/winfx/2006/xaml")
