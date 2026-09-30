@@ -3961,6 +3961,7 @@ namespace RF4Comp {
         public string Url { get; set; }
         public string Detail { get; set; }
         public string ImgUrl { get; set; }
+        public string CrossUrl { get; set; }
         public ObservableCollection<ReportImage> Images { get; private set; }
         public ReportItem() { Images = new ObservableCollection<ReportImage>(); }
         public string ImgState {
@@ -4056,8 +4057,8 @@ namespace RF4Comp {
         static int G(int p) { return (p >> 8) & 255; }
         static int B(int p) { return p & 255; }
 
-        static bool IsBlue(int p) { int r = R(p), g = G(p), b = B(p); return b > 150 && b-r > 100 && g > 60 && g < b-40; }
-        static bool IsRed(int p) { int r = R(p), g = G(p), b = B(p); return r > 150 && r-g > 75 && r-b > 75 && g < 130; }
+        static bool IsBlue(int p) { int r = R(p), g = G(p), b = B(p); return b > 105 && b-r > 70 && g > 30 && g < b-25; }
+        static bool IsRed(int p) { int r = R(p), g = G(p), b = B(p); return r > 100 && r-g > 55 && r-b > 60 && g < 110; }
         static bool IsArrowGreen(int p) { int r = R(p), g = G(p), b = B(p); return g > 150 && g-r > 70 && g-b > 70; }
 
         static List<Comp> Comps(bool[] mask, int w, int h, int minPx, bool keepPx) {
@@ -4163,6 +4164,29 @@ namespace RF4Comp {
             return ((double)grey / tot) * ((double)near / k);
         }
 
+        static bool MinimapInside(int[] px, int w, int h, double cx, double cy, double rad) {
+            int white = 0;
+            int wr = (int)Math.Max(3, rad * 0.2);
+            for (int y = (int)cy-wr; y <= (int)cy + wr; y++) for (int x = (int)cx-wr; x <= (int)cx + wr; x++) {
+                if (x < 0 || y < 0 || x >= w || y >= h) continue;
+                int p = px[y * w + x];
+                if (R(p) > 195 && G(p) > 195 && B(p) > 195) white++;
+            }
+            if (white < 3) return false;
+            int paper = 0, tot = 0;
+            for (int a = 0; a < 360; a += 10) {
+                double t = a * Math.PI / 180;
+                foreach (double f in new double[] { 0.5, 0.65 }) {
+                    int x = (int)Math.Round(cx + rad * f * Math.Sin(t)), y = (int)Math.Round(cy-rad * f * Math.Cos(t));
+                    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+                    tot++;
+                    int p = px[y * w + x];
+                    if (IsPaper(R(p), G(p), B(p))) paper++;
+                }
+            }
+            return tot > 0 && paper >= tot * 0.5;
+        }
+
         static bool BadgeShape(Comp c) {
             int bw = c.X1-c.X0+1, bh = c.Y1-c.Y0+1;
             if (bw < 4 || bh < 4) return false;
@@ -4213,11 +4237,12 @@ namespace RF4Comp {
                     if (Math.Max(sb, sr) > 1.5 * Math.Min(sb, sr)) continue;
                     double d = Math.Sqrt((b.X-r.X) * (b.X-r.X) + (b.Y-r.Y) * (b.Y-r.Y));
                     double size = (sb + sr) / 2.0;
-                    if (d / size < 4.5 || d / size > 10) continue;
+                    if (d / size < 4.5 || d / size > 16) continue;
                     double cx = (b.X + r.X) / 2, cy = (b.Y + r.Y) / 2;
                     double axis = Math.Atan2(b.X-r.X, r.Y-b.Y) * 180 / Math.PI;
                     double rs = Math.Max(RingScore(px, w, h, cx, cy, d / 2, axis), Math.Max(RingScore(px, w, h, cx, cy, d / 2 * 0.95, axis), RingScore(px, w, h, cx, cy, d / 2 * 1.05, axis)));
                     if (rs < 0.6 || rs <= bestScore) continue;
+                    if (!MinimapInside(px, w, h, cx, cy, d / 2)) continue;
                     bestScore = rs;
                     double ang = Math.Atan2(b.X-r.X, r.Y-b.Y) * 180 / Math.PI;
                     res.Deg = Norm(360-ang); res.Kind = "minimap"; res.Score = rs; res.Hud = true; res.Cx = cx / w; res.Cy = cy / h; res.Size = d / w;
@@ -4547,7 +4572,8 @@ function Get-DirsOf($reports) {
 }
 
 function Test-ScanFresh($e) {
-    if (-not $e -or [int]$e["v"] -ne 2) { return $false }
+    if (-not $e) { return $false }
+    if ([int]$e["v"] -lt 3 -and -not ([int]$e["v"] -eq 2 -and $null -ne $e["deg"] -and [double]$e["deg"] -ge 0)) { return $false }
     if (-not [string]$e["err"]) { return $true }
     try { return (((Get-Date).ToUniversalTime()-[datetime]::Parse([string]$e["t"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()).TotalHours -lt 12) } catch { return $false }
 }
@@ -4607,7 +4633,7 @@ $script:scanTimer.Add_Tick({
         try { $res = $script:scanCur.Task.Result } catch { }
         $script:scanCur = $null
         if ($res) {
-            $script:scans[$key] = @{ v = 2; imgs = @($res.Images); best = $res.Best; bv = $res.BestIsView; deg = [math]::Round($res.Deg, 1); kind = $res.Kind; di = $res.DirImage; t = (Get-Date).ToUniversalTime().ToString("o"); err = $res.Error }
+            $script:scans[$key] = @{ v = 3; imgs = @($res.Images); best = $res.Best; bv = $res.BestIsView; deg = [math]::Round($res.Deg, 1); kind = $res.Kind; di = $res.DirImage; t = (Get-Date).ToUniversalTime().ToString("o"); err = $res.Error }
             $script:scanDirty++
             $script:scanDone++
         }
@@ -4733,6 +4759,7 @@ function Start-ReportImages($item) {
     if (-not $item -or $item.Images.Count -gt 0 -or $item.ImgState) { return }
     if ($item.ImgUrl) { Add-ReportImages $item @($item.ImgUrl); return }
     $src = Get-ReportImageSource $item.Url
+    if (-not $src -and $item.CrossUrl) { $src = Get-ReportImageSource $item.CrossUrl }
     if (-not $src) { $item.ImgState = $(if ($item.Url) { T "imgViaSource" } else { T "noImages" }); return }
     if ($script:repImgCache.ContainsKey($src)) { Add-ReportImages $item $script:repImgCache[$src]; return }
     $item.ImgState = T "imgLoading"
@@ -4751,7 +4778,18 @@ $script:repImgTimer.Add_Tick({
                     $script:repBmpCache["H|" + $j.Src] = $bmp
                     if ($script:commHeaderUrl -eq $j.Src) { $imgCommSpot.Source = $bmp; $bdCommImg.Visibility = "Visible" }
                 } catch { }
-            } elseif ($script:commHeaderUrl -eq $j.Src) { $bdCommImg.Visibility = "Collapsed" }
+            } else {
+                if ($script:commHeaderUrl -eq $j.Src) { $bdCommImg.Visibility = "Collapsed"; $script:commHeaderUrl = "" }
+                foreach ($sk in @($script:scans.Keys)) {
+                    if (@($script:scans[$sk]["imgs"]) -contains $j.Src) {
+                        $script:scans[$sk]["err"] = "expired"
+                        $script:scans[$sk]["t"] = (Get-Date).ToUniversalTime().AddHours(-13).ToString("o")
+                        $script:scanQueue.Remove($sk)
+                        $script:scanQueue.Insert(0, $sk)
+                        $script:scanTimer.Start()
+                    }
+                }
+            }
             continue
         }
         if ($j.Kind -eq "img") {
@@ -5021,6 +5059,7 @@ function Show-CommCluster($cl) {
         $ri.Url = [string]$r["url"]
         $ri.Detail = Get-CommReportText $r
         $ri.ImgUrl = [string]$r["img"]
+        if (-not (Get-TgKey $ri.Url) -and [string]$r["src"] -ne "companion") { $cp = Find-CrossPost $r; if ($cp) { $ri.CrossUrl = [string]$cp["url"] } }
         $items += $ri
     }
     $lstCommReports.ItemsSource = $items
@@ -7856,12 +7895,16 @@ function Open-CommSpot([string]$lakeId, [int]$x, [int]$y) {
     Center-On ([double]$n.NX) ([double]$n.NY)
     $pick = $null
     foreach ($it in @($lstCommReports.ItemsSource)) {
+        if (-not (Get-ReportImageSource $it.Url) -and -not (Get-ReportImageSource $it.CrossUrl)) { continue }
         $sc = $null
         foreach ($r in $cl.Reports) { if ([string]$r["url"] -eq $it.Url -and $it.Url) { $sc = Get-ReportScan $r; break } }
-        if ($sc -and $null -ne $sc["deg"] -and [double]$sc["deg"] -ge 0) { $pick = $it; break }
+        if ($sc -and $null -ne $sc["deg"] -and [double]$sc["deg"] -ge 0 -and $sc["bv"]) { $pick = $it; break }
+        if (-not $pick -and $sc -and $null -ne $sc["deg"] -and [double]$sc["deg"] -ge 0) { $pick = $it }
     }
     if (-not $pick) { $pick = @($lstCommReports.ItemsSource | Where-Object { Get-ReportImageSource $_.Url } | Select-Object -First 1)[0] }
-    if ($pick) { $lstCommReports.SelectedItem = $pick; $lstCommReports.ScrollIntoView($pick) }
+    if ($pick) { $lstCommReports.SelectedItem = $pick }
+    $sv = $lstCommReports.Parent.Parent
+    if ($sv -is [System.Windows.Controls.ScrollViewer]) { $sv.ScrollToTop() }
 }
 
 $window.Dispatcher.Add_UnhandledException({
