@@ -89,6 +89,11 @@ function Save-User {
 
 $script:names = @{}
 foreach ($p in $game.names.PSObject.Properties) { $script:names[$p.Name] = $p.Value }
+$script:dipKeys = @()
+$dipFile = Join-Path $dataDir "dips.json"
+if (Test-Path -LiteralPath $dipFile) {
+    foreach ($p in (Get-Content -LiteralPath $dipFile -Raw -Encoding UTF8 | ConvertFrom-Json).PSObject.Properties) { $script:names[$p.Name] = $p.Value; $script:dipKeys += $p.Name }
+}
 
 $script:lakeById = @{}
 foreach ($l in @($game.lakes)) { $script:lakeById[$l.id] = $l }
@@ -255,6 +260,10 @@ function Get-ComboKey($combo) {
 
 function Set-ComboKey($combo, $key) {
     $m = @($combo.ItemsSource) | Where-Object { $_.Key -eq $key } | Select-Object -First 1
+    if (-not $m -and $key) {
+        $rk = Resolve-Name ([string]$key)
+        if ($rk -ne $key) { $m = @($combo.ItemsSource) | Where-Object { $_.Key -eq $rk } | Select-Object -First 1 }
+    }
     if ($m) {
         $combo.SelectedItem = $m
     } else {
@@ -273,6 +282,10 @@ function Get-FishChoices($lakeId) {
 
 function Get-BaitChoices {
     @($game.baits | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label)
+}
+
+function Get-DipChoices {
+    @($script:dipKeys | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label)
 }
 
 function Get-TechChoices {
@@ -6611,10 +6624,12 @@ function Show-SpotEdit([string]$id) {
     Set-Choices $cmbSeFish (Get-FishChoices $sp.lake)
     Set-ComboKey $cmbSeFish "$($sp.fish)"
     $bc = Get-BaitChoices
-    foreach ($pair in @(@($cmbSeBait, "$($sp.bait)"), @($cmbSeBait2, "$($sp.bait2)"), @($cmbSeDip, "$($sp.dip)"))) {
+    foreach ($pair in @(@($cmbSeBait, "$($sp.bait)"), @($cmbSeBait2, "$($sp.bait2)"))) {
         Set-Choices $pair[0] $bc
         Set-ComboKey $pair[0] $pair[1]
     }
+    Set-Choices $cmbSeDip (Get-DipChoices)
+    Set-ComboKey $cmbSeDip "$($sp.dip)"
     Set-Choices $cmbSeGround (Get-RecipeChoices "groundbait")
     Set-RecipeField $cmbSeGround "$($sp.groundbait)"
     Set-Choices $cmbSePva (Get-RecipeChoices "pva")
@@ -6652,11 +6667,12 @@ function Apply-Language {
     $b = Get-ComboKey $cmbSpotBait
     Set-Choices $cmbSpotBait (Get-BaitChoices)
     Set-ComboKey $cmbSpotBait $b
-    foreach ($cb in @($cmbSpotBait2, $cmbSpotDip)) {
-        $b = Get-ComboKey $cb
-        Set-Choices $cb (Get-BaitChoices)
-        Set-ComboKey $cb $b
-    }
+    $b = Get-ComboKey $cmbSpotBait2
+    Set-Choices $cmbSpotBait2 (Get-BaitChoices)
+    Set-ComboKey $cmbSpotBait2 $b
+    $b = Get-ComboKey $cmbSpotDip
+    Set-Choices $cmbSpotDip (Get-DipChoices)
+    Set-ComboKey $cmbSpotDip $b
     Refresh-SpotRecipeChoices
     $t = Get-ComboKey $cmbSpotTech
     Set-Choices $cmbSpotTech (Get-TechChoices)
@@ -6721,11 +6737,14 @@ function Apply-Language {
     $f = Get-ComboKey $cmbCatchFish
     Set-Choices $cmbCatchFish (Get-FishChoices $k)
     Set-ComboKey $cmbCatchFish $f
-    foreach ($cb in @($cmbCatchBait, $cmbCatchBait2, $cmbCatchDip)) {
+    foreach ($cb in @($cmbCatchBait, $cmbCatchBait2)) {
         $b = Get-ComboKey $cb
         Set-Choices $cb (Get-BaitChoices)
         Set-ComboKey $cb $b
     }
+    $b = Get-ComboKey $cmbCatchDip
+    Set-Choices $cmbCatchDip (Get-DipChoices)
+    Set-ComboKey $cmbCatchDip $b
     $pv = "$($cmbCatchPva.Text)"
     Set-Choices $cmbCatchPva @($script:recipes | ForEach-Object { New-Choice $_.id $_.name } | Sort-Object Label)
     $cmbCatchPva.Text = $pv
