@@ -3938,16 +3938,186 @@ function Parse-RecordDate([string]$t) {
     return $null
 }
 
+if (-not ("RF4Comp.WaterMap" -as [type])) {
+    Add-Type -AssemblyName System.Drawing
+    Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+
+namespace RF4Comp {
+    public class WaterMap {
+        const int G = 512;
+        bool[] water = new bool[G * G];
+        float[] dLand = new float[G * G];
+        float[] dWater = new float[G * G];
+
+        public static WaterMap Load(string path) {
+            var wm = new WaterMap();
+            using (var src = new Bitmap(path))
+            using (var bmp = new Bitmap(G * 4, G * 4, PixelFormat.Format24bppRgb)) {
+                using (var g = Graphics.FromImage(bmp)) g.DrawImage(src, 0, 0, G * 4, G * 4);
+                var bd = bmp.LockBits(new Rectangle(0, 0, G * 4, G * 4), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                var raw = new byte[bd.Stride * G * 4];
+                Marshal.Copy(bd.Scan0, raw, 0, raw.Length);
+                bmp.UnlockBits(bd);
+                var w0 = new bool[G * G];
+                for (int cy = 0; cy < G; cy++) for (int cx = 0; cx < G; cx++) {
+                    int sr = 0, sg = 0;
+                    for (int y = cy * 4; y < cy * 4 + 4; y++) for (int x = cx * 4; x < cx * 4 + 4; x++) {
+                        int o = y * bd.Stride + x * 3;
+                        sg += raw[o + 1]; sr += raw[o + 2];
+                    }
+                    w0[cy * G + cx] = (sr-sg) < -48;
+                }
+                for (int pass = 0; pass < 2; pass++) {
+                    var w1 = new bool[G * G];
+                    for (int y = 0; y < G; y++) for (int x = 0; x < G; x++) {
+                        int n = 0, t = 0;
+                        for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                            int xx = x + dx, yy = y + dy;
+                            if (xx < 0 || yy < 0 || xx >= G || yy >= G) continue;
+                            t++; if (w0[yy * G + xx]) n++;
+                        }
+                        w1[y * G + x] = n * 2 > t;
+                    }
+                    w0 = w1;
+                }
+                wm.water = w0;
+            }
+            Dist(wm.water, true, wm.dLand);
+            Dist(wm.water, false, wm.dWater);
+            return wm;
+        }
+
+        static void Dist(bool[] water, bool fromLand, float[] d) {
+            const float Inf = 1e9f;
+            for (int i = 0; i < G * G; i++) d[i] = (water[i] == fromLand) ? Inf : 0f;
+            const float D1 = 1f, D2 = 1.4142f;
+            for (int y = 0; y < G; y++) for (int x = 0; x < G; x++) {
+                int i = y * G + x; float v = d[i];
+                if (x > 0) v = Math.Min(v, d[i-1] + D1);
+                if (y > 0) {
+                    v = Math.Min(v, d[i-G] + D1);
+                    if (x > 0) v = Math.Min(v, d[i-G-1] + D2);
+                    if (x < G-1) v = Math.Min(v, d[i-G+1] + D2);
+                }
+                d[i] = v;
+            }
+            for (int y = G-1; y >= 0; y--) for (int x = G-1; x >= 0; x--) {
+                int i = y * G + x; float v = d[i];
+                if (x < G-1) v = Math.Min(v, d[i+1] + D1);
+                if (y < G-1) {
+                    v = Math.Min(v, d[i+G] + D1);
+                    if (x < G-1) v = Math.Min(v, d[i+G+1] + D2);
+                    if (x > 0) v = Math.Min(v, d[i+G-1] + D2);
+                }
+                d[i] = v;
+            }
+        }
+
+        public bool IsWater(double nx, double ny, out double cells) {
+            int x = Math.Min(G-1, Math.Max(0, (int)(nx * G))), y = Math.Min(G-1, Math.Max(0, (int)(ny * G)));
+            int i = y * G + x;
+            if (water[i]) { cells = dLand[i]; return true; }
+            cells = dWater[i];
+            return false;
+        }
+    }
+}
+'@
+}
+
+$script:waterMaps = @{}
+$script:posStatus = @{}
+$script:reportPos = @{}
+
+function Get-PosStatus([string]$lakeId, [int]$x, [int]$y) {
+    $k = "{0}|{1}|{2}" -f $lakeId, $x, $y
+    if ($script:posStatus.ContainsKey($k)) { return $script:posStatus[$k] }
+    $st = 0
+    $l = $script:lakeById[$lakeId]
+    if ($lakeId -ne "norwegian_sea" -and $l -and $l.bounds -and $l.mapKey) {
+        $b = $l.bounds
+        $nx = ([double]$x-[double]$b.xMin) / ([double]$b.xMax-[double]$b.xMin)
+        $ny = ([double]$b.yNorth-[double]$y) / ([double]$b.yNorth-[double]$b.ySouth)
+        if ($nx -lt 0 -or $nx -ge 1 -or $ny -lt 0 -or $ny -ge 1) { $st = 3 }
+        else {
+            if (-not $script:waterMaps.ContainsKey($lakeId)) {
+                $f = Join-Path $dataDir ("maps\" + $l.mapKey + ".jpg")
+                $script:waterMaps[$lakeId] = $(if (Test-Path -LiteralPath $f) { try { [RF4Comp.WaterMap]::Load($f) } catch { $null } } else { $null })
+            }
+            $wm = $script:waterMaps[$lakeId]
+            if ($wm) {
+                $cells = 0.0
+                $isWater = $wm.IsWater($nx, $ny, [ref]$cells)
+                $units = $cells / (512 / ([double]$b.xMax-[double]$b.xMin))
+                if ($isWater -and $units -ge 4) { $st = 1 } elseif (-not $isWater -and $units -ge 8) { $st = 2 }
+            }
+        }
+    }
+    $script:posStatus[$k] = $st
+    $st
+}
+
+function Get-DigitVariants([int]$x, [int]$y) {
+    $rx = $(if ("$x".Length -gt 1) { [int](-join ("$x".ToCharArray()[("$x".Length-1)..0])) } else { $x })
+    $ry = $(if ("$y".Length -gt 1) { [int](-join ("$y".ToCharArray()[("$y".Length-1)..0])) } else { $y })
+    $out = @()
+    foreach ($c in @(@($y, $x), @($rx, $y), @($x, $ry), @($rx, $ry), @($ry, $x), @($y, $rx))) {
+        if ($c[0] -eq $x -and $c[1] -eq $y) { continue }
+        if (@($out | Where-Object { $_[0] -eq $c[0] -and $_[1] -eq $c[1] }).Count) { continue }
+        $out += ,$c
+    }
+    Write-Output -NoEnumerate $out
+}
+
+function Get-ReportPos($r) {
+    $id = [string]$r["id"]
+    if ($script:reportPos.ContainsKey($id)) { return $script:reportPos[$id] }
+    $lk = [string]$r["lake"]
+    $x = [int]$r["x"]
+    $y = [int]$r["y"]
+    $st = Get-PosStatus $lk $x $y
+    $res = [pscustomobject]@{ X = $x; Y = $y; S = 0; Fix = ""; Hint = "" }
+    if ($st -eq 1 -and [string]$r["method"] -match "Troll") { $st = 0 }
+    if ($st -ne 0) {
+        $scores = @()
+        foreach ($c in (Get-DigitVariants $x $y)) {
+            if ((Get-PosStatus $lk $c[0] $c[1]) -ne 0) { continue }
+            $n = @(Get-NearbyReports $lk $c[0] $c[1] 2 | Where-Object { [string]$_["id"] -ne $id -and (Get-PosStatus $lk ([int]$_["x"]) ([int]$_["y"])) -eq 0 }).Count
+            $scores += [pscustomobject]@{ X = $c[0]; Y = $c[1]; N = $n }
+        }
+        $scores = @($scores | Sort-Object N -Descending)
+        $best = $null
+        if ($scores.Count -gt 0 -and $scores[0].N -gt 0 -and ($scores.Count -eq 1 -or $scores[0].N -ge 2 * [math]::Max(1, $scores[1].N))) { $best = $scores[0] }
+        if ($st -ge 2) {
+            if ($best) { $res.X = $best.X; $res.Y = $best.Y; $res.Fix = "{0}:{1}" -f $x, $y }
+            else { $res = $null }
+        } else {
+            $res.S = 1
+            $pl = @($scores | Where-Object { $_.N -gt 0 } | Select-Object -First 1)
+            if ($pl.Count) { $res.Hint = "{0}:{1}" -f $pl[0].X, $pl[0].Y }
+        }
+    }
+    $script:reportPos[$id] = $res
+    $res
+}
+
 function Get-CommClusters([string]$lakeId, [string]$since, [string]$fish) {
     $key = "{0}|{1}|{2}" -f $lakeId, $since.Substring(0, [math]::Min(13, $since.Length)), $fish
     if ($script:commClusterCache.ContainsKey($key)) { return $script:commClusterCache[$key] }
     $byCoord = @{}
+    $ckPos = @{}
     foreach ($r in (Get-AllCommReports)) {
         if ($lakeId -and $r["lake"] -ne $lakeId) { continue }
         if ($since -and [string]$r["posted"] -lt $since) { continue }
         if ($fish -and -not (@($r["fish"]) -contains $fish)) { continue }
-        $ck = "{0}|{1}|{2}" -f $r["lake"], $r["x"], $r["y"]
-        if (-not $byCoord.ContainsKey($ck)) { $byCoord[$ck] = New-Object System.Collections.ArrayList }
+        $pos = Get-ReportPos $r
+        if (-not $pos) { continue }
+        $ck = "{0}|{1}|{2}" -f $r["lake"], $pos.X, $pos.Y
+        if (-not $byCoord.ContainsKey($ck)) { $byCoord[$ck] = New-Object System.Collections.ArrayList; $ckPos[$ck] = $pos }
         $byCoord[$ck].Add($r) | Out-Null
     }
     $clusters = New-Object System.Collections.ArrayList
@@ -3956,19 +4126,24 @@ function Get-CommClusters([string]$lakeId, [string]$since, [string]$fish) {
         $list = $byCoord[$ck]
         $first = $list[0]
         $lk = [string]$first["lake"]
-        $x = [int]$first["x"]
-        $y = [int]$first["y"]
+        $x = [int]$ckPos[$ck].X
+        $y = [int]$ckPos[$ck].Y
         if (-not $byLake.ContainsKey($lk)) { $byLake[$lk] = New-Object System.Collections.ArrayList }
         $target = $null
         foreach ($cl in $byLake[$lk]) {
             if ([math]::Abs($cl.X-$x) -le 2 -and [math]::Abs($cl.Y-$y) -le 2) { $target = $cl; break }
         }
         if (-not $target) {
-            $target = [pscustomobject]@{ Lake = $lk; X = $x; Y = $y; Reports = (New-Object System.Collections.ArrayList) }
+            $target = [pscustomobject]@{ Lake = $lk; X = $x; Y = $y; Reports = (New-Object System.Collections.ArrayList); Water = $false; Hint = "" }
             $byLake[$lk].Add($target) | Out-Null
             $clusters.Add($target) | Out-Null
         }
         foreach ($r in $list) { $target.Reports.Add($r) | Out-Null }
+    }
+    foreach ($cl in $clusters) {
+        $wc = 0
+        foreach ($r in $cl.Reports) { $p = Get-ReportPos $r; if ($p.S -eq 1) { $wc++; if (-not $cl.Hint -and $p.Hint) { $cl.Hint = $p.Hint } } }
+        $cl.Water = ($wc * 2 -gt $cl.Reports.Count)
     }
     $result = @($clusters)
     $script:commClusterCache[$key] = $result
@@ -4958,8 +5133,10 @@ function Update-CommState {
     if ($script:commReports.Count -gt 0) {
         $week = 0
         $since = (Get-Date).ToUniversalTime().AddDays(-7).ToString("yyyy-MM-ddTHH:mm:ss")
-        foreach ($r in (Get-AllCommReports)) { if ([string]$r["posted"] -ge $since) { $week++ } }
+        $hidden = 0
+        foreach ($r in (Get-AllCommReports)) { if ([string]$r["posted"] -ge $since) { $week++; if (-not (Get-ReportPos $r)) { $hidden++ } } }
         $txtCommState.Text = "{0} {1}, {2} {3}   {4}: {5}" -f $script:commReports.Count, (T "reports"), $week, (T "thisWeekShort"), (T "lastUpdate"), $(if ($script:commSynced) { Format-LocalDate $script:commSynced.ToLocalTime() } else { "?" })
+        if ($hidden -gt 0) { $txtCommState.Text = $txtCommState.Text + "   " + ((T "hiddenImplausible") -f $hidden) }
         $left = $script:scanQueue.Count + $(if ($script:scanCur) { 1 } else { 0 })
         if ($left -gt 0) { $txtCommState.Text = $txtCommState.Text + "   " + ((T "scanProgress") -f $left) }
     } else {
@@ -5118,6 +5295,11 @@ function Show-CommCluster($cl) {
     if (@($sum.Depths).Count -gt 0) { $lines += "{0}: {1}" -f (T "depth"), (Format-MeterCounts $sum.Depths) }
     if (@($sum.ReelSpeed).Count -gt 0) { $lines += "{0}: {1}" -f (T "reelSpeed"), (Format-TopCounts $sum.ReelSpeed 3) }
     $lines += "{0}: {1}" -f (T "lastReport"), (Format-IsoDate $sum.Last)
+    if ($cl.Water) {
+        $wl = T "onWater"
+        if ($cl.Hint) { $wl = $wl + "   " + ((T "maybeMeant") -f $cl.Hint) }
+        $lines = @($wl) + $lines
+    }
     $txtCommInfo.Text = $lines -join [Environment]::NewLine
     $items = @()
     foreach ($r in @($cl.Reports | Sort-Object { [string]$_["posted"] } -Descending | Select-Object -First 40)) {
@@ -5179,6 +5361,8 @@ function Format-CommItems([string]$text) {
 
 function Get-CommReportText($r) {
     $lines = @()
+    $rp = Get-ReportPos $r
+    if ($rp -and $rp.Fix) { $lines += (T "coordFixed") -f $rp.Fix, ("{0}:{1}" -f $rp.X, $rp.Y) }
     $fl = (@($r["fish"]) | ForEach-Object { N $_ }) -join ", "
     if ($fl) { $lines += "{0}: {1}" -f (T "fish"), $fl }
     if ($null -ne $r["weight"] -and "$($r["weight"])" -ne "") { $lines += "{0}: {1}" -f (T "weight"), (Format-Weight ([double]$r["weight"] * 1000)) }
@@ -5230,15 +5414,21 @@ function Draw-CommMarkers {
         $r.RadiusY = 2 / $sc
         $r.Fill = $fill
         if (@($cl.Reports | Where-Object { $_["src"] -eq "companion" }).Count) { $r.Fill = $compFill }
+        $waterMark = $cl.Water
         $isSel = ($script:commSel -and $script:commSel.Lake -eq $cl.Lake -and $script:commSel.X -eq $cl.X -and $script:commSel.Y -eq $cl.Y)
         if ($isSel) { $r.Stroke = $selBrush; $r.StrokeThickness = 4 / $sc }
         else { $r.Stroke = [System.Windows.Media.Brushes]::Black; $r.StrokeThickness = 1.5 / $sc }
+        if ($waterMark) {
+            if (-not $isSel) { $r.Stroke = $r.Fill; $r.StrokeThickness = 3.5 / $sc }
+            $r.Fill = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(60, 255, 255, 255))
+        }
         $r.RenderTransformOrigin = New-Object System.Windows.Point 0.5, 0.5
         $r.RenderTransform = New-Object System.Windows.Media.RotateTransform 45
         $r.Tag = "c:$i"
         $r.Cursor = [System.Windows.Input.Cursors]::Hand
         $top = @(Get-TopCounts (@($cl.Reports | ForEach-Object { $_["fish"] })) 3 | ForEach-Object { N $_.Key }) -join ", "
         $r.ToolTip = "{0}:{1}   {2} {3}   {4}" -f $cl.X, $cl.Y, $cl.Reports.Count, (T "reports"), $top
+        if ($waterMark) { $r.ToolTip = $r.ToolTip + [Environment]::NewLine + (T "onWater") }
         [System.Windows.Controls.Canvas]::SetLeft($r, ([double]$n.NX * 2048)-($size / 2))
         [System.Windows.Controls.Canvas]::SetTop($r, ([double]$n.NY * 2048)-($size / 2))
         $canvasMarkers.Children.Add($r) | Out-Null
