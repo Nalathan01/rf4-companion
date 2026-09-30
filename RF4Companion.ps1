@@ -567,6 +567,7 @@ function Format-Coords($lake, $nx, $ny) {
                                         <Border x:Name="bdCommImg" Visibility="Collapsed" BorderBrush="{DynamicResource AppLine}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,8" Cursor="Hand">
                                             <Image x:Name="imgCommSpot" Stretch="Uniform" MaxHeight="230"/>
                                         </Border>
+                                        <TextBlock x:Name="txtCommImgSrc" Visibility="Collapsed" Foreground="{DynamicResource AppInkDim}" FontSize="11" TextWrapping="Wrap" Margin="0,-4,0,8"/>
                                         <TextBlock x:Name="txtCommDir" Visibility="Collapsed" Foreground="{DynamicResource AppAccent}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
                                         <TextBlock x:Name="txtCommInfo" Foreground="{DynamicResource AppInk}" TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,12"/>
                                         <TextBlock Tag="t:singleReports" Style="{StaticResource Label}" Margin="0,0,0,6" TextWrapping="Wrap"/>
@@ -4928,17 +4929,19 @@ function Update-CommSpotHeader($cl) {
         $txtCommDir.Visibility = "Collapsed"
     }
     $url = ""
+    $post = ""
     $fallback = ""
+    $fallbackPost = ""
     foreach ($r in @($cl.Reports | Sort-Object { [string]$_["posted"] } -Descending)) {
-        if ([string]$r["img"]) { $url = [string]$r["img"]; break }
+        if ([string]$r["img"]) { $url = [string]$r["img"]; $post = ""; break }
         $sc = Get-ReportScan $r
         if (-not $sc -or $null -eq $sc["best"] -or [int]$sc["best"] -lt 0) { continue }
         $imgs = @($sc["imgs"])
         if ([int]$sc["best"] -ge $imgs.Count) { continue }
-        if ($sc["bv"]) { $url = [string]$imgs[[int]$sc["best"]]; break }
-        if (-not $fallback) { $fallback = [string]$imgs[[int]$sc["best"]] }
+        if ($sc["bv"]) { $url = [string]$imgs[[int]$sc["best"]]; $post = Get-ReportImgPost $r; break }
+        if (-not $fallback) { $fallback = [string]$imgs[[int]$sc["best"]]; $fallbackPost = Get-ReportImgPost $r }
     }
-    if (-not $url) { $url = $fallback }
+    if (-not $url) { $url = $fallback; $post = $fallbackPost }
     if (-not $url) {
         $ids = @{}
         foreach ($r in $cl.Reports) { $ids[[string]$r["id"]] = $true }
@@ -4947,17 +4950,27 @@ function Update-CommSpotHeader($cl) {
             if (-not $sc -or $null -eq $sc["best"] -or [int]$sc["best"] -lt 0) { continue }
             $imgs = @($sc["imgs"])
             if ([int]$sc["best"] -ge $imgs.Count) { continue }
-            if ($sc["bv"]) { $url = [string]$imgs[[int]$sc["best"]]; break }
-            if (-not $fallback) { $fallback = [string]$imgs[[int]$sc["best"]] }
+            if ($sc["bv"]) { $url = [string]$imgs[[int]$sc["best"]]; $post = Get-ReportImgPost $r; break }
+            if (-not $fallback) { $fallback = [string]$imgs[[int]$sc["best"]]; $fallbackPost = Get-ReportImgPost $r }
         }
-        if (-not $url) { $url = $fallback }
+        if (-not $url) { $url = $fallback; $post = $fallbackPost }
     }
+    $script:commHeaderPost = $post
+    $txtCommImgSrc.Text = $(if ($post) { (T "imgFromSource") -f (Get-ReportHost $post) } else { T "companionSource" })
     if ($url -eq $script:commHeaderUrl -and $imgCommSpot.Source) { return }
     $script:commHeaderUrl = $url
-    if (-not $url) { $imgCommSpot.Source = $null; $bdCommImg.Visibility = "Collapsed"; return }
-    if ($script:repBmpCache.ContainsKey("H|" + $url)) { $imgCommSpot.Source = $script:repBmpCache["H|" + $url]; $bdCommImg.Visibility = "Visible"; return }
+    if (-not $url) { $imgCommSpot.Source = $null; $bdCommImg.Visibility = "Collapsed"; $txtCommImgSrc.Visibility = "Collapsed"; return }
+    if ($script:repBmpCache.ContainsKey("H|" + $url)) { $imgCommSpot.Source = $script:repBmpCache["H|" + $url]; $bdCommImg.Visibility = "Visible"; $txtCommImgSrc.Visibility = "Visible"; return }
     $script:repImgJobs.Add([pscustomobject]@{ Item = $null; Src = $url; Kind = "header"; Task = $script:http.GetByteArrayAsync($url) }) | Out-Null
     $script:repImgTimer.Start()
+}
+
+$script:commHeaderPost = ""
+
+function Get-ReportImgPost($r) {
+    $k = Get-TgKey ([string]$r["url"])
+    if (-not $k -and [string]$r["src"] -ne "companion") { $cp = Find-CrossPost $r; if ($cp) { $k = Get-TgKey ([string]$cp["url"]) } }
+    $k
 }
 
 $script:repImgCache = @{}
@@ -4996,25 +5009,27 @@ function New-BitmapFromBytes([byte[]]$bytes, [int]$width) {
     $bmp
 }
 
-function Add-ReportImages($item, $urls) {
+function Add-ReportImages($item, $urls, [string]$post = "") {
     $item.Images.Clear()
     foreach ($u in @($urls)) {
-        if ($script:repBmpCache.ContainsKey($u)) { $item.Images.Add((New-Object RF4Comp.ReportImage -Property @{ Img = $script:repBmpCache[$u]; Url = $u })); continue }
-        $script:repImgJobs.Add([pscustomobject]@{ Item = $item; Src = $u; Kind = "img"; Task = $script:http.GetByteArrayAsync($u) }) | Out-Null
+        $link = $(if ($post) { $post } else { $u })
+        if ($script:repBmpCache.ContainsKey($u)) { $item.Images.Add((New-Object RF4Comp.ReportImage -Property @{ Img = $script:repBmpCache[$u]; Url = $link })); continue }
+        $script:repImgJobs.Add([pscustomobject]@{ Item = $item; Src = $u; Kind = "img"; Post = $link; Task = $script:http.GetByteArrayAsync($u) }) | Out-Null
     }
     if ($script:repImgJobs.Count -gt 0) { $script:repImgTimer.Start() }
-    $item.ImgState = $(if (@($urls).Count) { "" } else { T "noImages" })
+    $item.ImgState = $(if (-not @($urls).Count) { T "noImages" } elseif ($post) { (T "imgsFromSource") -f (Get-ReportHost $post) } else { "" })
 }
 
 function Start-ReportImages($item) {
     if (-not $item -or $item.Images.Count -gt 0 -or $item.ImgState) { return }
     if ($item.ImgUrl) { Add-ReportImages $item @($item.ImgUrl); return }
     $src = Get-ReportImageSource $item.Url
-    if (-not $src -and $item.CrossUrl) { $src = Get-ReportImageSource $item.CrossUrl }
+    $post = Get-TgKey $item.Url
+    if (-not $src -and $item.CrossUrl) { $src = Get-ReportImageSource $item.CrossUrl; $post = Get-TgKey $item.CrossUrl }
     if (-not $src) { $item.ImgState = $(if ($item.Url) { T "imgViaSource" } else { T "noImages" }); return }
-    if ($script:repImgCache.ContainsKey($src)) { Add-ReportImages $item $script:repImgCache[$src]; return }
+    if ($script:repImgCache.ContainsKey($src)) { Add-ReportImages $item $script:repImgCache[$src] $post; return }
     $item.ImgState = T "imgLoading"
-    $script:repImgJobs.Add([pscustomobject]@{ Item = $item; Src = $src; Kind = "page"; Task = $script:http.GetStringAsync($src) }) | Out-Null
+    $script:repImgJobs.Add([pscustomobject]@{ Item = $item; Src = $src; Kind = "page"; Post = $post; Task = $script:http.GetStringAsync($src) }) | Out-Null
     $script:repImgTimer.Start()
 }
 
@@ -5027,10 +5042,10 @@ $script:repImgTimer.Add_Tick({
                 try {
                     $bmp = New-BitmapFromBytes $j.Task.Result 900
                     $script:repBmpCache["H|" + $j.Src] = $bmp
-                    if ($script:commHeaderUrl -eq $j.Src) { $imgCommSpot.Source = $bmp; $bdCommImg.Visibility = "Visible" }
+                    if ($script:commHeaderUrl -eq $j.Src) { $imgCommSpot.Source = $bmp; $bdCommImg.Visibility = "Visible"; $txtCommImgSrc.Visibility = "Visible" }
                 } catch { }
             } else {
-                if ($script:commHeaderUrl -eq $j.Src) { $bdCommImg.Visibility = "Collapsed"; $script:commHeaderUrl = "" }
+                if ($script:commHeaderUrl -eq $j.Src) { $bdCommImg.Visibility = "Collapsed"; $txtCommImgSrc.Visibility = "Collapsed"; $script:commHeaderUrl = "" }
                 foreach ($sk in @($script:scans.Keys)) {
                     if (@($script:scans[$sk]["imgs"]) -contains $j.Src) {
                         $script:scans[$sk]["err"] = "expired"
@@ -5048,7 +5063,7 @@ $script:repImgTimer.Add_Tick({
                 try {
                     $bmp = New-BitmapFromBytes $j.Task.Result 340
                     $script:repBmpCache[$j.Src] = $bmp
-                    $j.Item.Images.Add((New-Object RF4Comp.ReportImage -Property @{ Img = $bmp; Url = $j.Src }))
+                    $j.Item.Images.Add((New-Object RF4Comp.ReportImage -Property @{ Img = $bmp; Url = $j.Post }))
                 } catch { }
             }
             continue
@@ -5058,7 +5073,7 @@ $script:repImgTimer.Add_Tick({
             try { $urls = @(Parse-ReportImages $j.Task.Result) } catch { $urls = @() }
             $script:repImgCache[$j.Src] = $urls
         }
-        Add-ReportImages $j.Item $urls
+        Add-ReportImages $j.Item $urls $j.Post
     }
     if ($script:repImgJobs.Count -eq 0) { $script:repImgTimer.Stop() }
 })
@@ -5324,6 +5339,7 @@ function Show-CommCluster($cl) {
     $script:commHeaderUrl = ""
     $imgCommSpot.Source = $null
     $bdCommImg.Visibility = "Collapsed"
+    $txtCommImgSrc.Visibility = "Collapsed"
     Update-CommSpotHeader $cl
     Push-ScanFront $cl
     $panelSpotForm.Visibility = "Collapsed"
@@ -5336,6 +5352,7 @@ function Show-CommCluster($cl) {
 
 function Get-ReportHost([string]$url) {
     if (-not $url) { return (T "companionSource") }
+    if ($url -match "t\.me/([^/?]+)/") { return ("Telegram @" + $Matches[1]) }
     if ($url -match "t\.me/") { return "Telegram" }
     if ($url -match "vk\.com/") { return "VK" }
     if ($url -match "discord\.com/") { return "Discord" }
@@ -7826,7 +7843,7 @@ $btnWebSave.Add_Click({
 
 Load-Community
 Load-Scans
-$bdCommImg.Add_MouseLeftButtonUp({ if ($script:commHeaderUrl) { Open-External $script:commHeaderUrl } })
+$bdCommImg.Add_MouseLeftButtonUp({ if ($script:commHeaderPost) { Open-ReportUrl $script:commHeaderPost } elseif ($script:commHeaderUrl) { Open-External $script:commHeaderUrl } })
 
 $chkCommunity.Add_Click({ if (-not $chkCommunity.IsChecked -and $script:commSel) { Hide-CommCluster }; Draw-Markers })
 $cmbCommPeriod.Add_SelectionChanged({ if (-not $script:busy) { if ($script:commSel) { Hide-CommCluster }; Draw-Markers } })
@@ -8075,7 +8092,7 @@ $lstCommReports.Add_SelectionChanged({
 $lstCommReports.AddHandler([System.Windows.UIElement]::MouseLeftButtonUpEvent, [System.Windows.Input.MouseButtonEventHandler]{
     param($sender, $e)
     $src = $e.OriginalSource
-    if ($src -is [System.Windows.Controls.Image] -and $src.Tag) { Open-External ([string]$src.Tag); $e.Handled = $true }
+    if ($src -is [System.Windows.Controls.Image] -and $src.Tag) { Open-ReportUrl ([string]$src.Tag); $e.Handled = $true }
 }, $true)
 
 $lstCommReports.Add_MouseDoubleClick({
