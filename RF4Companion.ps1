@@ -4209,9 +4209,11 @@ namespace RF4Comp {
     }
     public class ReportItem : INotifyPropertyChanged {
         private string imgState = "";
-        public string Label { get; set; }
+        private string label = "";
+        private string detail = "";
+        public string Label { get { return label; } set { label = value; if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs("Label")); } }
         public string Url { get; set; }
-        public string Detail { get; set; }
+        public string Detail { get { return detail; } set { detail = value; if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs("Detail")); } }
         public string ImgUrl { get; set; }
         public string CrossUrl { get; set; }
         public ObservableCollection<ReportImage> Images { get; private set; }
@@ -4637,6 +4639,7 @@ namespace RF4Comp {
         public string Kind = "";
         public int DirImage = -1;
         public bool BestIsView;
+        public string Text = "";
         public string Error = "";
     }
 
@@ -4645,10 +4648,25 @@ namespace RF4Comp {
 
         public static Task<PostScan> ScanAsync(HttpClient http, string embedUrl) { return Task.Run(() => Scan(http, embedUrl)); }
 
+        static readonly Regex TextRx = new Regex(@"<div class=""tgme_widget_message_text[^""]*""[^>]*>(.*?)</div>", RegexOptions.Singleline);
+
+        public static string PostText(string html) {
+            var m = TextRx.Match(html ?? "");
+            if (!m.Success) return "";
+            string t = Regex.Replace(m.Groups[1].Value, @"<br\s*/?>", "\n");
+            t = Regex.Replace(t, "<[^>]+>", "");
+            return System.Net.WebUtility.HtmlDecode(t).Trim();
+        }
+
+        public static Task<string> TextAsync(HttpClient http, string embedUrl) {
+            return Task.Run(() => { try { return PostText(http.GetStringAsync(embedUrl).Result); } catch { return null; } });
+        }
+
         public static PostScan Scan(HttpClient http, string embedUrl) {
             var ps = new PostScan();
             try {
                 string html = http.GetStringAsync(embedUrl).Result;
+                ps.Text = PostText(html);
                 foreach (Match m in PhotoRx.Matches(html)) {
                     string u = m.Groups[1].Value;
                     if (u.StartsWith("//")) u = "https:" + u;
@@ -4776,6 +4794,152 @@ function Find-CrossPost($r) {
     $best
 }
 
+$script:textQueue = New-Object System.Collections.ArrayList
+$script:textCur = $null
+$script:postTexts = @{}
+$script:fullCache = @{}
+
+function Set-PostText([string]$key, [string]$text) {
+    if ($script:scans.ContainsKey($key)) { $script:scans[$key]["txt"] = $text } else { $script:postTexts[$key] = $text }
+    $script:fullCache = @{}
+}
+
+function Get-PostTextByKey([string]$k) {
+    if (-not $k) { return "" }
+    if ($script:scans.ContainsKey($k) -and $script:scans[$k].ContainsKey("txt")) { return [string]$script:scans[$k]["txt"] }
+    if ($script:postTexts.ContainsKey($k)) { return [string]$script:postTexts[$k] }
+    return ""
+}
+
+$script:ruExtra = $null
+
+function Get-RuExtraLists {
+    if ($script:ruExtra) { return $script:ruExtra }
+    $lists = Get-MatchLists "ru"
+    $nl = New-Object System.Collections.Generic.List[string]
+    $ne = New-Object System.Collections.Generic.List[string]
+    for ($i = 0; $i -lt $lists.ItemLoc.Count; $i++) { if ($lists.ItemLoc[$i] -notmatch "\d") { $nl.Add($lists.ItemLoc[$i]); $ne.Add($lists.ItemEn[$i]) } }
+    $dl = New-Object System.Collections.Generic.List[string]
+    $de = New-Object System.Collections.Generic.List[string]
+    foreach ($k in $script:dipKeys) {
+        $ru = [string]$script:names[$k].ru
+        if (-not $ru) { continue }
+        $dl.Add($ru); $de.Add($k)
+        $flav = ($ru -replace "^[A-Za-z'&.\s]+\s(?=[^ -])", "").Trim()
+        if ($flav -ne $ru) { $dl.Add($flav); $de.Add($k) }
+    }
+    $script:ruExtra = [pscustomobject]@{ NoDigitLoc = $nl.ToArray(); NoDigitEn = $ne.ToArray(); DipLoc = $dl.ToArray(); DipEn = $de.ToArray() }
+    $script:ruExtra
+}
+
+function Translate-RuItems([string]$text, [switch]$Dip) {
+    $lists = Get-MatchLists "ru"
+    $ex = Get-RuExtraLists
+    $keys = New-Object System.Collections.ArrayList
+    $total = 0
+    $clean = ($text -replace '[«»"“”]', '').Trim().TrimEnd(".", "!", ";", " ")
+    foreach ($raw in ($clean -split "\s*\+\s*|\s*,\s*|\s*;\s*")) {
+        $part = $raw.Trim().TrimEnd(".")
+        if ($part.Length -lt 3) { continue }
+        $crushed = $part -match "(?i)дробл|измельч"
+        $part = ($part -replace "(?i)\(?\s*(дробл|измельч)[а-я]*\.?\s*\)?", "").Trim()
+        $variants = @($part)
+        if ($part -match "^(.*?\D)\s*(\d+(?:\s*/\s*\d+)+)$") {
+            $base = $Matches[1].Trim()
+            $variants = @($Matches[2] -split "\s*/\s*" | ForEach-Object { "$base $_" })
+        }
+        foreach ($v in $variants) {
+            $total++
+            $hit = $null
+            if ($Dip) { $hit = Match-Name $v $ex.DipLoc $ex.DipEn 0.8 }
+            if (-not $hit) { $hit = Match-Name $v $lists.ItemLoc $lists.ItemEn 0.82 }
+            if (-not $hit -and $v -match "е") { $hit = Match-Name ($v -replace "е", "ё") $lists.ItemLoc $lists.ItemEn 0.82 }
+            if ($hit -and $v -notmatch "\d" -and $hit.Loc -match "\d") {
+                $hit = Match-Name $v $ex.NoDigitLoc $ex.NoDigitEn 0.82
+                if (-not $hit) { $hit = Match-Name $v $ex.DipLoc $ex.DipEn 0.85 }
+            }
+            if (-not $hit) { continue }
+            $k = [string]$hit.En
+            if ($crushed) { $k = $k + " (crushed)" }
+            $keys.Add($k) | Out-Null
+        }
+    }
+    [pscustomobject]@{ Keys = @($keys); Total = $total }
+}
+
+function Split-DipKeys($keys) {
+    $baits = @()
+    $dips = @()
+    foreach ($k in @($keys)) {
+        $d = @($script:dipKeys | Where-Object { $_ -eq $k -or $_.EndsWith(" " + $k, [System.StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1)
+        if ($d.Count) { $dips += $d[0] } else { $baits += $k }
+    }
+    [pscustomobject]@{ Baits = $baits; Dips = $dips }
+}
+
+function Parse-PostText([string]$txt) {
+    $o = @{}
+    if (-not $txt) { return $o }
+    $t = $txt -replace "ё", "е" -replace "Ё", "Е"
+    $m = [regex]::Match($t, "(?i)клипс[а-я]*(?:\s*или\s*глубин[а-я]*)?\s*[:\-\u2013\u2014]?\s*(\d{1,3})(?:[.,]\d)?\s*(см)?")
+    if ($m.Success -and -not $m.Groups[2].Success) { $o["clip"] = [double]$m.Groups[1].Value }
+    $m = [regex]::Match($t, "(?i)глубин[а-я]*\s*[:\-\u2013\u2014]?\s*(\d+(?:[.,]\d+)?)\s*(см|м)?")
+    if ($m.Success) {
+        $val = [double]::Parse($m.Groups[1].Value.Replace(",", "."), [System.Globalization.CultureInfo]::InvariantCulture)
+        $unit = $m.Groups[2].Value
+        if ($unit -eq "см" -or (-not $unit -and $val -gt 15)) { $val = $val / 100 }
+        $o["depth"] = [math]::Round($val, 2)
+        if ($o.ContainsKey("clip") -and $m.Groups[1].Value -eq ("{0}" -f $o["clip"])) { $o.Remove("clip") }
+    }
+    $m = [regex]::Match($t, "(?i)скорост[а-я]*(?:\s*проводки)?\s*[:\-\u2013\u2014]?\s*(\d{1,3})")
+    if ($m.Success) { $o["reelSpeed"] = $m.Groups[1].Value }
+    $m = [regex]::Match($t, "(?i)температур[а-я]*(?:\s*воды)?\s*[:\-\u2013\u2014]?\s*(холодн|нормальн|тепл)")
+    if ($m.Success) { $o["temp"] = @{ "холодн" = "cold"; "нормальн" = "normal"; "тепл" = "warm" }[$m.Groups[1].Value.ToLower()] }
+    $baitTxt = ""; $dipTxt = ""; $gbTxt = ""; $pvaTxt = ""; $comment = ""
+    foreach ($line in ($t -split "\n")) {
+        $l = ($line -replace "^[^\p{L}]+", "").Trim()
+        if ($l -match "^(?i)(наживк[а-я]*|приманк[а-я]*)\s*[:\-\u2013\u2014]\s*(.+)$") { $baitTxt = $Matches[2]; continue }
+        if ($l -match "^(?i)дип[а-я]*\s*[:\-\u2013\u2014]\s*(.+)$") { $dipTxt = $Matches[1]; continue }
+        if ($l -match "^(?i)прикорм[а-я]*\s*[:\-\u2013\u2014]\s*(.+)$") { $gbTxt = $Matches[1]; continue }
+        if ($l -match "^(?i)(пва|pva)[а-я]*\s*[:\-\u2013\u2014]\s*(.+)$") { $pvaTxt = $Matches[2]; continue }
+        if ($line -match "💬" -or $l -match "^(?i)комментари") { $comment = ($l -replace "^(?i)комментари[а-я]*(\s*игрока)?\s*[:\-\u2013\u2014]?\s*", "") }
+    }
+    if (-not $baitTxt -and -not $gbTxt -and $comment) {
+        $sp = [regex]::Split($comment, "(?i)\.?\s*прикорм[а-я]*\s*[:\-\u2013\u2014]?\s*")
+        $cand = Translate-RuItems $sp[0]
+        if ($cand.Keys.Count -gt 0 -and $cand.Keys.Count * 2 -ge $cand.Total) { $baitTxt = $sp[0] }
+        if ($sp.Count -gt 1) { $gbTxt = $sp[1] }
+    }
+    if ($baitTxt) {
+        $sd = Split-DipKeys (Translate-RuItems $baitTxt).Keys
+        if ($sd.Baits.Count) { $o["baitDetail"] = ($sd.Baits -join " + ") }
+        if ($sd.Dips.Count) { $o["dip"] = ($sd.Dips -join " + ") }
+    }
+    if ($dipTxt) {
+        $sd = Split-DipKeys (Translate-RuItems $dipTxt -Dip).Keys
+        $all = @($sd.Dips) + @($sd.Baits)
+        if ($all.Count) { $o["dip"] = ($all -join " + ") }
+    }
+    if ($gbTxt) { $tr = Translate-RuItems $gbTxt; if ($tr.Keys.Count) { $o["groundbait"] = ($tr.Keys -join " + ") } }
+    if ($pvaTxt) { $tr = Translate-RuItems $pvaTxt; if ($tr.Keys.Count) { $o["pva"] = ($tr.Keys -join ", ") } }
+    $o
+}
+
+function Get-ReportFull($r) {
+    $txt = Get-PostTextByKey (Get-ReportImgPost $r)
+    if (-not $txt) { return $r }
+    $id = [string]$r["id"]
+    if ($id -and $script:fullCache.ContainsKey($id)) { return $script:fullCache[$id] }
+    $info = Parse-PostText $txt
+    $f = @{}
+    foreach ($k in $r.Keys) { $f[$k] = $r[$k] }
+    foreach ($k in @("clip", "depth")) { if ($info.ContainsKey($k) -and ($null -eq $f[$k] -or "$($f[$k])" -eq "")) { $f[$k] = $info[$k] } }
+    foreach ($k in @("reelSpeed", "baitDetail", "dip", "groundbait", "pva")) { if ($info.ContainsKey($k) -and -not ([string]$f[$k]).Trim()) { $f[$k] = $info[$k] } }
+    if ($info.ContainsKey("temp")) { $f["temp"] = $info["temp"] }
+    if ($id) { $script:fullCache[$id] = $f }
+    $f
+}
+
 function Get-ReportScan($r) {
     $k = Get-TgKey ([string]$r["url"])
     if (-not $k -and [string]$r["src"] -ne "companion") {
@@ -4857,7 +5021,9 @@ function Start-ScanQueue {
     }
     $script:scanQueue.Clear()
     foreach ($it in ($items | Sort-Object P, @{ Expression = "T"; Descending = $true })) { $script:scanQueue.Add($it.K) | Out-Null }
-    if ($script:scanQueue.Count -gt 0) { $script:scanTimer.Start() }
+    $script:textQueue.Clear()
+    foreach ($k in @($script:scans.Keys)) { if (-not $script:scans[$k].ContainsKey("txt") -and -not $script:scanQueue.Contains($k)) { $script:textQueue.Add($k) | Out-Null } }
+    if ($script:scanQueue.Count -gt 0 -or $script:textQueue.Count -gt 0) { $script:scanTimer.Start() }
     Update-CommState
 }
 
@@ -4885,7 +5051,8 @@ $script:scanTimer.Add_Tick({
         try { $res = $script:scanCur.Task.Result } catch { }
         $script:scanCur = $null
         if ($res) {
-            $script:scans[$key] = @{ v = 3; imgs = @($res.Images); best = $res.Best; bv = $res.BestIsView; deg = [math]::Round($res.Deg, 1); kind = $res.Kind; di = $res.DirImage; t = (Get-Date).ToUniversalTime().ToString("o"); err = $res.Error }
+            $script:fullCache = @{}
+            $script:scans[$key] = @{ v = 3; txt = $res.Text; imgs = @($res.Images); best = $res.Best; bv = $res.BestIsView; deg = [math]::Round($res.Deg, 1); kind = $res.Kind; di = $res.DirImage; t = (Get-Date).ToUniversalTime().ToString("o"); err = $res.Error }
             $script:scanDirty++
             $script:scanDone++
         }
@@ -4906,6 +5073,22 @@ $script:scanTimer.Add_Tick({
         $script:scanQueue.RemoveAt(0)
         if (Test-ScanFresh $script:scans[$k]) { continue }
         $script:scanCur = [pscustomobject]@{ Key = $k; Task = [RF4Comp.PostScanner]::ScanAsync($script:http, ($k + "?embed=1&mode=tme")) }
+        return
+    }
+    if ($script:textCur) {
+        if (-not $script:textCur.Task.IsCompleted) { return }
+        $tk = $script:textCur.Key
+        $tv = $null
+        try { $tv = $script:textCur.Task.Result } catch { }
+        $script:textCur = $null
+        if ($null -ne $tv) { Set-PostText $tk $tv; $script:scanDirty++; if ($script:scanDirty -ge 25) { Save-Scans } }
+        return
+    }
+    while ($script:textQueue.Count -gt 0) {
+        $tk = [string]$script:textQueue[0]
+        $script:textQueue.RemoveAt(0)
+        if ($script:scans.ContainsKey($tk) -and $script:scans[$tk].ContainsKey("txt")) { continue }
+        $script:textCur = [pscustomobject]@{ Key = $tk; Task = [RF4Comp.PostScanner]::TextAsync($script:http, ($tk + "?embed=1&mode=tme")) }
         return
     }
     if ($script:scanDirty -gt 0) { Save-Scans }
@@ -5037,6 +5220,16 @@ $script:repImgTimer.Add_Tick({
     foreach ($j in @($script:repImgJobs)) {
         if (-not $j.Task.IsCompleted) { continue }
         $script:repImgJobs.Remove($j)
+        if ($j.Kind -eq "text") {
+            $tv = $null
+            try { $tv = $j.Task.Result } catch { }
+            if ($null -ne $tv) {
+                Set-PostText $j.Src $tv
+                $script:scanDirty++
+                foreach ($it in @($lstCommReports.ItemsSource)) { Refresh-ReportItem $it }
+            }
+            continue
+        }
         if ($j.Kind -eq "header") {
             if (-not $j.Task.IsFaulted -and -not $j.Task.IsCanceled) {
                 try {
@@ -5072,11 +5265,26 @@ $script:repImgTimer.Add_Tick({
         if (-not $j.Task.IsFaulted -and -not $j.Task.IsCanceled) {
             try { $urls = @(Parse-ReportImages $j.Task.Result) } catch { $urls = @() }
             $script:repImgCache[$j.Src] = $urls
+            if ($j.Post -and -not (Get-PostTextByKey $j.Post)) {
+                try {
+                    Set-PostText $j.Post ([RF4Comp.PostScanner]::PostText($j.Task.Result))
+                    Refresh-ReportItem $j.Item
+                } catch { }
+            }
         }
         Add-ReportImages $j.Item $urls $j.Post
     }
     if ($script:repImgJobs.Count -eq 0) { $script:repImgTimer.Stop() }
 })
+
+function Refresh-ReportItem($item) {
+    $r0 = $script:itemReport[$item]
+    if (-not $r0) { return }
+    $rf = Get-ReportFull $r0
+    $item.Detail = Get-CommReportText $rf
+    $item.Label = Get-ReportLabel $rf
+    if ($script:commSel) { Update-CommInfo $script:commSel }
+}
 
 function Open-ReportUrl([string]$url) {
     if (-not $url) { return }
@@ -5093,7 +5301,8 @@ function Get-ClusterSummary($cl) {
     $last = ""
     $det = @{}
     foreach ($f in @("baitDetail", "lure", "groundbait", "dryMix", "dip", "pva", "pvaMix", "rig", "reelSpeed")) { $det[$f] = @() }
-    foreach ($r in $cl.Reports) {
+    foreach ($r0 in $cl.Reports) {
+        $r = Get-ReportFull $r0
         foreach ($f in @("baitDetail", "lure", "groundbait", "dryMix", "dip", "rig", "reelSpeed")) {
             $v = Clean-CommDetail ([string]$r[$f])
             if ($v) { $det[$f] += $v }
@@ -5298,10 +5507,8 @@ function Receive-SyncPage([string]$raw) {
     }
 }
 
-function Show-CommCluster($cl) {
-    $script:commSel = $cl
+function Update-CommInfo($cl) {
     $sum = Get-ClusterSummary $cl
-    $txtCommTitle.Text = "{0}   {1}:{2}   ({3} {4})" -f (Get-LakeName $cl.Lake), $cl.X, $cl.Y, $cl.Reports.Count, (T "reports")
     $lines = @()
     $lines += "{0}: {1}" -f (T "fish"), (Format-TopCounts $sum.Fish 8)
     if (@($sum.Bait).Count -gt 0) { $lines += "{0}: {1}" -f (T "bait"), (Format-TopCounts $sum.Bait 8) }
@@ -5309,6 +5516,10 @@ function Show-CommCluster($cl) {
     if (@($sum.Clips).Count -gt 0) { $lines += "{0}: {1}" -f (T "distance"), (Format-MeterCounts $sum.Clips) }
     if (@($sum.Depths).Count -gt 0) { $lines += "{0}: {1}" -f (T "depth"), (Format-MeterCounts $sum.Depths) }
     if (@($sum.ReelSpeed).Count -gt 0) { $lines += "{0}: {1}" -f (T "reelSpeed"), (Format-TopCounts $sum.ReelSpeed 3) }
+    foreach ($pair in @(@("BaitDetail", "baitExact"), @("Dip", "dipL"), @("Groundbait", "groundbaitMix"))) {
+        $top = @($sum.($pair[0]))
+        if ($top.Count -gt 0) { $lines += "{0}: {1}" -f (T $pair[1]), ((@($top | Select-Object -First 3 | ForEach-Object { "{0} ({1})" -f (Format-CommItems $_.Key), $_.Value })) -join ";  ") }
+    }
     $lines += "{0}: {1}" -f (T "lastReport"), (Format-IsoDate $sum.Last)
     if ($cl.Water) {
         $wl = T "onWater"
@@ -5316,8 +5527,9 @@ function Show-CommCluster($cl) {
         $lines = @($wl) + $lines
     }
     $txtCommInfo.Text = $lines -join [Environment]::NewLine
-    $items = @()
-    foreach ($r in @($cl.Reports | Sort-Object { [string]$_["posted"] } -Descending | Select-Object -First 40)) {
+}
+
+function Get-ReportLabel($r) {
         $parts = @(Format-IsoDate ([string]$r["posted"]))
         $fl = (@($r["fish"]) | Select-Object -First 3 | ForEach-Object { N $_ }) -join ", "
         if ($fl) { $parts += $fl }
@@ -5327,15 +5539,36 @@ function Show-CommCluster($cl) {
         if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $parts += ("{0} {1:0.#} m {2}" -f (T "distance"), [double]$r["clip"], $dl).TrimEnd() }
         elseif ($dl) { $parts += $dl }
         $parts += Get-ReportHost ([string]$r["url"])
+        ($parts -join "  |  ")
+}
+
+$script:itemReport = @{}
+
+function Show-CommCluster($cl) {
+    $script:commSel = $cl
+    $txtCommTitle.Text = "{0}   {1}:{2}   ({3} {4})" -f (Get-LakeName $cl.Lake), $cl.X, $cl.Y, $cl.Reports.Count, (T "reports")
+    Update-CommInfo $cl
+    $items = @()
+    $script:itemReport = @{}
+    foreach ($r0 in @($cl.Reports | Sort-Object { [string]$_["posted"] } -Descending | Select-Object -First 40)) {
+        $r = Get-ReportFull $r0
         $ri = New-Object RF4Comp.ReportItem
-        $ri.Label = ($parts -join "  |  ")
+        $ri.Label = Get-ReportLabel $r
         $ri.Url = [string]$r["url"]
         $ri.Detail = Get-CommReportText $r
+        $script:itemReport[$ri] = $r0
         $ri.ImgUrl = [string]$r["img"]
         if (-not (Get-TgKey $ri.Url) -and [string]$r["src"] -ne "companion") { $cp = Find-CrossPost $r; if ($cp) { $ri.CrossUrl = [string]$cp["url"] } }
         $items += $ri
     }
     $lstCommReports.ItemsSource = $items
+    $want = @()
+    foreach ($r0 in $cl.Reports) {
+        $pk = Get-ReportImgPost $r0
+        if ($pk -and -not (Get-PostTextByKey $pk) -and $want -notcontains $pk -and -not @($script:repImgJobs | Where-Object { $_.Kind -eq "text" -and $_.Src -eq $pk }).Count) { $want += $pk }
+    }
+    foreach ($pk in ($want | Select-Object -First 20)) { $script:repImgJobs.Add([pscustomobject]@{ Item = $null; Src = $pk; Kind = "text"; Post = $pk; Task = [RF4Comp.PostScanner]::TextAsync($script:http, ($pk + "?embed=1&mode=tme")) }) | Out-Null }
+    if ($want.Count) { $script:repImgTimer.Start() }
     $script:commHeaderUrl = ""
     $imgCommSpot.Source = $null
     $bdCommImg.Visibility = "Collapsed"
@@ -5366,6 +5599,7 @@ function Format-CommItems([string]$text) {
     foreach ($part in ($text -split "\s\+\s")) {
         $x = $part.Trim()
         if (-not $x) { continue }
+        if ($x.EndsWith(" (crushed)")) { $out += ((N ($x.Substring(0, $x.Length-10))) + " (" + (T "crushed") + ")"); continue }
         $t = N $x
         if ($t -eq $x -and $x.Length -ge 4) {
             $hit = Match-Name $x $lists.ItemLoc $lists.ItemEn 0.85
@@ -5373,7 +5607,15 @@ function Format-CommItems([string]$text) {
         }
         $out += $t
     }
-    ($out -join " + ")
+    $merged = @()
+    foreach ($o in $out) {
+        if ($merged.Count -and $o -match "^(.+?) (\d+)$") {
+            $base = $Matches[1]; $num = $Matches[2]
+            if ($merged[-1] -match ("^" + [regex]::Escape($base) + " (\d+(?:/\d+)*)$")) { $merged[-1] = $merged[-1] + "/" + $num; continue }
+        }
+        $merged += $o
+    }
+    ($merged -join " + ")
 }
 
 function Get-CommReportText($r) {
@@ -5387,7 +5629,8 @@ function Get-CommReportText($r) {
     if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $lines += "{0}: {1:0.#} m" -f (T "distance"), [double]$r["clip"] }
     if (([string]$r["dir"]).Trim()) { $lines += "{0}: {1}" -f (T "castDir"), ([string]$r["dir"]).Trim() }
     elseif (($rdi = Get-ReportDir $r)) { $lines += "{0}: {1}  ({2})" -f (T "castDir"), (Format-Dir16 $rdi.Deg), (T "dirFromImages") }
-    if ($null -ne $r["depth"] -and "$($r["depth"])" -ne "") { $lines += "{0}: {1:0.#} m" -f (T "depth"), [double]$r["depth"] }
+    if ($null -ne $r["depth"] -and "$($r["depth"])" -ne "") { $lines += "{0}: {1:0.##} m" -f (T "depth"), [double]$r["depth"] }
+    if ([string]$r["temp"]) { $lines += "{0}: {1}" -f (T "temperature"), (T ("temp_" + [string]$r["temp"])) }
     $bl = (@($r["bait"]) | Where-Object { $_ } | ForEach-Object { N $_ }) -join ", "
     if ($bl) { $lines += "{0}: {1}" -f (T "bait"), $bl }
     foreach ($pair in @(@("baitDetail", "baitExact"), @("lure", "lureDetail"), @("groundbait", "groundbaitMix"), @("dryMix", "dryMix"), @("dip", "dipL"), @("rig", "rigL"), @("reelSpeed", "reelSpeed"))) {
@@ -5398,7 +5641,7 @@ function Get-CommReportText($r) {
     $pv = ([string]$r["pva"]).Trim()
     if ($pv) {
         if (Test-PvaStick $pv) { $lines += "{0}: PVA Stick/Stringer" -f (T "pvaL") }
-        elseif ($pv -match ",") { $lines += "{0}: {1}" -f (T "pvaContent"), (($pv -split "\s*,\s*" | ForEach-Object { N $_ }) -join ", ") }
+        elseif ($pv -match ",") { $lines += "{0}: {1}" -f (T "pvaContent"), (($pv -split "\s*,\s*" | ForEach-Object { Format-CommItems $_ }) -join ", ") }
         else { $lines += "{0}: {1}" -f (T "pvaL"), (Format-CommItems (Clean-CommDetail $pv)) }
     }
     $lines -join [Environment]::NewLine
