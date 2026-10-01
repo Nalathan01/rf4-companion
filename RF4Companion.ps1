@@ -2,12 +2,99 @@ param([switch]$Minimized, [string]$OpenSpot)
 
 $ErrorActionPreference = "Stop"
 
-Get-ChildItem -Path $PSScriptRoot -Recurse -File | Unblock-File -ErrorAction SilentlyContinue
-
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 Add-Type -AssemblyName System.Xaml
+
+$script:splash = $null
+$script:splashText = $null
+$script:splashBar = $null
+
+function Show-Splash {
+    $bg = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(0x15, 0x1A, 0x1F))
+    $line = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(0x2F, 0x3A, 0x44))
+    $accent = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(0x4F, 0xA8, 0xC9))
+    $dim = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(0x8F, 0xA0, 0xAB))
+    $rail = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(0x1F, 0x27, 0x2F))
+    $w = New-Object System.Windows.Window
+    $w.WindowStyle = "None"
+    $w.ResizeMode = "NoResize"
+    $w.Width = 440
+    $w.Height = 190
+    $w.WindowStartupLocation = "CenterScreen"
+    $w.Background = $bg
+    $w.BorderBrush = $line
+    $w.BorderThickness = 1
+    $w.Title = "RF4 Companion"
+    try { $w.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create((New-Object System.Uri (Join-Path $PSScriptRoot "app.ico"))) } catch { }
+    $sp = New-Object System.Windows.Controls.StackPanel
+    $sp.Margin = "28,26,28,22"
+    $title = New-Object System.Windows.Controls.TextBlock
+    $title.Text = "RF4 Companion"
+    $title.FontSize = 26
+    $title.FontFamily = "Segoe UI Semibold"
+    $title.Foreground = $accent
+    $ver = New-Object System.Windows.Controls.TextBlock
+    try { $ver.Text = "Version " + ([System.IO.File]::ReadAllText((Join-Path $PSScriptRoot "version.txt")).Trim()) } catch { }
+    $ver.FontSize = 12
+    $ver.Foreground = $dim
+    $ver.Margin = "0,2,0,22"
+    $bar = New-Object System.Windows.Controls.ProgressBar
+    $bar.Height = 6
+    $bar.Minimum = 0
+    $bar.Maximum = 100
+    $bar.Foreground = $accent
+    $bar.Background = $rail
+    $bar.BorderThickness = 0
+    $txt = New-Object System.Windows.Controls.TextBlock
+    $txt.FontSize = 13
+    $txt.Foreground = $dim
+    $txt.Margin = "0,12,0,0"
+    $txt.TextTrimming = "CharacterEllipsis"
+    $sp.Children.Add($title) | Out-Null
+    $sp.Children.Add($ver) | Out-Null
+    $sp.Children.Add($bar) | Out-Null
+    $sp.Children.Add($txt) | Out-Null
+    $w.Content = $sp
+    $script:splash = $w
+    $script:splashText = $txt
+    $script:splashBar = $bar
+    $w.Show()
+    Update-Splash
+}
+
+function Update-Splash {
+    if (-not $script:splash) { return }
+    $f = New-Object System.Windows.Threading.DispatcherFrame
+    $script:splash.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{ $f.Continue = $false }) | Out-Null
+    [System.Windows.Threading.Dispatcher]::PushFrame($f)
+}
+
+function Set-SplashStep([string]$key, [double]$pct) {
+    if (-not $script:splash) { return }
+    $script:splashText.Text = T $key
+    $script:splashBar.Value = $pct
+    Update-Splash
+}
+
+function Close-Splash {
+    if (-not $script:splash) { return }
+    try { $script:splash.Close() } catch { }
+    $script:splash = $null
+}
+
+if ($args -notcontains "-Minimized" -and -not $Minimized) { try { Show-Splash } catch { $script:splash = $null } }
+
+$unblockMark = Join-Path $PSScriptRoot "unblocked.txt"
+$verNow = ""
+try { $verNow = [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot "version.txt")).Trim() } catch { }
+$verDone = ""
+try { $verDone = [System.IO.File]::ReadAllText($unblockMark).Trim() } catch { }
+if (-not $verNow -or $verNow -ne $verDone) {
+    Get-ChildItem -Path $PSScriptRoot -Recurse -File | Unblock-File -ErrorAction SilentlyContinue
+    try { [System.IO.File]::WriteAllText($unblockMark, $verNow) } catch { }
+}
 
 $root = $PSScriptRoot
 $libsDir = Join-Path $root "Libs"
@@ -136,6 +223,8 @@ function T([string]$key) {
     if ($v) { return $v }
     return $key
 }
+
+Set-SplashStep "splashData" 8
 
 $script:itemNames = $null
 $script:itemLangIdx = @{}
@@ -1329,6 +1418,7 @@ function Format-Coords($lake, $nx, $ny) {
 "@
 
 $reader = New-Object System.Xml.XmlNodeReader $xaml
+Set-SplashStep "splashUi" 18
 $window = [System.Windows.Markup.XamlReader]::Load($reader)
 $appIcon = Join-Path $root "app.ico"
 if (Test-Path -LiteralPath $appIcon) { try { $window.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create((New-Object System.Uri $appIcon)) } catch { } }
@@ -7161,6 +7251,7 @@ function Apply-Language {
     $script:busy = $true
     $window.Title = T "appTitle"
     $txtAppTitle.Text = T "appTitle"
+    Set-SplashStep "splashLists" 42
     Localize-Tree $window
     foreach ($ck in $script:colKeys) { $ck.Col.Header = (T $ck.Key) }
     $txtPrefHint.Text = T "prefHintShort"
@@ -7292,10 +7383,12 @@ function Apply-Language {
     Refresh-Lakes
     Refresh-Trophies
     Refresh-Recipes
+    Set-SplashStep "splashWeekly" 58
     Refresh-Weekly
     Update-BottomPanel
     Update-RecipeLabels
     Update-TrackerUi
+    Set-SplashStep "splashSpots" 78
     Update-CommState
     if ($script:commSel) { Show-CommCluster $script:commSel }
     Set-Status ""
@@ -7903,6 +7996,7 @@ $window.Add_PreviewKeyDown({
     }
 })
 
+Set-SplashStep "splashRecords" 30
 Set-Choices $cmbWeekRegion @($script:weekRegions | ForEach-Object { New-Choice $_ $_ })
 Set-ComboKey $cmbWeekRegion $script:weekRegion
 Load-WeeklyCache
@@ -8093,6 +8187,7 @@ $btnWebSave.Add_Click({
     Set-Status ("{0}: {1}  {2}" -f (T "saved"), (Get-SpotLabel $s), (Format-Coords $lake $s.nx $s.ny))
 })
 
+Set-SplashStep "splashCommunity" 36
 Load-Community
 Load-Scans
 $bdCommImg.Add_MouseLeftButtonUp({ if ($script:commHeaderPost) { Open-ReportUrl $script:commHeaderPost } elseif ($script:commHeaderUrl) { Open-External $script:commHeaderUrl } })
@@ -8407,6 +8502,8 @@ $window.Top = ([System.Windows.SystemParameters]::PrimaryScreenHeight-$window.He
 if ($window.Top -lt 0) { $window.Top = 0 }
 
 $window.Add_ContentRendered({
+    Close-Splash
+    $window.Activate() | Out-Null
     $k = Get-ComboKey $cmbMapLake
     if (-not $k) { $k = "mosquito_lake" }
     if ($OpenSpot -match "^([a-z_]+):(\d+):(\d+)$") { $k = $Matches[1] }
@@ -8499,6 +8596,7 @@ if ($Minimized) {
     $window.WindowState = [System.Windows.WindowState]::Minimized
 }
 
+Set-SplashStep "splashMap" 95
 try {
     $window.ShowDialog() | Out-Null
 } catch {

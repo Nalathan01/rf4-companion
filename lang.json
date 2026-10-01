@@ -303,7 +303,15 @@
   "hiddenImplausible": "{0} unplausible Positionen ausgeblendet",
   "imgFromSource": "Bild: {0}, Klick öffnet den Originalpost",
   "imgsFromSource": "Bilder: {0}, Klick auf ein Bild öffnet den Originalpost",
-  "crushed": "zerkleinert"
+  "crushed": "zerkleinert",
+  "splashData": "Einstellungen und Spieldaten werden geladen",
+  "splashUi": "Oberfläche wird aufgebaut",
+  "splashRecords": "Wochenrekorde werden geladen",
+  "splashCommunity": "Community-Spots werden geladen",
+  "splashLists": "Listen und Auswahlfelder werden gefüllt",
+  "splashWeekly": "Wochenrekorde werden ausgewertet",
+  "splashSpots": "Community-Spots werden ausgewertet",
+  "splashMap": "Karte wird geöffnet"
  },
  "en": {
   "langName": "English",
@@ -609,7 +617,15 @@
   "hiddenImplausible": "{0} implausible positions hidden",
   "imgFromSource": "Image: {0}, click opens the original post",
   "imgsFromSource": "Images: {0}, click an image to open the original post",
-  "crushed": "crushed"
+  "crushed": "crushed",
+  "splashData": "Loading settings and game data",
+  "splashUi": "Building the interface",
+  "splashRecords": "Loading weekly records",
+  "splashCommunity": "Loading community spots",
+  "splashLists": "Filling lists and selections",
+  "splashWeekly": "Analyzing weekly records",
+  "splashSpots": "Analyzing community spots",
+  "splashMap": "Opening the map"
  },
  "ru": {
   "langName": "Русский",
@@ -912,7 +928,15 @@
   "hiddenImplausible": "скрыто неправдоподобных позиций: {0}",
   "imgFromSource": "Изображение: {0}, щелчок открывает оригинальный пост",
   "imgsFromSource": "Изображения: {0}, щелчок по изображению открывает оригинальный пост",
-  "crushed": "дроблёный"
+  "crushed": "дроблёный",
+  "splashData": "Загрузка настроек и игровых данных",
+  "splashUi": "Построение интерфейса",
+  "splashRecords": "Загрузка недельных рекордов",
+  "splashCommunity": "Загрузка точек сообщества",
+  "splashLists": "Заполнение списков",
+  "splashWeekly": "Анализ недельных рекордов",
+  "splashSpots": "Анализ точек сообщества",
+  "splashMap": "Открытие карты"
  },
  "fr": {
   "langName": "Français",
@@ -1215,7 +1239,15 @@
   "hiddenImplausible": "{0} positions invraisemblables masquées",
   "imgFromSource": "Image : {0}, un clic ouvre la publication d'origine",
   "imgsFromSource": "Images : {0}, cliquer sur une image ouvre la publication d'origine",
-  "crushed": "broyé"
+  "crushed": "broyé",
+  "splashData": "Chargement des paramètres et des données du jeu",
+  "splashUi": "Construction de l'interface",
+  "splashRecords": "Chargement des records hebdomadaires",
+  "splashCommunity": "Chargement des spots de la communauté",
+  "splashLists": "Remplissage des listes",
+  "splashWeekly": "Analyse des records hebdomadaires",
+  "splashSpots": "Analyse des spots de la communauté",
+  "splashMap": "Ouverture de la carte"
  },
  "es": {
   "langName": "Español",
@@ -1518,7 +1550,15 @@
   "hiddenImplausible": "{0} posiciones inverosímiles ocultas",
   "imgFromSource": "Imagen: {0}, clic abre la publicación original",
   "imgsFromSource": "Imágenes: {0}, clic en una imagen abre la publicación original",
-  "crushed": "triturado"
+  "crushed": "triturado",
+  "splashData": "Cargando ajustes y datos del juego",
+  "splashUi": "Construyendo la interfaz",
+  "splashRecords": "Cargando récords semanales",
+  "splashCommunity": "Cargando spots de la comunidad",
+  "splashLists": "Rellenando listas",
+  "splashWeekly": "Analizando récords semanales",
+  "splashSpots": "Analizando spots de la comunidad",
+  "splashMap": "Abriendo el mapa"
  },
  "it": {
   "langName": "Italiano",
@@ -1821,7 +1861,15 @@
   "hiddenImplausible": "{0} posizioni non plausibili nascoste",
   "imgFromSource": "Immagine: {0}, clic apre il post originale",
   "imgsFromSource": "Immagini: {0}, clic su un'immagine apre il post originale",
-  "crushed": "tritato"
+  "crushed": "tritato",
+  "splashData": "Caricamento impostazioni e dati di gioco",
+  "splashUi": "Costruzione dell'interfaccia",
+  "splashRecords": "Caricamento record settimanali",
+  "splashCommunity": "Caricamento spot della community",
+  "splashLists": "Compilazione degli elenchi",
+  "splashWeekly": "Analisi dei record settimanali",
+  "splashSpots": "Analisi degli spot della community",
+  "splashMap": "Apertura della mappa"
  },
  "pl": {
   "langName": "Polski",
@@ -2124,7 +2172,15 @@
   "hiddenImplausible": "ukryto nieprawdopodobne pozycje: {0}",
   "imgFromSource": "Obraz: {0}, kliknięcie otwiera oryginalny post",
   "imgsFromSource": "Obrazy: {0}, kliknięcie obrazu otwiera oryginalny post",
-  "crushed": "kruszony"
+  "crushed": "kruszony",
+  "splashData": "Wczytywanie ustawień i danych gry",
+  "splashUi": "Budowanie interfejsu",
+  "splashRecords": "Wczytywanie rekordów tygodniowych",
+  "splashCommunity": "Wczytywanie miejscówek społeczności",
+  "splashLists": "Wypełnianie list",
+  "splashWeekly": "Analiza rekordów tygodniowych",
+  "splashSpots": "Analiza miejscówek społeczności",
+  "splashMap": "Otwieranie mapy"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2427,7 +2483,15 @@
   "hiddenImplausible": "{0} posições implausíveis ocultas",
   "imgFromSource": "Imagem: {0}, clique abre a publicação original",
   "imgsFromSource": "Imagens: {0}, clique numa imagem para abrir a publicação original",
-  "crushed": "triturado"
+  "crushed": "triturado",
+  "splashData": "Carregando configurações e dados do jogo",
+  "splashUi": "Construindo a interface",
+  "splashRecords": "Carregando recordes semanais",
+  "splashCommunity": "Carregando pontos da comunidade",
+  "splashLists": "Preenchendo listas",
+  "splashWeekly": "Analisando recordes semanais",
+  "splashSpots": "Analisando pontos da comunidade",
+  "splashMap": "Abrindo o mapa"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2730,7 +2794,15 @@
   "hiddenImplausible": "{0} onwaarschijnlijke posities verborgen",
   "imgFromSource": "Afbeelding: {0}, klik opent het originele bericht",
   "imgsFromSource": "Afbeeldingen: {0}, klik op een afbeelding opent het originele bericht",
-  "crushed": "gebroken"
+  "crushed": "gebroken",
+  "splashData": "Instellingen en spelgegevens laden",
+  "splashUi": "Interface opbouwen",
+  "splashRecords": "Weekrecords laden",
+  "splashCommunity": "Communityspots laden",
+  "splashLists": "Lijsten vullen",
+  "splashWeekly": "Weekrecords analyseren",
+  "splashSpots": "Communityspots analyseren",
+  "splashMap": "Kaart openen"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3033,7 +3105,15 @@
   "hiddenImplausible": "{0} mantıksız konum gizlendi",
   "imgFromSource": "Resim: {0}, tıklamak orijinal gönderiyi açar",
   "imgsFromSource": "Resimler: {0}, bir resme tıklamak orijinal gönderiyi açar",
-  "crushed": "ezilmiş"
+  "crushed": "ezilmiş",
+  "splashData": "Ayarlar ve oyun verileri yükleniyor",
+  "splashUi": "Arayüz oluşturuluyor",
+  "splashRecords": "Haftalık rekorlar yükleniyor",
+  "splashCommunity": "Topluluk noktaları yükleniyor",
+  "splashLists": "Listeler dolduruluyor",
+  "splashWeekly": "Haftalık rekorlar analiz ediliyor",
+  "splashSpots": "Topluluk noktaları analiz ediliyor",
+  "splashMap": "Harita açılıyor"
  },
  "ro": {
   "langName": "Română",
@@ -3336,7 +3416,15 @@
   "hiddenImplausible": "{0} poziții neplauzibile ascunse",
   "imgFromSource": "Imagine: {0}, clic deschide postarea originală",
   "imgsFromSource": "Imagini: {0}, clic pe o imagine deschide postarea originală",
-  "crushed": "mărunțit"
+  "crushed": "mărunțit",
+  "splashData": "Se încarcă setările și datele jocului",
+  "splashUi": "Se construiește interfața",
+  "splashRecords": "Se încarcă recordurile săptămânale",
+  "splashCommunity": "Se încarcă locurile comunității",
+  "splashLists": "Se completează listele",
+  "splashWeekly": "Se analizează recordurile săptămânale",
+  "splashSpots": "Se analizează locurile comunității",
+  "splashMap": "Se deschide harta"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3639,7 +3727,15 @@
   "hiddenImplausible": "{0} posisi tidak masuk akal disembunyikan",
   "imgFromSource": "Gambar: {0}, klik membuka postingan asli",
   "imgsFromSource": "Gambar: {0}, klik gambar untuk membuka postingan asli",
-  "crushed": "dihancurkan"
+  "crushed": "dihancurkan",
+  "splashData": "Memuat pengaturan dan data game",
+  "splashUi": "Membangun antarmuka",
+  "splashRecords": "Memuat rekor mingguan",
+  "splashCommunity": "Memuat spot komunitas",
+  "splashLists": "Mengisi daftar",
+  "splashWeekly": "Menganalisis rekor mingguan",
+  "splashSpots": "Menganalisis spot komunitas",
+  "splashMap": "Membuka peta"
  },
  "ja": {
   "langName": "日本語",
@@ -3942,7 +4038,15 @@
   "hiddenImplausible": "不自然な位置 {0} 件を非表示",
   "imgFromSource": "画像: {0}、クリックで元の投稿を開きます",
   "imgsFromSource": "画像: {0}、画像をクリックすると元の投稿を開きます",
-  "crushed": "砕いた"
+  "crushed": "砕いた",
+  "splashData": "設定とゲームデータを読み込み中",
+  "splashUi": "画面を構築中",
+  "splashRecords": "週間記録を読み込み中",
+  "splashCommunity": "コミュニティのスポットを読み込み中",
+  "splashLists": "リストを準備中",
+  "splashWeekly": "週間記録を分析中",
+  "splashSpots": "コミュニティのスポットを分析中",
+  "splashMap": "マップを開いています"
  },
  "ko": {
   "langName": "한국어",
@@ -4245,7 +4349,15 @@
   "hiddenImplausible": "비정상 위치 {0}개 숨김",
   "imgFromSource": "이미지: {0}, 클릭하면 원본 게시물이 열립니다",
   "imgsFromSource": "이미지: {0}, 이미지를 클릭하면 원본 게시물이 열립니다",
-  "crushed": "분쇄"
+  "crushed": "분쇄",
+  "splashData": "설정 및 게임 데이터 불러오는 중",
+  "splashUi": "화면 구성 중",
+  "splashRecords": "주간 기록 불러오는 중",
+  "splashCommunity": "커뮤니티 포인트 불러오는 중",
+  "splashLists": "목록 채우는 중",
+  "splashWeekly": "주간 기록 분석 중",
+  "splashSpots": "커뮤니티 포인트 분석 중",
+  "splashMap": "지도 여는 중"
  },
  "zh": {
   "langName": "简体中文",
@@ -4548,7 +4660,15 @@
   "hiddenImplausible": "已隐藏 {0} 个不合理位置",
   "imgFromSource": "图片：{0}，点击打开原帖",
   "imgsFromSource": "图片：{0}，点击图片打开原帖",
-  "crushed": "碎"
+  "crushed": "碎",
+  "splashData": "正在加载设置和游戏数据",
+  "splashUi": "正在构建界面",
+  "splashRecords": "正在加载每周纪录",
+  "splashCommunity": "正在加载社区钓点",
+  "splashLists": "正在填充列表",
+  "splashWeekly": "正在分析每周纪录",
+  "splashSpots": "正在分析社区钓点",
+  "splashMap": "正在打开地图"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4851,6 +4971,14 @@
   "hiddenImplausible": "已隱藏 {0} 個不合理位置",
   "imgFromSource": "圖片：{0}，點擊開啟原帖",
   "imgsFromSource": "圖片：{0}，點擊圖片開啟原帖",
-  "crushed": "碎"
+  "crushed": "碎",
+  "splashData": "正在載入設定與遊戲資料",
+  "splashUi": "正在建立介面",
+  "splashRecords": "正在載入每週紀錄",
+  "splashCommunity": "正在載入社群釣點",
+  "splashLists": "正在填入清單",
+  "splashWeekly": "正在分析每週紀錄",
+  "splashSpots": "正在分析社群釣點",
+  "splashMap": "正在開啟地圖"
  }
 }
