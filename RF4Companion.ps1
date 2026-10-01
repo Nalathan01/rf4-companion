@@ -138,6 +138,7 @@ $script:lang = "de"
 $script:weekRegion = "GL"
 $script:trackerLang = ""
 $script:winPos = $null
+$script:showOwnSpots = $true
 $script:spots = New-Object System.Collections.ArrayList
 $script:catches = New-Object System.Collections.ArrayList
 $script:recipes = New-Object System.Collections.ArrayList
@@ -149,6 +150,7 @@ if (Test-Path $userFile) {
     if ($loaded.weekRegion) { $script:weekRegion = $loaded.weekRegion }
     if ($loaded.trackerLang) { $script:trackerLang = $loaded.trackerLang }
     if ($loaded.winPos) { $script:winPos = $loaded.winPos }
+    if ($null -ne $loaded.showOwnSpots) { $script:showOwnSpots = [bool]$loaded.showOwnSpots }
     foreach ($s in @($loaded.spots)) { if ($s) { $script:spots.Add($s) | Out-Null } }
     foreach ($c in @($loaded.catches)) { if ($c) { $script:catches.Add($c) | Out-Null } }
     foreach ($r in @($loaded.recipes)) { if ($r) { $script:recipes.Add($r) | Out-Null } }
@@ -164,6 +166,7 @@ function Save-User {
         weekRegion = $script:weekRegion
         trackerLang = $script:trackerLang
         winPos = $script:winPos
+        showOwnSpots = $script:showOwnSpots
         recipesSeeded = $true
         spots = @($script:spots)
         catches = @($script:catches)
@@ -603,6 +606,7 @@ function Format-Coords($lake, $nx, $ny) {
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <DockPanel Grid.Row="1">
+                            <CheckBox x:Name="chkOwnSpots" Tag="t:ownSpotsLayer" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,10"/>
                             <CheckBox x:Name="chkCommunity" Tag="t:communityLayer" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,10"/>
                             <ComboBox x:Name="cmbCommPeriod" Width="150" Margin="0,0,10,10"/>
                             <ComboBox x:Name="cmbCommFish" Width="200" Margin="0,0,10,10" IsEditable="True" TextSearch.TextPath="Label"/>
@@ -1743,6 +1747,7 @@ function Draw-Markers {
     foreach ($s in $script:spots) {
         if ($s.lake -ne $lake.id) { continue }
         $isSel = ($s.id -eq $script:selSpotId)
+        if (-not $chkOwnSpots.IsChecked -and -not $isSel) { continue }
         $size = 16 / $sc
         if ($isSel) { $size = 24 / $sc }
         $color = $script:techColors["$($s.tech)"]
@@ -8247,6 +8252,8 @@ Load-Community
 Load-Scans
 $bdCommImg.Add_MouseLeftButtonUp({ if ($script:commHeaderPost) { Open-ReportUrl $script:commHeaderPost } elseif ($script:commHeaderUrl) { Open-External $script:commHeaderUrl } })
 
+$chkOwnSpots.IsChecked = $script:showOwnSpots
+$chkOwnSpots.Add_Click({ $script:showOwnSpots = [bool]$chkOwnSpots.IsChecked; Save-User; Draw-Markers })
 $chkCommunity.Add_Click({ if (-not $chkCommunity.IsChecked -and $script:commSel) { Hide-CommCluster }; Draw-Markers })
 $cmbCommPeriod.Add_SelectionChanged({ if (-not $script:busy) { if ($script:commSel) { Hide-CommCluster }; Draw-Markers } })
 $cmbCommFish.Add_SelectionChanged({ if (-not $script:busy) { if ($script:commSel) { Hide-CommCluster }; Draw-Markers } })

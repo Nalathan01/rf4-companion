@@ -311,7 +311,8 @@
   "splashLists": "Listen und Auswahlfelder werden gefüllt",
   "splashWeekly": "Wochenrekorde werden ausgewertet",
   "splashSpots": "Community-Spots werden ausgewertet",
-  "splashMap": "Karte wird geöffnet"
+  "splashMap": "Karte wird geöffnet",
+  "ownSpotsLayer": "Eigene Spots"
  },
  "en": {
   "langName": "English",
@@ -625,7 +626,8 @@
   "splashLists": "Filling lists and selections",
   "splashWeekly": "Analyzing weekly records",
   "splashSpots": "Analyzing community spots",
-  "splashMap": "Opening the map"
+  "splashMap": "Opening the map",
+  "ownSpotsLayer": "My spots"
  },
  "ru": {
   "langName": "Русский",
@@ -936,7 +938,8 @@
   "splashLists": "Заполнение списков",
   "splashWeekly": "Анализ недельных рекордов",
   "splashSpots": "Анализ точек сообщества",
-  "splashMap": "Открытие карты"
+  "splashMap": "Открытие карты",
+  "ownSpotsLayer": "Мои точки"
  },
  "fr": {
   "langName": "Français",
@@ -1247,7 +1250,8 @@
   "splashLists": "Remplissage des listes",
   "splashWeekly": "Analyse des records hebdomadaires",
   "splashSpots": "Analyse des spots de la communauté",
-  "splashMap": "Ouverture de la carte"
+  "splashMap": "Ouverture de la carte",
+  "ownSpotsLayer": "Mes spots"
  },
  "es": {
   "langName": "Español",
@@ -1558,7 +1562,8 @@
   "splashLists": "Rellenando listas",
   "splashWeekly": "Analizando récords semanales",
   "splashSpots": "Analizando spots de la comunidad",
-  "splashMap": "Abriendo el mapa"
+  "splashMap": "Abriendo el mapa",
+  "ownSpotsLayer": "Mis spots"
  },
  "it": {
   "langName": "Italiano",
@@ -1869,7 +1874,8 @@
   "splashLists": "Compilazione degli elenchi",
   "splashWeekly": "Analisi dei record settimanali",
   "splashSpots": "Analisi degli spot della community",
-  "splashMap": "Apertura della mappa"
+  "splashMap": "Apertura della mappa",
+  "ownSpotsLayer": "I miei spot"
  },
  "pl": {
   "langName": "Polski",
@@ -2180,7 +2186,8 @@
   "splashLists": "Wypełnianie list",
   "splashWeekly": "Analiza rekordów tygodniowych",
   "splashSpots": "Analiza miejscówek społeczności",
-  "splashMap": "Otwieranie mapy"
+  "splashMap": "Otwieranie mapy",
+  "ownSpotsLayer": "Moje miejscówki"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2491,7 +2498,8 @@
   "splashLists": "Preenchendo listas",
   "splashWeekly": "Analisando recordes semanais",
   "splashSpots": "Analisando pontos da comunidade",
-  "splashMap": "Abrindo o mapa"
+  "splashMap": "Abrindo o mapa",
+  "ownSpotsLayer": "Meus pontos"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2802,7 +2810,8 @@
   "splashLists": "Lijsten vullen",
   "splashWeekly": "Weekrecords analyseren",
   "splashSpots": "Communityspots analyseren",
-  "splashMap": "Kaart openen"
+  "splashMap": "Kaart openen",
+  "ownSpotsLayer": "Mijn spots"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3113,7 +3122,8 @@
   "splashLists": "Listeler dolduruluyor",
   "splashWeekly": "Haftalık rekorlar analiz ediliyor",
   "splashSpots": "Topluluk noktaları analiz ediliyor",
-  "splashMap": "Harita açılıyor"
+  "splashMap": "Harita açılıyor",
+  "ownSpotsLayer": "Noktalarım"
  },
  "ro": {
   "langName": "Română",
@@ -3424,7 +3434,8 @@
   "splashLists": "Se completează listele",
   "splashWeekly": "Se analizează recordurile săptămânale",
   "splashSpots": "Se analizează locurile comunității",
-  "splashMap": "Se deschide harta"
+  "splashMap": "Se deschide harta",
+  "ownSpotsLayer": "Locurile mele"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3735,7 +3746,8 @@
   "splashLists": "Mengisi daftar",
   "splashWeekly": "Menganalisis rekor mingguan",
   "splashSpots": "Menganalisis spot komunitas",
-  "splashMap": "Membuka peta"
+  "splashMap": "Membuka peta",
+  "ownSpotsLayer": "Spot saya"
  },
  "ja": {
   "langName": "日本語",
@@ -4046,7 +4058,8 @@
   "splashLists": "リストを準備中",
   "splashWeekly": "週間記録を分析中",
   "splashSpots": "コミュニティのスポットを分析中",
-  "splashMap": "マップを開いています"
+  "splashMap": "マップを開いています",
+  "ownSpotsLayer": "自分のスポット"
  },
  "ko": {
   "langName": "한국어",
@@ -4357,7 +4370,8 @@
   "splashLists": "목록 채우는 중",
   "splashWeekly": "주간 기록 분석 중",
   "splashSpots": "커뮤니티 포인트 분석 중",
-  "splashMap": "지도 여는 중"
+  "splashMap": "지도 여는 중",
+  "ownSpotsLayer": "내 포인트"
  },
  "zh": {
   "langName": "简体中文",
@@ -4668,7 +4682,8 @@
   "splashLists": "正在填充列表",
   "splashWeekly": "正在分析每周纪录",
   "splashSpots": "正在分析社区钓点",
-  "splashMap": "正在打开地图"
+  "splashMap": "正在打开地图",
+  "ownSpotsLayer": "我的钓点"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4979,6 +4994,7 @@
   "splashLists": "正在填入清單",
   "splashWeekly": "正在分析每週紀錄",
   "splashSpots": "正在分析社群釣點",
-  "splashMap": "正在開啟地圖"
+  "splashMap": "正在開啟地圖",
+  "ownSpotsLayer": "我的釣點"
  }
 }
