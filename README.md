@@ -13,8 +13,9 @@ RF4 Companion is a free Windows tool that runs next to the game. It combines the
 * **Target fish:** pick a fish or "All koi" and get the most promising spots and baits. Spots are weighted by the age of their reports, because koi and other special fish usually stay at a spot for only two or three days. Every spot links to the original community post.
 * **Preferences:** a fish by flavour table built from the weekly records of all regions, filterable by the first 6, 12, 24 or 48 hours after the weekly reset.
 * **Weekly records:** all three official weekly tables (records, light, bottom light) for all regions, updated automatically.
-* **Map:** all waterbodies with your own spots, community spots filtered by fish and period, a ruler and coordinate search. Double click a fish anywhere in the app to see it on the map.
+* **Map:** all waterbodies with your own spots (can be hidden), community spots filtered by fish and period, a ruler and coordinate search. Double click a fish anywhere in the app to see it on the map.
 * **Cast direction and spot photos:** the cast direction is read from the screenshots in community posts (the green marker on the game map and the minimap) and drawn as an arrow. Every community spot shows the best photo of the spot, and the images of Telegram posts appear right in the app.
+* **Post details:** bait, dip, groundbait, clip, depth and water temperature are read from the Russian text of Telegram posts and translated into your language with the game's own item names.
 * **Plausibility check:** community positions are checked against the map. Broken coordinates are hidden, confirmed digit swaps are corrected, and spots on the water are marked as "boat or typo".
 * **Catch log with screenshot tracker:** press F12 in the game as usual. The app reads setup, catch screen, keepnet, fish market, map and recipe screenshots and suggests catches with fish, weight, bait, dip, PVA, position, water temperature and cast direction.
 * **Reference:** waterbodies, trophy weights and your own groundbait and PVA recipes.
