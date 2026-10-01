@@ -3787,25 +3787,43 @@ function Refresh-Weekly {
     if ($wd -gt 0) { $minDate = (Get-Date).Date.AddDays(1-$wd) }
     $rows = New-Object System.Collections.ArrayList
     $filtered = New-Object System.Collections.ArrayList
+    if ($script:wkMemoLang -ne $script:lang) { $script:wkMemo = @{}; $script:wkMemoLang = $script:lang }
+    $m = $script:wkMemo
     foreach ($r in $script:weekly) {
         if ($lf -and $r.lake -ne $lf) { continue }
         if ($minDate) {
-            $rd = Parse-RecordDate "$($r.date)"
+            $dk = "d|" + $r.date
+            if (-not $m.ContainsKey($dk)) { $m[$dk] = Parse-RecordDate "$($r.date)" }
+            $rd = $m[$dk]
             if ($rd -and $rd -lt $minDate) { continue }
         }
-        $fishL = N $r.fish
-        $baitL = (@(Split-Baits $r.bait | ForEach-Object { N $_ }) -join " + ")
+        $fk = "f|" + $r.fish
+        $fishL = $m[$fk]
+        if ($null -eq $fishL) { $fishL = N $r.fish; $m[$fk] = $fishL }
+        $bk = "b|" + $r.bait
+        $baitL = $m[$bk]
+        if ($null -eq $baitL) { $baitL = (@(Split-Baits $r.bait | ForEach-Object { N $_ }) -join " + "); $m[$bk] = $baitL }
         $lakeL = $r.loc
-        if ($r.lake) { $lakeL = Get-LakeName $r.lake }
+        if ($r.lake) {
+            $lk = "l|" + $r.lake
+            $lakeL = $m[$lk]
+            if ($null -eq $lakeL) { $lakeL = Get-LakeName $r.lake; $m[$lk] = $lakeL }
+        }
+        $rk = "r|" + $r.lake
+        if (-not $m.ContainsKey($rk)) { $m[$rk] = Get-LakeRank $r.lake }
+        $wk = "w|" + $r.weight
+        if (-not $m.ContainsKey($wk)) { $m[$wk] = Format-Weight $r.weight }
+        $mk = "m|" + $r.fish + "|" + $r.weight
+        if (-not $m.ContainsKey($mk)) { $m[$mk] = Get-TrophyMark $r.fish $r.weight }
         if ($q) {
             $hay = ("{0} {1} {2} {3} {4} {5}" -f $fishL, $r.fish, $baitL, $r.bait, $lakeL, $r.player).ToLower()
             if (-not $hay.Contains($q)) { continue }
         }
         $filtered.Add($r) | Out-Null
         $rows.Add([pscustomobject]@{
-            Fish = $fishL; Weight = (Format-Weight $r.weight); WeightSort = [int]$r.weight
-            Mark = (Get-TrophyMark $r.fish $r.weight); Lake = $lakeL; Bait = $baitL; Player = $r.player; Date = $r.date
-            LakeId = $r.lake; LakeSort = (Get-LakeRank $r.lake); FishKey = $r.fish
+            Fish = $fishL; Weight = $m[$wk]; WeightSort = [int]$r.weight
+            Mark = $m[$mk]; Lake = $lakeL; Bait = $baitL; Player = $r.player; Date = $r.date
+            LakeId = $r.lake; LakeSort = $m[$rk]; FishKey = $r.fish
         }) | Out-Null
     }
     $dgWeek.ItemsSource = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WeightSort"; Descending = $true })
@@ -3814,7 +3832,9 @@ function Refresh-Weekly {
     $bf = @{}
     $bl = @{}
     foreach ($r in $filtered) {
-        foreach ($b in (Split-Baits $r.bait)) {
+        $sk = "s|" + $r.bait
+        if (-not $m.ContainsKey($sk)) { $m[$sk] = @(Split-Baits $r.bait) }
+        foreach ($b in $m[$sk]) {
             if (-not $bc.ContainsKey($b)) { $bc[$b] = 0; $bf[$b] = New-Object System.Collections.ArrayList; $bl[$b] = New-Object System.Collections.ArrayList }
             $bc[$b] = $bc[$b] + 1
             if (-not $bf[$b].Contains($r.fish)) { $bf[$b].Add($r.fish) | Out-Null }
@@ -4126,6 +4146,41 @@ namespace RF4Comp {
 $script:waterMaps = @{}
 $script:posStatus = @{}
 $script:reportPos = @{}
+$script:posCacheFile = Join-Path $userDir "pos_cache.json"
+$script:posCacheFromDisk = $false
+
+function Load-PosCache {
+    if (-not (Test-Path -LiteralPath $script:posCacheFile)) { return }
+    try {
+        $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $ser.MaxJsonLength = [int]::MaxValue
+        $d = $ser.DeserializeObject([System.IO.File]::ReadAllText($script:posCacheFile))
+        if ([string]$d["day"] -ne (Get-Date).ToString("yyyy-MM-dd")) { return }
+        foreach ($k in $d["status"].Keys) { $script:posStatus[$k] = [int]$d["status"][$k] }
+        foreach ($k in $d["pos"].Keys) {
+            $v = $d["pos"][$k]
+            if ($null -eq $v) { $script:reportPos[$k] = $null; continue }
+            $script:reportPos[$k] = [pscustomobject]@{ X = [int]$v["X"]; Y = [int]$v["Y"]; S = [int]$v["S"]; Fix = [string]$v["Fix"]; Hint = [string]$v["Hint"] }
+        }
+        $script:posCacheFromDisk = $true
+    } catch { }
+}
+
+function Save-PosCache {
+    try {
+        $pos = @{}
+        foreach ($k in $script:reportPos.Keys) {
+            $v = $script:reportPos[$k]
+            $pos[$k] = $(if ($null -eq $v) { $null } else { @{ X = $v.X; Y = $v.Y; S = $v.S; Fix = $v.Fix; Hint = $v.Hint } })
+        }
+        $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+        $ser.MaxJsonLength = [int]::MaxValue
+        $json = $ser.Serialize(@{ day = (Get-Date).ToString("yyyy-MM-dd"); status = $script:posStatus; pos = $pos })
+        [System.IO.File]::WriteAllText($script:posCacheFile, $json, (New-Object System.Text.UTF8Encoding $false))
+    } catch { }
+}
+
+Load-PosCache
 
 function Get-PosStatus([string]$lakeId, [int]$x, [int]$y) {
     $k = "{0}|{1}|{2}" -f $lakeId, $x, $y
@@ -8492,9 +8547,12 @@ $btnCommTake.Add_Click({
     $txtSpotName.Focus() | Out-Null
 })
 
+$script:wkMemo = @{}
+$script:wkMemoLang = ""
 $dpCatchDate.SelectedDate = Get-Date
 Clear-RecipeForm
 Apply-Language
+if (-not $script:posCacheFromDisk) { Save-PosCache }
 if (-not $recipesSeeded) { Save-User }
 
 $window.Left = ([System.Windows.SystemParameters]::PrimaryScreenWidth-$window.Width) / 2
