@@ -4951,10 +4951,10 @@ $script:textQueue = New-Object System.Collections.ArrayList
 $script:textCur = $null
 $script:postTexts = @{}
 $script:fullCache = @{}
+$script:parseMemo = @{}
 
 function Set-PostText([string]$key, [string]$text) {
     if ($script:scans.ContainsKey($key)) { $script:scans[$key]["txt"] = $text } else { $script:postTexts[$key] = $text }
-    $script:fullCache = @{}
 }
 
 function Get-PostTextByKey([string]$k) {
@@ -5083,7 +5083,8 @@ function Get-ReportFull($r) {
     if (-not $txt) { return $r }
     $id = [string]$r["id"]
     if ($id -and $script:fullCache.ContainsKey($id)) { return $script:fullCache[$id] }
-    $info = Parse-PostText $txt
+    if (-not $script:parseMemo.ContainsKey($txt)) { $script:parseMemo[$txt] = Parse-PostText $txt }
+    $info = $script:parseMemo[$txt]
     $f = @{}
     foreach ($k in $r.Keys) { $f[$k] = $r[$k] }
     foreach ($k in @("clip", "depth")) { if ($info.ContainsKey($k) -and ($null -eq $f[$k] -or "$($f[$k])" -eq "")) { $f[$k] = $info[$k] } }
@@ -5159,10 +5160,12 @@ function Start-ScanQueue {
     $cur = $(if ($script:curMapLake) { $script:curMapLake.id } else { "" })
     $items = New-Object System.Collections.ArrayList
     $seen = @{}
+    $recent = @{}
     foreach ($r in (Get-AllCommReports)) {
         $k = Get-TgKey ([string]$r["url"])
         if (-not $k -or $seen.ContainsKey($k) -or [string]$r["posted"] -lt $since) { continue }
         $seen[$k] = $true
+        $recent[$k] = $true
         if (Test-ScanFresh $script:scans[$k]) { continue }
         $items.Add([pscustomobject]@{ K = $k; P = $(if ($r["lake"] -eq $cur) { 0 } else { 1 }); T = [string]$r["posted"] }) | Out-Null
     }
@@ -5181,7 +5184,7 @@ function Start-ScanQueue {
     $script:scanQueue.Clear()
     foreach ($it in ($items | Sort-Object P, @{ Expression = "T"; Descending = $true })) { $script:scanQueue.Add($it.K) | Out-Null }
     $script:textQueue.Clear()
-    foreach ($k in @($script:scans.Keys)) { if (-not $script:scans[$k].ContainsKey("txt") -and -not $script:scanQueue.Contains($k)) { $script:textQueue.Add($k) | Out-Null } }
+    foreach ($k in @($recent.Keys)) { if ($script:scans.ContainsKey($k) -and -not $script:scans[$k].ContainsKey("txt") -and -not $script:scanQueue.Contains($k)) { $script:textQueue.Add($k) | Out-Null } }
     if ($script:scanQueue.Count -gt 0 -or $script:textQueue.Count -gt 0) { $script:scanTimer.Start() }
     Update-CommState
 }
@@ -5210,7 +5213,6 @@ $script:scanTimer.Add_Tick({
         try { $res = $script:scanCur.Task.Result } catch { }
         $script:scanCur = $null
         if ($res) {
-            $script:fullCache = @{}
             $script:scans[$key] = @{ v = 3; txt = $res.Text; imgs = @($res.Images); best = $res.Best; bv = $res.BestIsView; deg = [math]::Round($res.Deg, 1); kind = $res.Kind; di = $res.DirImage; t = (Get-Date).ToUniversalTime().ToString("o"); err = $res.Error }
             $script:scanDirty++
             $script:scanDone++
@@ -5240,7 +5242,7 @@ $script:scanTimer.Add_Tick({
         $tv = $null
         try { $tv = $script:textCur.Task.Result } catch { }
         $script:textCur = $null
-        if ($null -ne $tv) { Set-PostText $tk $tv; $script:scanDirty++; if ($script:scanDirty -ge 25) { Save-Scans } }
+        if ($null -ne $tv) { Set-PostText $tk $tv; $script:scanDirty++; if ($script:scanDirty -ge 300) { Save-Scans } }
         return
     }
     while ($script:textQueue.Count -gt 0) {
@@ -8647,6 +8649,7 @@ $window.Add_Closing({
         if ($rb.Width -gt 0) { $script:winPos = [ordered]@{ left = $rb.Left; top = $rb.Top; width = $rb.Width; height = $rb.Height } }
     }
     try { Save-User } catch { }
+    if ($script:scanDirty -gt 0) { Save-Scans }
 })
 
 $script:fittedOnce = -not $Minimized
