@@ -8664,6 +8664,13 @@ if ($Minimized) {
     $window.WindowState = [System.Windows.WindowState]::Minimized
 }
 
+$extDir = Join-Path $userDir "extensions"
+if (Test-Path -LiteralPath $extDir) {
+    foreach ($extFile in @(Get-ChildItem -LiteralPath $extDir -Filter "*.ps1" -File)) {
+        try { . $extFile.FullName } catch { Write-ErrorLog ("extension " + $extFile.Name + ": " + $_.Exception.Message) }
+    }
+}
+
 Set-SplashStep "splashMap" 95
 try {
     $window.ShowDialog() | Out-Null
