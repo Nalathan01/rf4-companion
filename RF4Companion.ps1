@@ -4978,7 +4978,7 @@ function Get-RuExtraLists {
         $ru = [string]$script:names[$k].ru
         if (-not $ru) { continue }
         $dl.Add($ru); $de.Add($k)
-        $flav = ($ru -replace "^[A-Za-z'&.\s]+\s(?=[^ -])", "").Trim()
+        $flav = ($ru -replace "^[A-Za-z'&.\s]+\s(?=[^\x00-\x7F])", "").Trim()
         if ($flav -ne $ru) { $dl.Add($flav); $de.Add($k) }
     }
     $script:ruExtra = [pscustomobject]@{ NoDigitLoc = $nl.ToArray(); NoDigitEn = $ne.ToArray(); DipLoc = $dl.ToArray(); DipEn = $de.ToArray() }
