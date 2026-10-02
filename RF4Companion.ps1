@@ -3254,6 +3254,9 @@ function Refresh-Target {
     $script:tgtSet = $set
     if ($set.Count -eq 0) { $dgTgtSpots.ItemsSource = $null; $dgTgtBaits.ItemsSource = $null; $txtTgtVerdict.Text = T "tgtPick"; return }
     $lake = Get-ComboKey $cmbTgtLake
+    $tk = "{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f ($set -join ","), $lake, $script:commReports.Count, $script:catches.Count, $script:archCurId, $script:lang, (Get-Date).ToString("yyyyMMddHH")
+    if ($tk -eq $script:tgtLastKey -and $dgTgtSpots.ItemsSource) { return }
+    $script:tgtLastKey = $tk
     $ids = @()
     if ($script:archCurId) {
         $ids = @($script:archCurId)
@@ -4926,11 +4929,17 @@ function Find-CrossPost($r) {
     $bestDiff = 99999.0
     if ($pt) {
         $fr = @($r["fish"] | Where-Object { $_ })
+        $lo = $pt.AddHours(-12).ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
+        $hi = $pt.AddHours(12).ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture)
         for ($dx = -1; $dx -le 1; $dx++) {
             for ($dy = -1; $dy -le 1; $dy++) {
                 $k = "{0}|{1}|{2}" -f $r["lake"], ([int]$r["x"] + $dx), ([int]$r["y"] + $dy)
                 if (-not $script:tgIndex.ContainsKey($k)) { continue }
                 foreach ($t in $script:tgIndex[$k]) {
+                    $ts = [string]$t["posted"]
+                    if ($ts.Length -lt 19) { continue }
+                    $s19 = $ts.Substring(0, 19)
+                    if ([string]::CompareOrdinal($s19, $lo) -lt 0 -or [string]::CompareOrdinal($s19, $hi) -gt 0) { continue }
                     $tt = Get-PostedTime $t
                     if (-not $tt) { continue }
                     $diff = [math]::Abs(($tt-$pt).TotalHours)
@@ -4954,6 +4963,7 @@ $script:fullCache = @{}
 $script:parseMemo = @{}
 
 function Set-PostText([string]$key, [string]$text) {
+    $script:dirsEpoch++
     if ($script:scans.ContainsKey($key)) { $script:scans[$key]["txt"] = $text } else { $script:postTexts[$key] = $text }
 }
 
@@ -4965,6 +4975,8 @@ function Get-PostTextByKey([string]$k) {
 }
 
 $script:ruExtra = $null
+$script:ruMatchMemo = @{}
+$script:tgtLastKey = ""
 
 function Get-RuExtraLists {
     if ($script:ruExtra) { return $script:ruExtra }
@@ -5003,6 +5015,12 @@ function Translate-RuItems([string]$text, [switch]$Dip) {
         }
         foreach ($v in $variants) {
             $total++
+            $mkey = $(if ($Dip) { "d|" } else { "i|" }) + $v
+            if ($script:ruMatchMemo.ContainsKey($mkey)) {
+                $hk = $script:ruMatchMemo[$mkey]
+                if ($hk) { $k = $hk; if ($crushed) { $k = $k + " (crushed)" }; $keys.Add($k) | Out-Null }
+                continue
+            }
             $hit = $null
             if ($Dip) { $hit = Match-Name $v $ex.DipLoc $ex.DipEn 0.8 }
             if (-not $hit) { $hit = Match-Name $v $lists.ItemLoc $lists.ItemEn 0.82 }
@@ -5011,6 +5029,7 @@ function Translate-RuItems([string]$text, [switch]$Dip) {
                 $hit = Match-Name $v $ex.NoDigitLoc $ex.NoDigitEn 0.82
                 if (-not $hit) { $hit = Match-Name $v $ex.DipLoc $ex.DipEn 0.85 }
             }
+            $script:ruMatchMemo[$mkey] = $(if ($hit) { [string]$hit.En } else { "" })
             if (-not $hit) { continue }
             $k = [string]$hit.En
             if ($crushed) { $k = $k + " (crushed)" }
@@ -5078,6 +5097,20 @@ function Parse-PostText([string]$txt) {
     $o
 }
 
+$script:quickClip = @{}
+
+function Get-QuickClip($r) {
+    if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { return [double]$r["clip"] }
+    $txt = Get-PostTextByKey (Get-ReportImgPost $r)
+    if (-not $txt) { return $null }
+    if ($script:quickClip.ContainsKey($txt)) { return $script:quickClip[$txt] }
+    $v = $null
+    $m = [regex]::Match(($txt -replace "ё", "е"), "(?i)клипс[а-я]*(?:\s*или\s*глубин[а-я]*)?\s*[:\-–—]?\s*(\d{1,3})(?:[.,]\d)?\s*(см)?")
+    if ($m.Success -and -not $m.Groups[2].Success) { $v = [double]$m.Groups[1].Value }
+    $script:quickClip[$txt] = $v
+    $v
+}
+
 function Get-ReportFull($r) {
     $txt = Get-PostTextByKey (Get-ReportImgPost $r)
     if (-not $txt) { return $r }
@@ -5115,7 +5148,19 @@ function Get-ReportDir($r) {
     return $null
 }
 
+$script:dirsMemo = @{}
+$script:dirsEpoch = 0
+
 function Get-ClusterDirs($cl) {
+    $mk = "{0}|{1}|{2}|{3}|{4}|{5}" -f $script:dirsEpoch, $cl.Lake, $cl.X, $cl.Y, $cl.Reports.Count, $(if ($cl.Reports.Count) { [string]$cl.Reports[0]["id"] } else { "" })
+    if ($script:dirsMemo.ContainsKey($mk)) { return $script:dirsMemo[$mk] }
+    $res = Get-ClusterDirsRaw $cl
+    if ($script:dirsMemo.Count -gt 3000) { $script:dirsMemo = @{} }
+    $script:dirsMemo[$mk] = $res
+    $res
+}
+
+function Get-ClusterDirsRaw($cl) {
     $d = Get-DirsOf $cl.Reports
     if ($d.Counts.Count -gt 0) { return $d }
     $ids = @{}
@@ -5133,13 +5178,13 @@ function Get-DirsOf($reports) {
     foreach ($r0 in $reports) {
         $d = Get-ReportDir $r0
         if (-not $d) { continue }
-        $r = Get-ReportFull $r0
         $lbl = Format-Dir16 $d.Deg
         $cnt[$lbl] = 1 + [int]$cnt[$lbl]
         if ($d.Img) { $img = $true }
-        if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") {
+        $clip = Get-QuickClip $r0
+        if ($null -ne $clip) {
             if (-not $cc.ContainsKey($lbl)) { $cc[$lbl] = @() }
-            $cc[$lbl] += ("{0:0.#}" -f [double]$r["clip"])
+            $cc[$lbl] += ("{0:0.#}" -f $clip)
         }
     }
     $clips = @{}
@@ -5154,8 +5199,14 @@ function Test-ScanFresh($e) {
     try { return (((Get-Date).ToUniversalTime()-[datetime]::Parse([string]$e["t"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()).TotalHours -lt 12) } catch { return $false }
 }
 
+$script:scanSigFile = Join-Path $userDir "scanq_sig.txt"
+
 function Start-ScanQueue {
     $days = [math]::Max(7, (Get-KeyDays (Get-ComboKey $cmbCommPeriod)))
+    $sig = "{0}|{1}|{2}|{3}" -f (Get-Date).ToString("yyyy-MM-dd"), $days, $script:commReports.Count, $script:scans.Count
+    $old = ""
+    try { $old = [System.IO.File]::ReadAllText($script:scanSigFile).Trim() } catch { }
+    if ($sig -eq $old -and $script:scanQueue.Count -eq 0 -and $script:textQueue.Count -eq 0) { Update-CommState; return }
     $since = (Get-Date).ToUniversalTime().AddDays(-$days).ToString("yyyy-MM-ddTHH:mm:ss")
     $cur = $(if ($script:curMapLake) { $script:curMapLake.id } else { "" })
     $items = New-Object System.Collections.ArrayList
@@ -5186,6 +5237,7 @@ function Start-ScanQueue {
     $script:textQueue.Clear()
     foreach ($k in @($recent.Keys)) { if ($script:scans.ContainsKey($k) -and -not $script:scans[$k].ContainsKey("txt") -and -not $script:scanQueue.Contains($k)) { $script:textQueue.Add($k) | Out-Null } }
     if ($script:scanQueue.Count -gt 0 -or $script:textQueue.Count -gt 0) { $script:scanTimer.Start() }
+    else { try { [System.IO.File]::WriteAllText($script:scanSigFile, $sig) } catch { } }
     Update-CommState
 }
 
@@ -5213,6 +5265,7 @@ $script:scanTimer.Add_Tick({
         try { $res = $script:scanCur.Task.Result } catch { }
         $script:scanCur = $null
         if ($res) {
+            $script:dirsEpoch++
             $script:scans[$key] = @{ v = 3; txt = $res.Text; imgs = @($res.Images); best = $res.Best; bv = $res.BestIsView; deg = [math]::Round($res.Deg, 1); kind = $res.Kind; di = $res.DirImage; t = (Get-Date).ToUniversalTime().ToString("o"); err = $res.Error }
             $script:scanDirty++
             $script:scanDone++
