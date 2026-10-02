@@ -6111,6 +6111,21 @@ function Find-PosInLines([string[]]$lines) {
             if ($x -ge 1 -and $x -le 300 -and $y -ge 1 -and $y -le 300) { return [pscustomobject]@{ X = $x; Y = $y } }
         }
     }
+    $lb = $(if ($script:trackerLake -and $script:lakeById[$script:trackerLake]) { $script:lakeById[$script:trackerLake].bounds } else { $null })
+    foreach ($l in $lines) {
+        $t = ($l -replace "[Oo]", "0" -replace "[Il|]", "1" -replace "\s", "")
+        foreach ($m in [regex]::Matches($t, "(?<!\d)\d{4,7}(?!\d)")) {
+            $tok = $m.Value
+            for ($i = 1; $i -le $tok.Length-2; $i++) {
+                if ($tok[$i] -ne [char]"2") { continue }
+                $x = [int]$tok.Substring(0, $i)
+                $y = [int]$tok.Substring($i + 1)
+                if ($x -lt 1 -or $x -gt 300 -or $y -lt 1 -or $y -gt 300) { continue }
+                if ($lb -and ($x -lt [double]$lb.xMin -or $x -gt [double]$lb.xMax -or $y -lt [math]::Min([double]$lb.ySouth, [double]$lb.yNorth) -or $y -gt [math]::Max([double]$lb.ySouth, [double]$lb.yNorth))) { continue }
+                return [pscustomobject]@{ X = $x; Y = $y }
+            }
+        }
+    }
     return $null
 }
 
@@ -6147,6 +6162,7 @@ function Match-Temp([string[]]$lines) {
     return ""
 }
 $script:trackerPos = $null
+$script:mapNext = ""
 $script:trackerLake = $null
 $script:trackerLakeManual = $false
 $script:trackerSession = [guid]::NewGuid().ToString("N").Substring(0, 8)
@@ -6237,10 +6253,10 @@ if ($Crop -eq "grid" -or $zoom) {
         $cw = [int]($w * 0.1)
         $ch = [int]($h * 0.022)
     } elseif ($Crop -eq "mini") {
-        $cx = [int]($w * 0.9335)
-        $cy = [int]($h * 0.9244)
-        $cw = [int]($w * 0.033)
-        $ch = [int]($h * 0.022)
+        $cx = [int]($w * 0.925)
+        $cy = [int]($h * 0.87)
+        $cw = [int]($w * 0.055)
+        $ch = [int]($h * 0.075)
     } elseif ($Crop -eq "catch") {
         $cx = [int]($w * 0.38)
         $cy = [int]($h * 0.12)
@@ -7002,6 +7018,22 @@ function Complete-TrackerOcr {
     $script:lastGeo = @($geo)
     $job.PS.Dispose()
     $job.RS.Dispose()
+    if ($job.Mode -eq "lakemap") {
+        $lid = ""
+        foreach ($l in $lines) {
+            if ($l.Length -lt 4 -or $l.Length -gt 40) { continue }
+            $lid = Match-Lake $l "ru"
+            if ($lid) { break }
+        }
+        if ($lid) {
+            Set-TrackerLakeAuto $lid
+            Set-Status ("{0}: {1}" -f (T "trackerLakeFound"), (Get-LakeName $lid))
+        }
+        if ($script:mapNext) { $mr = $script:mapNext; $script:mapNext = ""; Update-TrackerUi; Start-TrackerOcr $job.Path "" "mapzoom" $mr; return }
+        if (-not $lid) { Set-Status (T "trackerUnknown") }
+        Update-TrackerUi
+        return
+    }
     if ($job.Mode -eq "lake") {
         foreach ($l in $lines) {
             if ($l.Length -lt 4 -or $l.Length -gt 40) { continue }
@@ -7222,12 +7254,18 @@ function Complete-TrackerOcr {
                 return
             }
         }
-        if (-not $isHud -and $lines.Count -lt 25) {
-            $cand = @($script:lastGeo | Where-Object { $_.Text.Trim() -match "^\d{1,3}(\s*[:;.]\s*\d{1,3})?$" -and $_.H -lt 30 } | Select-Object -First 1)
-            if ($cand.Count -gt 0) {
-                $c = $cand[0]
-                Start-TrackerOcr $job.Path "" "mapzoom" ("rect:{0},{1},{2},{3}" -f [int]($c.X-$c.H*3.3), [int]($c.Y-$c.H), [int]($c.W + $c.H*4.2), [int]($c.H*2.3))
-                return
+        if (-not $isHud -and $lines.Count -lt 60) {
+            $cand = @($script:lastGeo | Where-Object { $_.Text.Trim() -match "^\d{1,3}\s*[:;.]\s*\d{1,3}$" -and $_.H -lt 30 } | Select-Object -First 1)
+            $grid = @($lines | Where-Object { $_.Trim() -match "^([A-J]|10|[1-9])$" }).Count
+            if ($cand.Count -eq 0 -and $lines.Count -lt 25) { $cand = @($script:lastGeo | Where-Object { $_.Text.Trim() -match "^\d{1,3}(\s*[:;.]\s*\d{1,3})?$" -and $_.H -lt 30 } | Select-Object -First 1) }
+            if ($cand.Count -gt 0 -or $grid -ge 6) {
+                $script:mapNext = ""
+                if ($cand.Count -gt 0) {
+                    $c = $cand[0]
+                    $script:mapNext = "rect:{0},{1},{2},{3}" -f [int]($c.X-$c.H*3.3), [int]($c.Y-$c.H), [int]($c.W + $c.H*4.2), [int]($c.H*2.3)
+                }
+                if ((Get-OcrLanguages) -contains "ru") { Start-TrackerOcr $job.Path "ru" "lakemap"; return }
+                if ($script:mapNext) { $mr = $script:mapNext; $script:mapNext = ""; Start-TrackerOcr $job.Path "" "mapzoom" $mr; return }
             }
         }
         Start-TrackerOcr $job.Path "" "hud" "hud"
