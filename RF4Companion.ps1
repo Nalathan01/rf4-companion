@@ -86,16 +86,6 @@ function Close-Splash {
 
 if ($args -notcontains "-Minimized" -and -not $Minimized) { try { Show-Splash } catch { $script:splash = $null } }
 
-$unblockMark = Join-Path $PSScriptRoot "unblocked.txt"
-$verNow = ""
-try { $verNow = [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot "version.txt")).Trim() } catch { }
-$verDone = ""
-try { $verDone = [System.IO.File]::ReadAllText($unblockMark).Trim() } catch { }
-if (-not $verNow -or $verNow -ne $verDone) {
-    Get-ChildItem -Path $PSScriptRoot -Recurse -File | Unblock-File -ErrorAction SilentlyContinue
-    try { [System.IO.File]::WriteAllText($unblockMark, $verNow) } catch { }
-}
-
 $root = $PSScriptRoot
 $libsDir = Join-Path $root "Libs"
 Add-Type -Path (Join-Path $libsDir "Microsoft.Xaml.Behaviors\Microsoft.Xaml.Behaviors.dll")
@@ -8753,13 +8743,6 @@ $window.Add_StateChanged({
 if ($Minimized) {
     $window.ShowActivated = $false
     $window.WindowState = [System.Windows.WindowState]::Minimized
-}
-
-$extDir = Join-Path $userDir "extensions"
-if (Test-Path -LiteralPath $extDir) {
-    foreach ($extFile in @(Get-ChildItem -LiteralPath $extDir -Filter "*.ps1" -File)) {
-        try { . $extFile.FullName } catch { Write-ErrorLog ("extension " + $extFile.Name + ": " + $_.Exception.Message) }
-    }
 }
 
 Set-SplashStep "splashMap" 95
