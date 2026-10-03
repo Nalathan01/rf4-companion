@@ -10,7 +10,7 @@ $app = Join-Path $top "app"
 New-Item -ItemType Directory -Path (Join-Path $top "installer") -Force | Out-Null
 New-Item -ItemType Directory -Path $app -Force | Out-Null
 
-foreach ($f in @("RF4Companion.ps1", "Start RF4 Companion.vbs", "Uninstall.ps1", "Uninstall.vbs", "lang.json", "app.ico", "version.txt")) {
+foreach ($f in @("RF4Companion.ps1", "Uninstall.ps1", "lang.json", "app.ico", "version.txt")) {
     Copy-Item -LiteralPath (Join-Path $root $f) -Destination (Join-Path $app $f)
 }
 foreach ($d in @("data", "Libs")) {

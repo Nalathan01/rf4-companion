@@ -77,11 +77,16 @@ function Test-AppRunning {
     return ($procs.Count -gt 0)
 }
 
+function Get-PsExe { Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe" }
+
+function Get-PsArgs([string]$file) { '-NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $file + '"' }
+
 function New-AppShortcut([string]$path, [string]$dir) {
     $shell = New-Object -ComObject WScript.Shell
     $lnk = $shell.CreateShortcut($path)
-    $lnk.TargetPath = Join-Path $env:WINDIR "System32\wscript.exe"
-    $lnk.Arguments = '"' + (Join-Path $dir "Start RF4 Companion.vbs") + '"'
+    $lnk.TargetPath = [string](Get-PsExe)
+    $lnk.Arguments = [string](Get-PsArgs (Join-Path $dir "RF4Companion.ps1"))
+    $lnk.WindowStyle = 7
     $lnk.WorkingDirectory = $dir
     $lnk.IconLocation = (Join-Path $dir "app.ico") + ",0"
     $lnk.Description = $appName
@@ -102,6 +107,10 @@ function Install-App([string]$dir, [bool]$desktop, [bool]$startMenu) {
     & robocopy.exe $payload $dir /E /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { throw ("robocopy exit code " + $LASTEXITCODE) }
     Get-ChildItem -LiteralPath $dir -Recurse -File | Unblock-File -ErrorAction SilentlyContinue
+    foreach ($old in @("Start RF4 Companion.vbs", "Uninstall.vbs", "unblocked.txt")) {
+        $op = Join-Path $dir $old
+        if (Test-Path -LiteralPath $op) { Remove-Item -LiteralPath $op -Force }
+    }
 
     $desktopLnk = Join-Path ([Environment]::GetFolderPath("Desktop")) $shortcutName
     $startLnk = Join-Path ([Environment]::GetFolderPath("Programs")) $shortcutName
@@ -117,7 +126,7 @@ function Install-App([string]$dir, [bool]$desktop, [bool]$startMenu) {
         DisplayIcon = (Join-Path $dir "app.ico")
         InstallLocation = $dir
         InstallDate = (Get-Date).ToString("yyyyMMdd")
-        UninstallString = ('"' + (Join-Path $env:WINDIR "System32\wscript.exe") + '" "' + (Join-Path $dir "Uninstall.vbs") + '"')
+        UninstallString = ('"' + (Get-PsExe) + '" ' + (Get-PsArgs (Join-Path $dir "Uninstall.ps1")))
     }
     foreach ($k in $props.Keys) { New-ItemProperty -LiteralPath $regKey -Name $k -Value $props[$k] -PropertyType String -Force | Out-Null }
     foreach ($k in @("NoModify", "NoRepair")) { New-ItemProperty -LiteralPath $regKey -Name $k -Value 1 -PropertyType DWord -Force | Out-Null }
@@ -131,7 +140,7 @@ function Install-App([string]$dir, [bool]$desktop, [bool]$startMenu) {
 }
 
 function Start-App([string]$dir) {
-    Start-Process -FilePath (Join-Path $env:WINDIR "System32\wscript.exe") -ArgumentList ('"' + (Join-Path $dir "Start RF4 Companion.vbs") + '"')
+    Start-Process -FilePath (Get-PsExe) -ArgumentList (Get-PsArgs (Join-Path $dir "RF4Companion.ps1")) -WorkingDirectory $dir -WindowStyle Hidden
 }
 
 if (-not $InstallDir) { $InstallDir = Get-PreviousInstallDir }

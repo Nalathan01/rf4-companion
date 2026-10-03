@@ -39,7 +39,7 @@ RF4 Companion is a free Windows tool that runs next to the game. It combines the
 2. Run `Setup.cmd` and follow the steps.
 3. Uninstall any time via the Windows settings.
 
-To run it from this repository instead: start `Start RF4 Companion.vbs`. `Build-Release.ps1` builds the installer zip into `dist\`.
+To run it from this repository instead: `powershell -STA -ExecutionPolicy Bypass -File RF4Companion.ps1`. `Build-Release.ps1` builds the installer zip into `dist\`.
 
 ## Privacy
 

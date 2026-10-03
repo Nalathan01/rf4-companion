@@ -1462,8 +1462,7 @@ namespace RF4Comp {
 $window.Add_SourceInitialized({
     try {
         $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper $window).Handle
-        $vbs = Get-ChildItem -LiteralPath $root -Filter "*.vbs" | Where-Object { $_.Name -like "Start*" } | Select-Object -First 1
-        $cmd = $(if ($vbs) { "wscript.exe `"" + $vbs.FullName + "`"" } else { "powershell.exe -STA -WindowStyle Hidden -File `"" + (Join-Path $root "RF4Companion.ps1") + "`"" })
+        $cmd = "powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File `"" + (Join-Path $root "RF4Companion.ps1") + "`""
         [RF4Comp.TaskbarId]::Apply($hwnd, "Nalathan.RF4Companion", ($appIcon + ",0"), $cmd, "RF4 Companion") | Out-Null
     } catch { }
 })
