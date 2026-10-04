@@ -928,34 +928,26 @@ function Format-Coords($lake, $nx, $ny) {
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*"/>
-                        <ColumnDefinition Width="14"/>
-                        <ColumnDefinition Width="2*"/>
-                    </Grid.ColumnDefinitions>
-                    <DockPanel Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,10">
+                    <DockPanel Grid.Row="0" Margin="0,0,0,10">
                         <Button x:Name="btnResetRefresh" Tag="t:refresh" DockPanel.Dock="Right" Padding="12,4"/>
                         <ComboBox x:Name="cmbResetFish" DockPanel.Dock="Left" Width="200" Margin="0,0,10,0" IsEditable="True" TextSearch.TextPath="Label"/>
                         <ComboBox x:Name="cmbResetLake" DockPanel.Dock="Left" Width="200" Margin="0,0,10,0"/>
-                        <ComboBox x:Name="cmbResetRegion" DockPanel.Dock="Left" Width="110" Margin="0,0,14,0"/>
+                        <ComboBox x:Name="cmbResetRegion" DockPanel.Dock="Left" Width="130" Margin="0,0,14,0"/>
                         <TextBlock x:Name="txtResetState" Foreground="{DynamicResource AppInkDim}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                     </DockPanel>
-                    <DataGrid x:Name="dgReset" Grid.Row="1" Grid.Column="0" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                    <DataGrid x:Name="dgReset" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True" VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="t:resetSeen" Binding="{Binding Seen}" SortMemberPath="SeenSort"/>
-                            <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}"/>
-                            <DataGridTextColumn Header="t:weight" Binding="{Binding Weight}" SortMemberPath="WSort"/>
-                            <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" SortMemberPath="LakeSort"/>
-                            <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*"/>
-                            <DataGridTextColumn Header="t:region" Binding="{Binding Region}"/>
-                            <DataGridTextColumn Header="t:resetTable" Binding="{Binding Table}"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <DataGrid x:Name="dgResetBaits" Grid.Row="1" Grid.Column="2" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*"/>
-                            <DataGridTextColumn Header="t:resetCount" Binding="{Binding Count}"/>
-                            <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}" Width="*"/>
+                            <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}" Width="170"/>
+                            <DataGridTextColumn Header="t:weight" Binding="{Binding Weight}" SortMemberPath="WSort" Width="90"/>
+                            <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}" SortMemberPath="LakeSort" Width="150"/>
+                            <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*" MinWidth="420">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="t:region" Binding="{Binding Region}" Width="70"/>
+                            <DataGridTextColumn Header="t:resetTable" Binding="{Binding Table}" Width="150"/>
+                            <DataGridTextColumn Header="t:resetSeen" Binding="{Binding Seen}" SortMemberPath="SeenSort" Width="80"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -1546,7 +1538,7 @@ $theme = [ControlzEx.Theming.RuntimeThemeGenerator]::Current.GenerateRuntimeThem
 [ControlzEx.Theming.ThemeManager]::Current.ChangeTheme($window, $theme) | Out-Null
 
 $script:colKeys = New-Object System.Collections.ArrayList
-foreach ($dg in @($dgSpots, $dgCatches, $dgStats, $dgLakeFish, $dgTrophies, $dgWeek, $dgWeekBaits, $dgPrefBaits, $dgTgtSpots, $dgTgtBaits, $dgReset, $dgResetBaits)) {
+foreach ($dg in @($dgSpots, $dgCatches, $dgStats, $dgLakeFish, $dgTrophies, $dgWeek, $dgWeekBaits, $dgPrefBaits, $dgTgtSpots, $dgTgtBaits, $dgReset)) {
     foreach ($col in $dg.Columns) {
         if ($col.Header -is [string] -and $col.Header.StartsWith("t:")) {
             $script:colKeys.Add([pscustomobject]@{ Col = $col; Key = $col.Header.Substring(2) }) | Out-Null
@@ -3061,7 +3053,7 @@ function Get-ResetWindow {
 
 function Refresh-Reset {
     $w = Get-ResetWindow
-    if (-not $w) { $dgReset.ItemsSource = $null; $dgResetBaits.ItemsSource = $null; $txtResetState.Text = T "resetNotYet"; return }
+    if (-not $w) { $dgReset.ItemsSource = $null; $txtResetState.Text = T "resetNotYet"; return }
     $rows = New-Object System.Collections.ArrayList
     $bc = @{}
     $bf = @{}
@@ -3096,8 +3088,7 @@ function Refresh-Reset {
     Set-Choices $cmbResetRegion (@(New-Choice "" (T "allRegions")) + @($allR.Keys | Where-Object { $_ } | Sort-Object | ForEach-Object { New-Choice $_ $_ }))
     Set-ComboKey $cmbResetRegion $fr
     $script:busy = $false
-    $dgReset.ItemsSource = @($rows | Sort-Object SeenSort)
-    $dgResetBaits.ItemsSource = @($bc.Keys | Sort-Object { $bc[$_] } -Descending | ForEach-Object { [pscustomobject]@{ Bait = (N $_); Count = $bc[$_]; Fish = ((@($bf[$_].Keys) | Select-Object -First 5) -join ", ") } })
+    $dgReset.ItemsSource = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WSort"; Descending = $true })
     $txtResetState.Text = (T "resetState") -f $w.Start.ToLocalTime().ToString("dd.MM. HH:mm"), $w.End.ToLocalTime().ToString("HH:mm"), $rows.Count, $(if ($script:cloudLast) { $script:cloudLast.ToString("HH:mm") } else { "-" }), $(if ($script:lastHarvest) { $script:lastHarvest.ToString("HH:mm") } else { "-" })
 }
 
