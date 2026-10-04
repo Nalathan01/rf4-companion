@@ -3089,6 +3089,13 @@ function Refresh-Reset {
     $allF = @{}; $allL = @{}; $allR = @{}
     $prev = Get-PrevBaits $w.Id
     $onlyNew = [bool]$chkResetNew.IsChecked
+    $firstCap = @{}
+    foreach ($it in (Get-ArchWeek $w.Id).Values) {
+        $fs = [string]$it["fs"]
+        if (-not $fs) { continue }
+        $ck = [string]$it["r"] + "|" + [string]$it["t"]
+        if (-not $firstCap.ContainsKey($ck) -or [string]::CompareOrdinal($fs, $firstCap[$ck]) -lt 0) { $firstCap[$ck] = $fs }
+    }
     foreach ($it in (Get-ArchWeek $w.Id).Values) {
         $fs = [string]$it["fs"]
         if (-not $fs) { continue }
@@ -3106,7 +3113,7 @@ function Refresh-Reset {
         if ($newCombo) { $newTxt += (T "resetNewCombo") }
         $newTxt += @($newB | Select-Object -Unique | ForEach-Object { N $_ })
         $rows.Add([pscustomobject]@{
-            Seen = $t.ToLocalTime().ToString("HH:mm"); SeenSort = $t.ToString("o"); Fish = (N $fish); Weight = (Format-Weight ([int]$it["w"])); WSort = [int]$it["w"]
+            Seen = $(if ($fs -eq $firstCap[[string]$it["r"] + "|" + [string]$it["t"]]) { "" } else { $t.ToLocalTime().ToString("HH:mm") }); SeenSort = $t.ToString("o"); Fish = (N $fish); Weight = (Format-Weight ([int]$it["w"])); WSort = [int]$it["w"]
             Lake = (Get-LakeName ([string]$it["l"])); LakeSort = (Get-LakeRank ([string]$it["l"])); Bait = ((@(Split-Baits ([string]$it["b"]) | ForEach-Object { N $_ })) -join " + "); Region = [string]$it["r"]; Table = [string]$tabNames[[string]$it["t"]]; New = ($newTxt -join ", ")
         }) | Out-Null
         foreach ($b in (Split-Baits ([string]$it["b"]))) {
