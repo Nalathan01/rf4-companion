@@ -3124,7 +3124,7 @@ function Refresh-Reset {
     Set-ComboKey $cmbResetRegion $fr
     $script:busy = $false
     $dgReset.ItemsSource = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WSort"; Descending = $true })
-    $txtResetState.Text = (T "resetState") -f $w.Start.ToLocalTime().ToString("dd.MM. HH:mm"), $w.End.ToLocalTime().ToString("HH:mm"), $rows.Count, $(if ($script:cloudLast) { $script:cloudLast.ToString("HH:mm") } else { "-" }), $(if ($script:lastHarvest) { $script:lastHarvest.ToString("HH:mm") } else { "-" })
+    $txtResetState.Text = (T "resetState") -f $w.Start.ToLocalTime().ToString("dd.MM. HH:mm"), $w.End.ToLocalTime().ToString("HH:mm"), $rows.Count, $(if ($script:cloudNewest) { [datetime]::SpecifyKind($script:cloudNewest, [System.DateTimeKind]::Utc).ToLocalTime().ToString("HH:mm") } elseif ($script:cloudLast) { $script:cloudLast.ToString("HH:mm") } else { "-" }), $(if ($script:lastHarvest) { $script:lastHarvest.ToString("HH:mm") } else { "-" })
 }
 
 function Get-HarvestIntervalMinutes {
@@ -3152,8 +3152,8 @@ $script:harvCheckTimer.Add_Tick({
             Start-CommunitySync
         }
     }
-    if (-not $script:cloudTask -and -not $script:cloudCur -and (-not $script:cloudFailAt -or ((Get-Date)-$script:cloudFailAt).TotalMinutes -ge 10) -and (-not $script:cloudLast -or ((Get-Date)-$script:cloudLast).TotalMinutes -ge 30)) { Start-CloudSync }
-    $inReset = Test-ResetWindow
+    if (-not $script:cloudTask -and -not $script:cloudCur -and (-not $script:cloudFailAt -or ((Get-Date)-$script:cloudFailAt).TotalMinutes -ge 10) -and (-not $script:cloudLast -or ((Get-Date)-$script:cloudLast).TotalMinutes -ge $(if (Test-ResetWindow) { 5 } else { 30 }))) { Start-CloudSync }
+    $inReset = (Test-ResetWindow) -and ($script:cloudError -or -not $script:cloudNewest -or ((Get-Date).ToUniversalTime()-$script:cloudNewest).TotalMinutes -ge 20)
     if (-not $inReset -and -not $script:cloudError -and $script:cloudLast -and ((Get-Date)-$script:cloudLast).TotalHours -lt 6) { return }
     if ($script:harvCur -or $script:harvQueue.Count -gt 0 -or $script:weekLoading) { return }
     $iv = $(if ($inReset) { 10 } else { Get-HarvestIntervalMinutes })
@@ -3338,6 +3338,7 @@ $script:cloudRebuilt = @{}
 foreach ($old in @($script:cloudTokenFile, (Join-Path $userDir "cloud_sync.json"))) { if (Test-Path -LiteralPath $old) { Remove-Item -LiteralPath $old -Force -ErrorAction SilentlyContinue } }
 $script:cloudShas = @{}
 $script:cloudLast = $null
+$script:cloudNewest = $null
 $script:cloudQueue = New-Object System.Collections.ArrayList
 $script:cloudTask = $null
 $script:cloudCur = $null
@@ -3482,6 +3483,10 @@ $script:cloudTimer.Add_Tick({
                 $n = [string]$f["name"]
                 if ($n -notmatch "^(week|delta)_(\d{4}-\d{2}-\d{2})(_\d{8}T\d{4})?\.json\.gz$") { continue }
                 $wid = $Matches[2]
+                if ($n -match "_(\d{8}T\d{4})\.json\.gz$") {
+                    $dt = [datetime]::ParseExact($Matches[1], "yyyyMMdd'T'HHmm", [System.Globalization.CultureInfo]::InvariantCulture)
+                    if (-not $script:cloudNewest -or $dt -gt $script:cloudNewest) { $script:cloudNewest = $dt }
+                }
                 $present[$n] = $true
                 if (-not $byWeek.ContainsKey($wid)) { $byWeek[$wid] = New-Object System.Collections.ArrayList }
                 $byWeek[$wid].Add(@{ Kind = "week"; Name = $n; Id = $wid; Sha = [string]$f["sha"]; Url = [string]$f["download_url"] }) | Out-Null
