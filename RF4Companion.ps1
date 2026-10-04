@@ -4152,7 +4152,7 @@ function Load-PosCache {
         $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
         $ser.MaxJsonLength = [int]::MaxValue
         $d = $ser.DeserializeObject([System.IO.File]::ReadAllText($script:posCacheFile))
-        if ([string]$d["day"] -ne (Get-Date).ToString("yyyy-MM-dd")) { return }
+        if ([string]$d["day"] -ne (Get-Date).ToString("yyyy-MM-dd") -or [int]$d["v"] -ne 2) { return }
         foreach ($k in $d["status"].Keys) { $script:posStatus[$k] = [int]$d["status"][$k] }
         foreach ($k in $d["pos"].Keys) {
             $v = $d["pos"][$k]
@@ -4172,7 +4172,7 @@ function Save-PosCache {
         }
         $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
         $ser.MaxJsonLength = [int]::MaxValue
-        $json = $ser.Serialize(@{ day = (Get-Date).ToString("yyyy-MM-dd"); status = $script:posStatus; pos = $pos })
+        $json = $ser.Serialize(@{ v = 2; day = (Get-Date).ToString("yyyy-MM-dd"); status = $script:posStatus; pos = $pos })
         [System.IO.File]::WriteAllText($script:posCacheFile, $json, (New-Object System.Text.UTF8Encoding $false))
     } catch { }
 }
@@ -4228,6 +4228,11 @@ function Get-ReportPos($r) {
     $st = Get-PosStatus $lk $x $y
     $res = [pscustomobject]@{ X = $x; Y = $y; S = 0; Fix = ""; Hint = "" }
     if ($st -eq 1 -and [string]$r["method"] -match "Troll") { $st = 0 }
+    $cv = $r["clip"]
+    if ($st -ne 0 -and $null -ne $cv -and "$cv" -ne "" -and ([int][double]$cv -eq $x -or [int][double]$cv -eq $y)) {
+        $script:reportPos[$id] = $null
+        return $null
+    }
     if ($st -ne 0) {
         $scores = @()
         foreach ($c in (Get-DigitVariants $x $y)) {
