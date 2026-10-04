@@ -3971,6 +3971,17 @@ function New-Serializer {
     $ser
 }
 
+function Clean-ReportFish($r) {
+    if (-not $r) { return $r }
+    $l = $script:lakeById[[string]$r["lake"]]
+    if (-not $l -or -not @($l.fish).Count) { return $r }
+    $fl = @($r["fish"] | Where-Object { $_ })
+    if (-not $fl.Count) { return $r }
+    $keep = @($fl | Where-Object { @($l.fish) -contains [string]$_ })
+    if ($keep.Count -ne $fl.Count) { $r["fish"] = [object[]]$keep }
+    $r
+}
+
 function Load-Community {
     $script:commReports.Clear()
     $script:commIds = @{}
@@ -3981,7 +3992,7 @@ function Load-Community {
         $d = (New-Serializer).DeserializeObject([System.IO.File]::ReadAllText($script:commFile, [System.Text.Encoding]::UTF8))
         if ($d["synced"]) { $script:commSynced = [datetime]::Parse([string]$d["synced"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind) }
         foreach ($r in $d["reports"]) {
-            $idx = $script:commReports.Add($r)
+            $idx = $script:commReports.Add((Clean-ReportFish $r))
             $script:commIds[[string]$r["id"]] = $idx
         }
         if ([int]$d["v"] -lt 2) { $script:commSynced = $null }
@@ -5706,11 +5717,11 @@ function Receive-SyncPage([string]$raw) {
         $r = Convert-CommPost $p
         if ($script:commIds.ContainsKey($id)) {
             $idx = $script:commIds[$id]
-            if ($r -and $idx -ge 0) { $script:commReports[$idx] = $r }
+            if ($r -and $idx -ge 0) { $script:commReports[$idx] = (Clean-ReportFish $r) }
             continue
         }
         if ($r) {
-            $script:commIds[$id] = $script:commReports.Add($r)
+            $script:commIds[$id] = $script:commReports.Add((Clean-ReportFish $r))
             $script:syncAdded++
         } else {
             $script:commIds[$id] = -1
