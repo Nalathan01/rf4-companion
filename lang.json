@@ -332,7 +332,8 @@
   "allRegions": "Alle Regionen",
   "resetOnlyNew": "Nur Neues seit letzter Woche",
   "resetNew": "Neu seit letzter Woche",
-  "resetNewCombo": "neue Kombination"
+  "resetNewCombo": "neue Kombination",
+  "resetRegionUnknown": "unbekannt (nur global)"
  },
  "en": {
   "langName": "English",
@@ -667,7 +668,8 @@
   "allRegions": "All regions",
   "resetOnlyNew": "New baits only",
   "resetNew": "New since last week",
-  "resetNewCombo": "new combination"
+  "resetNewCombo": "new combination",
+  "resetRegionUnknown": "unknown (global only)"
  },
  "ru": {
   "langName": "Русский",
@@ -999,7 +1001,8 @@
   "allRegions": "Все регионы",
   "resetOnlyNew": "Только новые наживки",
   "resetNew": "Новое с прошлой недели",
-  "resetNewCombo": "новая комбинация"
+  "resetNewCombo": "новая комбинация",
+  "resetRegionUnknown": "неизвестно (только общий)"
  },
  "fr": {
   "langName": "Français",
@@ -1331,7 +1334,8 @@
   "allRegions": "Toutes les régions",
   "resetOnlyNew": "Nouveaux appâts seulement",
   "resetNew": "Nouveau depuis la semaine dernière",
-  "resetNewCombo": "nouvelle combinaison"
+  "resetNewCombo": "nouvelle combinaison",
+  "resetRegionUnknown": "inconnue (global seulement)"
  },
  "es": {
   "langName": "Español",
@@ -1663,7 +1667,8 @@
   "allRegions": "Todas las regiones",
   "resetOnlyNew": "Solo cebos nuevos",
   "resetNew": "Nuevo desde la semana pasada",
-  "resetNewCombo": "nueva combinación"
+  "resetNewCombo": "nueva combinación",
+  "resetRegionUnknown": "desconocida (solo global)"
  },
  "it": {
   "langName": "Italiano",
@@ -1995,7 +2000,8 @@
   "allRegions": "Tutte le regioni",
   "resetOnlyNew": "Solo esche nuove",
   "resetNew": "Nuovo dalla settimana scorsa",
-  "resetNewCombo": "nuova combinazione"
+  "resetNewCombo": "nuova combinazione",
+  "resetRegionUnknown": "sconosciuta (solo globale)"
  },
  "pl": {
   "langName": "Polski",
@@ -2327,7 +2333,8 @@
   "allRegions": "Wszystkie regiony",
   "resetOnlyNew": "Tylko nowe przynęty",
   "resetNew": "Nowe od zeszłego tygodnia",
-  "resetNewCombo": "nowa kombinacja"
+  "resetNewCombo": "nowa kombinacja",
+  "resetRegionUnknown": "nieznany (tylko globalny)"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2659,7 +2666,8 @@
   "allRegions": "Todas as regiões",
   "resetOnlyNew": "Só iscas novas",
   "resetNew": "Novo desde a semana passada",
-  "resetNewCombo": "nova combinação"
+  "resetNewCombo": "nova combinação",
+  "resetRegionUnknown": "desconhecida (só global)"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2991,7 +2999,8 @@
   "allRegions": "Alle regio's",
   "resetOnlyNew": "Alleen nieuw aas",
   "resetNew": "Nieuw sinds vorige week",
-  "resetNewCombo": "nieuwe combinatie"
+  "resetNewCombo": "nieuwe combinatie",
+  "resetRegionUnknown": "onbekend (alleen globaal)"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3323,7 +3332,8 @@
   "allRegions": "Tüm bölgeler",
   "resetOnlyNew": "Sadece yeni yemler",
   "resetNew": "Geçen haftadan beri yeni",
-  "resetNewCombo": "yeni kombinasyon"
+  "resetNewCombo": "yeni kombinasyon",
+  "resetRegionUnknown": "bilinmiyor (yalnız küresel)"
  },
  "ro": {
   "langName": "Română",
@@ -3655,7 +3665,8 @@
   "allRegions": "Toate regiunile",
   "resetOnlyNew": "Doar nade noi",
   "resetNew": "Nou față de săptămâna trecută",
-  "resetNewCombo": "combinație nouă"
+  "resetNewCombo": "combinație nouă",
+  "resetRegionUnknown": "necunoscută (doar global)"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3987,7 +3998,8 @@
   "allRegions": "Semua wilayah",
   "resetOnlyNew": "Hanya umpan baru",
   "resetNew": "Baru sejak minggu lalu",
-  "resetNewCombo": "kombinasi baru"
+  "resetNewCombo": "kombinasi baru",
+  "resetRegionUnknown": "tidak diketahui (hanya global)"
  },
  "ja": {
   "langName": "日本語",
@@ -4319,7 +4331,8 @@
   "allRegions": "すべての地域",
   "resetOnlyNew": "新しい餌のみ",
   "resetNew": "先週からの新規",
-  "resetNewCombo": "新しい組み合わせ"
+  "resetNewCombo": "新しい組み合わせ",
+  "resetRegionUnknown": "不明 (全体のみ)"
  },
  "ko": {
   "langName": "한국어",
@@ -4651,7 +4664,8 @@
   "allRegions": "모든 지역",
   "resetOnlyNew": "새 미끼만",
   "resetNew": "지난주 이후 새로움",
-  "resetNewCombo": "새 조합"
+  "resetNewCombo": "새 조합",
+  "resetRegionUnknown": "알 수 없음 (전체만)"
  },
  "zh": {
   "langName": "简体中文",
@@ -4983,7 +4997,8 @@
   "allRegions": "所有地区",
   "resetOnlyNew": "仅新饵",
   "resetNew": "自上周以来新增",
-  "resetNewCombo": "新组合"
+  "resetNewCombo": "新组合",
+  "resetRegionUnknown": "未知 (仅全球)"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5315,6 +5330,7 @@
   "allRegions": "所有地區",
   "resetOnlyNew": "僅新餌",
   "resetNew": "自上週以來新增",
-  "resetNewCombo": "新組合"
+  "resetNewCombo": "新組合",
+  "resetRegionUnknown": "未知 (僅全球)"
  }
 }
