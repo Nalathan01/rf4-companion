@@ -4154,7 +4154,7 @@ function Load-PosCache {
         $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
         $ser.MaxJsonLength = [int]::MaxValue
         $d = $ser.DeserializeObject([System.IO.File]::ReadAllText($script:posCacheFile))
-        if ([string]$d["day"] -ne (Get-Date).ToString("yyyy-MM-dd") -or [int]$d["v"] -ne 2) { return }
+        if ([string]$d["day"] -ne (Get-Date).ToString("yyyy-MM-dd") -or [int]$d["v"] -ne 3) { return }
         foreach ($k in $d["status"].Keys) { $script:posStatus[$k] = [int]$d["status"][$k] }
         foreach ($k in $d["pos"].Keys) {
             $v = $d["pos"][$k]
@@ -4174,7 +4174,7 @@ function Save-PosCache {
         }
         $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
         $ser.MaxJsonLength = [int]::MaxValue
-        $json = $ser.Serialize(@{ v = 2; day = (Get-Date).ToString("yyyy-MM-dd"); status = $script:posStatus; pos = $pos })
+        $json = $ser.Serialize(@{ v = 3; day = (Get-Date).ToString("yyyy-MM-dd"); status = $script:posStatus; pos = $pos })
         [System.IO.File]::WriteAllText($script:posCacheFile, $json, (New-Object System.Text.UTF8Encoding $false))
     } catch { }
 }
@@ -4232,8 +4232,29 @@ function Get-ReportPos($r) {
     if ($st -eq 1 -and [string]$r["method"] -match "Troll") { $st = 0 }
     $cv = $r["clip"]
     if ($st -ne 0 -and $null -ne $cv -and "$cv" -ne "" -and ([int][double]$cv -eq $x -or [int][double]$cv -eq $y)) {
-        $script:reportPos[$id] = $null
-        return $null
+        $res = $null
+        $nx = $(if ([int][double]$cv -eq $x) { $y } else { $x })
+        $pt = Get-PostedTime $r
+        $fr = @($r["fish"] | Where-Object { $_ })
+        $cand = @{}
+        if ($pt) {
+            foreach ($o in (Get-AllCommReports)) {
+                if ([string]$o["lake"] -ne $lk -or [int]$o["x"] -ne $nx -or [string]$o["id"] -eq $id) { continue }
+                $ot = Get-PostedTime $o
+                if (-not $ot -or [math]::Abs(($ot-$pt).TotalDays) -gt 4) { continue }
+                $of = @($o["fish"] | Where-Object { $_ })
+                if ($fr.Count -and $of.Count -and -not @($fr | Where-Object { $of -contains $_ }).Count) { continue }
+                if ((Get-PosStatus $lk $nx ([int]$o["y"])) -ne 0) { continue }
+                $k = [int]$o["y"]
+                $cand[$k] = 1 + [int]$cand[$k]
+            }
+        }
+        $best = @($cand.Keys | Sort-Object { $cand[$_] } -Descending)
+        if ($best.Count -ge 1 -and ($best.Count -eq 1 -or $cand[$best[0]] -ge 2 * $cand[$best[1]])) {
+            $res = [pscustomobject]@{ X = $nx; Y = [int]$best[0]; S = 0; Fix = ("{0}:{1}" -f $x, $y); Hint = "" }
+        }
+        $script:reportPos[$id] = $res
+        return $res
     }
     if ($st -ne 0) {
         $scores = @()
