@@ -4174,8 +4174,9 @@ function Clean-ReportFish($r) {
     if (-not $l -or -not @($l.fish).Count) { return $r }
     $fl = @($r["fish"] | Where-Object { $_ })
     if (-not $fl.Count) { return $r }
-    $keep = @($fl | Where-Object { @($l.fish) -contains [string]$_ })
-    if ($keep.Count -ne $fl.Count) { $r["fish"] = [object[]]$keep }
+    $keep = New-Object System.Collections.Generic.List[object]
+    foreach ($f in $fl) { if (@($l.fish) -contains [string]$f) { $keep.Add([string]$f) } }
+    if ($keep.Count -ne $fl.Count) { $r["fish"] = $keep.ToArray() }
     $r
 }
 
