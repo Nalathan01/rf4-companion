@@ -3104,13 +3104,33 @@ function Build-ResetRows($w) {
     $rows = New-Object System.Collections.Generic.List[object]
     $allF = @{}; $allL = @{}; $allR = @{}
     $newCount = 0
+    $groups = @{}
     foreach ($it in $map.Values) {
         $fs = [string]$it["fs"]
         if ($fs.Length -lt 19) { continue }
         $fs19 = $fs.Substring(0, 19)
         if ([string]::CompareOrdinal($fs19, $startS) -lt 0 -or [string]::CompareOrdinal($fs19, $endS) -gt 0) { continue }
-        $fish = [string]$it["f"]; $lk = [string]$it["l"]; $rg = [string]$it["r"]; $bs = [string]$it["b"]
-        $allF[$fish] = $true; $allL[$lk] = $true; $allR[$rg] = $true
+        $kp = ([string]$it["k"]).Split("|")
+        $who = $(if ($kp.Count -ge 7) { $kp[6] } else { [string]$it["p"] })
+        $gk = "{0}|{1}|{2}|{3}|{4}" -f $who, $it["f"], $it["w"], $it["d"], $it["b"]
+        if (-not $groups.ContainsKey($gk)) { $groups[$gk] = [pscustomobject]@{ It = $it; Regions = New-Object System.Collections.Generic.List[string]; Tables = New-Object System.Collections.Generic.List[string]; Fs = $fs; FirstSeenAtCap = ($fs -eq $firstCap[[string]$it["r"] + "|" + [string]$it["t"]]) } }
+        $g = $groups[$gk]
+        $rg0 = [string]$it["r"]; $tb0 = [string]$it["t"]
+        if (-not $g.Regions.Contains($rg0)) { $g.Regions.Add($rg0) }
+        if (-not $g.Tables.Contains($tb0)) { $g.Tables.Add($tb0) }
+        $atCap = $fs -eq $firstCap[$rg0 + "|" + $tb0]
+        $cmp = [string]::CompareOrdinal($fs, $g.Fs)
+        if ($cmp -lt 0) { $g.Fs = $fs; $g.FirstSeenAtCap = $atCap }
+        elseif ($cmp -eq 0 -and $atCap) { $g.FirstSeenAtCap = $true }
+    }
+    foreach ($g in $groups.Values) {
+        $it = $g.It
+        $fs = $g.Fs
+        $realRegions = @($g.Regions | Where-Object { $_ -ne "GL" })
+        $fish = [string]$it["f"]; $lk = [string]$it["l"]; $bs = [string]$it["b"]
+        $rg = $(if ($realRegions.Count) { $realRegions -join ", " } else { T "resetRegionUnknown" })
+        $allF[$fish] = $true; $allL[$lk] = $true
+        foreach ($x in $g.Regions) { $allR[$x] = $true }
         $fk = "f|" + $fish; if (-not $memo.ContainsKey($fk)) { $memo[$fk] = N $fish }
         $lkk = "l|" + $lk; if (-not $memo.ContainsKey($lkk)) { $memo[$lkk] = @((Get-LakeName $lk), (Get-LakeRank $lk)) }
         $bk = "b|" + $bs
@@ -3130,11 +3150,11 @@ function Build-ResetRows($w) {
         if ($newTxt) { $newCount++ }
         $wk = "w|" + $it["w"]; if (-not $memo.ContainsKey($wk)) { $memo[$wk] = Format-Weight ([int]$it["w"]) }
         $seen = ""
-        if ($fs -ne $firstCap[$rg + "|" + [string]$it["t"]]) { $seen = ([datetime]::Parse($fs, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal)).ToLocalTime().ToString("HH:mm") }
+        if (-not $g.FirstSeenAtCap) { $seen = ([datetime]::Parse($fs, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal)).ToLocalTime().ToString("HH:mm") }
         $rows.Add([pscustomobject]@{
             Seen = $seen; SeenSort = $fs; Fish = $memo[$fk]; Weight = $memo[$wk]; WSort = [int]$it["w"]
-            Lake = $memo[$lkk][0]; LakeSort = $memo[$lkk][1]; Bait = $memo[$bk][1]; Region = $rg; Table = [string]$tabNames[[string]$it["t"]]; New = $newTxt
-            FishKey = $fish; LakeKey = $lk
+            Lake = $memo[$lkk][0]; LakeSort = $memo[$lkk][1]; Bait = $memo[$bk][1]; Region = $rg; Table = ((@($g.Tables | ForEach-Object { [string]$tabNames[$_] })) -join ", "); New = $newTxt
+            FishKey = $fish; LakeKey = $lk; RegionKeys = @($g.Regions)
         })
     }
     $sorted = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WSort"; Descending = $true })
@@ -3172,7 +3192,7 @@ function Refresh-Reset {
         if ($ff -or $fl -or $fr -or $onlyNew) {
             $list = New-Object System.Collections.Generic.List[object]
             foreach ($r in $c.Rows) {
-                if (($ff -and $r.FishKey -ne $ff) -or ($fl -and $r.LakeKey -ne $fl) -or ($fr -and $r.Region -ne $fr) -or ($onlyNew -and -not $r.New)) { continue }
+                if (($ff -and $r.FishKey -ne $ff) -or ($fl -and $r.LakeKey -ne $fl) -or ($fr -and $r.RegionKeys -notcontains $fr) -or ($onlyNew -and -not $r.New)) { continue }
                 $list.Add($r)
             }
             $view = $list.ToArray()
