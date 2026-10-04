@@ -733,6 +733,35 @@ function Format-Coords($lake, $nx, $ny) {
                                         <ComboBox x:Name="cmbSpotPva" IsEditable="True" TextSearch.TextPath="Label"/>
                                     </DockPanel>
                                 </StackPanel>
+                                <StackPanel x:Name="panelMarine" Visibility="Collapsed">
+                                    <TextBlock Tag="t:marineRig" Style="{StaticResource Label}"/>
+                                    <ComboBox x:Name="cmbMarRig"/>
+                                    <TextBlock x:Name="lblMarMain" Tag="t:mainBait" Style="{StaticResource Label}"/>
+                                    <ComboBox x:Name="cmbMarMain" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                    <StackPanel x:Name="panelMarHook">
+                                        <TextBlock Tag="t:extraHook" Style="{StaticResource Label}"/>
+                                        <ComboBox x:Name="cmbMarHook" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                    </StackPanel>
+                                    <StackPanel x:Name="panelMarTeaser">
+                                        <TextBlock x:Name="lblMarT1" Style="{StaticResource Label}"/>
+                                        <ComboBox x:Name="cmbMarT1" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                        <TextBlock x:Name="lblMarT2" Style="{StaticResource Label}"/>
+                                        <ComboBox x:Name="cmbMarT2" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                        <StackPanel x:Name="panelMarT3">
+                                            <TextBlock x:Name="lblMarT3" Style="{StaticResource Label}"/>
+                                            <ComboBox x:Name="cmbMarT3" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel x:Name="panelMarLure">
+                                        <TextBlock x:Name="lblMarL1" Style="{StaticResource Label}"/>
+                                        <ComboBox x:Name="cmbMarL1" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                        <TextBlock x:Name="lblMarL2" Style="{StaticResource Label}"/>
+                                        <ComboBox x:Name="cmbMarL2" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                    </StackPanel>
+                                    <TextBlock Tag="t:fishDepth" Style="{StaticResource Label}"/>
+                                    <TextBox x:Name="txtMarFishDepth" Tag="w:fishDepthHint"/>
+                                    <CheckBox x:Name="chkMarBank" Tag="t:onBank" Margin="0,0,0,10"/>
+                                </StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -763,17 +792,17 @@ function Format-Coords($lake, $nx, $ny) {
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Tag="t:depth" Style="{StaticResource Label}"/>
+                                        <TextBlock x:Name="lblSpotDepth" Tag="t:depth" Style="{StaticResource Label}"/>
                                         <TextBox x:Name="txtSpotDepth"/>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2">
+                                    <StackPanel x:Name="panelSpotDist" Grid.Column="2">
                                         <TextBlock Tag="t:distance" Style="{StaticResource Label}"/>
                                         <TextBox x:Name="txtSpotDist"/>
                                     </StackPanel>
                                 </Grid>
                                 <TextBlock Tag="t:temperature" Style="{StaticResource Label}"/>
                                 <ComboBox x:Name="cmbSpotTemp"/>
-                                <TextBlock Tag="t:castDir" Style="{StaticResource Label}"/>
+                                <TextBlock x:Name="lblSpotDir" Tag="t:castDir" Style="{StaticResource Label}"/>
                                 <TextBox x:Name="txtSpotDir" Tag="w:castDirHint"/>
                                 <CheckBox x:Name="chkSpotShare" Tag="t:shareSpot" Margin="0,0,0,4"/>
                                 <CheckBox x:Name="chkSpotShareImg" Tag="t:shareSpotImg" Margin="0,0,0,10"/>
@@ -1866,7 +1895,169 @@ function Center-On([double]$nx, [double]$ny) {
     $svMap.ScrollToVerticalOffset(($ny * 2048 * $script:scale)-($svMap.ViewportHeight / 2))
 }
 
+$script:marineRigs = $null
+$script:marineItems = $null
+$script:marineItemsLang = ""
+$script:marineLayout = @{
+    rig_MarinePilker = @(1, 3, 2); rig_MarineBottomDropShot = @(0, 3, 2); rig_MarineBottomPaternoster = @(0, 3, 2)
+    rig_MarineBottomClassic = @(0, 2, 2); rig_MarineBottomWithRattlingSinker = @(0, 2, 2); rig_MarineBottomWithFlyingColarLure = @(0, 0, 1)
+    rig_MarineBottomWithDeadFish = @(0, 0, 1); rig_MarineLureJig = @(0, 0, 0); rig_MarineFilletJig = @(0, 0, 0)
+    rig_MarineGiganticLureJig = @(0, 0, 0); rig_MarineGiganticFishJig = @(0, 0, 0)
+}
+
+function Get-MarineRigs {
+    if ($script:marineRigs) { return $script:marineRigs }
+    $f = Join-Path $dataDir "marine_rigs.json"
+    $script:marineRigs = @{}
+    if (Test-Path -LiteralPath $f) { foreach ($p in (Get-Content -LiteralPath $f -Raw -Encoding UTF8 | ConvertFrom-Json).PSObject.Properties) { $script:marineRigs[$p.Name] = $p.Value } }
+    $script:marineRigs
+}
+
+function Get-MarineRigName([string]$key) {
+    $r = (Get-MarineRigs)[$key]
+    if (-not $r) { return $key }
+    $v = [string]$r.($script:lang)
+    if ($v) { return $v }
+    [string]$r.en
+}
+
+function Get-MarineRigChoices {
+    $order = @("rig_MarinePilker", "rig_MarineBottomDropShot", "rig_MarineBottomPaternoster", "rig_MarineBottomClassic", "rig_MarineBottomWithRattlingSinker", "rig_MarineBottomWithFlyingColarLure", "rig_MarineBottomWithDeadFish", "rig_MarineLureJig", "rig_MarineFilletJig", "rig_MarineGiganticLureJig", "rig_MarineGiganticFishJig")
+    @(New-Choice "" "") + @($order | ForEach-Object { New-Choice $_ (Get-MarineRigName $_) })
+}
+
+if (-not ("RF4Comp.KeyLabel" -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+namespace RF4Comp {
+    public class KeyLabel {
+        public string Key { get; set; }
+        public string Label { get; set; }
+        public override string ToString() { return Label; }
+        public static List<KeyLabel> Build(string[] keys, string[] labels) {
+            var seen = new HashSet<string>();
+            var list = new List<KeyLabel>();
+            for (int i = 0; i < keys.Length; i++) {
+                string k = keys[i];
+                if (string.IsNullOrEmpty(k) || !seen.Add(k)) continue;
+                string l = (i < labels.Length && !string.IsNullOrEmpty(labels[i])) ? labels[i] : k;
+                list.Add(new KeyLabel { Key = k, Label = l });
+            }
+            list.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.CurrentCultureIgnoreCase));
+            return list;
+        }
+    }
+}
+'@
+}
+
+$script:marineIndex = @{}
+
+function Get-MarineItemChoices {
+    if ($script:marineItems -and $script:marineItemsLang -eq $script:lang) { return $script:marineItems }
+    $ml = Get-MatchLists $script:lang
+    $script:marineItems = [RF4Comp.KeyLabel]::Build([string[]]$ml.ItemEn, [string[]]$ml.ItemLoc)
+    $script:marineIndex = @{}
+    foreach ($it in $script:marineItems) { $script:marineIndex[$it.Key] = $it }
+    $script:marineItemsLang = $script:lang
+    $script:marineItems
+}
+
+function Get-MarineCombos { @($cmbMarMain, $cmbMarHook, $cmbMarT1, $cmbMarT2, $cmbMarT3, $cmbMarL1, $cmbMarL2) }
+
+function Ensure-MarineChoices {
+    if ($cmbMarRig.ItemsSource -and $cmbMarMain.ItemsSource -and $script:marineItemsLang -eq $script:lang) { return }
+    $k = Get-ComboKey $cmbMarRig
+    Set-Choices $cmbMarRig (Get-MarineRigChoices)
+    Set-ComboKey $cmbMarRig $k
+    $items = Get-MarineItemChoices
+    foreach ($c in (Get-MarineCombos)) {
+        $t = $(if ($c.SelectedItem) { [string]$c.SelectedItem.Key } else { "$($c.Text)".Trim() })
+        $c.ItemsSource = $null
+        $c.DisplayMemberPath = "Label"
+        $c.ItemsSource = $items
+        Set-MarineValue $c $t
+    }
+    $lblMarT1.Text = (T "teaserN") -f 1
+    $lblMarT2.Text = (T "teaserN") -f 2
+    $lblMarT3.Text = (T "teaserN") -f 3
+    $lblMarL1.Text = (T "lureAttrN") -f 1
+    $lblMarL2.Text = (T "lureAttrN") -f 2
+}
+
+function Set-MarineValue($combo, [string]$key) {
+    if (-not $key) { $combo.SelectedItem = $null; $combo.Text = ""; return }
+    $m = $script:marineIndex[$key]
+    if ($m) { $combo.SelectedItem = $m } else { $combo.SelectedItem = $null; $combo.Text = $key }
+}
+
+function Update-MarineLayout {
+    $lay = $script:marineLayout[(Get-ComboKey $cmbMarRig)]
+    if (-not $lay) { $lay = @(1, 3, 2) }
+    $panelMarHook.Visibility = $(if ($lay[0] -gt 0) { "Visible" } else { "Collapsed" })
+    $panelMarTeaser.Visibility = $(if ($lay[1] -gt 0) { "Visible" } else { "Collapsed" })
+    $panelMarT3.Visibility = $(if ($lay[1] -ge 3) { "Visible" } else { "Collapsed" })
+    $panelMarLure.Visibility = $(if ($lay[2] -gt 0) { "Visible" } else { "Collapsed" })
+    $lblMarL2.Visibility = $(if ($lay[2] -ge 2) { "Visible" } else { "Collapsed" })
+    $cmbMarL2.Visibility = $lblMarL2.Visibility
+}
+
+function Clear-MarineFields {
+    Set-ComboKey $cmbMarRig ""
+    foreach ($c in (Get-MarineCombos)) { $c.SelectedItem = $null; $c.Text = "" }
+    $txtMarFishDepth.Text = ""
+    $chkMarBank.IsChecked = $false
+}
+
+function Fill-MarineFields($m) {
+    Ensure-MarineChoices
+    Clear-MarineFields
+    if (-not $m) { Update-MarineLayout; return }
+    Set-ComboKey $cmbMarRig ([string]$m.rig)
+    Set-MarineValue $cmbMarMain ([string]$m.main)
+    Set-MarineValue $cmbMarHook ([string]$m.hook2)
+    $ts = @($m.teasers)
+    $ls = @($m.lures)
+    Set-MarineValue $cmbMarT1 ([string]$ts[0]); Set-MarineValue $cmbMarT2 ([string]$ts[1]); Set-MarineValue $cmbMarT3 ([string]$ts[2])
+    Set-MarineValue $cmbMarL1 ([string]$ls[0]); Set-MarineValue $cmbMarL2 ([string]$ls[1])
+    if ($null -ne $m.fishDepth) { $txtMarFishDepth.Text = [string]$m.fishDepth }
+    $chkMarBank.IsChecked = [bool]$m.bank
+    Update-MarineLayout
+}
+
+function Get-MarineKey($combo) {
+    if ($combo.SelectedItem) { return [string]$combo.SelectedItem.Key }
+    $t = "$($combo.Text)".Trim()
+    if (-not $t) { return "" }
+    $r = Resolve-ItemName $t
+    if ($r) { return $r }
+    $t
+}
+
+function Get-MarineFields {
+    [ordered]@{
+        rig = Get-ComboKey $cmbMarRig; main = Get-MarineKey $cmbMarMain; hook2 = Get-MarineKey $cmbMarHook
+        teasers = @(@($cmbMarT1, $cmbMarT2, $cmbMarT3) | ForEach-Object { [string](Get-MarineKey $_) })
+        lures = @(@($cmbMarL1, $cmbMarL2) | ForEach-Object { [string](Get-MarineKey $_) })
+        fishDepth = $txtMarFishDepth.Text.Trim(); bank = [bool]$chkMarBank.IsChecked
+    }
+}
+
 function Update-BottomPanel {
+    $isMar = (Get-ComboKey $cmbSpotTech) -eq "marine"
+    $panelMarine.Visibility = $(if ($isMar) { "Visible" } else { "Collapsed" })
+    $panelSpotDist.Visibility = $(if ($isMar) { "Collapsed" } else { "Visible" })
+    $lblSpotDir.Visibility = $panelSpotDist.Visibility
+    $txtSpotDir.Visibility = $panelSpotDist.Visibility
+    $lblSpotDepth.Text = $(if ($isMar) { T "waterDepth" } else { T "depth" })
+    $lblSpotBait.Visibility = $(if ($isMar) { "Collapsed" } else { "Visible" })
+    $cmbSpotBait.Visibility = $lblSpotBait.Visibility
+    if ($isMar) {
+        Ensure-MarineChoices
+        $st = $script:trackerSetup
+        if (-not $script:selSpotId -and -not (Get-ComboKey $cmbMarRig) -and $st -and $st.Marine) { Fill-MarineFields $st.Marine } else { Update-MarineLayout }
+    }
     if ((Get-ComboKey $cmbSpotTech) -eq "bottom") {
         $panelBottom.Visibility = "Visible"
         $lblSpotBait.Text = T "bait1"
@@ -1946,6 +2137,9 @@ function Clear-SpotForm {
     $txtSpotY.Text = ""
     $btnSpotDelete.IsEnabled = $false
     Show-SpotImage $null
+    Clear-MarineFields
+    if ($script:curMapLake -and $script:curMapLake.id -eq "norwegian_sea") { Set-ComboKey $cmbSpotTech "marine" }
+    Update-BottomPanel
     $script:spotFormOpen = $false
     Update-MapPanel
 }
@@ -1962,6 +2156,7 @@ function Fill-SpotForm($s) {
     $txtSpotDepth.Text = "$($s.depth)"
     $txtSpotDist.Text = "$($s.dist)"
     $txtSpotNotes.Text = "$($s.notes)"
+    if ("$($s.tech)" -eq "marine") { Fill-MarineFields $s.marine } else { Clear-MarineFields }
     Set-ComboKey $cmbSpotBait2 "$($s.bait2)"
     Set-ComboKey $cmbSpotDip "$($s.dip)"
     Set-RecipeField $cmbSpotGround "$($s.groundbait)"
@@ -2012,9 +2207,11 @@ function Load-MapLake([string]$lakeId) {
     $script:rulerLive = $null
     $script:searchMark = $null
     $keepTech = Get-ComboKey $cmbSpotTech
+    if ($lake.id -eq "norwegian_sea") { $keepTech = "marine" } elseif ($keepTech -eq "marine") { $keepTech = "" }
     Set-Choices $cmbSpotFish (Get-FishChoices $lake.id)
     Clear-SpotForm
     Set-ComboKey $cmbSpotTech $keepTech
+    Update-BottomPanel
     if ($script:commSel) { Hide-CommCluster }
     $script:busy = $true
     Refresh-CommFishChoices
@@ -6189,7 +6386,7 @@ function Find-PosInLines([string[]]$lines) {
         if ($m.Success) {
             $x = [int]$m.Groups[1].Value
             $y = [int]$m.Groups[2].Value
-            if ($x -ge 1 -and $x -le 300 -and $y -ge 1 -and $y -le 300) { return [pscustomobject]@{ X = $x; Y = $y } }
+            if ($x -ge 1 -and $x -le 999 -and $y -ge 1 -and $y -le 999) { return [pscustomobject]@{ X = $x; Y = $y } }
         }
     }
     $lb = $(if ($script:trackerLake -and $script:lakeById[$script:trackerLake]) { $script:lakeById[$script:trackerLake].bounds } else { $null })
@@ -6201,7 +6398,7 @@ function Find-PosInLines([string[]]$lines) {
                 if ($tok[$i] -ne [char]"2") { continue }
                 $x = [int]$tok.Substring(0, $i)
                 $y = [int]$tok.Substring($i + 1)
-                if ($x -lt 1 -or $x -gt 300 -or $y -lt 1 -or $y -gt 300) { continue }
+                if ($x -lt 1 -or $x -gt 999 -or $y -lt 1 -or $y -gt 999) { continue }
                 if ($lb -and ($x -lt [double]$lb.xMin -or $x -gt [double]$lb.xMax -or $y -lt [math]::Min([double]$lb.ySouth, [double]$lb.yNorth) -or $y -gt [math]::Max([double]$lb.ySouth, [double]$lb.yNorth))) { continue }
                 return [pscustomobject]@{ X = $x; Y = $y }
             }
@@ -6786,6 +6983,63 @@ function Match-Lake([string]$text, [string]$code) {
     return ""
 }
 
+function Get-MarineRigKey([string]$text) {
+    $t = $text.Trim()
+    if ($t.Length -lt 4) { return "" }
+    $loc = New-Object System.Collections.Generic.List[string]
+    $keys = New-Object System.Collections.Generic.List[string]
+    foreach ($e in (Get-MarineRigs).GetEnumerator()) { foreach ($p in $e.Value.PSObject.Properties) { $loc.Add([string]$p.Value); $keys.Add($e.Key) } }
+    $hit = Match-Name $t $loc.ToArray() $keys.ToArray() 0.82
+    if ($hit) { return [string]$hit.En }
+    return ""
+}
+
+function Parse-MarineSetup([string[]]$lines, [string]$code) {
+    $rk = ""
+    $ri = -1
+    for ($i = 0; $i -lt $lines.Count -and -not $rk; $i++) {
+        if ($lines[$i] -notmatch "^(Angelmontage|Rig|Монтаж|Zestaw)\b") { continue }
+        for ($j = $i + 1; $j -lt [math]::Min($lines.Count, $i + 4); $j++) {
+            $c = $lines[$j].Trim()
+            if (-not $c -or $c -match "Ändern|Change|Изменить") { continue }
+            $rk = Get-MarineRigKey $c
+            $ri = $j
+            break
+        }
+    }
+    if (-not $rk) { return $null }
+    $lists = Get-MatchLists $code
+    $m = [ordered]@{ rig = $rk; main = ""; hook2 = ""; teasers = @(); lures = @(); fishDepth = ""; bank = $false }
+    $isItem = { param($t) $t -match "\s[O0o©@®]\s*$" }
+    for ($i = $ri + 1; $i -lt $lines.Count; $i++) {
+        $l = $lines[$i].Trim()
+        if (-not (& $isItem $l)) { continue }
+        $name = ($l -replace "\s[O0o©@®]\s*$", "").Trim()
+        $info = ""
+        for ($j = $i + 1; $j -lt [math]::Min($lines.Count, $i + 6); $j++) {
+            if (& $isItem $lines[$j].Trim()) { break }
+            $info = $info + " " + $lines[$j]
+        }
+        if ($info -match "(?i)Bremskraft|Spulenkapazit|Drag|Durchmesser|Diameter|Schock|Shock|Шок|Фрикцион|Диаметр") { continue }
+        $typ = ""
+        if ($info -match "(Typ|Type|Тип)\s*:\s*(\S+(\s\S+)?)") { $typ = $Matches[2].Trim() }
+        $hit = Match-Name $name $lists.ItemLoc $lists.ItemEn 0.8
+        $val = $(if ($hit) { [string]$hit.En } else { $name })
+        if ($typ -match "(?i)Rassel|Rattle|Tube|Perle|Bead|Lockstoff|Attract|Погрем|Трубк|Бусин") { $m.lures += $val }
+        elseif ($typ -match "(?i)Beifänger|Teaser|Seitenarm|Makk|Мушк|Отвод") { $m.teasers += $val }
+        elseif ($typ -match "(?i)Pilker|Jig|Blei|Sinker|Груз|Пилкер|Джиг|Filet|Fillet|Филе|Köderfisch|Baitfish") { if (-not $m.main) { $m.main = $val } else { $m.teasers += $val } }
+        elseif (-not $typ -and $info -match "(?i)Größe|Size|Размер") { if (-not $m.hook2) { $m.hook2 = $val } }
+        elseif (-not $m.main) { $m.main = $val }
+        else { $m.teasers += $val }
+    }
+    $m.teasers = @($m.teasers | Select-Object -First 3)
+    $m.lures = @($m.lures | Select-Object -First 2)
+    $o = [pscustomobject]@{ Kind = "setup"; Fish = ""; Weight = $null; Baits = @(@($m.main) | Where-Object { $_ }); Dip = ""; Pva = ""; Rig = (Get-MarineRigName $rk); Lake = ""; Items = @() }
+    $o | Add-Member -NotePropertyName Tech -NotePropertyValue "marine" -Force
+    $o | Add-Member -NotePropertyName Marine -NotePropertyValue ([pscustomobject]$m) -Force
+    $o
+}
+
 function Parse-TrackerLines([string[]]$lines, [string]$code) {
     $lists = Get-MatchLists $code
     $out = [pscustomobject]@{ Kind = ""; Fish = ""; Weight = $null; Baits = @(); Dip = ""; Pva = ""; Rig = ""; Lake = ""; Items = @() }
@@ -6871,6 +7125,8 @@ function Parse-TrackerLines([string[]]$lines, [string]$code) {
         $out.Fish = $best.En
         return $out
     }
+    $mar = Parse-MarineSetup $lines $code
+    if ($mar) { return $mar }
     $start = -1
     for ($i = 0; $i -lt $lines.Count; $i++) {
         if ($lines[$i] -match "Köder\s*Kombination|Bait\s*combination|Комбинация\s*наживок|Kombinacja\s*przyn") { $start = $i; break }
@@ -6980,7 +7236,7 @@ function Save-TrackerState {
         pos = $(if ($script:trackerPos) { [ordered]@{ x = $script:trackerPos.X; y = $script:trackerPos.Y } } else { $null })
         hud = [string]$script:trackerHud
         cast = [ordered]@{ clip = [string]$script:trackerCast.Clip; dir = [string]$script:trackerCast.Dir }
-        setup = $(if ($st) { [ordered]@{ baits = @($st.Baits); dip = $st.Dip; pva = $st.Pva; rig = $st.Rig; tech = $st.Tech } } else { $null })
+        setup = $(if ($st) { [ordered]@{ baits = @($st.Baits); dip = $st.Dip; pva = $st.Pva; rig = $st.Rig; tech = $st.Tech; marine = $st.Marine } } else { $null })
     }
     for ($try = 0; $try -lt 5; $try++) {
         try {
@@ -7000,7 +7256,7 @@ function Load-TrackerState {
         if ($d.hud) { $script:trackerHud = [string]$d.hud }
         if ($d.cast) { $script:trackerCast = [pscustomobject]@{ Clip = [string]$d.cast.clip; Dir = [string]$d.cast.dir } }
         if ($d.pos) { $script:trackerPos = [pscustomobject]@{ X = [int]$d.pos.x; Y = [int]$d.pos.y } }
-        if ($d.setup) { $script:trackerSetup = [pscustomobject]@{ Kind = "setup"; Baits = @($d.setup.baits | Where-Object { $_ }); Dip = [string]$d.setup.dip; Pva = [string]$d.setup.pva; Rig = [string]$d.setup.rig; Tech = [string]$d.setup.tech }
+        if ($d.setup) { $script:trackerSetup = [pscustomobject]@{ Kind = "setup"; Baits = @($d.setup.baits | Where-Object { $_ }); Dip = [string]$d.setup.dip; Pva = [string]$d.setup.pva; Rig = [string]$d.setup.rig; Tech = [string]$d.setup.tech; Marine = $d.setup.marine }
             if (-not $script:trackerSetup.Tech -and ($script:trackerSetup.Dip -or $script:trackerSetup.Pva -or @($script:trackerSetup.Baits).Count -ge 2)) { $script:trackerSetup.Tech = "bottom" }
         }
         return $true
@@ -7723,7 +7979,9 @@ $btnSpotSave.Add_Click({
         [System.Windows.MessageBox]::Show((T "invalidCoords"), (T "appTitle")) | Out-Null
         return
     }
-    if (-not (Test-SpotFields $txtSpotName.Text.Trim() $x $y (Get-ComboKey $cmbSpotTech) (Get-ComboKey $cmbSpotFish) (Get-ComboKey $cmbSpotBait) $txtSpotDist.Text.Trim() $txtSpotDepth.Text.Trim() (Get-ComboKey $cmbSpotTemp) $txtSpotNotes.Text.Trim())) { return }
+    $isMarSpot = (Get-ComboKey $cmbSpotTech) -eq "marine"
+    $baitForCheck = $(if ($isMarSpot) { Get-MarineKey $cmbMarMain } else { Get-ComboKey $cmbSpotBait })
+    if (-not (Test-SpotFields $txtSpotName.Text.Trim() $x $y (Get-ComboKey $cmbSpotTech) (Get-ComboKey $cmbSpotFish) $baitForCheck $txtSpotDist.Text.Trim() $txtSpotDepth.Text.Trim() (Get-ComboKey $cmbSpotTemp) $txtSpotNotes.Text.Trim())) { return }
     $n = From-Game $lake $x $y
     if ($script:pending) {
         $g = To-Game $lake $script:pending.NX $script:pending.NY
@@ -7758,6 +8016,8 @@ $btnSpotSave.Add_Click({
         if ($s.tech -ne "bottom") { $v = "" }
         $s | Add-Member -NotePropertyName $pair[0] -NotePropertyValue $v -Force
     }
+    $s | Add-Member -NotePropertyName marine -NotePropertyValue $(if ($s.tech -eq "marine") { Get-MarineFields } else { $null }) -Force
+    if ($s.tech -eq "marine") { $s.dist = ""; $s.dir = ""; $s.bait = [string]$s.marine.main }
     $s.nx = [double]$n.NX
     $s.ny = [double]$n.NY
     $script:selSpotId = $s.id
@@ -8591,6 +8851,7 @@ $btnTrackerDiscard.Add_Click({
 })
 
 $btnCommSync.Add_Click({ Start-CommunitySync })
+$cmbMarRig.Add_SelectionChanged({ Update-MarineLayout })
 $cmbSpotTech.Add_SelectionChanged({ if (-not $script:busy) { Update-BottomPanel }; Update-NotesHint $cmbSpotTech $txtSpotNotes })
 $cmbCatchTech.Add_SelectionChanged({ Update-NotesHint $cmbCatchTech $txtCatchNotes })
 $cmbSeTech.Add_SelectionChanged({ Update-NotesHint $cmbSeTech $txtSeNotes })

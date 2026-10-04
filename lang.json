@@ -312,7 +312,16 @@
   "splashWeekly": "Wochenrekorde werden ausgewertet",
   "splashSpots": "Community-Spots werden ausgewertet",
   "splashMap": "Karte wird geöffnet",
-  "ownSpotsLayer": "Eigene Spots"
+  "ownSpotsLayer": "Eigene Spots",
+  "marineRig": "Meeresmontage",
+  "mainBait": "Hauptköder (Pilker, Jig, Köder)",
+  "extraHook": "Zusatzhaken",
+  "teaserN": "Beifänger {0}",
+  "lureAttrN": "Lockmittel {0}",
+  "fishDepth": "Angeltiefe",
+  "fishDepthHint": "z. B. Grund oder 5 m über Grund",
+  "waterDepth": "Wassertiefe",
+  "onBank": "Spot liegt auf einer Bank"
  },
  "en": {
   "langName": "English",
@@ -627,7 +636,16 @@
   "splashWeekly": "Analyzing weekly records",
   "splashSpots": "Analyzing community spots",
   "splashMap": "Opening the map",
-  "ownSpotsLayer": "My spots"
+  "ownSpotsLayer": "My spots",
+  "marineRig": "Sea rig",
+  "mainBait": "Main bait (pilker, jig, bait)",
+  "extraHook": "Extra hook",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Attractor {0}",
+  "fishDepth": "Fishing depth",
+  "fishDepthHint": "e.g. bottom or 5 m above bottom",
+  "waterDepth": "Water depth",
+  "onBank": "Spot is on a bank"
  },
  "ru": {
   "langName": "Русский",
@@ -939,7 +957,16 @@
   "splashWeekly": "Анализ недельных рекордов",
   "splashSpots": "Анализ точек сообщества",
   "splashMap": "Открытие карты",
-  "ownSpotsLayer": "Мои точки"
+  "ownSpotsLayer": "Мои точки",
+  "marineRig": "Морская оснастка",
+  "mainBait": "Основная приманка (пилкер, джиг, наживка)",
+  "extraHook": "Дополнительный крючок",
+  "teaserN": "Отвод {0}",
+  "lureAttrN": "Привлекатель {0}",
+  "fishDepth": "Глубина ловли",
+  "fishDepthHint": "например, дно или 5 м над дном",
+  "waterDepth": "Глубина воды",
+  "onBank": "Точка на банке"
  },
  "fr": {
   "langName": "Français",
@@ -1251,7 +1278,16 @@
   "splashWeekly": "Analyse des records hebdomadaires",
   "splashSpots": "Analyse des spots de la communauté",
   "splashMap": "Ouverture de la carte",
-  "ownSpotsLayer": "Mes spots"
+  "ownSpotsLayer": "Mes spots",
+  "marineRig": "Montage mer",
+  "mainBait": "Appât principal (pilker, jig, appât)",
+  "extraHook": "Hameçon supplémentaire",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Attractant {0}",
+  "fishDepth": "Profondeur de pêche",
+  "fishDepthHint": "p. ex. fond ou 5 m au-dessus du fond",
+  "waterDepth": "Profondeur d'eau",
+  "onBank": "Le spot est sur un banc"
  },
  "es": {
   "langName": "Español",
@@ -1563,7 +1599,16 @@
   "splashWeekly": "Analizando récords semanales",
   "splashSpots": "Analizando spots de la comunidad",
   "splashMap": "Abriendo el mapa",
-  "ownSpotsLayer": "Mis spots"
+  "ownSpotsLayer": "Mis spots",
+  "marineRig": "Aparejo de mar",
+  "mainBait": "Cebo principal (pilker, jig, cebo)",
+  "extraHook": "Anzuelo adicional",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Atrayente {0}",
+  "fishDepth": "Profundidad de pesca",
+  "fishDepthHint": "p. ej. fondo o 5 m sobre el fondo",
+  "waterDepth": "Profundidad del agua",
+  "onBank": "El punto está en un banco"
  },
  "it": {
   "langName": "Italiano",
@@ -1875,7 +1920,16 @@
   "splashWeekly": "Analisi dei record settimanali",
   "splashSpots": "Analisi degli spot della community",
   "splashMap": "Apertura della mappa",
-  "ownSpotsLayer": "I miei spot"
+  "ownSpotsLayer": "I miei spot",
+  "marineRig": "Montatura mare",
+  "mainBait": "Esca principale (pilker, jig, esca)",
+  "extraHook": "Amo aggiuntivo",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Attrattore {0}",
+  "fishDepth": "Profondità di pesca",
+  "fishDepthHint": "es. fondo o 5 m sopra il fondo",
+  "waterDepth": "Profondità dell'acqua",
+  "onBank": "Lo spot è su una secca"
  },
  "pl": {
   "langName": "Polski",
@@ -2187,7 +2241,16 @@
   "splashWeekly": "Analiza rekordów tygodniowych",
   "splashSpots": "Analiza miejscówek społeczności",
   "splashMap": "Otwieranie mapy",
-  "ownSpotsLayer": "Moje miejscówki"
+  "ownSpotsLayer": "Moje miejscówki",
+  "marineRig": "Zestaw morski",
+  "mainBait": "Główna przynęta (pilker, jig, przynęta)",
+  "extraHook": "Dodatkowy haczyk",
+  "teaserN": "Przywieszka {0}",
+  "lureAttrN": "Atraktor {0}",
+  "fishDepth": "Głębokość łowienia",
+  "fishDepthHint": "np. dno lub 5 m nad dnem",
+  "waterDepth": "Głębokość wody",
+  "onBank": "Miejscówka na ławicy"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2499,7 +2562,16 @@
   "splashWeekly": "Analisando recordes semanais",
   "splashSpots": "Analisando pontos da comunidade",
   "splashMap": "Abrindo o mapa",
-  "ownSpotsLayer": "Meus pontos"
+  "ownSpotsLayer": "Meus pontos",
+  "marineRig": "Montagem de mar",
+  "mainBait": "Isca principal (pilker, jig, isca)",
+  "extraHook": "Anzol adicional",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Atrativo {0}",
+  "fishDepth": "Profundidade de pesca",
+  "fishDepthHint": "ex.: fundo ou 5 m acima do fundo",
+  "waterDepth": "Profundidade da água",
+  "onBank": "O ponto fica num banco"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2811,7 +2883,16 @@
   "splashWeekly": "Weekrecords analyseren",
   "splashSpots": "Communityspots analyseren",
   "splashMap": "Kaart openen",
-  "ownSpotsLayer": "Mijn spots"
+  "ownSpotsLayer": "Mijn spots",
+  "marineRig": "Zeemontage",
+  "mainBait": "Hoofdaas (pilker, jig, aas)",
+  "extraHook": "Extra haak",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Lokmiddel {0}",
+  "fishDepth": "Vistiepte",
+  "fishDepthHint": "bijv. bodem of 5 m boven de bodem",
+  "waterDepth": "Waterdiepte",
+  "onBank": "Spot ligt op een bank"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3123,7 +3204,16 @@
   "splashWeekly": "Haftalık rekorlar analiz ediliyor",
   "splashSpots": "Topluluk noktaları analiz ediliyor",
   "splashMap": "Harita açılıyor",
-  "ownSpotsLayer": "Noktalarım"
+  "ownSpotsLayer": "Noktalarım",
+  "marineRig": "Deniz takımı",
+  "mainBait": "Ana yem (pilker, jig, yem)",
+  "extraHook": "Ek iğne",
+  "teaserN": "Yan köstek {0}",
+  "lureAttrN": "Çekici {0}",
+  "fishDepth": "Avlanma derinliği",
+  "fishDepthHint": "ör. dip veya dipten 5 m yukarı",
+  "waterDepth": "Su derinliği",
+  "onBank": "Nokta bir sığlıkta"
  },
  "ro": {
   "langName": "Română",
@@ -3435,7 +3525,16 @@
   "splashWeekly": "Se analizează recordurile săptămânale",
   "splashSpots": "Se analizează locurile comunității",
   "splashMap": "Se deschide harta",
-  "ownSpotsLayer": "Locurile mele"
+  "ownSpotsLayer": "Locurile mele",
+  "marineRig": "Montură marină",
+  "mainBait": "Nada principală (pilker, jig, nadă)",
+  "extraHook": "Cârlig suplimentar",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Atractant {0}",
+  "fishDepth": "Adâncimea de pescuit",
+  "fishDepthHint": "ex. fund sau 5 m deasupra fundului",
+  "waterDepth": "Adâncimea apei",
+  "onBank": "Locul este pe un banc"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3747,7 +3846,16 @@
   "splashWeekly": "Menganalisis rekor mingguan",
   "splashSpots": "Menganalisis spot komunitas",
   "splashMap": "Membuka peta",
-  "ownSpotsLayer": "Spot saya"
+  "ownSpotsLayer": "Spot saya",
+  "marineRig": "Rig laut",
+  "mainBait": "Umpan utama (pilker, jig, umpan)",
+  "extraHook": "Kail tambahan",
+  "teaserN": "Teaser {0}",
+  "lureAttrN": "Penarik {0}",
+  "fishDepth": "Kedalaman memancing",
+  "fishDepthHint": "mis. dasar atau 5 m di atas dasar",
+  "waterDepth": "Kedalaman air",
+  "onBank": "Spot berada di gundukan"
  },
  "ja": {
   "langName": "日本語",
@@ -4059,7 +4167,16 @@
   "splashWeekly": "週間記録を分析中",
   "splashSpots": "コミュニティのスポットを分析中",
   "splashMap": "マップを開いています",
-  "ownSpotsLayer": "自分のスポット"
+  "ownSpotsLayer": "自分のスポット",
+  "marineRig": "海釣り仕掛け",
+  "mainBait": "メインの餌 (ピルカー、ジグ、餌)",
+  "extraHook": "追加フック",
+  "teaserN": "ティーザー {0}",
+  "lureAttrN": "集魚パーツ {0}",
+  "fishDepth": "釣りの深さ",
+  "fishDepthHint": "例: 底、または底から5 m上",
+  "waterDepth": "水深",
+  "onBank": "浅瀬の上のスポット"
  },
  "ko": {
   "langName": "한국어",
@@ -4371,7 +4488,16 @@
   "splashWeekly": "주간 기록 분석 중",
   "splashSpots": "커뮤니티 포인트 분석 중",
   "splashMap": "지도 여는 중",
-  "ownSpotsLayer": "내 포인트"
+  "ownSpotsLayer": "내 포인트",
+  "marineRig": "바다 채비",
+  "mainBait": "메인 미끼 (필커, 지그, 미끼)",
+  "extraHook": "추가 바늘",
+  "teaserN": "티저 {0}",
+  "lureAttrN": "집어재 {0}",
+  "fishDepth": "낚시 수심",
+  "fishDepthHint": "예: 바닥 또는 바닥 위 5 m",
+  "waterDepth": "수심",
+  "onBank": "뱅크 위 포인트"
  },
  "zh": {
   "langName": "简体中文",
@@ -4683,7 +4809,16 @@
   "splashWeekly": "正在分析每周纪录",
   "splashSpots": "正在分析社区钓点",
   "splashMap": "正在打开地图",
-  "ownSpotsLayer": "我的钓点"
+  "ownSpotsLayer": "我的钓点",
+  "marineRig": "海钓钓组",
+  "mainBait": "主饵 (铅鱼、铅头钩、饵)",
+  "extraHook": "附加鱼钩",
+  "teaserN": "附加钩 {0}",
+  "lureAttrN": "诱鱼配件 {0}",
+  "fishDepth": "钓鱼深度",
+  "fishDepthHint": "例如：底部或离底5米",
+  "waterDepth": "水深",
+  "onBank": "钓点位于浅滩"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -4995,6 +5130,15 @@
   "splashWeekly": "正在分析每週紀錄",
   "splashSpots": "正在分析社群釣點",
   "splashMap": "正在開啟地圖",
-  "ownSpotsLayer": "我的釣點"
+  "ownSpotsLayer": "我的釣點",
+  "marineRig": "海釣釣組",
+  "mainBait": "主餌 (鉛魚、鉛頭鉤、餌)",
+  "extraHook": "附加魚鉤",
+  "teaserN": "附加鉤 {0}",
+  "lureAttrN": "誘魚配件 {0}",
+  "fishDepth": "釣魚深度",
+  "fishDepthHint": "例如：底部或離底5公尺",
+  "waterDepth": "水深",
+  "onBank": "釣點位於淺灘"
  }
 }
