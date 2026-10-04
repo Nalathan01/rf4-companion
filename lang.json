@@ -330,8 +330,9 @@
   "resetCount": "Anzahl",
   "allLakes": "Alle Gewässer",
   "allRegions": "Alle Regionen",
-  "resetOnlyNew": "Nur neue Köder",
-  "resetNew": "Neu seit letzter Woche"
+  "resetOnlyNew": "Nur Neues seit letzter Woche",
+  "resetNew": "Neu seit letzter Woche",
+  "resetNewCombo": "neue Kombination"
  },
  "en": {
   "langName": "English",
@@ -665,7 +666,8 @@
   "allLakes": "All waterbodies",
   "allRegions": "All regions",
   "resetOnlyNew": "New baits only",
-  "resetNew": "New since last week"
+  "resetNew": "New since last week",
+  "resetNewCombo": "new combination"
  },
  "ru": {
   "langName": "Русский",
@@ -996,7 +998,8 @@
   "allLakes": "Все водоёмы",
   "allRegions": "Все регионы",
   "resetOnlyNew": "Только новые наживки",
-  "resetNew": "Новое с прошлой недели"
+  "resetNew": "Новое с прошлой недели",
+  "resetNewCombo": "новая комбинация"
  },
  "fr": {
   "langName": "Français",
@@ -1327,7 +1330,8 @@
   "allLakes": "Tous les plans d'eau",
   "allRegions": "Toutes les régions",
   "resetOnlyNew": "Nouveaux appâts seulement",
-  "resetNew": "Nouveau depuis la semaine dernière"
+  "resetNew": "Nouveau depuis la semaine dernière",
+  "resetNewCombo": "nouvelle combinaison"
  },
  "es": {
   "langName": "Español",
@@ -1658,7 +1662,8 @@
   "allLakes": "Todas las aguas",
   "allRegions": "Todas las regiones",
   "resetOnlyNew": "Solo cebos nuevos",
-  "resetNew": "Nuevo desde la semana pasada"
+  "resetNew": "Nuevo desde la semana pasada",
+  "resetNewCombo": "nueva combinación"
  },
  "it": {
   "langName": "Italiano",
@@ -1989,7 +1994,8 @@
   "allLakes": "Tutti gli specchi d'acqua",
   "allRegions": "Tutte le regioni",
   "resetOnlyNew": "Solo esche nuove",
-  "resetNew": "Nuovo dalla settimana scorsa"
+  "resetNew": "Nuovo dalla settimana scorsa",
+  "resetNewCombo": "nuova combinazione"
  },
  "pl": {
   "langName": "Polski",
@@ -2320,7 +2326,8 @@
   "allLakes": "Wszystkie łowiska",
   "allRegions": "Wszystkie regiony",
   "resetOnlyNew": "Tylko nowe przynęty",
-  "resetNew": "Nowe od zeszłego tygodnia"
+  "resetNew": "Nowe od zeszłego tygodnia",
+  "resetNewCombo": "nowa kombinacja"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2651,7 +2658,8 @@
   "allLakes": "Todas as águas",
   "allRegions": "Todas as regiões",
   "resetOnlyNew": "Só iscas novas",
-  "resetNew": "Novo desde a semana passada"
+  "resetNew": "Novo desde a semana passada",
+  "resetNewCombo": "nova combinação"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2982,7 +2990,8 @@
   "allLakes": "Alle wateren",
   "allRegions": "Alle regio's",
   "resetOnlyNew": "Alleen nieuw aas",
-  "resetNew": "Nieuw sinds vorige week"
+  "resetNew": "Nieuw sinds vorige week",
+  "resetNewCombo": "nieuwe combinatie"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3313,7 +3322,8 @@
   "allLakes": "Tüm sular",
   "allRegions": "Tüm bölgeler",
   "resetOnlyNew": "Sadece yeni yemler",
-  "resetNew": "Geçen haftadan beri yeni"
+  "resetNew": "Geçen haftadan beri yeni",
+  "resetNewCombo": "yeni kombinasyon"
  },
  "ro": {
   "langName": "Română",
@@ -3644,7 +3654,8 @@
   "allLakes": "Toate apele",
   "allRegions": "Toate regiunile",
   "resetOnlyNew": "Doar nade noi",
-  "resetNew": "Nou față de săptămâna trecută"
+  "resetNew": "Nou față de săptămâna trecută",
+  "resetNewCombo": "combinație nouă"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3975,7 +3986,8 @@
   "allLakes": "Semua perairan",
   "allRegions": "Semua wilayah",
   "resetOnlyNew": "Hanya umpan baru",
-  "resetNew": "Baru sejak minggu lalu"
+  "resetNew": "Baru sejak minggu lalu",
+  "resetNewCombo": "kombinasi baru"
  },
  "ja": {
   "langName": "日本語",
@@ -4306,7 +4318,8 @@
   "allLakes": "すべての釣り場",
   "allRegions": "すべての地域",
   "resetOnlyNew": "新しい餌のみ",
-  "resetNew": "先週からの新規"
+  "resetNew": "先週からの新規",
+  "resetNewCombo": "新しい組み合わせ"
  },
  "ko": {
   "langName": "한국어",
@@ -4637,7 +4650,8 @@
   "allLakes": "모든 낚시터",
   "allRegions": "모든 지역",
   "resetOnlyNew": "새 미끼만",
-  "resetNew": "지난주 이후 새로움"
+  "resetNew": "지난주 이후 새로움",
+  "resetNewCombo": "새 조합"
  },
  "zh": {
   "langName": "简体中文",
@@ -4968,7 +4982,8 @@
   "allLakes": "所有水域",
   "allRegions": "所有地区",
   "resetOnlyNew": "仅新饵",
-  "resetNew": "自上周以来新增"
+  "resetNew": "自上周以来新增",
+  "resetNewCombo": "新组合"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5299,6 +5314,7 @@
   "allLakes": "所有水域",
   "allRegions": "所有地區",
   "resetOnlyNew": "僅新餌",
-  "resetNew": "自上週以來新增"
+  "resetNew": "自上週以來新增",
+  "resetNewCombo": "新組合"
  }
 }

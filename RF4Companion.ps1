@@ -3067,7 +3067,9 @@ function Get-PrevBaits([string]$curId) {
     foreach ($it in (Get-ArchWeek $prevId).Values) {
         $f = [string]$it["f"]
         if (-not $m.ContainsKey($f)) { $m[$f] = @{} }
-        foreach ($b in (Split-Baits ([string]$it["b"]))) { $m[$f][$b] = $true }
+        $parts = @(Split-Baits ([string]$it["b"]))
+        foreach ($b in $parts) { $m[$f][$b] = $true }
+        if ($parts.Count -gt 1) { $m[$f]["combo|" + ((@($parts | Sort-Object)) -join "+")] = $true }
     }
     $script:prevBaits = $m
     $script:prevBaitsId = $prevId
@@ -3096,11 +3098,16 @@ function Refresh-Reset {
         $allF[$fish] = $true; $allL[[string]$it["l"]] = $true; $allR[[string]$it["r"]] = $true
         if (($ff -and $fish -ne $ff) -or ($fl -and [string]$it["l"] -ne $fl) -or ($fr -and [string]$it["r"] -ne $fr)) { continue }
         $pb = $prev[$fish]
-        $newB = @(Split-Baits ([string]$it["b"]) | Where-Object { -not $pb -or -not $pb.ContainsKey([string]$_) })
-        if ($onlyNew -and $newB.Count -eq 0) { continue }
+        $parts = @(Split-Baits ([string]$it["b"]))
+        $newB = @($parts | Where-Object { -not $pb -or -not $pb.ContainsKey([string]$_) })
+        $newCombo = $parts.Count -gt 1 -and (-not $pb -or -not $pb.ContainsKey("combo|" + ((@($parts | Sort-Object)) -join "+")))
+        if ($onlyNew -and $newB.Count -eq 0 -and -not $newCombo) { continue }
+        $newTxt = @()
+        if ($newCombo) { $newTxt += (T "resetNewCombo") }
+        $newTxt += @($newB | Select-Object -Unique | ForEach-Object { N $_ })
         $rows.Add([pscustomobject]@{
             Seen = $t.ToLocalTime().ToString("HH:mm"); SeenSort = $t.ToString("o"); Fish = (N $fish); Weight = (Format-Weight ([int]$it["w"])); WSort = [int]$it["w"]
-            Lake = (Get-LakeName ([string]$it["l"])); LakeSort = (Get-LakeRank ([string]$it["l"])); Bait = ((@(Split-Baits ([string]$it["b"]) | ForEach-Object { N $_ })) -join " + "); Region = [string]$it["r"]; Table = [string]$tabNames[[string]$it["t"]]; New = ((@($newB | ForEach-Object { N $_ })) -join " + ")
+            Lake = (Get-LakeName ([string]$it["l"])); LakeSort = (Get-LakeRank ([string]$it["l"])); Bait = ((@(Split-Baits ([string]$it["b"]) | ForEach-Object { N $_ })) -join " + "); Region = [string]$it["r"]; Table = [string]$tabNames[[string]$it["t"]]; New = ($newTxt -join ", ")
         }) | Out-Null
         foreach ($b in (Split-Baits ([string]$it["b"]))) {
             $bc[$b] = 1 + [int]$bc[$b]
