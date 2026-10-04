@@ -321,7 +321,13 @@
   "fishDepth": "Angeltiefe",
   "fishDepthHint": "z. B. Grund oder 5 m über Grund",
   "waterDepth": "Wassertiefe",
-  "onBank": "Spot liegt auf einer Bank"
+  "onBank": "Spot liegt auf einer Bank",
+  "tabReset": "Reset-Phase",
+  "resetNotYet": "Der Wochenreset ist noch nicht erfasst. Er findet sonntags gegen 21 Uhr (MESZ) statt, danach erscheinen hier alle neuen Rekorde bis 3 Uhr.",
+  "resetState": "Reset {0} bis {1} Uhr: {2} Rekorde   Cloud {3}, lokal {4}",
+  "resetSeen": "Erstmals",
+  "resetTable": "Tabelle",
+  "resetCount": "Anzahl"
  },
  "en": {
   "langName": "English",
@@ -645,7 +651,13 @@
   "fishDepth": "Fishing depth",
   "fishDepthHint": "e.g. bottom or 5 m above bottom",
   "waterDepth": "Water depth",
-  "onBank": "Spot is on a bank"
+  "onBank": "Spot is on a bank",
+  "tabReset": "Reset phase",
+  "resetNotYet": "The weekly reset has not been captured yet. It happens on Sunday at 19:00 UTC, then all new records up to 3:00 local time appear here.",
+  "resetState": "Reset {0} until {1}: {2} records   cloud {3}, local {4}",
+  "resetSeen": "First seen",
+  "resetTable": "Table",
+  "resetCount": "Count"
  },
  "ru": {
   "langName": "Русский",
@@ -966,7 +978,13 @@
   "fishDepth": "Глубина ловли",
   "fishDepthHint": "например, дно или 5 м над дном",
   "waterDepth": "Глубина воды",
-  "onBank": "Точка на банке"
+  "onBank": "Точка на банке",
+  "tabReset": "После сброса",
+  "resetNotYet": "Еженедельный сброс ещё не зафиксирован. Он происходит в воскресенье в 19:00 UTC, затем здесь появятся все новые рекорды до 3:00.",
+  "resetState": "Сброс {0} до {1}: {2} рекордов   облако {3}, локально {4}",
+  "resetSeen": "Впервые",
+  "resetTable": "Таблица",
+  "resetCount": "Кол-во"
  },
  "fr": {
   "langName": "Français",
@@ -1287,7 +1305,13 @@
   "fishDepth": "Profondeur de pêche",
   "fishDepthHint": "p. ex. fond ou 5 m au-dessus du fond",
   "waterDepth": "Profondeur d'eau",
-  "onBank": "Le spot est sur un banc"
+  "onBank": "Le spot est sur un banc",
+  "tabReset": "Phase de reset",
+  "resetNotYet": "Le reset hebdomadaire n'est pas encore enregistré. Il a lieu le dimanche à 19:00 UTC, ensuite tous les nouveaux records jusqu'à 3:00 apparaissent ici.",
+  "resetState": "Reset {0} jusqu'à {1} : {2} records   cloud {3}, local {4}",
+  "resetSeen": "Vu à",
+  "resetTable": "Tableau",
+  "resetCount": "Nombre"
  },
  "es": {
   "langName": "Español",
@@ -1608,7 +1632,13 @@
   "fishDepth": "Profundidad de pesca",
   "fishDepthHint": "p. ej. fondo o 5 m sobre el fondo",
   "waterDepth": "Profundidad del agua",
-  "onBank": "El punto está en un banco"
+  "onBank": "El punto está en un banco",
+  "tabReset": "Fase de reinicio",
+  "resetNotYet": "El reinicio semanal aún no se ha registrado. Ocurre el domingo a las 19:00 UTC, luego aquí aparecen todos los récords nuevos hasta las 3:00.",
+  "resetState": "Reinicio {0} hasta {1}: {2} récords   nube {3}, local {4}",
+  "resetSeen": "Visto",
+  "resetTable": "Tabla",
+  "resetCount": "Cantidad"
  },
  "it": {
   "langName": "Italiano",
@@ -1929,7 +1959,13 @@
   "fishDepth": "Profondità di pesca",
   "fishDepthHint": "es. fondo o 5 m sopra il fondo",
   "waterDepth": "Profondità dell'acqua",
-  "onBank": "Lo spot è su una secca"
+  "onBank": "Lo spot è su una secca",
+  "tabReset": "Fase di reset",
+  "resetNotYet": "Il reset settimanale non è ancora registrato. Avviene la domenica alle 19:00 UTC, poi qui compaiono tutti i nuovi record fino alle 3:00.",
+  "resetState": "Reset {0} fino alle {1}: {2} record   cloud {3}, locale {4}",
+  "resetSeen": "Visto",
+  "resetTable": "Tabella",
+  "resetCount": "Numero"
  },
  "pl": {
   "langName": "Polski",
@@ -2250,7 +2286,13 @@
   "fishDepth": "Głębokość łowienia",
   "fishDepthHint": "np. dno lub 5 m nad dnem",
   "waterDepth": "Głębokość wody",
-  "onBank": "Miejscówka na ławicy"
+  "onBank": "Miejscówka na ławicy",
+  "tabReset": "Faza resetu",
+  "resetNotYet": "Cotygodniowy reset nie został jeszcze zarejestrowany. Odbywa się w niedzielę o 19:00 UTC, potem pojawią się tu wszystkie nowe rekordy do 3:00.",
+  "resetState": "Reset {0} do {1}: {2} rekordów   chmura {3}, lokalnie {4}",
+  "resetSeen": "Pierwszy raz",
+  "resetTable": "Tabela",
+  "resetCount": "Liczba"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2571,7 +2613,13 @@
   "fishDepth": "Profundidade de pesca",
   "fishDepthHint": "ex.: fundo ou 5 m acima do fundo",
   "waterDepth": "Profundidade da água",
-  "onBank": "O ponto fica num banco"
+  "onBank": "O ponto fica num banco",
+  "tabReset": "Fase de reinício",
+  "resetNotYet": "O reinício semanal ainda não foi registado. Ocorre domingo às 19:00 UTC, depois aparecem aqui todos os novos recordes até às 3:00.",
+  "resetState": "Reinício {0} até {1}: {2} recordes   nuvem {3}, local {4}",
+  "resetSeen": "Visto",
+  "resetTable": "Tabela",
+  "resetCount": "Quantidade"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2892,7 +2940,13 @@
   "fishDepth": "Vistiepte",
   "fishDepthHint": "bijv. bodem of 5 m boven de bodem",
   "waterDepth": "Waterdiepte",
-  "onBank": "Spot ligt op een bank"
+  "onBank": "Spot ligt op een bank",
+  "tabReset": "Resetfase",
+  "resetNotYet": "De wekelijkse reset is nog niet vastgelegd. Die vindt zondag om 19:00 UTC plaats, daarna verschijnen hier alle nieuwe records tot 3:00 uur.",
+  "resetState": "Reset {0} tot {1}: {2} records   cloud {3}, lokaal {4}",
+  "resetSeen": "Eerst gezien",
+  "resetTable": "Tabel",
+  "resetCount": "Aantal"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3213,7 +3267,13 @@
   "fishDepth": "Avlanma derinliği",
   "fishDepthHint": "ör. dip veya dipten 5 m yukarı",
   "waterDepth": "Su derinliği",
-  "onBank": "Nokta bir sığlıkta"
+  "onBank": "Nokta bir sığlıkta",
+  "tabReset": "Sıfırlama dönemi",
+  "resetNotYet": "Haftalık sıfırlama henüz kaydedilmedi. Pazar 19:00 UTC'de olur, ardından saat 3:00'e kadar tüm yeni rekorlar burada görünür.",
+  "resetState": "Sıfırlama {0} - {1}: {2} rekor   bulut {3}, yerel {4}",
+  "resetSeen": "İlk görülme",
+  "resetTable": "Tablo",
+  "resetCount": "Adet"
  },
  "ro": {
   "langName": "Română",
@@ -3534,7 +3594,13 @@
   "fishDepth": "Adâncimea de pescuit",
   "fishDepthHint": "ex. fund sau 5 m deasupra fundului",
   "waterDepth": "Adâncimea apei",
-  "onBank": "Locul este pe un banc"
+  "onBank": "Locul este pe un banc",
+  "tabReset": "Faza de resetare",
+  "resetNotYet": "Resetarea săptămânală nu a fost încă înregistrată. Are loc duminica la 19:00 UTC, apoi aici apar toate recordurile noi până la ora 3:00.",
+  "resetState": "Resetare {0} până la {1}: {2} recorduri   cloud {3}, local {4}",
+  "resetSeen": "Prima dată",
+  "resetTable": "Tabel",
+  "resetCount": "Număr"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3855,7 +3921,13 @@
   "fishDepth": "Kedalaman memancing",
   "fishDepthHint": "mis. dasar atau 5 m di atas dasar",
   "waterDepth": "Kedalaman air",
-  "onBank": "Spot berada di gundukan"
+  "onBank": "Spot berada di gundukan",
+  "tabReset": "Fase reset",
+  "resetNotYet": "Reset mingguan belum tercatat. Reset terjadi Minggu pukul 19:00 UTC, lalu semua rekor baru hingga pukul 3:00 muncul di sini.",
+  "resetState": "Reset {0} sampai {1}: {2} rekor   cloud {3}, lokal {4}",
+  "resetSeen": "Pertama",
+  "resetTable": "Tabel",
+  "resetCount": "Jumlah"
  },
  "ja": {
   "langName": "日本語",
@@ -4176,7 +4248,13 @@
   "fishDepth": "釣りの深さ",
   "fishDepthHint": "例: 底、または底から5 m上",
   "waterDepth": "水深",
-  "onBank": "浅瀬の上のスポット"
+  "onBank": "浅瀬の上のスポット",
+  "tabReset": "リセット直後",
+  "resetNotYet": "週間リセットはまだ記録されていません。日曜19:00 UTCに行われ、その後3:00までの新記録がここに表示されます。",
+  "resetState": "リセット {0} から {1} まで: {2} 件   クラウド {3}、ローカル {4}",
+  "resetSeen": "初出",
+  "resetTable": "表",
+  "resetCount": "件数"
  },
  "ko": {
   "langName": "한국어",
@@ -4497,7 +4575,13 @@
   "fishDepth": "낚시 수심",
   "fishDepthHint": "예: 바닥 또는 바닥 위 5 m",
   "waterDepth": "수심",
-  "onBank": "뱅크 위 포인트"
+  "onBank": "뱅크 위 포인트",
+  "tabReset": "리셋 직후",
+  "resetNotYet": "주간 리셋이 아직 기록되지 않았습니다. 일요일 19:00 UTC에 진행되며, 그 후 3시까지의 새 기록이 여기에 표시됩니다.",
+  "resetState": "리셋 {0} ~ {1}: 기록 {2}개   클라우드 {3}, 로컬 {4}",
+  "resetSeen": "최초",
+  "resetTable": "표",
+  "resetCount": "개수"
  },
  "zh": {
   "langName": "简体中文",
@@ -4818,7 +4902,13 @@
   "fishDepth": "钓鱼深度",
   "fishDepthHint": "例如：底部或离底5米",
   "waterDepth": "水深",
-  "onBank": "钓点位于浅滩"
+  "onBank": "钓点位于浅滩",
+  "tabReset": "重置阶段",
+  "resetNotYet": "尚未记录到每周重置。重置在周日 19:00 UTC 进行，之后到 3:00 的所有新纪录会显示在这里。",
+  "resetState": "重置 {0} 至 {1}：{2} 条纪录   云端 {3}，本地 {4}",
+  "resetSeen": "首次",
+  "resetTable": "表",
+  "resetCount": "数量"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5139,6 +5229,12 @@
   "fishDepth": "釣魚深度",
   "fishDepthHint": "例如：底部或離底5公尺",
   "waterDepth": "水深",
-  "onBank": "釣點位於淺灘"
+  "onBank": "釣點位於淺灘",
+  "tabReset": "重置階段",
+  "resetNotYet": "尚未記錄到每週重置。重置在週日 19:00 UTC 進行，之後到 3:00 的所有新紀錄會顯示在這裡。",
+  "resetState": "重置 {0} 至 {1}：{2} 筆紀錄   雲端 {3}，本機 {4}",
+  "resetSeen": "首次",
+  "resetTable": "表",
+  "resetCount": "數量"
  }
 }

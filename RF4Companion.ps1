@@ -922,6 +922,41 @@ function Format-Coords($lake, $nx, $ny) {
                     </Grid>
                 </Grid>
             </TabItem>
+            <TabItem x:Name="tabReset" Tag="t:tabReset" Style="{StaticResource SubTab}">
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,10">
+                        <Button x:Name="btnResetRefresh" Tag="t:refresh" DockPanel.Dock="Right" Padding="12,4"/>
+                        <TextBlock x:Name="txtResetState" Foreground="{DynamicResource AppInkDim}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </DockPanel>
+                    <DataGrid x:Name="dgReset" Grid.Row="1" Grid.Column="0" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="t:resetSeen" Binding="{Binding Seen}" SortMemberPath="SeenSort"/>
+                            <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}"/>
+                            <DataGridTextColumn Header="t:weight" Binding="{Binding Weight}" SortMemberPath="WSort"/>
+                            <DataGridTextColumn Header="t:lake" Binding="{Binding Lake}"/>
+                            <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*"/>
+                            <DataGridTextColumn Header="t:region" Binding="{Binding Region}"/>
+                            <DataGridTextColumn Header="t:resetTable" Binding="{Binding Table}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <DataGrid x:Name="dgResetBaits" Grid.Row="1" Grid.Column="2" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*"/>
+                            <DataGridTextColumn Header="t:resetCount" Binding="{Binding Count}"/>
+                            <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
             <TabItem Tag="t:tabWeekly" Style="{StaticResource SubTab}">
                 <Grid Margin="0,10,0,0">
                     <Grid.RowDefinitions>
@@ -3003,6 +3038,52 @@ $script:harvNextTimer.Add_Tick({
     Next-HarvestPage
 })
 
+function Test-ResetWindow {
+    $u = (Get-Date).ToUniversalTime()
+    if ($u.DayOfWeek -eq [System.DayOfWeek]::Sunday -and ($u.Hour -gt 18 -or ($u.Hour -eq 18 -and $u.Minute -ge 30))) { return $true }
+    if ($u.DayOfWeek -eq [System.DayOfWeek]::Monday -and ($u.Hour -lt 1 -or ($u.Hour -eq 1 -and $u.Minute -le 15))) { return $true }
+    return $false
+}
+
+function Get-ResetWindow {
+    $id = $script:archCurId
+    if (-not $id) { return $null }
+    $rs = Get-WeekResetUtc $id
+    if (-not $rs) { return $null }
+    if (((Get-Date).ToUniversalTime()-$rs).TotalDays -gt 6) { return $null }
+    $loc = $rs.ToLocalTime()
+    $end = $(if ($loc.Hour -lt 3) { $loc.Date.AddHours(3) } else { $loc.Date.AddDays(1).AddHours(3) })
+    [pscustomobject]@{ Id = $id; Start = $rs; End = $end.ToUniversalTime() }
+}
+
+function Refresh-Reset {
+    $w = Get-ResetWindow
+    if (-not $w) { $dgReset.ItemsSource = $null; $dgResetBaits.ItemsSource = $null; $txtResetState.Text = T "resetNotYet"; return }
+    $rows = New-Object System.Collections.ArrayList
+    $bc = @{}
+    $bf = @{}
+    $tabNames = @{ n = (T "table_n"); l = (T "table_l"); b = (T "table_b") }
+    foreach ($it in (Get-ArchWeek $w.Id).Values) {
+        $fs = [string]$it["fs"]
+        if (-not $fs) { continue }
+        $t = [datetime]::Parse($fs, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal)
+        if ($t -lt $w.Start -or $t -gt $w.End) { continue }
+        $fish = [string]$it["f"]
+        $rows.Add([pscustomobject]@{
+            Seen = $t.ToLocalTime().ToString("HH:mm"); SeenSort = $t.ToString("o"); Fish = (N $fish); Weight = (Format-Weight ([int]$it["w"])); WSort = [int]$it["w"]
+            Lake = (Get-LakeName ([string]$it["l"])); Bait = ((@(Split-Baits ([string]$it["b"]) | ForEach-Object { N $_ })) -join " + "); Region = [string]$it["r"]; Table = [string]$tabNames[[string]$it["t"]]
+        }) | Out-Null
+        foreach ($b in (Split-Baits ([string]$it["b"]))) {
+            $bc[$b] = 1 + [int]$bc[$b]
+            if (-not $bf.ContainsKey($b)) { $bf[$b] = @{} }
+            $bf[$b][(N $fish)] = $true
+        }
+    }
+    $dgReset.ItemsSource = @($rows | Sort-Object SeenSort)
+    $dgResetBaits.ItemsSource = @($bc.Keys | Sort-Object { $bc[$_] } -Descending | ForEach-Object { [pscustomobject]@{ Bait = (N $_); Count = $bc[$_]; Fish = ((@($bf[$_].Keys) | Select-Object -First 5) -join ", ") } })
+    $txtResetState.Text = (T "resetState") -f $w.Start.ToLocalTime().ToString("dd.MM. HH:mm"), $w.End.ToLocalTime().ToString("HH:mm"), $rows.Count, $(if ($script:cloudLast) { $script:cloudLast.ToString("HH:mm") } else { "-" }), $(if ($script:lastHarvest) { $script:lastHarvest.ToString("HH:mm") } else { "-" })
+}
+
 function Get-HarvestIntervalMinutes {
     $now = Get-Date
     $sunday = Get-WeekIdForDate $now
@@ -3029,9 +3110,10 @@ $script:harvCheckTimer.Add_Tick({
         }
     }
     if (-not $script:cloudTask -and -not $script:cloudCur -and (-not $script:cloudFailAt -or ((Get-Date)-$script:cloudFailAt).TotalMinutes -ge 10) -and (-not $script:cloudLast -or ((Get-Date)-$script:cloudLast).TotalMinutes -ge 30)) { Start-CloudSync }
-    if (-not $script:cloudError -and $script:cloudLast -and ((Get-Date)-$script:cloudLast).TotalHours -lt 6) { return }
+    $inReset = Test-ResetWindow
+    if (-not $inReset -and -not $script:cloudError -and $script:cloudLast -and ((Get-Date)-$script:cloudLast).TotalHours -lt 6) { return }
     if ($script:harvCur -or $script:harvQueue.Count -gt 0 -or $script:weekLoading) { return }
-    $iv = Get-HarvestIntervalMinutes
+    $iv = $(if ($inReset) { 10 } else { Get-HarvestIntervalMinutes })
     if (-not $script:lastHarvest -or ((Get-Date)-$script:lastHarvest).TotalMinutes -ge $iv) { Start-Harvest }
 })
 
@@ -8032,9 +8114,15 @@ $btnSpotSave.Add_Click({
 $script:spotFormOpen = $false
 $btnMapNewSpot.Add_Click({ Clear-SpotForm; $script:spotFormOpen = $true; Update-MapPanel; $txtSpotName.Focus() | Out-Null })
 $btnSpotClose.Add_Click({ Clear-SpotForm; Draw-Markers; Refresh-LakeSpotList })
+$btnResetRefresh.Add_Click({ $script:cloudLast = $null; Start-CloudSync; Refresh-Reset })
+$script:resetTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:resetTimer.Interval = [TimeSpan]::FromSeconds(60)
+$script:resetTimer.Add_Tick({ if ($tabsPlan.SelectedItem -eq $tabReset -and $window.IsVisible) { Refresh-Reset } })
+$script:resetTimer.Start()
 $tabsPlan.Add_SelectionChanged({
     param($sender, $e)
     if ($e.OriginalSource -ne $tabsPlan) { return }
+    if ($tabsPlan.SelectedItem -eq $tabReset) { Refresh-Reset }
     if ($tabsPlan.SelectedItem -and $tabsPlan.SelectedItem.Tag -eq "t:tabTarget") { Refresh-Target }
 })
 $btnSpotNew.Add_Click({
