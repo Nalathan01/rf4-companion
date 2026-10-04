@@ -933,6 +933,7 @@ function Format-Coords($lake, $nx, $ny) {
                         <ComboBox x:Name="cmbResetFish" DockPanel.Dock="Left" Width="200" Margin="0,0,10,0" IsEditable="True" TextSearch.TextPath="Label"/>
                         <ComboBox x:Name="cmbResetLake" DockPanel.Dock="Left" Width="200" Margin="0,0,10,0"/>
                         <ComboBox x:Name="cmbResetRegion" DockPanel.Dock="Left" Width="130" Margin="0,0,14,0"/>
+                        <CheckBox x:Name="chkResetNew" Tag="t:resetOnlyNew" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,14,0"/>
                         <TextBlock x:Name="txtResetState" Foreground="{DynamicResource AppInkDim}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                     </DockPanel>
                     <DataGrid x:Name="dgReset" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True" VerticalScrollBarVisibility="Auto">
@@ -943,6 +944,11 @@ function Format-Coords($lake, $nx, $ny) {
                             <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*" MinWidth="420">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="t:resetNew" Binding="{Binding New}" Width="220">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Foreground" Value="#FF81C784"/></Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
                             <DataGridTextColumn Header="t:region" Binding="{Binding Region}" Width="70"/>
@@ -3051,6 +3057,23 @@ function Get-ResetWindow {
     [pscustomobject]@{ Id = $id; Start = $rs; End = $end.ToUniversalTime() }
 }
 
+$script:prevBaits = $null
+$script:prevBaitsId = ""
+
+function Get-PrevBaits([string]$curId) {
+    $prevId = ([datetime]::ParseExact($curId, "yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)).AddDays(-7).ToString("yyyy-MM-dd")
+    if ($script:prevBaits -and $script:prevBaitsId -eq $prevId) { return $script:prevBaits }
+    $m = @{}
+    foreach ($it in (Get-ArchWeek $prevId).Values) {
+        $f = [string]$it["f"]
+        if (-not $m.ContainsKey($f)) { $m[$f] = @{} }
+        foreach ($b in (Split-Baits ([string]$it["b"]))) { $m[$f][$b] = $true }
+    }
+    $script:prevBaits = $m
+    $script:prevBaitsId = $prevId
+    $m
+}
+
 function Refresh-Reset {
     $w = Get-ResetWindow
     if (-not $w) { $dgReset.ItemsSource = $null; $txtResetState.Text = T "resetNotYet"; return }
@@ -3062,6 +3085,8 @@ function Refresh-Reset {
     $fl = Get-ComboKey $cmbResetLake
     $fr = Get-ComboKey $cmbResetRegion
     $allF = @{}; $allL = @{}; $allR = @{}
+    $prev = Get-PrevBaits $w.Id
+    $onlyNew = [bool]$chkResetNew.IsChecked
     foreach ($it in (Get-ArchWeek $w.Id).Values) {
         $fs = [string]$it["fs"]
         if (-not $fs) { continue }
@@ -3070,9 +3095,12 @@ function Refresh-Reset {
         $fish = [string]$it["f"]
         $allF[$fish] = $true; $allL[[string]$it["l"]] = $true; $allR[[string]$it["r"]] = $true
         if (($ff -and $fish -ne $ff) -or ($fl -and [string]$it["l"] -ne $fl) -or ($fr -and [string]$it["r"] -ne $fr)) { continue }
+        $pb = $prev[$fish]
+        $newB = @(Split-Baits ([string]$it["b"]) | Where-Object { -not $pb -or -not $pb.ContainsKey([string]$_) })
+        if ($onlyNew -and $newB.Count -eq 0) { continue }
         $rows.Add([pscustomobject]@{
             Seen = $t.ToLocalTime().ToString("HH:mm"); SeenSort = $t.ToString("o"); Fish = (N $fish); Weight = (Format-Weight ([int]$it["w"])); WSort = [int]$it["w"]
-            Lake = (Get-LakeName ([string]$it["l"])); LakeSort = (Get-LakeRank ([string]$it["l"])); Bait = ((@(Split-Baits ([string]$it["b"]) | ForEach-Object { N $_ })) -join " + "); Region = [string]$it["r"]; Table = [string]$tabNames[[string]$it["t"]]
+            Lake = (Get-LakeName ([string]$it["l"])); LakeSort = (Get-LakeRank ([string]$it["l"])); Bait = ((@(Split-Baits ([string]$it["b"]) | ForEach-Object { N $_ })) -join " + "); Region = [string]$it["r"]; Table = [string]$tabNames[[string]$it["t"]]; New = ((@($newB | ForEach-Object { N $_ })) -join " + ")
         }) | Out-Null
         foreach ($b in (Split-Baits ([string]$it["b"]))) {
             $bc[$b] = 1 + [int]$bc[$b]
@@ -8122,6 +8150,7 @@ $btnSpotSave.Add_Click({
 $script:spotFormOpen = $false
 $btnMapNewSpot.Add_Click({ Clear-SpotForm; $script:spotFormOpen = $true; Update-MapPanel; $txtSpotName.Focus() | Out-Null })
 $btnSpotClose.Add_Click({ Clear-SpotForm; Draw-Markers; Refresh-LakeSpotList })
+$chkResetNew.Add_Click({ Refresh-Reset })
 foreach ($cb in @($cmbResetFish, $cmbResetLake, $cmbResetRegion)) { $cb.Add_SelectionChanged({ if (-not $script:busy) { Refresh-Reset } }) }
 $btnResetRefresh.Add_Click({ $script:cloudLast = $null; Start-CloudSync; Refresh-Reset })
 $script:resetTimer = New-Object System.Windows.Threading.DispatcherTimer
