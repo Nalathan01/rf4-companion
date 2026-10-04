@@ -327,7 +327,9 @@
   "resetState": "Reset {0} bis {1} Uhr: {2} Rekorde   Cloud {3}, lokal {4}",
   "resetSeen": "Erstmals",
   "resetTable": "Tabelle",
-  "resetCount": "Anzahl"
+  "resetCount": "Anzahl",
+  "allLakes": "Alle Gewässer",
+  "allRegions": "Alle Regionen"
  },
  "en": {
   "langName": "English",
@@ -657,7 +659,9 @@
   "resetState": "Reset {0} until {1}: {2} records   cloud {3}, local {4}",
   "resetSeen": "First seen",
   "resetTable": "Table",
-  "resetCount": "Count"
+  "resetCount": "Count",
+  "allLakes": "All waterbodies",
+  "allRegions": "All regions"
  },
  "ru": {
   "langName": "Русский",
@@ -984,7 +988,9 @@
   "resetState": "Сброс {0} до {1}: {2} рекордов   облако {3}, локально {4}",
   "resetSeen": "Впервые",
   "resetTable": "Таблица",
-  "resetCount": "Кол-во"
+  "resetCount": "Кол-во",
+  "allLakes": "Все водоёмы",
+  "allRegions": "Все регионы"
  },
  "fr": {
   "langName": "Français",
@@ -1311,7 +1317,9 @@
   "resetState": "Reset {0} jusqu'à {1} : {2} records   cloud {3}, local {4}",
   "resetSeen": "Vu à",
   "resetTable": "Tableau",
-  "resetCount": "Nombre"
+  "resetCount": "Nombre",
+  "allLakes": "Tous les plans d'eau",
+  "allRegions": "Toutes les régions"
  },
  "es": {
   "langName": "Español",
@@ -1638,7 +1646,9 @@
   "resetState": "Reinicio {0} hasta {1}: {2} récords   nube {3}, local {4}",
   "resetSeen": "Visto",
   "resetTable": "Tabla",
-  "resetCount": "Cantidad"
+  "resetCount": "Cantidad",
+  "allLakes": "Todas las aguas",
+  "allRegions": "Todas las regiones"
  },
  "it": {
   "langName": "Italiano",
@@ -1965,7 +1975,9 @@
   "resetState": "Reset {0} fino alle {1}: {2} record   cloud {3}, locale {4}",
   "resetSeen": "Visto",
   "resetTable": "Tabella",
-  "resetCount": "Numero"
+  "resetCount": "Numero",
+  "allLakes": "Tutti gli specchi d'acqua",
+  "allRegions": "Tutte le regioni"
  },
  "pl": {
   "langName": "Polski",
@@ -2292,7 +2304,9 @@
   "resetState": "Reset {0} do {1}: {2} rekordów   chmura {3}, lokalnie {4}",
   "resetSeen": "Pierwszy raz",
   "resetTable": "Tabela",
-  "resetCount": "Liczba"
+  "resetCount": "Liczba",
+  "allLakes": "Wszystkie łowiska",
+  "allRegions": "Wszystkie regiony"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2619,7 +2633,9 @@
   "resetState": "Reinício {0} até {1}: {2} recordes   nuvem {3}, local {4}",
   "resetSeen": "Visto",
   "resetTable": "Tabela",
-  "resetCount": "Quantidade"
+  "resetCount": "Quantidade",
+  "allLakes": "Todas as águas",
+  "allRegions": "Todas as regiões"
  },
  "nl": {
   "langName": "Nederlands",
@@ -2946,7 +2962,9 @@
   "resetState": "Reset {0} tot {1}: {2} records   cloud {3}, lokaal {4}",
   "resetSeen": "Eerst gezien",
   "resetTable": "Tabel",
-  "resetCount": "Aantal"
+  "resetCount": "Aantal",
+  "allLakes": "Alle wateren",
+  "allRegions": "Alle regio's"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3273,7 +3291,9 @@
   "resetState": "Sıfırlama {0} - {1}: {2} rekor   bulut {3}, yerel {4}",
   "resetSeen": "İlk görülme",
   "resetTable": "Tablo",
-  "resetCount": "Adet"
+  "resetCount": "Adet",
+  "allLakes": "Tüm sular",
+  "allRegions": "Tüm bölgeler"
  },
  "ro": {
   "langName": "Română",
@@ -3600,7 +3620,9 @@
   "resetState": "Resetare {0} până la {1}: {2} recorduri   cloud {3}, local {4}",
   "resetSeen": "Prima dată",
   "resetTable": "Tabel",
-  "resetCount": "Număr"
+  "resetCount": "Număr",
+  "allLakes": "Toate apele",
+  "allRegions": "Toate regiunile"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3927,7 +3949,9 @@
   "resetState": "Reset {0} sampai {1}: {2} rekor   cloud {3}, lokal {4}",
   "resetSeen": "Pertama",
   "resetTable": "Tabel",
-  "resetCount": "Jumlah"
+  "resetCount": "Jumlah",
+  "allLakes": "Semua perairan",
+  "allRegions": "Semua wilayah"
  },
  "ja": {
   "langName": "日本語",
@@ -4254,7 +4278,9 @@
   "resetState": "リセット {0} から {1} まで: {2} 件   クラウド {3}、ローカル {4}",
   "resetSeen": "初出",
   "resetTable": "表",
-  "resetCount": "件数"
+  "resetCount": "件数",
+  "allLakes": "すべての釣り場",
+  "allRegions": "すべての地域"
  },
  "ko": {
   "langName": "한국어",
@@ -4581,7 +4607,9 @@
   "resetState": "리셋 {0} ~ {1}: 기록 {2}개   클라우드 {3}, 로컬 {4}",
   "resetSeen": "최초",
   "resetTable": "표",
-  "resetCount": "개수"
+  "resetCount": "개수",
+  "allLakes": "모든 낚시터",
+  "allRegions": "모든 지역"
  },
  "zh": {
   "langName": "简体中文",
@@ -4908,7 +4936,9 @@
   "resetState": "重置 {0} 至 {1}：{2} 条纪录   云端 {3}，本地 {4}",
   "resetSeen": "首次",
   "resetTable": "表",
-  "resetCount": "数量"
+  "resetCount": "数量",
+  "allLakes": "所有水域",
+  "allRegions": "所有地区"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5235,6 +5265,8 @@
   "resetState": "重置 {0} 至 {1}：{2} 筆紀錄   雲端 {3}，本機 {4}",
   "resetSeen": "首次",
   "resetTable": "表",
-  "resetCount": "數量"
+  "resetCount": "數量",
+  "allLakes": "所有水域",
+  "allRegions": "所有地區"
  }
 }
