@@ -3317,9 +3317,11 @@ function Refresh-Target {
         if ($lake -and $r["lake"] -ne $lake) { continue }
         $hit = @(@($r["fish"]) | Where-Object { $set -contains [string]$_ })
         if ($hit.Count -eq 0 -or $null -eq $r["x"]) { continue }
+        $rp = Get-ReportPos $r
+        if (-not $rp) { continue }
         $bd = Clean-CommDetail ([string]$r["baitDetail"])
         if (-not $bd) { $bd = (@($r["bait"]) | Where-Object { $_ }) -join ", " }
-        $reports.Add([pscustomobject]@{ X = [int]$r["x"]; Y = [int]$r["y"]; Age = (Get-IsoAgeDays ([string]$r["posted"])); Clip = $r["clip"]; Bait = $bd; Own = $false; Url = [string]$r["url"]; Comp = ([string]$r["src"] -eq "companion") }) | Out-Null
+        $reports.Add([pscustomobject]@{ X = [int]$rp.X; Y = [int]$rp.Y; Age = (Get-IsoAgeDays ([string]$r["posted"])); Clip = $r["clip"]; Bait = $bd; Own = $false; Url = [string]$r["url"]; Comp = ([string]$r["src"] -eq "companion") }) | Out-Null
     }
     foreach ($c in $script:catches) {
         if ($set -notcontains [string]$c.fish -or ($lake -and $c.lake -ne $lake) -or $null -eq $c.x -or "$($c.x)" -eq "") { continue }
