@@ -3063,75 +3063,124 @@ $script:prevBaitsId = ""
 function Get-PrevBaits([string]$curId) {
     $prevId = ([datetime]::ParseExact($curId, "yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)).AddDays(-7).ToString("yyyy-MM-dd")
     if ($script:prevBaits -and $script:prevBaitsId -eq $prevId) { return $script:prevBaits }
+    $seen = New-Object 'System.Collections.Generic.HashSet[string]'
     $m = @{}
     foreach ($it in (Get-ArchWeek $prevId).Values) {
         $f = [string]$it["f"]
+        $bs = [string]$it["b"]
+        if (-not $seen.Add($f + "`t" + $bs)) { continue }
         if (-not $m.ContainsKey($f)) { $m[$f] = @{} }
-        $parts = @(Split-Baits ([string]$it["b"]))
-        foreach ($b in $parts) { $m[$f][$b] = $true }
-        if ($parts.Count -gt 1) { $m[$f]["combo|" + ((@($parts | Sort-Object)) -join "+")] = $true }
+        $h = $m[$f]
+        $parts = $bs.Split([char]';') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+        $parts = @($parts)
+        foreach ($b in $parts) { $h[$b] = $true }
+        if ($parts.Count -gt 1) { [array]::Sort($parts); $h["combo|" + ($parts -join "+")] = $true }
     }
     $script:prevBaits = $m
     $script:prevBaitsId = $prevId
     $m
 }
 
-function Refresh-Reset {
-    $w = Get-ResetWindow
-    if (-not $w) { $dgReset.ItemsSource = $null; $txtResetState.Text = T "resetNotYet"; return }
-    $rows = New-Object System.Collections.ArrayList
-    $bc = @{}
-    $bf = @{}
+$script:resetCache = $null
+$script:resetShownKey = ""
+$script:resetShownCount = 0
+
+function Build-ResetRows($w) {
+    $map = Get-ArchWeek $w.Id
+    $key = "{0}|{1}|{2}|{3}" -f $w.Id, $map.Count, $script:lang, $w.Start.ToString("o")
+    if ($script:resetCache -and $script:resetCache.Key -eq $key) { return $script:resetCache }
     $tabNames = @{ n = (T "table_n"); l = (T "table_l"); b = (T "table_b") }
-    $ff = Get-ComboKey $cmbResetFish
-    $fl = Get-ComboKey $cmbResetLake
-    $fr = Get-ComboKey $cmbResetRegion
-    $allF = @{}; $allL = @{}; $allR = @{}
     $prev = Get-PrevBaits $w.Id
-    $onlyNew = [bool]$chkResetNew.IsChecked
+    $memo = @{}
     $firstCap = @{}
-    foreach ($it in (Get-ArchWeek $w.Id).Values) {
+    foreach ($it in $map.Values) {
         $fs = [string]$it["fs"]
         if (-not $fs) { continue }
         $ck = [string]$it["r"] + "|" + [string]$it["t"]
         if (-not $firstCap.ContainsKey($ck) -or [string]::CompareOrdinal($fs, $firstCap[$ck]) -lt 0) { $firstCap[$ck] = $fs }
     }
-    foreach ($it in (Get-ArchWeek $w.Id).Values) {
+    $startS = $w.Start.ToString("yyyy-MM-ddTHH:mm:ss")
+    $endS = $w.End.ToString("yyyy-MM-ddTHH:mm:ss")
+    $rows = New-Object System.Collections.Generic.List[object]
+    $allF = @{}; $allL = @{}; $allR = @{}
+    $newCount = 0
+    foreach ($it in $map.Values) {
         $fs = [string]$it["fs"]
-        if (-not $fs) { continue }
-        $t = [datetime]::Parse($fs, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal)
-        if ($t -lt $w.Start -or $t -gt $w.End) { continue }
-        $fish = [string]$it["f"]
-        $allF[$fish] = $true; $allL[[string]$it["l"]] = $true; $allR[[string]$it["r"]] = $true
-        if (($ff -and $fish -ne $ff) -or ($fl -and [string]$it["l"] -ne $fl) -or ($fr -and [string]$it["r"] -ne $fr)) { continue }
-        $pb = $prev[$fish]
-        $parts = @(Split-Baits ([string]$it["b"]))
-        $newB = @($parts | Where-Object { -not $pb -or -not $pb.ContainsKey([string]$_) })
-        $newCombo = $parts.Count -gt 1 -and (-not $pb -or -not $pb.ContainsKey("combo|" + ((@($parts | Sort-Object)) -join "+")))
-        if ($onlyNew -and $newB.Count -eq 0 -and -not $newCombo) { continue }
-        $newTxt = @()
-        if ($newCombo) { $newTxt += (T "resetNewCombo") }
-        $newTxt += @($newB | Select-Object -Unique | ForEach-Object { N $_ })
-        $rows.Add([pscustomobject]@{
-            Seen = $(if ($fs -eq $firstCap[[string]$it["r"] + "|" + [string]$it["t"]]) { "" } else { $t.ToLocalTime().ToString("HH:mm") }); SeenSort = $t.ToString("o"); Fish = (N $fish); Weight = (Format-Weight ([int]$it["w"])); WSort = [int]$it["w"]
-            Lake = (Get-LakeName ([string]$it["l"])); LakeSort = (Get-LakeRank ([string]$it["l"])); Bait = ((@(Split-Baits ([string]$it["b"]) | ForEach-Object { N $_ })) -join " + "); Region = [string]$it["r"]; Table = [string]$tabNames[[string]$it["t"]]; New = ($newTxt -join ", ")
-        }) | Out-Null
-        foreach ($b in (Split-Baits ([string]$it["b"]))) {
-            $bc[$b] = 1 + [int]$bc[$b]
-            if (-not $bf.ContainsKey($b)) { $bf[$b] = @{} }
-            $bf[$b][(N $fish)] = $true
+        if ($fs.Length -lt 19) { continue }
+        $fs19 = $fs.Substring(0, 19)
+        if ([string]::CompareOrdinal($fs19, $startS) -lt 0 -or [string]::CompareOrdinal($fs19, $endS) -gt 0) { continue }
+        $fish = [string]$it["f"]; $lk = [string]$it["l"]; $rg = [string]$it["r"]; $bs = [string]$it["b"]
+        $allF[$fish] = $true; $allL[$lk] = $true; $allR[$rg] = $true
+        $fk = "f|" + $fish; if (-not $memo.ContainsKey($fk)) { $memo[$fk] = N $fish }
+        $lkk = "l|" + $lk; if (-not $memo.ContainsKey($lkk)) { $memo[$lkk] = @((Get-LakeName $lk), (Get-LakeRank $lk)) }
+        $bk = "b|" + $bs
+        if (-not $memo.ContainsKey($bk)) { $parts0 = @(Split-Baits $bs); $memo[$bk] = @(, $parts0) + @(((@($parts0 | ForEach-Object { N $_ })) -join " + ")) }
+        $parts = $memo[$bk][0]
+        $nk = "n|" + $fish + "|" + $bs
+        if (-not $memo.ContainsKey($nk)) {
+            $pb = $prev[$fish]
+            $newB = @($parts | Where-Object { -not $pb -or -not $pb.ContainsKey([string]$_) } | Select-Object -Unique)
+            $newCombo = $parts.Count -gt 1 -and (-not $pb -or -not $pb.ContainsKey("combo|" + ((@($parts | Sort-Object)) -join "+")))
+            $tx = @()
+            if ($newCombo) { $tx += (T "resetNewCombo") }
+            $tx += @($newB | ForEach-Object { N $_ })
+            $memo[$nk] = ($tx -join ", ")
         }
+        $newTxt = $memo[$nk]
+        if ($newTxt) { $newCount++ }
+        $wk = "w|" + $it["w"]; if (-not $memo.ContainsKey($wk)) { $memo[$wk] = Format-Weight ([int]$it["w"]) }
+        $seen = ""
+        if ($fs -ne $firstCap[$rg + "|" + [string]$it["t"]]) { $seen = ([datetime]::Parse($fs, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal)).ToLocalTime().ToString("HH:mm") }
+        $rows.Add([pscustomobject]@{
+            Seen = $seen; SeenSort = $fs; Fish = $memo[$fk]; Weight = $memo[$wk]; WSort = [int]$it["w"]
+            Lake = $memo[$lkk][0]; LakeSort = $memo[$lkk][1]; Bait = $memo[$bk][1]; Region = $rg; Table = [string]$tabNames[[string]$it["t"]]; New = $newTxt
+            FishKey = $fish; LakeKey = $lk
+        })
     }
-    $script:busy = $true
-    Set-Choices $cmbResetFish (@(New-Choice "" (T "allFish")) + @($allF.Keys | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label))
-    Set-ComboKey $cmbResetFish $ff
-    Set-Choices $cmbResetLake (@(New-Choice "" (T "allLakes")) + @($allL.Keys | Where-Object { $_ } | Sort-Object { Get-LakeRank $_ } | ForEach-Object { New-Choice $_ (Get-LakeName $_) }))
-    Set-ComboKey $cmbResetLake $fl
-    Set-Choices $cmbResetRegion (@(New-Choice "" (T "allRegions")) + @($allR.Keys | Where-Object { $_ } | Sort-Object | ForEach-Object { New-Choice $_ $_ }))
-    Set-ComboKey $cmbResetRegion $fr
-    $script:busy = $false
-    $dgReset.ItemsSource = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WSort"; Descending = $true })
-    $txtResetState.Text = (T "resetState") -f $w.Start.ToLocalTime().ToString("dd.MM. HH:mm"), $w.End.ToLocalTime().ToString("HH:mm"), $rows.Count, $(if ($script:cloudNewest) { [datetime]::SpecifyKind($script:cloudNewest, [System.DateTimeKind]::Utc).ToLocalTime().ToString("HH:mm") } elseif ($script:cloudLast) { $script:cloudLast.ToString("HH:mm") } else { "-" }), $(if ($script:lastHarvest) { $script:lastHarvest.ToString("HH:mm") } else { "-" })
+    $sorted = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WSort"; Descending = $true })
+    $script:resetCache = [pscustomobject]@{
+        Key = $key; Rows = $sorted
+        Fish = @(@(New-Choice "" (T "allFish")) + @($allF.Keys | ForEach-Object { New-Choice $_ $memo["f|" + $_] } | Sort-Object Label))
+        Lakes = @(@(New-Choice "" (T "allLakes")) + @($allL.Keys | Where-Object { $_ } | Sort-Object { Get-LakeRank $_ } | ForEach-Object { New-Choice $_ (Get-LakeName $_) }))
+        Regions = @(@(New-Choice "" (T "allRegions")) + @($allR.Keys | Where-Object { $_ } | Sort-Object | ForEach-Object { New-Choice $_ $_ }))
+        Built = $false
+    }
+    $script:resetCache
+}
+
+function Refresh-Reset {
+    $w = Get-ResetWindow
+    if (-not $w) { $dgReset.ItemsSource = $null; $txtResetState.Text = T "resetNotYet"; return }
+    $c = Build-ResetRows $w
+    $ff = Get-ComboKey $cmbResetFish
+    $fl = Get-ComboKey $cmbResetLake
+    $fr = Get-ComboKey $cmbResetRegion
+    if (-not $c.Built) {
+        $script:busy = $true
+        Set-Choices $cmbResetFish $c.Fish; Set-ComboKey $cmbResetFish $ff
+        Set-Choices $cmbResetLake $c.Lakes; Set-ComboKey $cmbResetLake $fl
+        Set-Choices $cmbResetRegion $c.Regions; Set-ComboKey $cmbResetRegion $fr
+        $script:busy = $false
+        $c.Built = $true
+        $script:resetShownKey = ""
+    }
+    $onlyNew = [bool]$chkResetNew.IsChecked
+    $sk = "{0}|{1}|{2}|{3}|{4}" -f $c.Key, $ff, $fl, $fr, $onlyNew
+    if ($sk -ne $script:resetShownKey) {
+        $script:resetShownKey = $sk
+        $view = $c.Rows
+        if ($ff -or $fl -or $fr -or $onlyNew) {
+            $list = New-Object System.Collections.Generic.List[object]
+            foreach ($r in $c.Rows) {
+                if (($ff -and $r.FishKey -ne $ff) -or ($fl -and $r.LakeKey -ne $fl) -or ($fr -and $r.Region -ne $fr) -or ($onlyNew -and -not $r.New)) { continue }
+                $list.Add($r)
+            }
+            $view = $list.ToArray()
+        }
+        $dgReset.ItemsSource = $view
+        $script:resetShownCount = $view.Count
+    }
+    $txtResetState.Text = (T "resetState") -f $w.Start.ToLocalTime().ToString("dd.MM. HH:mm"), $w.End.ToLocalTime().ToString("HH:mm"), $script:resetShownCount, $(if ($script:cloudNewest) { [datetime]::SpecifyKind($script:cloudNewest, [System.DateTimeKind]::Utc).ToLocalTime().ToString("HH:mm") } elseif ($script:cloudLast) { $script:cloudLast.ToString("HH:mm") } else { "-" }), $(if ($script:lastHarvest) { $script:lastHarvest.ToString("HH:mm") } else { "-" })
 }
 
 function Get-HarvestIntervalMinutes {
