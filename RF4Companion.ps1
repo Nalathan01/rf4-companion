@@ -1546,7 +1546,7 @@ $theme = [ControlzEx.Theming.RuntimeThemeGenerator]::Current.GenerateRuntimeThem
 [ControlzEx.Theming.ThemeManager]::Current.ChangeTheme($window, $theme) | Out-Null
 
 $script:colKeys = New-Object System.Collections.ArrayList
-foreach ($dg in @($dgSpots, $dgCatches, $dgStats, $dgLakeFish, $dgTrophies, $dgWeek, $dgWeekBaits, $dgPrefBaits, $dgTgtSpots, $dgTgtBaits)) {
+foreach ($dg in @($dgSpots, $dgCatches, $dgStats, $dgLakeFish, $dgTrophies, $dgWeek, $dgWeekBaits, $dgPrefBaits, $dgTgtSpots, $dgTgtBaits, $dgReset, $dgResetBaits)) {
     foreach ($col in $dg.Columns) {
         if ($col.Header -is [string] -and $col.Header.StartsWith("t:")) {
             $script:colKeys.Add([pscustomobject]@{ Col = $col; Key = $col.Header.Substring(2) }) | Out-Null
