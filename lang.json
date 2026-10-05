@@ -339,7 +339,9 @@
   "updateAvailable": "Version {0} ist verfügbar",
   "updateOpen": "Herunterladen",
   "updateHide": "Ausblenden",
-  "teaserLures": "Lockmittel an Beifänger {0} (keine oder zwei)"
+  "teaserLures": "Lockmittel an Beifänger {0} (keine oder zwei)",
+  "lure": "Kunstköder",
+  "seaSinker": "Blei"
  },
  "en": {
   "langName": "English",
@@ -681,7 +683,9 @@
   "updateAvailable": "Version {0} is available",
   "updateOpen": "Download",
   "updateHide": "Hide",
-  "teaserLures": "Attractors on teaser {0} (none or two)"
+  "teaserLures": "Attractors on teaser {0} (none or two)",
+  "lure": "Lure",
+  "seaSinker": "Sinker"
  },
  "ru": {
   "langName": "Русский",
@@ -1020,7 +1024,9 @@
   "updateAvailable": "Доступна версия {0}",
   "updateOpen": "Скачать",
   "updateHide": "Скрыть",
-  "teaserLures": "Привлекатели на отводе {0} (нет или два)"
+  "teaserLures": "Привлекатели на отводе {0} (нет или два)",
+  "lure": "Приманка",
+  "seaSinker": "Груз"
  },
  "fr": {
   "langName": "Français",
@@ -1359,7 +1365,9 @@
   "updateAvailable": "La version {0} est disponible",
   "updateOpen": "Télécharger",
   "updateHide": "Masquer",
-  "teaserLures": "Attractants sur l'avançon {0} (aucun ou deux)"
+  "teaserLures": "Attractants sur l'avançon {0} (aucun ou deux)",
+  "lure": "Leurre",
+  "seaSinker": "Plomb"
  },
  "es": {
   "langName": "Español",
@@ -1698,7 +1706,9 @@
   "updateAvailable": "La versión {0} está disponible",
   "updateOpen": "Descargar",
   "updateHide": "Ocultar",
-  "teaserLures": "Atrayentes en el brazo {0} (ninguno o dos)"
+  "teaserLures": "Atrayentes en el brazo {0} (ninguno o dos)",
+  "lure": "Señuelo",
+  "seaSinker": "Plomo"
  },
  "it": {
   "langName": "Italiano",
@@ -2037,7 +2047,9 @@
   "updateAvailable": "È disponibile la versione {0}",
   "updateOpen": "Scarica",
   "updateHide": "Nascondi",
-  "teaserLures": "Attrattori sul bracciolo {0} (nessuno o due)"
+  "teaserLures": "Attrattori sul bracciolo {0} (nessuno o due)",
+  "lure": "Esca artificiale",
+  "seaSinker": "Piombo"
  },
  "pl": {
   "langName": "Polski",
@@ -2376,7 +2388,9 @@
   "updateAvailable": "Dostępna jest wersja {0}",
   "updateOpen": "Pobierz",
   "updateHide": "Ukryj",
-  "teaserLures": "Atraktory na przyponie {0} (brak lub dwa)"
+  "teaserLures": "Atraktory na przyponie {0} (brak lub dwa)",
+  "lure": "Przynęta sztuczna",
+  "seaSinker": "Ciężarek"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2715,7 +2729,9 @@
   "updateAvailable": "A versão {0} está disponível",
   "updateOpen": "Baixar",
   "updateHide": "Ocultar",
-  "teaserLures": "Atrativos no braço {0} (nenhum ou dois)"
+  "teaserLures": "Atrativos no braço {0} (nenhum ou dois)",
+  "lure": "Isca artificial",
+  "seaSinker": "Chumbada"
  },
  "nl": {
   "langName": "Nederlands",
@@ -3054,7 +3070,9 @@
   "updateAvailable": "Versie {0} is beschikbaar",
   "updateOpen": "Downloaden",
   "updateHide": "Verbergen",
-  "teaserLures": "Lokmiddelen aan zijlijn {0} (geen of twee)"
+  "teaserLures": "Lokmiddelen aan zijlijn {0} (geen of twee)",
+  "lure": "Kunstaas",
+  "seaSinker": "Lood"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3393,7 +3411,9 @@
   "updateAvailable": "{0} sürümü mevcut",
   "updateOpen": "İndir",
   "updateHide": "Gizle",
-  "teaserLures": "Yan kol {0} cezbedicileri (yok veya iki)"
+  "teaserLures": "Yan kol {0} cezbedicileri (yok veya iki)",
+  "lure": "Suni yem",
+  "seaSinker": "Kurşun"
  },
  "ro": {
   "langName": "Română",
@@ -3732,7 +3752,9 @@
   "updateAvailable": "Versiunea {0} este disponibilă",
   "updateOpen": "Descarcă",
   "updateHide": "Ascunde",
-  "teaserLures": "Atractanți pe brațul {0} (niciunul sau doi)"
+  "teaserLures": "Atractanți pe brațul {0} (niciunul sau doi)",
+  "lure": "Năluca",
+  "seaSinker": "Plumb"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -4071,7 +4093,9 @@
   "updateAvailable": "Versi {0} tersedia",
   "updateOpen": "Unduh",
   "updateHide": "Sembunyikan",
-  "teaserLures": "Pemikat di cabang {0} (tidak ada atau dua)"
+  "teaserLures": "Pemikat di cabang {0} (tidak ada atau dua)",
+  "lure": "Umpan tiruan",
+  "seaSinker": "Pemberat"
  },
  "ja": {
   "langName": "日本語",
@@ -4410,7 +4434,9 @@
   "updateAvailable": "バージョン {0} が利用可能です",
   "updateOpen": "ダウンロード",
   "updateHide": "非表示",
-  "teaserLures": "枝 {0} のアトラクター (なし または 2つ)"
+  "teaserLures": "枝 {0} のアトラクター (なし または 2つ)",
+  "lure": "ルアー",
+  "seaSinker": "オモリ"
  },
  "ko": {
   "langName": "한국어",
@@ -4749,7 +4775,9 @@
   "updateAvailable": "버전 {0}을(를) 사용할 수 있습니다",
   "updateOpen": "다운로드",
   "updateHide": "숨기기",
-  "teaserLures": "가지줄 {0} 유인물 (없음 또는 2개)"
+  "teaserLures": "가지줄 {0} 유인물 (없음 또는 2개)",
+  "lure": "루어",
+  "seaSinker": "봉돌"
  },
  "zh": {
   "langName": "简体中文",
@@ -5088,7 +5116,9 @@
   "updateAvailable": "版本 {0} 已发布",
   "updateOpen": "下载",
   "updateHide": "隐藏",
-  "teaserLures": "支线 {0} 的诱饵配件 (无或两个)"
+  "teaserLures": "支线 {0} 的诱饵配件 (无或两个)",
+  "lure": "拟饵",
+  "seaSinker": "铅坠"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5427,6 +5457,8 @@
   "updateAvailable": "版本 {0} 已發布",
   "updateOpen": "下載",
   "updateHide": "隱藏",
-  "teaserLures": "支線 {0} 的誘餌配件 (無或兩個)"
+  "teaserLures": "支線 {0} 的誘餌配件 (無或兩個)",
+  "lure": "擬餌",
+  "seaSinker": "鉛墜"
  }
 }
