@@ -669,6 +669,16 @@ function Format-Coords($lake, $nx, $ny) {
                                                         <Border BorderBrush="{DynamicResource AppAccent}" BorderThickness="2,0,0,0" Padding="10,4,4,6" Margin="0,2,0,6" Visibility="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}, Converter={StaticResource BoolToVis}}">
                                                             <StackPanel>
                                                                 <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Foreground="{DynamicResource AppInk}" FontSize="12" LineHeight="19"/>
+                                                                <ItemsControl ItemsSource="{Binding Links}" Margin="0,4,0,0">
+                                                                    <ItemsControl.ItemsPanel>
+                                                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                                    </ItemsControl.ItemsPanel>
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding Text}" Tag="{Binding Url}" ToolTip="{Binding Url}" Cursor="Hand" TextDecorations="Underline" Foreground="{DynamicResource AppAccent}" FontSize="12" Margin="0,0,14,2"/>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
                                                                 <TextBlock Text="{Binding ImgState}" Foreground="{DynamicResource AppInkDim}" FontSize="11" Margin="0,4,0,0"/>
                                                                 <ItemsControl ItemsSource="{Binding Images}" Margin="0,4,0,0">
                                                                     <ItemsControl.ItemsPanel>
@@ -4201,9 +4211,139 @@ function Update-ShareState {
     $txtShareState.Text = (T "shareOk") -f $n, $(if ($script:shareLast) { $script:shareLast.ToString("dd.MM. HH:mm") } else { "?" })
 }
 
+if (-not ("RF4Comp.ReportDedup" -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
+namespace RF4Comp {
+    public static class ReportDedup {
+        class G { public object P; public DateTime T, Last; public int X, Y; public string FS; public double W; public bool HasW; public HashSet<string> Srcs = new HashSet<string>(); public List<object> M = new List<object>(); public List<string> MS = new List<string>(); }
+        static readonly Regex Tg = new Regex(@"t\.me/([^/?]+)/", RegexOptions.IgnoreCase);
+        static readonly Regex Vk = new Regex(@"vk\.com/wall(-?\d+)_", RegexOptions.IgnoreCase);
+        static readonly Regex Dc = new Regex(@"discord\.com/channels/\d+/(\d+)", RegexOptions.IgnoreCase);
+        public static string Src(string u) {
+            if (string.IsNullOrEmpty(u)) return null;
+            Match m = Tg.Match(u);
+            if (m.Success) return "tg:" + m.Groups[1].Value.ToLowerInvariant();
+            m = Vk.Match(u);
+            if (m.Success) return "vk:" + m.Groups[1].Value;
+            if (u.IndexOf("vk.com", StringComparison.OrdinalIgnoreCase) >= 0) return "vk";
+            m = Dc.Match(u);
+            if (m.Success) return "dc:" + m.Groups[1].Value;
+            if (u.IndexOf("discord.com", StringComparison.OrdinalIgnoreCase) >= 0) return "dc";
+            return null;
+        }
+        static string S(IDictionary d, string k) { object o = d.Contains(k) ? d[k] : null; return o == null ? "" : o.ToString(); }
+        static bool Num(object o, out double v) {
+            v = 0;
+            if (o == null) return false;
+            string t = o.ToString();
+            return t != "" && double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out v);
+        }
+        public static object[] Build(IList reports) {
+            var kept = new List<object>();
+            var also = new Dictionary<object, List<object>>();
+            var dropped = new HashSet<object>();
+            var byLake = new Dictionary<string, List<object[]>>();
+            foreach (object o in reports) {
+                IDictionary r = o as IDictionary;
+                if (r == null) continue;
+                string src = Src(S(r, "url"));
+                string ps = S(r, "posted");
+                if (src == null || ps.Length < 19) continue;
+                DateTime t;
+                if (!DateTime.TryParseExact(ps.Substring(0, 19), "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out t)) continue;
+                string lk = S(r, "lake");
+                List<object[]> l;
+                if (!byLake.TryGetValue(lk, out l)) { l = new List<object[]>(); byLake[lk] = l; }
+                l.Add(new object[] { r, t, src });
+            }
+            foreach (List<object[]> l in byLake.Values) {
+                l.Sort((a, b) => ((DateTime)a[1]).CompareTo((DateTime)b[1]));
+                var open = new List<G>();
+                var all = new List<G>();
+                foreach (object[] e in l) {
+                    IDictionary r = (IDictionary)e[0];
+                    DateTime t = (DateTime)e[1];
+                    string src = (string)e[2];
+                    var fl = new List<string>();
+                    object fo = r.Contains("fish") ? r["fish"] : null;
+                    if (fo is IEnumerable && !(fo is string)) { foreach (object f in (IEnumerable)fo) if (f != null && f.ToString() != "") fl.Add(f.ToString()); }
+                    fl.Sort(StringComparer.Ordinal);
+                    string fs = string.Join("|", fl.ToArray());
+                    double x, y, w;
+                    Num(r.Contains("x") ? r["x"] : null, out x);
+                    Num(r.Contains("y") ? r["y"] : null, out y);
+                    bool hasW = Num(r.Contains("weight") ? r["weight"] : null, out w);
+                    open.RemoveAll(g => t.Subtract(g.T).TotalHours > 6);
+                    G hit = null;
+                    double best = double.MaxValue;
+                    if (fs != "") {
+                        foreach (G g in open) {
+                            if (g.FS != fs || g.Srcs.Contains(src) || Math.Abs(g.X-(int)x) > 1 || Math.Abs(g.Y-(int)y) > 1) continue;
+                            if (hasW && g.HasW && Math.Abs(g.W-w) > 0.0005) continue;
+                            double d = t.Subtract(g.Last).TotalMinutes;
+                            if (d < best) { best = d; hit = g; }
+                        }
+                    }
+                    if (hit == null) {
+                        hit = new G { P = r, T = t, Last = t, X = (int)x, Y = (int)y, FS = fs };
+                        open.Add(hit);
+                        all.Add(hit);
+                    }
+                    if (hasW && !hit.HasW) { hit.W = w; hit.HasW = true; }
+                    hit.Last = t;
+                    hit.Srcs.Add(src);
+                    hit.M.Add(r);
+                    hit.MS.Add(src);
+                }
+                foreach (G g in all) {
+                    if (g.M.Count < 2) continue;
+                    int pi = g.MS.FindIndex(z => z.StartsWith("tg:"));
+                    if (pi < 0) pi = 0;
+                    object prim = g.M[pi];
+                    var rest = new List<object>();
+                    for (int i = 0; i < g.M.Count; i++) if (i != pi) { rest.Add(g.M[i]); dropped.Add(g.M[i]); }
+                    also[prim] = rest;
+                }
+            }
+            foreach (object o in reports) if (!dropped.Contains(o)) kept.Add(o);
+            return new object[] { kept, also };
+        }
+    }
+}
+'@
+}
+
+$script:dedupCount = -1
+$script:dedupRef = $null
+$script:dedupKept = $null
+$script:dedupAlso = $null
+
+function Update-ReportDedup {
+    if ($script:dedupKept -and [object]::ReferenceEquals($script:dedupRef, $script:commReports) -and $script:dedupCount -eq $script:commReports.Count) { return }
+    $res = [RF4Comp.ReportDedup]::Build($script:commReports)
+    $script:dedupKept = $res[0]
+    $script:dedupAlso = @{}
+    foreach ($kv in $res[1].GetEnumerator()) { $id = [string]$kv.Key["id"]; if ($id) { $script:dedupAlso[$id] = @($kv.Value) } }
+    $script:dedupRef = $script:commReports
+    $script:dedupCount = $script:commReports.Count
+}
+
+function Get-ReportAlso($r) {
+    Update-ReportDedup
+    $id = [string]$r["id"]
+    if ($id -and $script:dedupAlso.ContainsKey($id)) { return $script:dedupAlso[$id] }
+    @()
+}
+
 function Get-AllCommReports {
-    if ($script:sharedReports.Count -eq 0) { return $script:commReports }
-    @($script:commReports) + @($script:sharedReports)
+    Update-ReportDedup
+    if ($script:sharedReports.Count -eq 0) { return $script:dedupKept }
+    @($script:dedupKept) + @($script:sharedReports)
 }
 
 function Import-SharedFile([string]$name, [string]$text) {
@@ -4905,6 +5045,10 @@ namespace RF4Comp {
         public object Img { get; set; }
         public string Url { get; set; }
     }
+    public class ReportLink {
+        public string Text { get; set; }
+        public string Url { get; set; }
+    }
     public class ReportItem : INotifyPropertyChanged {
         private string imgState = "";
         private string label = "";
@@ -4915,7 +5059,8 @@ namespace RF4Comp {
         public string ImgUrl { get; set; }
         public string CrossUrl { get; set; }
         public ObservableCollection<ReportImage> Images { get; private set; }
-        public ReportItem() { Images = new ObservableCollection<ReportImage>(); }
+        public ObservableCollection<ReportLink> Links { get; private set; }
+        public ReportItem() { Images = new ObservableCollection<ReportImage>(); Links = new ObservableCollection<ReportLink>(); }
         public string ImgState {
             get { return imgState; }
             set { imgState = value; if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs("ImgState")); }
@@ -5438,7 +5583,7 @@ function Ensure-PosIndex {
     if ($script:tgIndex -and $script:tgIndexCount -eq $cnt) { return }
     $script:tgIndex = @{}
     $script:posIndex = @{}
-    foreach ($t in (Get-AllCommReports)) {
+    foreach ($t in (@($script:commReports) + @($script:sharedReports))) {
         $k = "{0}|{1}|{2}" -f $t["lake"], $t["x"], $t["y"]
         if (-not $script:posIndex.ContainsKey($k)) { $script:posIndex[$k] = New-Object System.Collections.ArrayList }
         $script:posIndex[$k].Add($t) | Out-Null
@@ -6296,7 +6441,9 @@ function Get-ReportLabel($r) {
         $dl = $(if ($rd) { Format-Dir16 $rd.Deg } else { "" })
         if ($null -ne $r["clip"] -and "$($r["clip"])" -ne "") { $parts += ("{0} {1:0.#} m {2}" -f (T "distance"), [double]$r["clip"], $dl).TrimEnd() }
         elseif ($dl) { $parts += $dl }
-        $parts += Get-ReportHost ([string]$r["url"])
+        $hosts = @(Get-ReportHost ([string]$r["url"]))
+        foreach ($a in (Get-ReportAlso $r)) { $h = Get-ReportHost ([string]$a["url"]); if ($hosts -notcontains $h) { $hosts += $h } }
+        $parts += ($hosts -join ", ")
         ($parts -join "  |  ")
 }
 
@@ -6310,13 +6457,33 @@ function Show-CommCluster($cl) {
     $script:itemReport = @{}
     foreach ($r0 in @($cl.Reports | Sort-Object { [string]$_["posted"] } -Descending | Select-Object -First 40)) {
         $r = Get-ReportFull $r0
+        $also = @(Get-ReportAlso $r0)
+        if ($also.Count) {
+            $m = @{}
+            foreach ($k in $r.Keys) { $m[$k] = $r[$k] }
+            foreach ($a0 in $also) {
+                $a = Get-ReportFull $a0
+                foreach ($k in $a.Keys) {
+                    if ($k -in @("id", "url", "posted", "img", "src")) { continue }
+                    $v = $m[$k]
+                    if ($null -eq $v -or "$v" -eq "" -or ($v -is [System.Collections.ICollection] -and $v -isnot [string] -and $v.Count -eq 0)) { $m[$k] = $a[$k] }
+                }
+            }
+            $r = $m
+        }
         $ri = New-Object RF4Comp.ReportItem
         $ri.Label = Get-ReportLabel $r
         $ri.Url = [string]$r["url"]
         $ri.Detail = Get-CommReportText $r
         $script:itemReport[$ri] = $r0
         $ri.ImgUrl = [string]$r["img"]
-        if (-not (Get-TgKey $ri.Url) -and [string]$r["src"] -ne "companion") { $cp = Find-CrossPost $r; if ($cp) { $ri.CrossUrl = [string]$cp["url"] } }
+        if ($ri.Url -and $also.Count) {
+            foreach ($u in (@($r0) + $also)) { $lk = New-Object RF4Comp.ReportLink; $lk.Text = (Get-ReportHost ([string]$u["url"])) + " " + [char]0x2197; $lk.Url = [string]$u["url"]; $ri.Links.Add($lk) }
+        }
+        if (-not (Get-TgKey $ri.Url) -and [string]$r["src"] -ne "companion") {
+            $tgA = @($also | Where-Object { Get-TgKey ([string]$_["url"]) } | Select-Object -First 1)
+            if ($tgA.Count) { $ri.CrossUrl = [string]$tgA[0]["url"] } else { $cp = Find-CrossPost $r; if ($cp) { $ri.CrossUrl = [string]$cp["url"] } }
+        }
         $items += $ri
     }
     $lstCommReports.ItemsSource = $items
@@ -9211,7 +9378,8 @@ $lstCommReports.Add_SelectionChanged({
 $lstCommReports.AddHandler([System.Windows.UIElement]::MouseLeftButtonUpEvent, [System.Windows.Input.MouseButtonEventHandler]{
     param($sender, $e)
     $src = $e.OriginalSource
-    if ($src -is [System.Windows.Controls.Image] -and $src.Tag) { Open-ReportUrl ([string]$src.Tag); $e.Handled = $true }
+    if ($src -is [System.Windows.Controls.Image] -and $src.Tag) { Open-ReportUrl ([string]$src.Tag); $e.Handled = $true; return }
+    if ($src -is [System.Windows.Controls.TextBlock] -and $src.Tag -is [string] -and $src.Tag -match "^https?://") { Open-ReportUrl ([string]$src.Tag); $e.Handled = $true }
 }, $true)
 
 $lstCommReports.Add_MouseDoubleClick({
