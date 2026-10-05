@@ -366,6 +366,52 @@ function Get-BaitChoices {
     @($game.baits | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label)
 }
 
+$script:itemCats = $null
+$script:catChoiceCache = @{}
+
+function Get-ItemCats {
+    if ($script:itemCats) { return $script:itemCats }
+    $script:itemCats = @{}
+    $f = Join-Path $dataDir "itemcats.json"
+    if (Test-Path -LiteralPath $f) { foreach ($pr in ([System.IO.File]::ReadAllText($f, [System.Text.Encoding]::UTF8) | ConvertFrom-Json).PSObject.Properties) { $script:itemCats[$pr.Name] = [string[]]@($pr.Value) } }
+    $script:itemCats
+}
+
+function Get-CatChoices([string[]]$cats) {
+    $ck = $script:lang + "|" + ($cats -join ",")
+    if ($script:catChoiceCache.ContainsKey($ck)) { return $script:catChoiceCache[$ck] }
+    $ml = Get-MatchLists $script:lang
+    if (-not $script:itemLocMap -or $script:itemLocMapLang -ne $script:lang) {
+        $script:itemLocMap = @{}
+        for ($i = 0; $i -lt $ml.ItemEn.Count; $i++) { $script:itemLocMap[[string]$ml.ItemEn[$i]] = [string]$ml.ItemLoc[$i] }
+        $script:itemLocMapLang = $script:lang
+    }
+    $keys = New-Object System.Collections.Generic.List[string]
+    foreach ($c in $cats) { foreach ($n in @((Get-ItemCats)[$c])) { if ($n) { $keys.Add($n) } } }
+    $labels = [string[]]@($keys | ForEach-Object { $l = $script:itemLocMap[$_]; if ($l) { $l } else { N $_ } })
+    $res = [RF4Comp.KeyLabel]::Build($keys.ToArray(), $labels)
+    $script:catChoiceCache[$ck] = $res
+    $res
+}
+
+function Get-BaitChoicesFor([string]$tech) {
+    if ($tech -eq "spin" -or $tech -eq "trolling") { return @(Get-CatChoices @("spinlure")) }
+    Get-BaitChoices
+}
+
+function Set-BaitCombosFor([string]$tech, $combos) {
+    $kind = $(if ($tech -eq "spin" -or $tech -eq "trolling") { "lure" } else { "bait" })
+    $list = $null
+    foreach ($cb in $combos) {
+        if ([string]$cb.Tag -eq $kind -and $cb.ItemsSource) { continue }
+        if (-not $list) { $list = Get-BaitChoicesFor $tech }
+        $k = Get-ComboKey $cb
+        Set-Choices $cb $list
+        $cb.Tag = $kind
+        if ($k) { Set-ComboKey $cb $k }
+    }
+}
+
 function Get-DipChoices {
     @($script:dipKeys | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label)
 }
@@ -722,23 +768,23 @@ function Format-Coords($lake, $nx, $ny) {
                                 <TextBlock Tag="t:fish" Style="{StaticResource Label}"/>
                                 <ComboBox x:Name="cmbSpotFish" IsEditable="True" TextSearch.TextPath="Label"/>
                                 <TextBlock x:Name="lblSpotBait" Tag="t:bait" Style="{StaticResource Label}"/>
-                                <ComboBox x:Name="cmbSpotBait" IsEditable="True" TextSearch.TextPath="Label"/>
+                                <ComboBox x:Name="cmbSpotBait" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                <Grid x:Name="gridSpotBait2" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Tag="t:bait2" Style="{StaticResource Label}"/>
+                                        <ComboBox x:Name="cmbSpotBait2" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                    </StackPanel>
+                                    <StackPanel x:Name="panelSpotDip" Grid.Column="2">
+                                        <TextBlock Tag="t:dipL" Style="{StaticResource Label}"/>
+                                        <ComboBox x:Name="cmbSpotDip" IsEditable="True" TextSearch.TextPath="Label"/>
+                                    </StackPanel>
+                                </Grid>
                                 <StackPanel x:Name="panelBottom" Visibility="Collapsed">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="10"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Tag="t:bait2" Style="{StaticResource Label}"/>
-                                            <ComboBox x:Name="cmbSpotBait2" IsEditable="True" TextSearch.TextPath="Label"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Tag="t:dipL" Style="{StaticResource Label}"/>
-                                            <ComboBox x:Name="cmbSpotDip" IsEditable="True" TextSearch.TextPath="Label"/>
-                                        </StackPanel>
-                                    </Grid>
                                     <TextBlock Tag="t:groundbaitMix" Style="{StaticResource Label}"/>
                                     <DockPanel>
                                         <Button x:Name="btnSpotGroundRecipe" Tag="t:openRecipe" DockPanel.Dock="Right" Margin="8,0,0,10" Padding="10,4" VerticalAlignment="Top"/>
@@ -753,7 +799,7 @@ function Format-Coords($lake, $nx, $ny) {
                                 <StackPanel x:Name="panelMarine" Visibility="Collapsed">
                                     <TextBlock Tag="t:marineRig" Style="{StaticResource Label}"/>
                                     <ComboBox x:Name="cmbMarRig"/>
-                                    <TextBlock x:Name="lblMarMain" Tag="t:mainBait" Style="{StaticResource Label}"/>
+                                    <TextBlock x:Name="lblMarMain" Style="{StaticResource Label}"/>
                                     <ComboBox x:Name="cmbMarMain" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
                                     <StackPanel x:Name="panelMarHook">
                                         <TextBlock Tag="t:extraHook" Style="{StaticResource Label}"/>
@@ -1145,11 +1191,11 @@ function Format-Coords($lake, $nx, $ny) {
                                 </StackPanel>
                                 <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
                                     <TextBlock Tag="t:bait1" Style="{StaticResource Label}"/>
-                                    <ComboBox x:Name="cmbCatchBait" IsEditable="True" TextSearch.TextPath="Label"/>
+                                    <ComboBox x:Name="cmbCatchBait" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
                                 </StackPanel>
                                 <StackPanel Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="3">
                                     <TextBlock Tag="t:bait2" Style="{StaticResource Label}"/>
-                                    <ComboBox x:Name="cmbCatchBait2" IsEditable="True" TextSearch.TextPath="Label"/>
+                                    <ComboBox x:Name="cmbCatchBait2" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
                                 </StackPanel>
                                 <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3">
                                     <TextBlock Tag="t:dipL" Style="{StaticResource Label}"/>
@@ -1289,9 +1335,9 @@ function Format-Coords($lake, $nx, $ny) {
                                     <TextBlock Tag="t:fish" Style="{StaticResource Label}"/>
                                     <ComboBox x:Name="cmbSeFish" IsEditable="True" TextSearch.TextPath="Label"/>
                                     <TextBlock Tag="t:bait1" Style="{StaticResource Label}"/>
-                                    <ComboBox x:Name="cmbSeBait" IsEditable="True" TextSearch.TextPath="Label"/>
+                                    <ComboBox x:Name="cmbSeBait" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
                                     <TextBlock Tag="t:bait2" Style="{StaticResource Label}"/>
-                                    <ComboBox x:Name="cmbSeBait2" IsEditable="True" TextSearch.TextPath="Label"/>
+                                    <ComboBox x:Name="cmbSeBait2" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
                                     <TextBlock Tag="t:dipL" Style="{StaticResource Label}"/>
                                     <ComboBox x:Name="cmbSeDip" IsEditable="True" TextSearch.TextPath="Label"/>
                                     <TextBlock Tag="t:groundbaitMix" Style="{StaticResource Label}"/>
@@ -1969,6 +2015,13 @@ function Center-On([double]$nx, [double]$ny) {
 $script:marineRigs = $null
 $script:marineItems = $null
 $script:marineItemsLang = ""
+$script:marineCats = @{
+    rig_MarinePilker = @(@("pilker"), @("teaser", "fillet")); rig_MarineLureJig = @(@("seasoft"), @()); rig_MarineFilletJig = @(@("fillet"), @())
+    rig_MarineGiganticLureJig = @(@("seasoft"), @()); rig_MarineGiganticFishJig = @(@("deadfish"), @())
+    rig_MarineBottomClassic = @(@("seasinker"), @("seanatural", "teaser", "seasoft")); rig_MarineBottomWithRattlingSinker = @(@("seasinker"), @("seanatural", "teaser", "seasoft"))
+    rig_MarineBottomPaternoster = @(@("seasinker"), @("seanatural", "teaser", "seasoft")); rig_MarineBottomWithFlyingColarLure = @(@("seasoft", "fillet"), @())
+    rig_MarineBottomWithDeadFish = @(@("deadfish"), @())
+}
 $script:marineLayout = @{
     rig_MarinePilker = @(1, 3, 0); rig_MarineBottomPaternoster = @(0, 3, 0)
     rig_MarineBottomClassic = @(0, 2, 0); rig_MarineBottomWithRattlingSinker = @(0, 2, 0); rig_MarineBottomWithFlyingColarLure = @(0, 0, 1)
@@ -2060,10 +2113,9 @@ function Ensure-MarineChoices {
     foreach ($c in (Get-MarineCombos)) {
         $t = $(if ($c.SelectedItem) { [string]$c.SelectedItem.Key } else { "$($c.Text)".Trim() })
         $c.ItemsSource = $null
-        $c.DisplayMemberPath = "Label"
-        $c.ItemsSource = $items
         Set-MarineValue $c $t
     }
+    Apply-MarineSources
     $lblMarT1.Text = (T "teaserN") -f 1
     $lblMarT2.Text = (T "teaserN") -f 2
     $lblMarT3.Text = (T "teaserN") -f 3
@@ -2076,11 +2128,38 @@ function Ensure-MarineChoices {
 
 function Set-MarineValue($combo, [string]$key) {
     if (-not $key) { $combo.SelectedItem = $null; $combo.Text = ""; return }
+    $hit = $null
+    foreach ($it in @($combo.ItemsSource)) { if ($it.Key -eq $key) { $hit = $it; break } }
+    if ($hit) { $combo.SelectedItem = $hit; return }
+    $combo.SelectedItem = $null
     $m = $script:marineIndex[$key]
-    if ($m) { $combo.SelectedItem = $m } else { $combo.SelectedItem = $null; $combo.Text = $key }
+    $combo.Text = $(if ($m) { $m.Label } else { $key })
+}
+
+function Set-MarineSource($combo, $list) {
+    if ([object]::ReferenceEquals($combo.ItemsSource, $list)) { return }
+    $k = Get-MarineKey $combo
+    $combo.ItemsSource = $null
+    $combo.DisplayMemberPath = "Label"
+    $combo.ItemsSource = $list
+    Set-MarineValue $combo $k
+}
+
+function Apply-MarineSources {
+    $rk = Get-ComboKey $cmbMarRig
+    $cats = $script:marineCats[$rk]
+    if (-not $cats) { $cats = $script:marineCats["rig_MarinePilker"] }
+    Set-MarineSource $cmbMarMain (Get-CatChoices $cats[0])
+    Set-MarineSource $cmbMarHook (Get-CatChoices @("seahook"))
+    $tc = $(if (@($cats[1]).Count) { Get-CatChoices $cats[1] } else { Get-CatChoices @("teaser") })
+    foreach ($c in @($cmbMarT1, $cmbMarT2, $cmbMarT3)) { Set-MarineSource $c $tc }
+    $ac = Get-CatChoices @("attractor")
+    foreach ($c in @($cmbMarT1a, $cmbMarT1b, $cmbMarT2a, $cmbMarT2b, $cmbMarT3a, $cmbMarT3b, $cmbMarL1, $cmbMarL2)) { Set-MarineSource $c $ac }
+    $lblMarMain.Text = $(if (@($cats[0]) -contains "seasinker") { T "seaSinker" } else { T "mainBait" })
 }
 
 function Update-MarineLayout {
+    if ($cmbMarMain.ItemsSource) { Apply-MarineSources }
     $lay = $script:marineLayout[(Get-ComboKey $cmbMarRig)]
     if (-not $lay) { $lay = @(1, 3, 0) }
     $panelMarHook.Visibility = $(if ($lay[0] -gt 0) { "Visible" } else { "Collapsed" })
@@ -2159,13 +2238,12 @@ function Update-BottomPanel {
         $st = $script:trackerSetup
         if (-not $script:selSpotId -and -not (Get-ComboKey $cmbMarRig) -and $st -and $st.Marine) { Fill-MarineFields $st.Marine } else { Update-MarineLayout }
     }
-    if ((Get-ComboKey $cmbSpotTech) -eq "bottom") {
-        $panelBottom.Visibility = "Visible"
-        $lblSpotBait.Text = T "bait1"
-    } else {
-        $panelBottom.Visibility = "Collapsed"
-        $lblSpotBait.Text = T "bait"
-    }
+    $tk = Get-ComboKey $cmbSpotTech
+    $panelBottom.Visibility = $(if ($tk -eq "bottom") { "Visible" } else { "Collapsed" })
+    $gridSpotBait2.Visibility = $(if ($tk -eq "bottom" -or $tk -eq "float") { "Visible" } else { "Collapsed" })
+    $panelSpotDip.Visibility = $panelBottom.Visibility
+    $lblSpotBait.Text = $(if ($gridSpotBait2.Visibility -eq "Visible") { T "bait1" } elseif ($tk -eq "spin" -or $tk -eq "trolling") { T "lure" } else { T "bait" })
+    if (-not $isMar) { Set-BaitCombosFor $tk @($cmbSpotBait, $cmbSpotBait2) }
 }
 
 function Get-RecipeChoices([string]$type) {
@@ -8203,9 +8281,10 @@ function Show-SpotEdit([string]$id) {
     Set-ComboKey $cmbSeTech "$($sp.tech)"
     Set-Choices $cmbSeFish (Get-FishChoices $sp.lake)
     Set-ComboKey $cmbSeFish "$($sp.fish)"
-    $bc = Get-BaitChoices
+    $bc = Get-BaitChoicesFor "$($sp.tech)"
     foreach ($pair in @(@($cmbSeBait, "$($sp.bait)"), @($cmbSeBait2, "$($sp.bait2)"))) {
         Set-Choices $pair[0] $bc
+        $pair[0].Tag = $(if ("$($sp.tech)" -eq "spin" -or "$($sp.tech)" -eq "trolling") { "lure" } else { "bait" })
         Set-ComboKey $pair[0] $pair[1]
     }
     Set-Choices $cmbSeDip (Get-DipChoices)
@@ -8245,12 +8324,8 @@ function Apply-Language {
     if ($script:curMapLake) { $lakeId = $script:curMapLake.id }
     Set-Choices $cmbSpotFish (Get-FishChoices $lakeId)
     Set-ComboKey $cmbSpotFish $f
-    $b = Get-ComboKey $cmbSpotBait
-    Set-Choices $cmbSpotBait (Get-BaitChoices)
-    Set-ComboKey $cmbSpotBait $b
-    $b = Get-ComboKey $cmbSpotBait2
-    Set-Choices $cmbSpotBait2 (Get-BaitChoices)
-    Set-ComboKey $cmbSpotBait2 $b
+    foreach ($cb in @($cmbSpotBait, $cmbSpotBait2)) { $cb.Tag = $null }
+    Set-BaitCombosFor (Get-ComboKey $cmbSpotTech) @($cmbSpotBait, $cmbSpotBait2)
     $b = Get-ComboKey $cmbSpotDip
     Set-Choices $cmbSpotDip (Get-DipChoices)
     Set-ComboKey $cmbSpotDip $b
@@ -8318,11 +8393,8 @@ function Apply-Language {
     $f = Get-ComboKey $cmbCatchFish
     Set-Choices $cmbCatchFish (Get-FishChoices $k)
     Set-ComboKey $cmbCatchFish $f
-    foreach ($cb in @($cmbCatchBait, $cmbCatchBait2)) {
-        $b = Get-ComboKey $cb
-        Set-Choices $cb (Get-BaitChoices)
-        Set-ComboKey $cb $b
-    }
+    foreach ($cb in @($cmbCatchBait, $cmbCatchBait2)) { $cb.Tag = $null }
+    Set-BaitCombosFor (Get-ComboKey $cmbCatchTech) @($cmbCatchBait, $cmbCatchBait2)
     $b = Get-ComboKey $cmbCatchDip
     Set-Choices $cmbCatchDip (Get-DipChoices)
     Set-ComboKey $cmbCatchDip $b
@@ -8556,7 +8628,7 @@ $btnSpotSave.Add_Click({
     $s.notes = $txtSpotNotes.Text.Trim()
     foreach ($pair in @(@("bait2", (Get-ComboKey $cmbSpotBait2)), @("dip", (Get-ComboKey $cmbSpotDip)), @("groundbait", (Get-RecipeFieldValue $cmbSpotGround)), @("pva", (Get-RecipeFieldValue $cmbSpotPva)))) {
         $v = [string]$pair[1]
-        if ($s.tech -ne "bottom") { $v = "" }
+        if ($s.tech -ne "bottom" -and -not ($s.tech -eq "float" -and $pair[0] -eq "bait2")) { $v = "" }
         $s | Add-Member -NotePropertyName $pair[0] -NotePropertyValue $v -Force
     }
     $s | Add-Member -NotePropertyName marine -NotePropertyValue $(if ($s.tech -eq "marine") { Get-MarineFields } else { $null }) -Force
@@ -9405,8 +9477,8 @@ $btnTrackerDiscard.Add_Click({
 $btnCommSync.Add_Click({ Start-CommunitySync })
 $cmbMarRig.Add_SelectionChanged({ Update-MarineLayout })
 $cmbSpotTech.Add_SelectionChanged({ if (-not $script:busy) { Update-BottomPanel }; Update-NotesHint $cmbSpotTech $txtSpotNotes })
-$cmbCatchTech.Add_SelectionChanged({ Update-NotesHint $cmbCatchTech $txtCatchNotes })
-$cmbSeTech.Add_SelectionChanged({ Update-NotesHint $cmbSeTech $txtSeNotes })
+$cmbCatchTech.Add_SelectionChanged({ Update-NotesHint $cmbCatchTech $txtCatchNotes; if ($cmbCatchBait.ItemsSource) { Set-BaitCombosFor (Get-ComboKey $cmbCatchTech) @($cmbCatchBait, $cmbCatchBait2) } })
+$cmbSeTech.Add_SelectionChanged({ Update-NotesHint $cmbSeTech $txtSeNotes; if ($cmbSeBait.ItemsSource) { Set-BaitCombosFor (Get-ComboKey $cmbSeTech) @($cmbSeBait, $cmbSeBait2) } })
 $btnSpotGroundRecipe.Add_Click({ Open-RecipeFromSpot $cmbSpotGround "groundbait" })
 $btnSpotPvaRecipe.Add_Click({ Open-RecipeFromSpot $cmbSpotPva "pva" })
 $txtMapSearch.Add_KeyDown({
