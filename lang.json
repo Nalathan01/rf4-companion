@@ -333,7 +333,12 @@
   "resetOnlyNew": "Nur Neues seit letzter Woche",
   "resetNew": "Neu seit letzter Woche",
   "resetNewCombo": "neue Kombination",
-  "resetRegionUnknown": "unbekannt (nur global)"
+  "resetRegionUnknown": "unbekannt (nur global)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Meer",
+  "updateAvailable": "Version {0} ist verfügbar",
+  "updateOpen": "Herunterladen",
+  "updateHide": "Ausblenden"
  },
  "en": {
   "langName": "English",
@@ -669,7 +674,12 @@
   "resetOnlyNew": "New baits only",
   "resetNew": "New since last week",
   "resetNewCombo": "new combination",
-  "resetRegionUnknown": "unknown (global only)"
+  "resetRegionUnknown": "unknown (global only)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Sea",
+  "updateAvailable": "Version {0} is available",
+  "updateOpen": "Download",
+  "updateHide": "Hide"
  },
  "ru": {
   "langName": "Русский",
@@ -1002,7 +1012,12 @@
   "resetOnlyNew": "Только новые наживки",
   "resetNew": "Новое с прошлой недели",
   "resetNewCombo": "новая комбинация",
-  "resetRegionUnknown": "неизвестно (только общий)"
+  "resetRegionUnknown": "неизвестно (только общий)",
+  "table_u": "Ультралайт (UL)",
+  "table_m": "Море",
+  "updateAvailable": "Доступна версия {0}",
+  "updateOpen": "Скачать",
+  "updateHide": "Скрыть"
  },
  "fr": {
   "langName": "Français",
@@ -1335,7 +1350,12 @@
   "resetOnlyNew": "Nouveaux appâts seulement",
   "resetNew": "Nouveau depuis la semaine dernière",
   "resetNewCombo": "nouvelle combinaison",
-  "resetRegionUnknown": "inconnue (global seulement)"
+  "resetRegionUnknown": "inconnue (global seulement)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Mer",
+  "updateAvailable": "La version {0} est disponible",
+  "updateOpen": "Télécharger",
+  "updateHide": "Masquer"
  },
  "es": {
   "langName": "Español",
@@ -1668,7 +1688,12 @@
   "resetOnlyNew": "Solo cebos nuevos",
   "resetNew": "Nuevo desde la semana pasada",
   "resetNewCombo": "nueva combinación",
-  "resetRegionUnknown": "desconocida (solo global)"
+  "resetRegionUnknown": "desconocida (solo global)",
+  "table_u": "Ultraligero (UL)",
+  "table_m": "Mar",
+  "updateAvailable": "La versión {0} está disponible",
+  "updateOpen": "Descargar",
+  "updateHide": "Ocultar"
  },
  "it": {
   "langName": "Italiano",
@@ -2001,7 +2026,12 @@
   "resetOnlyNew": "Solo esche nuove",
   "resetNew": "Nuovo dalla settimana scorsa",
   "resetNewCombo": "nuova combinazione",
-  "resetRegionUnknown": "sconosciuta (solo globale)"
+  "resetRegionUnknown": "sconosciuta (solo globale)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Mare",
+  "updateAvailable": "È disponibile la versione {0}",
+  "updateOpen": "Scarica",
+  "updateHide": "Nascondi"
  },
  "pl": {
   "langName": "Polski",
@@ -2334,7 +2364,12 @@
   "resetOnlyNew": "Tylko nowe przynęty",
   "resetNew": "Nowe od zeszłego tygodnia",
   "resetNewCombo": "nowa kombinacja",
-  "resetRegionUnknown": "nieznany (tylko globalny)"
+  "resetRegionUnknown": "nieznany (tylko globalny)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Morze",
+  "updateAvailable": "Dostępna jest wersja {0}",
+  "updateOpen": "Pobierz",
+  "updateHide": "Ukryj"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2667,7 +2702,12 @@
   "resetOnlyNew": "Só iscas novas",
   "resetNew": "Novo desde a semana passada",
   "resetNewCombo": "nova combinação",
-  "resetRegionUnknown": "desconhecida (só global)"
+  "resetRegionUnknown": "desconhecida (só global)",
+  "table_u": "Ultraleve (UL)",
+  "table_m": "Mar",
+  "updateAvailable": "A versão {0} está disponível",
+  "updateOpen": "Baixar",
+  "updateHide": "Ocultar"
  },
  "nl": {
   "langName": "Nederlands",
@@ -3000,7 +3040,12 @@
   "resetOnlyNew": "Alleen nieuw aas",
   "resetNew": "Nieuw sinds vorige week",
   "resetNewCombo": "nieuwe combinatie",
-  "resetRegionUnknown": "onbekend (alleen globaal)"
+  "resetRegionUnknown": "onbekend (alleen globaal)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Zee",
+  "updateAvailable": "Versie {0} is beschikbaar",
+  "updateOpen": "Downloaden",
+  "updateHide": "Verbergen"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3333,7 +3378,12 @@
   "resetOnlyNew": "Sadece yeni yemler",
   "resetNew": "Geçen haftadan beri yeni",
   "resetNewCombo": "yeni kombinasyon",
-  "resetRegionUnknown": "bilinmiyor (yalnız küresel)"
+  "resetRegionUnknown": "bilinmiyor (yalnız küresel)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Deniz",
+  "updateAvailable": "{0} sürümü mevcut",
+  "updateOpen": "İndir",
+  "updateHide": "Gizle"
  },
  "ro": {
   "langName": "Română",
@@ -3666,7 +3716,12 @@
   "resetOnlyNew": "Doar nade noi",
   "resetNew": "Nou față de săptămâna trecută",
   "resetNewCombo": "combinație nouă",
-  "resetRegionUnknown": "necunoscută (doar global)"
+  "resetRegionUnknown": "necunoscută (doar global)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Mare",
+  "updateAvailable": "Versiunea {0} este disponibilă",
+  "updateOpen": "Descarcă",
+  "updateHide": "Ascunde"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -3999,7 +4054,12 @@
   "resetOnlyNew": "Hanya umpan baru",
   "resetNew": "Baru sejak minggu lalu",
   "resetNewCombo": "kombinasi baru",
-  "resetRegionUnknown": "tidak diketahui (hanya global)"
+  "resetRegionUnknown": "tidak diketahui (hanya global)",
+  "table_u": "Ultralight (UL)",
+  "table_m": "Laut",
+  "updateAvailable": "Versi {0} tersedia",
+  "updateOpen": "Unduh",
+  "updateHide": "Sembunyikan"
  },
  "ja": {
   "langName": "日本語",
@@ -4332,7 +4392,12 @@
   "resetOnlyNew": "新しい餌のみ",
   "resetNew": "先週からの新規",
   "resetNewCombo": "新しい組み合わせ",
-  "resetRegionUnknown": "不明 (全体のみ)"
+  "resetRegionUnknown": "不明 (全体のみ)",
+  "table_u": "ウルトラライト (UL)",
+  "table_m": "海",
+  "updateAvailable": "バージョン {0} が利用可能です",
+  "updateOpen": "ダウンロード",
+  "updateHide": "非表示"
  },
  "ko": {
   "langName": "한국어",
@@ -4665,7 +4730,12 @@
   "resetOnlyNew": "새 미끼만",
   "resetNew": "지난주 이후 새로움",
   "resetNewCombo": "새 조합",
-  "resetRegionUnknown": "알 수 없음 (전체만)"
+  "resetRegionUnknown": "알 수 없음 (전체만)",
+  "table_u": "울트라라이트 (UL)",
+  "table_m": "바다",
+  "updateAvailable": "버전 {0}을(를) 사용할 수 있습니다",
+  "updateOpen": "다운로드",
+  "updateHide": "숨기기"
  },
  "zh": {
   "langName": "简体中文",
@@ -4998,7 +5068,12 @@
   "resetOnlyNew": "仅新饵",
   "resetNew": "自上周以来新增",
   "resetNewCombo": "新组合",
-  "resetRegionUnknown": "未知 (仅全球)"
+  "resetRegionUnknown": "未知 (仅全球)",
+  "table_u": "超轻 (UL)",
+  "table_m": "海洋",
+  "updateAvailable": "版本 {0} 已发布",
+  "updateOpen": "下载",
+  "updateHide": "隐藏"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5331,6 +5406,11 @@
   "resetOnlyNew": "僅新餌",
   "resetNew": "自上週以來新增",
   "resetNewCombo": "新組合",
-  "resetRegionUnknown": "未知 (僅全球)"
+  "resetRegionUnknown": "未知 (僅全球)",
+  "table_u": "超輕 (UL)",
+  "table_m": "海洋",
+  "updateAvailable": "版本 {0} 已發布",
+  "updateOpen": "下載",
+  "updateHide": "隱藏"
  }
 }
