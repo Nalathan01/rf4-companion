@@ -943,7 +943,7 @@ function Format-Coords($lake, $nx, $ny) {
                         <CheckBox x:Name="chkResetNew" Tag="t:resetOnlyNew" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,14,0"/>
                         <TextBlock x:Name="txtResetState" Foreground="{DynamicResource AppInkDim}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                     </DockPanel>
-                    <DataGrid x:Name="dgReset" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True" VerticalScrollBarVisibility="Auto">
+                    <DataGrid x:Name="dgReset" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserSortColumns="True" VerticalScrollBarVisibility="Auto" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Item">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}" Width="170"/>
                             <DataGridTextColumn Header="t:weight" Binding="{Binding Weight}" SortMemberPath="WSort" Width="90"/>
@@ -3132,6 +3132,11 @@ namespace RF4Comp {
             foreach (object o in items) { var d = o as IDictionary; if (d != null && set.Contains(S(d, f))) l.Add(o); }
             return l;
         }
+        public static Hashtable CountBy(ICollection items, string f) {
+            var h = new Hashtable();
+            foreach (object o in items) { var d = o as IDictionary; if (d == null) continue; string v = S(d, f); if (v.Length == 0) continue; h[v] = h.ContainsKey(v) ? (int)h[v] + 1 : 1; }
+            return h;
+        }
         public static string MinFs(ICollection items) {
             string min = null;
             foreach (object o in items) { var d = o as IDictionary; if (d == null) continue; string fs = S(d, "fs"); if (fs.Length == 0) continue; if (min == null || string.CompareOrdinal(fs, min) < 0) min = fs; }
@@ -3732,16 +3737,20 @@ function Refresh-Target {
     }
     $recs = New-Object System.Collections.ArrayList
     $lakeCount = @{}
+    $weekRecs = @{}
     foreach ($id in $ids) {
-        $rs = Get-WeekResetUtc $id
-        foreach ($it in [RF4Comp.ResetBuilder]::WhereIn((Get-ArchWeek $id).Values, "f", [object[]]$set)) {
-            $l = [string]$it["l"]
-            if ($id -eq $script:archCurId -and $l) { $lakeCount[$l] = 1 + [int]$lakeCount[$l] }
-            $recs.Add([pscustomobject]@{ It = $it; Week = $id; Reset = $rs }) | Out-Null
-        }
+        $weekRecs[$id] = [RF4Comp.ResetBuilder]::WhereIn((Get-ArchWeek $id).Values, "f", [object[]]$set)
+        if ($id -eq $script:archCurId) { $lakeCount = [RF4Comp.ResetBuilder]::CountBy($weekRecs[$id], "l") }
     }
+    $setH = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($x in $set) { [void]$setH.Add([string]$x) }
     $repLake = @{}
-    foreach ($r in (Get-AllCommReports)) { foreach ($f in @($r["fish"])) { if ($set -contains [string]$f) { $k = [string]$r["lake"]; $repLake[$k] = 1 + [int]$repLake[$k]; break } } }
+    $hitReports = New-Object System.Collections.Generic.List[object]
+    foreach ($r in (Get-AllCommReports)) {
+        $fl = $r["fish"]
+        if ($null -eq $fl) { continue }
+        foreach ($f in $fl) { if ($setH.Contains([string]$f)) { $k = [string]$r["lake"]; $repLake[$k] = 1 + [int]$repLake[$k]; $hitReports.Add($r); break } }
+    }
     if (-not $lake) {
         if ($lakeCount.Count -gt 0) { $lake = @($lakeCount.Keys | Sort-Object { $lakeCount[$_] } -Descending)[0] }
         elseif ($repLake.Count -gt 0) { $lake = @($repLake.Keys | Sort-Object { $repLake[$_] } -Descending)[0] }
@@ -3751,21 +3760,24 @@ function Refresh-Target {
     $baits = @{}
     $nWeek = 0
     $nRecent = 0
-    foreach ($x in $recs) {
-        $it = $x.It
-        if ($lake -and $it["l"] -ne $lake) { continue }
-        $cd = Parse-RecordDate ([string]$it["d"])
-        $isCur = $x.Week -eq $script:archCurId
+    $dateMemo = @{}
+    foreach ($id in $ids) {
+      $rsW = Get-WeekResetUtc $id
+      foreach ($it in [RF4Comp.ResetBuilder]::Where($weekRecs[$id], "l", $lake, "", "")) {
+        $dk = [string]$it["d"]; if (-not $dateMemo.ContainsKey($dk)) { $dateMemo[$dk] = Parse-RecordDate $dk }; $cd = $dateMemo[$dk]
+        $isCur = $id -eq $script:archCurId
         $recent = $cd -and $cd -ge $today.AddDays(-1)
         if ($isCur) { $nWeek++ }
         if ($recent) { $nRecent++ }
         $h = $null
-        if ($isCur -and $x.Reset) {
+        if ($isCur -and $rsW) {
             $seen = [datetime]::Parse([string]$it["fs"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal)
             if ($cd) { $bound = $cd.Date.AddDays(1).ToUniversalTime(); if ($bound -lt $seen) { $seen = $bound } }
-            $h = [math]::Max(0, ($seen-$x.Reset).TotalHours)
+            $h = [math]::Max(0, ($seen-$rsW).TotalHours)
         }
-        $bk = ((Split-Baits ([string]$it["b"]) | Sort-Object) -join " + ")
+        $bsRaw = [string]$it["b"]
+        if (-not $dateMemo.ContainsKey("b|" + $bsRaw)) { $dateMemo["b|" + $bsRaw] = ((Split-Baits $bsRaw | Sort-Object) -join " + ") }
+        $bk = $dateMemo["b|" + $bsRaw]
         if (-not $bk) { continue }
         if (-not $baits.ContainsKey($bk)) { $baits[$bk] = [pscustomobject]@{ N = 0; Cur = 0; Recent = 0; H = $null; Fish = @{}; Last = $null } }
         $e = $baits[$bk]
@@ -3776,6 +3788,8 @@ function Refresh-Target {
         if ($null -ne $h -and ($null -eq $e.H -or $h -lt $e.H)) { $e.H = $h }
         $e.Fish[[string]$it["f"]] = $true
     }
+    }
+
     $brows = @()
     foreach ($k in $baits.Keys) {
         $e = $baits[$k]
@@ -3790,10 +3804,11 @@ function Refresh-Target {
     $brows = @($brows | Sort-Object CountSort -Descending)
     $dgTgtBaits.ItemsSource = $brows
     $reports = New-Object System.Collections.ArrayList
-    foreach ($r in (Get-AllCommReports)) {
+    $cut60 = (Get-Date).ToUniversalTime().AddDays(-60).ToString("yyyy-MM-ddTHH:mm:ss")
+    foreach ($r in $hitReports) {
         if ($lake -and $r["lake"] -ne $lake) { continue }
-        $hit = @(@($r["fish"]) | Where-Object { $set -contains [string]$_ })
-        if ($hit.Count -eq 0 -or $null -eq $r["x"]) { continue }
+        if ([string]::CompareOrdinal([string]$r["posted"], $cut60) -lt 0) { continue }
+        if ($null -eq $r["x"]) { continue }
         $rp = Get-ReportPos $r
         if (-not $rp) { continue }
         $bd = Clean-CommDetail ([string]$r["baitDetail"])
@@ -4555,7 +4570,7 @@ function Get-CommPeriodStart {
 
 function Parse-RecordDate([string]$t) {
     $d = [datetime]::MinValue
-    foreach ($fmt in @("dd.MM.yy", "dd.MM.yyyy", "MM/dd/yy", "MM/dd/yyyy", "yyyy-MM-dd", "dd/MM/yy")) {
+    foreach ($fmt in @("d.M.yy", "d.M.yyyy", "dd.MM.yy", "dd.MM.yyyy", "M/d/yy", "M/d/yyyy", "yyyy-MM-dd", "d/M/yy")) {
         if ([datetime]::TryParseExact($t.Trim(), $fmt, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$d)) { return $d }
     }
     return $null
@@ -6191,11 +6206,13 @@ function Finish-CommunitySync([bool]$ok) {
     $btnCommFull.IsEnabled = $true
     if ($ok) {
         if (-not $script:commSynced -or $script:syncStarted -gt $script:commSynced) { $script:commSynced = $script:syncStarted }
-        Save-Community
-        $script:commClusterCache = @{}
+        if ($script:syncAdded -gt 0) {
+            Save-Community
+            $script:commClusterCache = @{}
+            Draw-Markers
+            Start-ScanQueue
+        }
         Update-CommState
-        Draw-Markers
-        Start-ScanQueue
         if ((Get-ComboKey $cmbSpotsSource) -ne "mine") { Refresh-SpotsGrid }
         Set-Status ("{0}: {1} {2}" -f (T "syncDone"), $script:syncAdded, (T "newReports"))
     } else {
