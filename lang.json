@@ -338,7 +338,8 @@
   "table_m": "Meer",
   "updateAvailable": "Version {0} ist verfügbar",
   "updateOpen": "Herunterladen",
-  "updateHide": "Ausblenden"
+  "updateHide": "Ausblenden",
+  "teaserLures": "Lockmittel an Beifänger {0} (keine oder zwei)"
  },
  "en": {
   "langName": "English",
@@ -679,7 +680,8 @@
   "table_m": "Sea",
   "updateAvailable": "Version {0} is available",
   "updateOpen": "Download",
-  "updateHide": "Hide"
+  "updateHide": "Hide",
+  "teaserLures": "Attractors on teaser {0} (none or two)"
  },
  "ru": {
   "langName": "Русский",
@@ -1017,7 +1019,8 @@
   "table_m": "Море",
   "updateAvailable": "Доступна версия {0}",
   "updateOpen": "Скачать",
-  "updateHide": "Скрыть"
+  "updateHide": "Скрыть",
+  "teaserLures": "Привлекатели на отводе {0} (нет или два)"
  },
  "fr": {
   "langName": "Français",
@@ -1355,7 +1358,8 @@
   "table_m": "Mer",
   "updateAvailable": "La version {0} est disponible",
   "updateOpen": "Télécharger",
-  "updateHide": "Masquer"
+  "updateHide": "Masquer",
+  "teaserLures": "Attractants sur l'avançon {0} (aucun ou deux)"
  },
  "es": {
   "langName": "Español",
@@ -1693,7 +1697,8 @@
   "table_m": "Mar",
   "updateAvailable": "La versión {0} está disponible",
   "updateOpen": "Descargar",
-  "updateHide": "Ocultar"
+  "updateHide": "Ocultar",
+  "teaserLures": "Atrayentes en el brazo {0} (ninguno o dos)"
  },
  "it": {
   "langName": "Italiano",
@@ -2031,7 +2036,8 @@
   "table_m": "Mare",
   "updateAvailable": "È disponibile la versione {0}",
   "updateOpen": "Scarica",
-  "updateHide": "Nascondi"
+  "updateHide": "Nascondi",
+  "teaserLures": "Attrattori sul bracciolo {0} (nessuno o due)"
  },
  "pl": {
   "langName": "Polski",
@@ -2369,7 +2375,8 @@
   "table_m": "Morze",
   "updateAvailable": "Dostępna jest wersja {0}",
   "updateOpen": "Pobierz",
-  "updateHide": "Ukryj"
+  "updateHide": "Ukryj",
+  "teaserLures": "Atraktory na przyponie {0} (brak lub dwa)"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2707,7 +2714,8 @@
   "table_m": "Mar",
   "updateAvailable": "A versão {0} está disponível",
   "updateOpen": "Baixar",
-  "updateHide": "Ocultar"
+  "updateHide": "Ocultar",
+  "teaserLures": "Atrativos no braço {0} (nenhum ou dois)"
  },
  "nl": {
   "langName": "Nederlands",
@@ -3045,7 +3053,8 @@
   "table_m": "Zee",
   "updateAvailable": "Versie {0} is beschikbaar",
   "updateOpen": "Downloaden",
-  "updateHide": "Verbergen"
+  "updateHide": "Verbergen",
+  "teaserLures": "Lokmiddelen aan zijlijn {0} (geen of twee)"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3383,7 +3392,8 @@
   "table_m": "Deniz",
   "updateAvailable": "{0} sürümü mevcut",
   "updateOpen": "İndir",
-  "updateHide": "Gizle"
+  "updateHide": "Gizle",
+  "teaserLures": "Yan kol {0} cezbedicileri (yok veya iki)"
  },
  "ro": {
   "langName": "Română",
@@ -3721,7 +3731,8 @@
   "table_m": "Mare",
   "updateAvailable": "Versiunea {0} este disponibilă",
   "updateOpen": "Descarcă",
-  "updateHide": "Ascunde"
+  "updateHide": "Ascunde",
+  "teaserLures": "Atractanți pe brațul {0} (niciunul sau doi)"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -4059,7 +4070,8 @@
   "table_m": "Laut",
   "updateAvailable": "Versi {0} tersedia",
   "updateOpen": "Unduh",
-  "updateHide": "Sembunyikan"
+  "updateHide": "Sembunyikan",
+  "teaserLures": "Pemikat di cabang {0} (tidak ada atau dua)"
  },
  "ja": {
   "langName": "日本語",
@@ -4397,7 +4409,8 @@
   "table_m": "海",
   "updateAvailable": "バージョン {0} が利用可能です",
   "updateOpen": "ダウンロード",
-  "updateHide": "非表示"
+  "updateHide": "非表示",
+  "teaserLures": "枝 {0} のアトラクター (なし または 2つ)"
  },
  "ko": {
   "langName": "한국어",
@@ -4735,7 +4748,8 @@
   "table_m": "바다",
   "updateAvailable": "버전 {0}을(를) 사용할 수 있습니다",
   "updateOpen": "다운로드",
-  "updateHide": "숨기기"
+  "updateHide": "숨기기",
+  "teaserLures": "가지줄 {0} 유인물 (없음 또는 2개)"
  },
  "zh": {
   "langName": "简体中文",
@@ -5073,7 +5087,8 @@
   "table_m": "海洋",
   "updateAvailable": "版本 {0} 已发布",
   "updateOpen": "下载",
-  "updateHide": "隐藏"
+  "updateHide": "隐藏",
+  "teaserLures": "支线 {0} 的诱饵配件 (无或两个)"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5411,6 +5426,7 @@
   "table_m": "海洋",
   "updateAvailable": "版本 {0} 已發布",
   "updateOpen": "下載",
-  "updateHide": "隱藏"
+  "updateHide": "隱藏",
+  "teaserLures": "支線 {0} 的誘餌配件 (無或兩個)"
  }
 }

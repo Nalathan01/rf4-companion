@@ -762,11 +762,29 @@ function Format-Coords($lake, $nx, $ny) {
                                     <StackPanel x:Name="panelMarTeaser">
                                         <TextBlock x:Name="lblMarT1" Style="{StaticResource Label}"/>
                                         <ComboBox x:Name="cmbMarT1" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                        <TextBlock x:Name="lblMarT1L" Style="{StaticResource Label}" Margin="16,0,0,4"/>
+                                        <Grid Margin="16,0,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0"><ComboBox x:Name="cmbMarT1a" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox></Border>
+                                            <Border Grid.Column="2"><ComboBox x:Name="cmbMarT1b" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox></Border>
+                                        </Grid>
                                         <TextBlock x:Name="lblMarT2" Style="{StaticResource Label}"/>
                                         <ComboBox x:Name="cmbMarT2" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                        <TextBlock x:Name="lblMarT2L" Style="{StaticResource Label}" Margin="16,0,0,4"/>
+                                        <Grid Margin="16,0,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0"><ComboBox x:Name="cmbMarT2a" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox></Border>
+                                            <Border Grid.Column="2"><ComboBox x:Name="cmbMarT2b" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox></Border>
+                                        </Grid>
                                         <StackPanel x:Name="panelMarT3">
                                             <TextBlock x:Name="lblMarT3" Style="{StaticResource Label}"/>
                                             <ComboBox x:Name="cmbMarT3" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox>
+                                            <TextBlock x:Name="lblMarT3L" Style="{StaticResource Label}" Margin="16,0,0,4"/>
+                                            <Grid Margin="16,0,0,0">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0"><ComboBox x:Name="cmbMarT3a" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox></Border>
+                                                <Border Grid.Column="2"><ComboBox x:Name="cmbMarT3b" IsEditable="True" TextSearch.TextPath="Label"><ComboBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ComboBox.ItemsPanel></ComboBox></Border>
+                                            </Grid>
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel x:Name="panelMarLure">
@@ -1952,8 +1970,8 @@ $script:marineRigs = $null
 $script:marineItems = $null
 $script:marineItemsLang = ""
 $script:marineLayout = @{
-    rig_MarinePilker = @(1, 3, 2); rig_MarineBottomDropShot = @(0, 3, 2); rig_MarineBottomPaternoster = @(0, 3, 2)
-    rig_MarineBottomClassic = @(0, 2, 2); rig_MarineBottomWithRattlingSinker = @(0, 2, 2); rig_MarineBottomWithFlyingColarLure = @(0, 0, 1)
+    rig_MarinePilker = @(1, 3, 0); rig_MarineBottomPaternoster = @(0, 3, 0)
+    rig_MarineBottomClassic = @(0, 2, 0); rig_MarineBottomWithRattlingSinker = @(0, 2, 0); rig_MarineBottomWithFlyingColarLure = @(0, 0, 1)
     rig_MarineBottomWithDeadFish = @(0, 0, 1); rig_MarineLureJig = @(0, 0, 0); rig_MarineFilletJig = @(0, 0, 0)
     rig_MarineGiganticLureJig = @(0, 0, 0); rig_MarineGiganticFishJig = @(0, 0, 0)
 }
@@ -1975,7 +1993,7 @@ function Get-MarineRigName([string]$key) {
 }
 
 function Get-MarineRigChoices {
-    $order = @("rig_MarinePilker", "rig_MarineBottomDropShot", "rig_MarineBottomPaternoster", "rig_MarineBottomClassic", "rig_MarineBottomWithRattlingSinker", "rig_MarineBottomWithFlyingColarLure", "rig_MarineBottomWithDeadFish", "rig_MarineLureJig", "rig_MarineFilletJig", "rig_MarineGiganticLureJig", "rig_MarineGiganticFishJig")
+    $order = @("rig_MarinePilker", "rig_MarineBottomPaternoster", "rig_MarineBottomClassic", "rig_MarineBottomWithRattlingSinker", "rig_MarineBottomWithFlyingColarLure", "rig_MarineBottomWithDeadFish", "rig_MarineLureJig", "rig_MarineFilletJig", "rig_MarineGiganticLureJig", "rig_MarineGiganticFishJig")
     @(New-Choice "" "") + @($order | ForEach-Object { New-Choice $_ (Get-MarineRigName $_) })
 }
 
@@ -2017,7 +2035,21 @@ function Get-MarineItemChoices {
     $script:marineItems
 }
 
-function Get-MarineCombos { @($cmbMarMain, $cmbMarHook, $cmbMarT1, $cmbMarT2, $cmbMarT3, $cmbMarL1, $cmbMarL2) }
+function Get-MarineCombos { @($cmbMarMain, $cmbMarHook, $cmbMarT1, $cmbMarT2, $cmbMarT3, $cmbMarT1a, $cmbMarT1b, $cmbMarT2a, $cmbMarT2b, $cmbMarT3a, $cmbMarT3b, $cmbMarL1, $cmbMarL2) }
+function Get-TeaserLureCombos { @(@($cmbMarT1a, $cmbMarT1b), @($cmbMarT2a, $cmbMarT2b), @($cmbMarT3a, $cmbMarT3b)) }
+
+function Get-MarineLureMissing {
+    if ((Get-ComboKey $cmbSpotTech) -ne "marine") { return @() }
+    $lay = $script:marineLayout[(Get-ComboKey $cmbMarRig)]
+    if (-not $lay) { return @() }
+    $miss = @()
+    $pairs = Get-TeaserLureCombos
+    for ($i = 0; $i -lt [math]::Min(3, $lay[1]); $i++) {
+        $n = @($pairs[$i] | Where-Object { Get-MarineKey $_ }).Count
+        if ($n -eq 1) { $miss += ((T "teaserLures") -f ($i + 1)) }
+    }
+    $miss
+}
 
 function Ensure-MarineChoices {
     if ($cmbMarRig.ItemsSource -and $cmbMarMain.ItemsSource -and $script:marineItemsLang -eq $script:lang) { return }
@@ -2037,6 +2069,9 @@ function Ensure-MarineChoices {
     $lblMarT3.Text = (T "teaserN") -f 3
     $lblMarL1.Text = (T "lureAttrN") -f 1
     $lblMarL2.Text = (T "lureAttrN") -f 2
+    $lblMarT1L.Text = (T "teaserLures") -f 1
+    $lblMarT2L.Text = (T "teaserLures") -f 2
+    $lblMarT3L.Text = (T "teaserLures") -f 3
 }
 
 function Set-MarineValue($combo, [string]$key) {
@@ -2047,7 +2082,7 @@ function Set-MarineValue($combo, [string]$key) {
 
 function Update-MarineLayout {
     $lay = $script:marineLayout[(Get-ComboKey $cmbMarRig)]
-    if (-not $lay) { $lay = @(1, 3, 2) }
+    if (-not $lay) { $lay = @(1, 3, 0) }
     $panelMarHook.Visibility = $(if ($lay[0] -gt 0) { "Visible" } else { "Collapsed" })
     $panelMarTeaser.Visibility = $(if ($lay[1] -gt 0) { "Visible" } else { "Collapsed" })
     $panelMarT3.Visibility = $(if ($lay[1] -ge 3) { "Visible" } else { "Collapsed" })
@@ -2067,12 +2102,24 @@ function Fill-MarineFields($m) {
     Ensure-MarineChoices
     Clear-MarineFields
     if (-not $m) { Update-MarineLayout; return }
-    Set-ComboKey $cmbMarRig ([string]$m.rig)
+    $rk = [string]$m.rig
+    if ($rk -eq "rig_MarineBottomDropShot") { $rk = "rig_MarinePilker" }
+    Set-ComboKey $cmbMarRig $rk
     Set-MarineValue $cmbMarMain ([string]$m.main)
     Set-MarineValue $cmbMarHook ([string]$m.hook2)
     $ts = @($m.teasers)
     $ls = @($m.lures)
     Set-MarineValue $cmbMarT1 ([string]$ts[0]); Set-MarineValue $cmbMarT2 ([string]$ts[1]); Set-MarineValue $cmbMarT3 ([string]$ts[2])
+    $tl = @()
+    if ($m.PSObject.Properties["teaserLures"] -and $m.teaserLures) { $tl = @($m.teaserLures) }
+    $pairs = Get-TeaserLureCombos
+    $lay = $script:marineLayout[$rk]
+    if (-not $tl.Count -and $lay -and $lay[1] -gt 0 -and $lay[2] -eq 0 -and $ls.Count -ge 2) { $tl = @(, @([string]$ls[0], [string]$ls[1])); $ls = @() }
+    for ($i = 0; $i -lt 3; $i++) {
+        $pr = @()
+        if ($i -lt $tl.Count) { $pr = @($tl[$i]) }
+        Set-MarineValue $pairs[$i][0] ([string]$pr[0]); Set-MarineValue $pairs[$i][1] ([string]$pr[1])
+    }
     Set-MarineValue $cmbMarL1 ([string]$ls[0]); Set-MarineValue $cmbMarL2 ([string]$ls[1])
     if ($null -ne $m.fishDepth) { $txtMarFishDepth.Text = [string]$m.fishDepth }
     $chkMarBank.IsChecked = [bool]$m.bank
@@ -2091,8 +2138,9 @@ function Get-MarineKey($combo) {
 function Get-MarineFields {
     [ordered]@{
         rig = Get-ComboKey $cmbMarRig; main = Get-MarineKey $cmbMarMain; hook2 = Get-MarineKey $cmbMarHook
-        teasers = @(@($cmbMarT1, $cmbMarT2, $cmbMarT3) | ForEach-Object { [string](Get-MarineKey $_) })
-        lures = @(@($cmbMarL1, $cmbMarL2) | ForEach-Object { [string](Get-MarineKey $_) })
+        teasers = [string[]]@(@($cmbMarT1, $cmbMarT2, $cmbMarT3) | ForEach-Object { [string](Get-MarineKey $_) })
+        teaserLures = [object[]]@(Get-TeaserLureCombos | ForEach-Object { , [string[]]@(@($_) | ForEach-Object { [string](Get-MarineKey $_) }) })
+        lures = [string[]]@(@($cmbMarL1, $cmbMarL2) | ForEach-Object { [string](Get-MarineKey $_) })
         fishDepth = $txtMarFishDepth.Text.Trim(); bank = [bool]$chkMarBank.IsChecked
     }
 }
@@ -7495,7 +7543,8 @@ function Parse-MarineSetup([string[]]$lines, [string]$code) {
     }
     if (-not $rk) { return $null }
     $lists = Get-MatchLists $code
-    $m = [ordered]@{ rig = $rk; main = ""; hook2 = ""; teasers = @(); lures = @(); fishDepth = ""; bank = $false }
+    if ($rk -eq "rig_MarineBottomDropShot") { $rk = "rig_MarinePilker" }
+    $m = [ordered]@{ rig = $rk; main = ""; hook2 = ""; teasers = @(); teaserLures = @(); lures = @(); fishDepth = ""; bank = $false }
     $isItem = { param($t) $t -match "\s[O0o©@®]\s*$" }
     for ($i = $ri + 1; $i -lt $lines.Count; $i++) {
         $l = $lines[$i].Trim()
@@ -7519,7 +7568,13 @@ function Parse-MarineSetup([string[]]$lines, [string]$code) {
         else { $m.teasers += $val }
     }
     $m.teasers = @($m.teasers | Select-Object -First 3)
-    $m.lures = @($m.lures | Select-Object -First 2)
+    $lay = $script:marineLayout[$rk]
+    if ($lay -and $lay[1] -gt 0 -and $lay[2] -eq 0) {
+        $all = @($m.lures)
+        $m.teaserLures = @()
+        for ($i = 0; $i + 1 -lt $all.Count -and $i / 2 -lt $lay[1]; $i += 2) { $m.teaserLures += , @([string]$all[$i], [string]$all[$i + 1]) }
+        $m.lures = @()
+    } else { $m.lures = @($m.lures | Select-Object -First 2) }
     $o = [pscustomobject]@{ Kind = "setup"; Fish = ""; Weight = $null; Baits = @(@($m.main) | Where-Object { $_ }); Dip = ""; Pva = ""; Rig = (Get-MarineRigName $rk); Lake = ""; Items = @() }
     $o | Add-Member -NotePropertyName Tech -NotePropertyValue "marine" -Force
     $o | Add-Member -NotePropertyName Marine -NotePropertyValue ([pscustomobject]$m) -Force
@@ -8467,6 +8522,8 @@ $btnSpotSave.Add_Click({
     }
     $isMarSpot = (Get-ComboKey $cmbSpotTech) -eq "marine"
     $baitForCheck = $(if ($isMarSpot) { Get-MarineKey $cmbMarMain } else { Get-ComboKey $cmbSpotBait })
+    $ml = @(Get-MarineLureMissing)
+    if ($ml.Count) { Show-MissingFields $ml; return }
     if (-not (Test-SpotFields $txtSpotName.Text.Trim() $x $y (Get-ComboKey $cmbSpotTech) (Get-ComboKey $cmbSpotFish) $baitForCheck $txtSpotDist.Text.Trim() $txtSpotDepth.Text.Trim() (Get-ComboKey $cmbSpotTemp) $txtSpotNotes.Text.Trim())) { return }
     $n = From-Game $lake $x $y
     if ($script:pending) {
