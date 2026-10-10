@@ -22,13 +22,21 @@ if (-not $InstallDir) {
     New-Item -ItemType Directory -Path $tmp -Force | Out-Null
     Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $tmp "Uninstall.ps1")
     Copy-Item -LiteralPath (Join-Path $InstallDir "lang.json") -Destination (Join-Path $tmp "lang.json") -ErrorAction SilentlyContinue
-    $argList = @("-NoProfile", "-STA", "-ExecutionPolicy", "Bypass", "-File", ('"' + (Join-Path $tmp "Uninstall.ps1") + '"'), "-InstallDir", ('"' + $InstallDir + '"'))
+    $uexe = Join-Path $InstallDir "Uninstall.exe"
+    $argList = @("-InstallDir", ('"' + $InstallDir + '"'))
     if ($Silent) { $argList += "-Silent" }
     if ($KeepData) { $argList += "-KeepData" }
-    if ($Silent) {
-        Start-Process -FilePath "powershell.exe" -ArgumentList $argList -WindowStyle Hidden -Wait
+    if (Test-Path -LiteralPath $uexe) {
+        Copy-Item -LiteralPath $uexe -Destination (Join-Path $tmp "Uninstall.exe")
+        $file = Join-Path $tmp "Uninstall.exe"
     } else {
-        Start-Process -FilePath "powershell.exe" -ArgumentList $argList -WindowStyle Hidden
+        $argList = @("-NoProfile", "-STA", "-ExecutionPolicy", "Bypass", "-File", ('"' + (Join-Path $tmp "Uninstall.ps1") + '"')) + $argList
+        $file = "powershell.exe"
+    }
+    if ($Silent) {
+        Start-Process -FilePath $file -ArgumentList $argList -WindowStyle Hidden -Wait
+    } else {
+        Start-Process -FilePath $file -ArgumentList $argList
     }
     exit 0
 }
@@ -58,6 +66,7 @@ function Show-Message([string]$text, [string]$icon) {
 }
 
 function Test-AppRunning {
+    if (@(Get-Process -Name "RF4 Companion" -ErrorAction SilentlyContinue).Count) { return $true }
     $procs = @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "RF4Companion\.ps1" })
     return ($procs.Count -gt 0)
 }

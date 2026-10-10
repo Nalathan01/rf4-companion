@@ -18,7 +18,11 @@ foreach ($d in @("data", "Libs")) {
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $d" }
 }
 Copy-Item -LiteralPath (Join-Path $root "installer\Setup.ps1") -Destination (Join-Path $top "installer\Setup.ps1")
-Copy-Item -LiteralPath (Join-Path $root "installer\Setup.cmd") -Destination (Join-Path $top "Setup.cmd")
+$bin = Join-Path $stage "_bin"
+& (Join-Path $root "tools\Build-Native.ps1") -OutDir $bin | Out-Null
+foreach ($f in @("RF4 Companion.exe", "RF4 Companion.exe.config", "Uninstall.exe", "Uninstall.exe.config", "RF4Comp.dll")) { Copy-Item -LiteralPath (Join-Path $bin $f) -Destination (Join-Path $app $f) }
+foreach ($f in @("Setup.exe", "Setup.exe.config")) { Copy-Item -LiteralPath (Join-Path $bin $f) -Destination (Join-Path $top $f) }
+Remove-Item -LiteralPath $bin -Recurse -Force
 
 New-Item -ItemType Directory -Path $dist -Force | Out-Null
 $zip = Join-Path $dist ("RF4Companion-Setup-" + $version + ".zip")
