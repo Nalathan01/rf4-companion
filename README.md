@@ -37,11 +37,11 @@ RF4 Companion is a free Windows tool that runs next to the game. It combines the
 
 ## Installation
 
-1. Download the zip from [itch.io](https://nalathan.itch.io/rf4-companion) and unzip it.
-2. Run `RF4Companion-Setup-<version>.exe` and follow the steps.
+1. Download `RF4Companion-Setup-<version>.exe` from [itch.io](https://nalathan.itch.io/rf4-companion).
+2. Run it and follow the steps.
 3. Uninstall any time via the Windows settings.
 
-To run it from this repository instead: `powershell -STA -ExecutionPolicy Bypass -File RF4Companion.ps1`. `Build-Release.ps1` builds the installer zip into `dist\`.
+To run it from this repository instead: `powershell -STA -ExecutionPolicy Bypass -File RF4Companion.ps1`. `Build-Release.ps1` builds the installer into `dist\` (needs Inno Setup 6).
 
 ## Privacy
 
