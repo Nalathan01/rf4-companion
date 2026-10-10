@@ -38,7 +38,7 @@ RF4 Companion is a free Windows tool that runs next to the game. It combines the
 ## Installation
 
 1. Download the zip from [itch.io](https://nalathan.itch.io/rf4-companion) and unzip it.
-2. Run `Setup.cmd` and follow the steps.
+2. Run `Setup.exe` and follow the steps.
 3. Uninstall any time via the Windows settings.
 
 To run it from this repository instead: `powershell -STA -ExecutionPolicy Bypass -File RF4Companion.ps1`. `Build-Release.ps1` builds the installer zip into `dist\`.
@@ -64,4 +64,4 @@ RF4 Companion is an unofficial fan tool. It is not affiliated with, endorsed by 
 
 RF4 Companion ist ein kostenloses Windows-Tool, das neben Russian Fishing 4 läuft. Es verbindet die offiziellen Wochenrekorde, Community-Spots und deine eigenen Fänge und sagt dir in Klartext, wo und womit es sich gerade lohnt: Zielfisch mit Spots und Ködern, Vorlieben nach Aroma, Wochenrekorde aller Regionen, Karte mit Spots, Wurfrichtung und Spotbildern und ein Fangbuch, das deine F12-Screenshots automatisch ausliest.
 
-Download und Installation über [itch.io](https://nalathan.itch.io/rf4-companion): Zip entpacken, `Setup.cmd` starten. Alle Daten bleiben auf deinem PC. Inoffizielles Fan-Tool ohne Verbindung zu Fishsoft.
+Download und Installation über [itch.io](https://nalathan.itch.io/rf4-companion): Zip entpacken, `Setup.exe` starten. Alle Daten bleiben auf deinem PC. Inoffizielles Fan-Tool ohne Verbindung zu Fishsoft.
