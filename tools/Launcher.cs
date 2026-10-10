@@ -13,13 +13,7 @@ using System.Windows.Forms;
 [assembly: AssemblyCopyright("Nalathan")]
 
 static class Launcher {
-#if SCRIPT_SETUP
-    const string Script = @"installer\Setup.ps1";
-#elif SCRIPT_UNINSTALL
-    const string Script = "Uninstall.ps1";
-#else
     const string Script = "RF4Companion.ps1";
-#endif
 
     [STAThread]
     static int Main(string[] args) {

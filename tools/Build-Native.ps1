@@ -42,7 +42,7 @@ Remove-Item -Recurse -Force $srcDir
 
 $sma = (Get-ChildItem (Join-Path $env:WINDIR "Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation") -Recurse -Filter System.Management.Automation.dll | Select-Object -First 1).FullName
 $cfg = '<?xml version="1.0" encoding="utf-8"?><configuration><startup><supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.8"/></startup><runtime><loadFromRemoteSources enabled="true"/></runtime></configuration>'
-foreach ($t in @(@{ Name = "RF4 Companion.exe"; Def = "APP" }, @{ Name = "Setup.exe"; Def = "SETUP" }, @{ Name = "Uninstall.exe"; Def = "UNINSTALL" })) {
+foreach ($t in @(@{ Name = "RF4 Companion.exe"; Def = "APP" })) {
     $exe = Join-Path $OutDir $t.Name
     & $csc /nologo /target:winexe /optimize+ /platform:anycpu "/win32icon:$(Join-Path $root 'app.ico')" "/define:SCRIPT_$($t.Def)" /out:$exe "/reference:$sma" /reference:System.Windows.Forms.dll (Join-Path $PSScriptRoot "Launcher.cs")
     if ($LASTEXITCODE -ne 0) { throw "$($t.Name) build failed" }
