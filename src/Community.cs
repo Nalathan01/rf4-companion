@@ -295,18 +295,18 @@ internal static class Community
         AppEnv.WriteJsonFile(AppEnv.DataPath("community.json"), AppEnv.Obj("v", 2, "synced", sy, "source", "https://rf4intel.com", "reports", raws));
     }
 
-    private static readonly Regex SetupWords = new Regex("(?i)наживк|приманк|прикорм|насадк|дип|бойл|pop ?up|кукуруз|червь|червя|опарыш|пеллетс|пелетс|воблер|блесн|джиг|твистер|виброхвост|силикон|бутерброд|тесто|мотыл|креветк|кальмар|филе|живец|монтаж|оснастк|пилкер|балансир");
 
     public static bool HasSetup(Report r)
     {
-        foreach (object b in AppEnv.GetList(r.Raw, "bait")) if (b != null && b.ToString().Trim().Length > 0) return true;
-        foreach (string k in new string[] { "baitDetail", "lure", "groundbait", "dip", "pva", "dryMix" }) if (PostText.HasKnownItem(r.S(k))) return true;
+        foreach (string k in new string[] { "baitDetail", "lure" }) if (PostText.HasKnownItem(r.S(k))) return true;
         string pk = Scans.PostKey(r.Url);
-        if (pk.Length == 0) return Records.Match(r) != null;
-        Dictionary<string, string> info = PostText.Parse(Scans.Text(pk));
-        foreach (string k in new string[] { "baitDetail", "groundbait", "dip", "pva" }) if (info.ContainsKey(k)) return true;
-        Dictionary<string, object> oc = ImageOcr.Result(pk);
-        if (oc != null && AppEnv.GetList(oc, "baits").Count > 0) return true;
+        if (pk.Length > 0)
+        {
+            string pb;
+            if (PostText.Parse(Scans.Text(pk)).TryGetValue("baitDetail", out pb)) foreach (string k in pb.Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries)) if (GameData.IsBait(k.Replace(" (crushed)", ""))) return true;
+            Dictionary<string, object> oc = ImageOcr.Result(pk);
+            if (oc != null) foreach (object o in AppEnv.GetList(oc, "baits")) if (o != null && !GameData.DipKeys.Contains(o.ToString())) return true;
+        }
         return Records.Match(r) != null;
     }
 

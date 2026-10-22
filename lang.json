@@ -343,8 +343,7 @@
   "lure": "Kunstköder",
   "seaSinker": "Blei",
   "prefBaitSearch": "Köder suchen",
-  "prefBaitFishTitle": "Fische auf „{0}“: {1}",
-  "baitKind": "Köderart"
+  "prefBaitFishTitle": "Fische auf „{0}“: {1}"
  },
  "en": {
   "langName": "English",
@@ -690,8 +689,7 @@
   "lure": "Lure",
   "seaSinker": "Sinker",
   "prefBaitSearch": "Search bait",
-  "prefBaitFishTitle": "Fish on “{0}”: {1}",
-  "baitKind": "Bait type"
+  "prefBaitFishTitle": "Fish on “{0}”: {1}"
  },
  "ru": {
   "langName": "Русский",
@@ -1034,8 +1032,7 @@
   "lure": "Приманка",
   "seaSinker": "Груз",
   "prefBaitSearch": "Поиск наживки",
-  "prefBaitFishTitle": "Рыба на «{0}»: {1}",
-  "baitKind": "Тип наживки"
+  "prefBaitFishTitle": "Рыба на «{0}»: {1}"
  },
  "fr": {
   "langName": "Français",
@@ -1378,8 +1375,7 @@
   "lure": "Leurre",
   "seaSinker": "Plomb",
   "prefBaitSearch": "Chercher un appât",
-  "prefBaitFishTitle": "Poissons sur « {0} » : {1}",
-  "baitKind": "Type d'appât"
+  "prefBaitFishTitle": "Poissons sur « {0} » : {1}"
  },
  "es": {
   "langName": "Español",
@@ -1722,8 +1718,7 @@
   "lure": "Señuelo",
   "seaSinker": "Plomo",
   "prefBaitSearch": "Buscar cebo",
-  "prefBaitFishTitle": "Peces con «{0}»: {1}",
-  "baitKind": "Tipo de cebo"
+  "prefBaitFishTitle": "Peces con «{0}»: {1}"
  },
  "it": {
   "langName": "Italiano",
@@ -2066,8 +2061,7 @@
   "lure": "Esca artificiale",
   "seaSinker": "Piombo",
   "prefBaitSearch": "Cerca esca",
-  "prefBaitFishTitle": "Pesci su «{0}»: {1}",
-  "baitKind": "Tipo di esca"
+  "prefBaitFishTitle": "Pesci su «{0}»: {1}"
  },
  "pl": {
   "langName": "Polski",
@@ -2410,8 +2404,7 @@
   "lure": "Przynęta sztuczna",
   "seaSinker": "Ciężarek",
   "prefBaitSearch": "Szukaj przynęty",
-  "prefBaitFishTitle": "Ryby na „{0}”: {1}",
-  "baitKind": "Rodzaj przynęty"
+  "prefBaitFishTitle": "Ryby na „{0}”: {1}"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2754,8 +2747,7 @@
   "lure": "Isca artificial",
   "seaSinker": "Chumbada",
   "prefBaitSearch": "Buscar isca",
-  "prefBaitFishTitle": "Peixes com “{0}”: {1}",
-  "baitKind": "Tipo de isca"
+  "prefBaitFishTitle": "Peixes com “{0}”: {1}"
  },
  "nl": {
   "langName": "Nederlands",
@@ -3098,8 +3090,7 @@
   "lure": "Kunstaas",
   "seaSinker": "Lood",
   "prefBaitSearch": "Aas zoeken",
-  "prefBaitFishTitle": "Vissen op “{0}”: {1}",
-  "baitKind": "Soort aas"
+  "prefBaitFishTitle": "Vissen op “{0}”: {1}"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3442,8 +3433,7 @@
   "lure": "Suni yem",
   "seaSinker": "Kurşun",
   "prefBaitSearch": "Yem ara",
-  "prefBaitFishTitle": "“{0}” ile balıklar: {1}",
-  "baitKind": "Yem türü"
+  "prefBaitFishTitle": "“{0}” ile balıklar: {1}"
  },
  "ro": {
   "langName": "Română",
@@ -3786,8 +3776,7 @@
   "lure": "Năluca",
   "seaSinker": "Plumb",
   "prefBaitSearch": "Caută momeală",
-  "prefBaitFishTitle": "Pești pe „{0}”: {1}",
-  "baitKind": "Tip de momeală"
+  "prefBaitFishTitle": "Pești pe „{0}”: {1}"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -4130,8 +4119,7 @@
   "lure": "Umpan tiruan",
   "seaSinker": "Pemberat",
   "prefBaitSearch": "Cari umpan",
-  "prefBaitFishTitle": "Ikan dengan “{0}”: {1}",
-  "baitKind": "Jenis umpan"
+  "prefBaitFishTitle": "Ikan dengan “{0}”: {1}"
  },
  "ja": {
   "langName": "日本語",
@@ -4474,8 +4462,7 @@
   "lure": "ルアー",
   "seaSinker": "オモリ",
   "prefBaitSearch": "エサを検索",
-  "prefBaitFishTitle": "「{0}」で釣れた魚: {1}",
-  "baitKind": "エサの種類"
+  "prefBaitFishTitle": "「{0}」で釣れた魚: {1}"
  },
  "ko": {
   "langName": "한국어",
@@ -4818,8 +4805,7 @@
   "lure": "루어",
   "seaSinker": "봉돌",
   "prefBaitSearch": "미끼 검색",
-  "prefBaitFishTitle": "“{0}” 물고기: {1}",
-  "baitKind": "미끼 종류"
+  "prefBaitFishTitle": "“{0}” 물고기: {1}"
  },
  "zh": {
   "langName": "简体中文",
@@ -5162,8 +5148,7 @@
   "lure": "拟饵",
   "seaSinker": "铅坠",
   "prefBaitSearch": "搜索鱼饵",
-  "prefBaitFishTitle": "“{0}” 钓到的鱼: {1}",
-  "baitKind": "鱼饵类型"
+  "prefBaitFishTitle": "“{0}” 钓到的鱼: {1}"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5506,7 +5491,6 @@
   "lure": "擬餌",
   "seaSinker": "鉛墜",
   "prefBaitSearch": "搜尋魚餌",
-  "prefBaitFishTitle": "“{0}” 釣到的魚: {1}",
-  "baitKind": "魚餌類型"
+  "prefBaitFishTitle": "“{0}” 釣到的魚: {1}"
  }
 }

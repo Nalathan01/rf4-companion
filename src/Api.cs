@@ -168,7 +168,6 @@ internal sealed class Api
             if (rh != null) foreach (string b in rh.Bait.Split(';')) if (b.Trim().Length > 0 && !keys.Contains(b.Trim())) keys.Add(b.Trim());
         }
         bool detailed = keys.Count > 0;
-        if (keys.Count == 0) foreach (object b in AppEnv.GetList(r.Raw, "bait")) if (b != null && b.ToString().Length > 0 && !keys.Contains(b.ToString())) keys.Add(b.ToString());
         string[] res = keys.ToArray();
         if (detailed || pk.Length == 0 || ImageOcr.Result(pk) != null) lock (baitMemo) baitMemo[r.Id] = res;
         return res;
@@ -297,12 +296,6 @@ internal sealed class Api
                     detail["baitDetail"] = string.Join(" + ", bl.ToArray());
                     if (weight <= 0) weight = rec.Grams / 1000.0;
                 }
-            }
-            if (!detail.ContainsKey("baitDetail"))
-            {
-                List<string> cats = new List<string>();
-                foreach (Report r in e.Reports) foreach (object b in AppEnv.GetList(r.Raw, "bait")) { string bn = b == null ? "" : GameData.Translate(b.ToString(), lang); if (bn.Length > 0 && !cats.Contains(bn)) cats.Add(bn); }
-                if (cats.Count > 0) detail["baitKind"] = string.Join(", ", cats.ToArray());
             }
             bool mixed = PostText.Mixed(postText);
             List<string> fish = new List<string>();
