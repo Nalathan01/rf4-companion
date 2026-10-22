@@ -308,7 +308,7 @@ async function loadDetail() {
   $("detail").innerHTML = `<div class="d-head"><h3>${esc(d.lakeName)} · ${esc(d.name)}</h3><span class="d-sum">${esc(sum)}${dirs ? " · " + esc(dirs) : ""}</span></div>` +
     d.events.map((e, i) => `
     <div class="ev">
-      <div class="ev-top"><div class="ev-fish">${esc(e.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}${e.weight ? `<span class="w">${esc(e.weight)}</span>` : ""}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
+      <div class="ev-top"><div class="ev-fish">${esc(e.fish.join(", ") || (e.mixed ? T("mixedFish", "Verschiedene Fische") : T("unknownFish", "Fisch unbekannt")))}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
       ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
       <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
@@ -327,7 +327,7 @@ async function loadDetail() {
     }
   });
 }
-const DET = { baitDetail: "baitExact", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed" };
+const DET = { baitKind: "baitKind", baitDetail: "baitExact", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed" };
 $("lightbox").onclick = () => $("lightbox").classList.remove("show");
 (function mapInput() {
   const cv = $("map"); let drag = null;

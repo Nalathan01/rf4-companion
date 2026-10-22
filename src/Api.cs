@@ -298,6 +298,13 @@ internal sealed class Api
                     if (weight <= 0) weight = rec.Grams / 1000.0;
                 }
             }
+            if (!detail.ContainsKey("baitDetail"))
+            {
+                List<string> cats = new List<string>();
+                foreach (Report r in e.Reports) foreach (object b in AppEnv.GetList(r.Raw, "bait")) { string bn = b == null ? "" : GameData.Translate(b.ToString(), lang); if (bn.Length > 0 && !cats.Contains(bn)) cats.Add(bn); }
+                if (cats.Count > 0) detail["baitKind"] = string.Join(", ", cats.ToArray());
+            }
+            bool mixed = PostText.Mixed(postText);
             List<string> fish = new List<string>();
             foreach (Report r in e.Reports) foreach (string f in r.Fish) { string n = GameData.Translate(f, lang); if (!fish.Contains(n)) fish.Add(n); }
             string dir = deg >= 0 ? Scans.Dir16(deg, lang) : "";
@@ -307,7 +314,7 @@ internal sealed class Api
             Dictionary<string, object> eo = AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage,
+                "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage, "mixed", mixed,
                 "record", rec == null ? null : AppEnv.Obj("table", GameData.Ui(lang, "table_" + rec.Table, rec.Table), "region", rec.Region, "date", rec.Date));
             events.Add(eo);
             evObjs.Add(eo);
