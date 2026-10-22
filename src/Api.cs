@@ -29,6 +29,7 @@ internal sealed class Api
                 Community.Load();
                 Scans.Load();
                 ready = true;
+                try { Active(new NameValueCollection { { "hours", "72" } }); } catch (Exception ex) { AppEnv.Log("Start", "Vorrechnen: " + ex.Message); }
                 timer = new Timer(delegate { Tick(); }, null, 2000, 600000);
             }
             catch (Exception ex) { AppEnv.Log("Start", ex.ToString()); }
@@ -46,6 +47,7 @@ internal sealed class Api
         if (stopping) return;
         DateTime sy = Community.Synced;
         if (!Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
+        if (ImageOcr.Available("ru")) Community.QueueRecentOcr(72);
     }
 
     private void WaitReady()
@@ -116,6 +118,45 @@ internal sealed class Api
         catch (Exception ex) { AppEnv.Log("Bilder", ex.Message); return false; }
     }
 
+    private static readonly Dictionary<string, string[]> baitMemo = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+    private static string[] ReportBaits(Report r)
+    {
+        lock (baitMemo)
+        {
+            string[] m;
+            if (baitMemo.TryGetValue(r.Id, out m)) return m;
+        }
+        List<string> keys = new List<string>();
+        foreach (string field in new string[] { "baitDetail", "lure" })
+        {
+            string t = CleanDetail(r.S(field));
+            if (t.Length == 0) continue;
+            foreach (string part in System.Text.RegularExpressions.Regex.Split(t, @"\s\+\s|\s*,\s*"))
+            {
+                string k = PostText.ResolveKey(part);
+                if (k != null && !keys.Contains(k)) keys.Add(k);
+            }
+            if (keys.Count > 0) break;
+        }
+        string pk = Scans.PostKey(r.Url);
+        if (keys.Count == 0 && pk.Length > 0)
+        {
+            string pv;
+            if (PostText.Parse(Scans.Text(pk)).TryGetValue("baitDetail", out pv)) foreach (string k in pv.Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries)) if (!keys.Contains(k)) keys.Add(k);
+        }
+        if (keys.Count == 0 && pk.Length > 0)
+        {
+            Dictionary<string, object> oc = ImageOcr.Result(pk);
+            if (oc != null) foreach (object o in AppEnv.GetList(oc, "baits")) if (!GameData.DipKeys.Contains(o.ToString()) && !keys.Contains(o.ToString())) keys.Add(o.ToString());
+        }
+        bool detailed = keys.Count > 0;
+        if (keys.Count == 0) foreach (object b in AppEnv.GetList(r.Raw, "bait")) if (b != null && b.ToString().Length > 0 && !keys.Contains(b.ToString())) keys.Add(b.ToString());
+        string[] res = keys.ToArray();
+        if (detailed || pk.Length == 0 || ImageOcr.Result(pk) != null) lock (baitMemo) baitMemo[r.Id] = res;
+        return res;
+    }
+
     private static readonly string[] DetailKeys = { "baitDetail", "lure", "rig", "dip", "groundbait", "dryMix", "pva", "reelSpeed" };
 
     private static string CleanDetail(string t)
@@ -151,7 +192,7 @@ internal sealed class Api
     {
         string lang = Lang;
         Dictionary<string, object> strings = GameData.Strings(lang);
-        Spot s = Community.Spots().FirstOrDefault(x => x.Key == key);
+        Spot s = Community.Spots(false).FirstOrDefault(x => x.Key == key) ?? Community.Spots(true).FirstOrDefault(x => x.Key == key);
         if (s == null) throw new AppError("spotGone", key);
         Lake lake;
         GameData.LakeById.TryGetValue(s.Lake, out lake);
@@ -260,10 +301,11 @@ internal sealed class Api
         if (hours <= 0) hours = 24;
         string lakeFilter = q["lake"] ?? "";
         string fishFilter = q["fish"] ?? "";
+        bool all = q["all"] == "1";
         DateTime now = DateTime.UtcNow;
         DateTime since = now.AddHours(-hours);
         List<object> rows = new List<object>();
-        foreach (Spot s in Community.Spots())
+        foreach (Spot s in Community.Spots(all))
         {
             if (s.Last < since) continue;
             if (lakeFilter.Length > 0 && !string.Equals(s.Lake, lakeFilter, StringComparison.OrdinalIgnoreCase)) continue;
@@ -283,8 +325,13 @@ internal sealed class Api
                 foreach (Report r in e.Reports)
                 {
                     foreach (string f in r.Fish) ef.Add(f);
-                    foreach (object b in AppEnv.GetList(r.Raw, "bait")) if (b != null && b.ToString().Length > 0) eb.Add(b.ToString());
+                    foreach (string b in ReportBaits(r)) eb.Add(b);
                     string c = r.S("clip");
+                    if (c.Length == 0)
+                    {
+                        string pk = Scans.PostKey(r.Url), pc;
+                        if (pk.Length > 0 && PostText.Parse(Scans.Text(pk)).TryGetValue("clip", out pc)) c = pc;
+                    }
                     if (c.Length > 0) { int n; clips.TryGetValue(c, out n); clips[c] = n + 1; }
                     if (sources.Add(r.SourceKey)) sourceLabels.Add(r.SourceLabel);
                 }

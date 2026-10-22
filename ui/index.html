@@ -71,6 +71,8 @@ main { flex: 1; min-height: 0; display: flex; }
 .title-row h2 { font-family: var(--font-display); font-size: 26px; margin: 0; font-weight: 700; letter-spacing: -0.3px; }
 .sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.chk { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; cursor: pointer; padding: 0 4px; }
+.chk input { accent-color: var(--accent); width: 15px; height: 15px; }
 .seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
 .seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 7px; cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; }
 .seg button.on { background: var(--surface-3); color: var(--ink); }
@@ -161,6 +163,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
             <button data-h="6">6 h</button><button data-h="24" class="on">24 h</button><button data-h="72">3 d</button><button data-h="168">7 d</button>
           </div>
           <select id="lakeSel"></select>
+          <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
         </div>
         <div class="cards" id="cards"></div>
       </div>
@@ -219,13 +222,13 @@ async function ping() {
     if (p.syncing) $("status").textContent = T("syncing", "Wird abgeglichen") + (p.syncState ? " · " + p.syncState : "");
     if (DATAV !== -1 && p.data !== DATAV) loadActive();
     DATAV = p.data;
-    if (OCRV !== -1 && p.ocr !== OCRV) { DETAIL_KEY = null; loadDetail(); }
+    if (OCRV !== -1 && p.ocr !== OCRV) { DETAIL_KEY = null; loadActive(); }
     OCRV = p.ocr;
     if (p.spot) openSpotKey(p.spot);
   } catch (e) {}
 }
 async function loadActive() {
-  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE));
+  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : ""));
   ACTIVE = r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
   if (!SEL || !ACTIVE.find(s => s.key === SEL)) SEL = ACTIVE.length ? ACTIVE[0].key : null;
@@ -350,6 +353,7 @@ document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => {
 });
 $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS = +b.dataset.h; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadActive(); });
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
+$("allChk").onchange = () => loadActive();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 $("lang").onchange = async () => { INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); loadActive(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };

@@ -241,6 +241,16 @@ internal static class PostText
         return o;
     }
 
+    public static string ResolveKey(string x)
+    {
+        x = (x ?? "").Trim();
+        if (x.EndsWith(" (crushed)")) x = x.Substring(0, x.Length-10);
+        if (x.Length == 0) return null;
+        if (GameData.Names.ContainsKey(x) || GameData.HasItem(x)) return x;
+        string loc;
+        return Match(x, Items("en"), 0.88, out loc);
+    }
+
     public static string CleanItems(string text, string lang)
     {
         if (string.IsNullOrEmpty(text)) return "";
