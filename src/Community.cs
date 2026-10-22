@@ -31,7 +31,6 @@ internal sealed class SpotEvent
     public DateTime First, Last;
     public string FishKey;
     public List<Report> Reports = new List<Report>();
-    public bool Confirm;
 }
 
 internal sealed class Spot
@@ -42,7 +41,6 @@ internal sealed class Spot
     public string Mark;
     public List<Report> Reports = new List<Report>();
     public List<SpotEvent> Events = new List<SpotEvent>();
-    public HashSet<Report> Confirms = new HashSet<Report>();
     public DateTime Last;
 }
 
@@ -56,6 +54,7 @@ internal static class Community
     private static List<Spot> spots;
     private static List<Spot> spotsAll;
     private static int ocrSeen = -1;
+    private static int recSeen = -1;
     private static readonly Regex Tg = new Regex(@"^https?://t\.me/([^/?]+)/(\d+)", RegexOptions.IgnoreCase);
     private static readonly Regex Vk = new Regex(@"vk\.com/wall(-?\d+)_", RegexOptions.IgnoreCase);
     private static readonly Regex Dc = new Regex(@"discord\.com/channels/(\d+)/(\d+)", RegexOptions.IgnoreCase);
@@ -303,10 +302,11 @@ internal static class Community
         foreach (object b in AppEnv.GetList(r.Raw, "bait")) if (b != null && b.ToString().Trim().Length > 0) return true;
         foreach (string k in new string[] { "baitDetail", "lure", "rig", "groundbait", "dip", "pva", "dryMix" }) if (r.S(k).Trim().Length > 0) return true;
         string pk = Scans.PostKey(r.Url);
-        if (pk.Length == 0) return false;
+        if (pk.Length == 0) return Records.Match(r) != null;
         if (SetupWords.IsMatch(Scans.Text(pk))) return true;
         Dictionary<string, object> oc = ImageOcr.Result(pk);
-        return oc != null && AppEnv.GetList(oc, "baits").Count > 0;
+        if (oc != null && AppEnv.GetList(oc, "baits").Count > 0) return true;
+        return Records.Match(r) != null;
     }
 
     public static List<Spot> Spots(bool all)
@@ -314,6 +314,7 @@ internal static class Community
         lock (gate)
         {
             if (ocrSeen != ImageOcr.Version) { ocrSeen = ImageOcr.Version; spots = null; spotsAll = null; }
+            if (recSeen != Records.Version) { recSeen = Records.Version; spots = null; spotsAll = null; }
             if (scansSeen != Scans.Version)
             {
                 scansSeen = Scans.Version;
@@ -327,10 +328,7 @@ internal static class Community
             }
             if (spots == null)
             {
-                List<Report> setup = new List<Report>(), rest = new List<Report>();
-                foreach (Report r in reports) { if (HasSetup(r)) setup.Add(r); else rest.Add(r); }
-                spots = BuildSpots(setup);
-                AttachConfirms(spots, rest);
+                spots = BuildSpots(reports.FindAll(HasSetup));
             }
             return spots;
         }
@@ -405,45 +403,6 @@ internal static class Community
         return result;
     }
 
-    public const double ConfirmHours = 48;
-
-    private static void AttachConfirms(List<Spot> list, List<Report> rest)
-    {
-        Dictionary<string, List<Spot>> byLake = new Dictionary<string, List<Spot>>(StringComparer.OrdinalIgnoreCase);
-        foreach (Spot s in list)
-        {
-            List<Spot> l;
-            if (!byLake.TryGetValue(s.Lake, out l)) { l = new List<Spot>(); byLake[s.Lake] = l; }
-            l.Add(s);
-        }
-        HashSet<Spot> touched = new HashSet<Spot>();
-        foreach (Report r in rest)
-        {
-            if (r.X < 0 || r.Y < 0 || r.Posted == DateTime.MinValue) continue;
-            List<Spot> l;
-            if (!byLake.TryGetValue(r.Lake, out l)) continue;
-            SeaMark sm = SeaMarks.Nearest(r.Lake, r.X, r.Y);
-            foreach (Spot s in l)
-            {
-                bool here = sm != null ? s.Mark == sm.Key : (s.Mark == null && Math.Abs(s.X-r.X) <= 2 && Math.Abs(s.Y-r.Y) <= 2);
-                if (!here) continue;
-                bool fits = false;
-                foreach (Report sr in s.Reports)
-                {
-                    if (s.Confirms.Contains(sr)) continue;
-                    double h = r.Posted.Subtract(sr.Posted).TotalHours;
-                    if (h >= 0 && h <= ConfirmHours) { fits = true; break; }
-                }
-                if (!fits) continue;
-                s.Reports.Add(r);
-                s.Confirms.Add(r);
-                touched.Add(s);
-                break;
-            }
-        }
-        foreach (Spot s in touched) { s.Events.Clear(); BuildEvents(s); }
-    }
-
     private static void BuildEvents(Spot s)
     {
         s.Reports.Sort((a, b) => a.Posted.CompareTo(b.Posted));
@@ -464,12 +423,6 @@ internal static class Community
             hit.Reports.Add(r);
             hit.Last = r.Posted;
             open.RemoveAll(e => r.Posted.Subtract(e.Last).TotalHours > 6);
-        }
-        foreach (SpotEvent e in s.Events)
-        {
-            bool all = e.Reports.Count > 0;
-            foreach (Report r in e.Reports) if (!s.Confirms.Contains(r)) { all = false; break; }
-            e.Confirm = all;
         }
         s.Last = s.Reports.Count > 0 ? s.Reports[s.Reports.Count-1].Posted : DateTime.MinValue;
     }
