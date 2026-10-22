@@ -10,7 +10,9 @@ internal static class DiscordInfo
     private static readonly HashSet<string> pending = new HashSet<string>(StringComparer.Ordinal);
     private static readonly Dictionary<string, string[]> Known = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
-        { "486847731575554061", new string[] { "Russian Fishing 4 DE", "https://discord.gg/auvuHx9tHp" } }
+        { "486847731575554061", new string[] { "Russian Fishing 4 DE", "https://discord.gg/auvuHx9tHp" } },
+        { "406518430368399371", new string[] { "Russian Fishing 4 EN", "https://discord.com/servers/russian-fishing-4-en-406518430368399371" } },
+        { "611104383337365504", new string[] { "Russian Fishing 4 FR", "https://discord.com/servers/russian-fishing-4-fr-611104383337365504" } }
     };
 
     private static void Ensure()
