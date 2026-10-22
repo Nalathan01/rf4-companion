@@ -241,6 +241,44 @@ internal static class PostText
         return o;
     }
 
+    private static List<KeyValuePair<Regex, string>> fishRu;
+    private static readonly Dictionary<string, string[]> fishMemo = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+    public static string[] Fish(string txt)
+    {
+        if (string.IsNullOrEmpty(txt)) return new string[0];
+        lock (gate)
+        {
+            string[] c;
+            if (fishMemo.TryGetValue(txt, out c)) return c;
+            if (fishRu == null)
+            {
+                List<KeyValuePair<string, string>> names = new List<KeyValuePair<string, string>>();
+                foreach (string en in GameData.Trophies.Keys)
+                {
+                    string ru = GameData.Translate(en, "ru").Replace("ё", "е").Replace("Ё", "Е").Trim();
+                    if (ru.Length >= 3 && ru != en) names.Add(new KeyValuePair<string, string>(ru, en));
+                }
+                names.Sort((a, b) => b.Key.Length.CompareTo(a.Key.Length));
+                fishRu = new List<KeyValuePair<Regex, string>>();
+                foreach (KeyValuePair<string, string> kv in names) fishRu.Add(new KeyValuePair<Regex, string>(new Regex(@"(?<![\p{L}])" + Regex.Escape(kv.Key) + @"(?![\p{L}])", RegexOptions.IgnoreCase), kv.Value));
+            }
+            string t = txt.Replace("ё", "е").Replace("Ё", "Е");
+            t = Regex.Replace(t, "#[^\\s]+", " ");
+            List<string> found = new List<string>();
+            foreach (KeyValuePair<Regex, string> kv in fishRu)
+            {
+                Match m = kv.Key.Match(t);
+                if (!m.Success) continue;
+                if (!found.Contains(kv.Value)) found.Add(kv.Value);
+                t = kv.Key.Replace(t, " ");
+            }
+            string[] res = found.ToArray();
+            fishMemo[txt] = res;
+            return res;
+        }
+    }
+
     public static string ResolveKey(string x)
     {
         x = (x ?? "").Trim();

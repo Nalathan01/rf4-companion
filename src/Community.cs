@@ -118,7 +118,23 @@ internal static class Community
         SetSource(r);
         Lake lake;
         GameData.LakeById.TryGetValue(r.Lake, out lake);
-        foreach (object f in AppEnv.GetList(raw, "fish"))
+        SetFish(r, lake);
+        return r;
+    }
+
+    private static void SetFish(Report r, Lake lake)
+    {
+        r.Fish = new List<string>();
+        string pk = Scans.PostKey(r.Url);
+        if (pk.Length > 0)
+        {
+            foreach (string f in PostText.Fish(Scans.Text(pk)))
+            {
+                if (lake != null && lake.Fish.Count > 0 && !lake.Fish.Contains(f)) continue;
+                if (!r.Fish.Contains(f)) r.Fish.Add(f);
+            }
+        }
+        if (r.Fish.Count == 0) foreach (object f in AppEnv.GetList(r.Raw, "fish"))
         {
             if (f == null) continue;
             string s = f.ToString();
@@ -129,7 +145,16 @@ internal static class Community
         List<string> sorted = new List<string>(r.Fish);
         sorted.Sort(StringComparer.Ordinal);
         r.FishKey = string.Join("|", sorted.ToArray());
-        return r;
+    }
+
+    private static int scansSeen = -1;
+
+    public static void QueuePosts(double hours)
+    {
+        DateTime since = DateTime.UtcNow.AddHours(-hours);
+        List<string> keys = new List<string>();
+        lock (gate) foreach (Report r in reports) { if (r.Posted < since) continue; string pk = Scans.PostKey(r.Url); if (pk.Length > 0 && !Scans.Known(pk)) keys.Add(pk); }
+        foreach (string k in keys) Scans.Request(k);
     }
 
     private static void SetSource(Report r)
@@ -289,6 +314,12 @@ internal static class Community
         lock (gate)
         {
             if (ocrSeen != ImageOcr.Version) { ocrSeen = ImageOcr.Version; spots = null; spotsAll = null; }
+            if (scansSeen != Scans.Version)
+            {
+                scansSeen = Scans.Version;
+                spots = null; spotsAll = null;
+                foreach (Report r in reports) { Lake lk; GameData.LakeById.TryGetValue(r.Lake, out lk); SetFish(r, lk); }
+            }
             if (all)
             {
                 if (spotsAll == null) spotsAll = BuildSpots(reports);

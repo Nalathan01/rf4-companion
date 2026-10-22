@@ -41,7 +41,18 @@ internal static class ImageOcr
         {
             EnsureCache();
             object v;
-            return cache.TryGetValue(post, out v) ? v as Dictionary<string, object> : null;
+            Dictionary<string, object> r = cache.TryGetValue(post, out v) ? v as Dictionary<string, object> : null;
+            if (r != null && AppEnv.GetBool(r, "error"))
+            {
+                DateTime at;
+                if (!DateTime.TryParse(AppEnv.GetString(r, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out at) || DateTime.UtcNow.Subtract(at).TotalHours > 6)
+                {
+                    cache.Remove(post);
+                    queued.Remove(post);
+                    return null;
+                }
+            }
+            return r;
         }
     }
 
@@ -79,7 +90,7 @@ internal static class ImageOcr
             }
             Dictionary<string, object> res = AppEnv.Obj("v", 1);
             try { Scan(post, res); }
-            catch (Exception ex) { AppEnv.Log("OCR", post + ": " + ex.Message); res["error"] = true; }
+            catch (Exception ex) { AppEnv.Log("OCR", post + ": " + ex.Message); res["error"] = true; res["at"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture); }
             lock (gate)
             {
                 cache[post] = res;
@@ -95,9 +106,10 @@ internal static class ImageOcr
         if (!Available("ru")) { res["noLang"] = true; return; }
         string[] imgs = Scans.FetchImages(post);
         if (imgs == null) return;
-        for (int i = 0; i < imgs.Length && i < 8; i++)
+        for (int i = 0; i < imgs.Length && i < 10; i++)
         {
-            byte[] b = Scans.ImageBytes(imgs[i]);
+            byte[] b = Scans.ImageAt(post, i);
+            if (b == null) continue;
             string[] lines = Recognize(b, "ru", 3, 0.5);
             List<string> baits;
             if (!ParseSetup(lines, out baits)) continue;
