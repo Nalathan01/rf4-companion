@@ -118,7 +118,7 @@ internal sealed class Api
 
     private static readonly string[] DetailKeys = { "baitDetail", "lure", "rig", "dip", "groundbait", "dryMix", "pva", "reelSpeed" };
 
-    private static string CleanDetail(string t, string lang)
+    private static string CleanDetail(string t)
     {
         if (string.IsNullOrEmpty(t)) return "";
         int k = t.LastIndexOf("<==", StringComparison.Ordinal);
@@ -132,7 +132,7 @@ internal sealed class Api
         {
             string x = x0.Trim();
             if (x.Length == 0 || !seen.Add(x)) continue;
-            parts.Add(GameData.Translate(x, lang));
+            parts.Add(x);
         }
         return string.Join(" + ", parts.ToArray());
     }
@@ -175,7 +175,20 @@ internal sealed class Api
                 foreach (string dk in DetailKeys)
                 {
                     if (detail.ContainsKey(dk)) continue;
-                    string v = dk == "reelSpeed" ? r.S(dk) : CleanDetail(r.S(dk), lang);
+                    string v = dk == "reelSpeed" ? r.S(dk) : PostText.CleanItems(CleanDetail(r.S(dk)), lang);
+                    if (v.Length > 0) detail[dk] = v;
+                }
+            }
+            if (postText.Length > 0)
+            {
+                Dictionary<string, string> info = PostText.Parse(postText);
+                string pv;
+                if (clip.Length == 0 && info.TryGetValue("clip", out pv)) clip = pv;
+                if (depth.Length == 0 && info.TryGetValue("depth", out pv)) depth = pv;
+                foreach (string dk in new string[] { "baitDetail", "dip", "groundbait", "pva", "reelSpeed" })
+                {
+                    if (detail.ContainsKey(dk) || !info.TryGetValue(dk, out pv)) continue;
+                    string v = dk == "reelSpeed" ? pv : PostText.CleanItems(pv, lang);
                     if (v.Length > 0) detail[dk] = v;
                 }
             }
