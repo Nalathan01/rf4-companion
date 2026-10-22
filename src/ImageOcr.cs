@@ -1,0 +1,198 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using System.Threading;
+using Windows.Foundation;
+using Windows.Graphics.Imaging;
+using Windows.Media.Ocr;
+using Windows.Storage.Streams;
+
+internal static class ImageOcr
+{
+    private static readonly object gate = new object();
+    private static Dictionary<string, object> cache;
+    private static readonly Queue<string> queue = new Queue<string>();
+    private static readonly HashSet<string> queued = new HashSet<string>(StringComparer.Ordinal);
+    private static Thread worker;
+    private static MatchList candidates;
+    private static bool dirty;
+    public static int Version;
+    private static readonly Regex Header = new Regex(@"^(Монтаж|Angelmontage|Rig|Montaż|Комбинация наживок|Köder\s*Kombination|Bait\s*combination)\b", RegexOptions.IgnoreCase);
+    private static readonly Regex ItemEnd = new Regex(@"\s[OoО0©ф@®]\s*$");
+
+    public static bool Available(string lang)
+    {
+        try { return OcrEngine.IsLanguageSupported(new Windows.Globalization.Language(lang)); }
+        catch (Exception) { return false; }
+    }
+
+    private static void EnsureCache()
+    {
+        if (cache != null) return;
+        Dictionary<string, object> d = null;
+        try { d = AppEnv.ReadJsonFile(AppEnv.DataPath("ocr_cache.json")) as Dictionary<string, object>; } catch (Exception) { }
+        cache = d ?? new Dictionary<string, object>();
+    }
+
+    public static Dictionary<string, object> Result(string post)
+    {
+        lock (gate)
+        {
+            EnsureCache();
+            object v;
+            return cache.TryGetValue(post, out v) ? v as Dictionary<string, object> : null;
+        }
+    }
+
+    public static void Request(string post)
+    {
+        if (string.IsNullOrEmpty(post)) return;
+        lock (gate)
+        {
+            EnsureCache();
+            if (cache.ContainsKey(post) || !queued.Add(post)) return;
+            queue.Enqueue(post);
+            if (worker == null || !worker.IsAlive)
+            {
+                worker = new Thread(Work);
+                worker.IsBackground = true;
+                worker.Start();
+            }
+        }
+    }
+
+    private static void Work()
+    {
+        while (true)
+        {
+            string post;
+            lock (gate)
+            {
+                if (queue.Count == 0)
+                {
+                    if (dirty) { try { AppEnv.WriteJsonFile(AppEnv.DataPath("ocr_cache.json"), cache); } catch (Exception) { } dirty = false; }
+                    worker = null;
+                    return;
+                }
+                post = queue.Dequeue();
+            }
+            Dictionary<string, object> res = AppEnv.Obj("v", 1);
+            try { Scan(post, res); }
+            catch (Exception ex) { AppEnv.Log("OCR", post + ": " + ex.Message); res["error"] = true; }
+            lock (gate)
+            {
+                cache[post] = res;
+                dirty = true;
+                Version++;
+                if (queue.Count % 10 == 0) { try { AppEnv.WriteJsonFile(AppEnv.DataPath("ocr_cache.json"), cache); dirty = false; } catch (Exception) { } }
+            }
+        }
+    }
+
+    private static void Scan(string post, Dictionary<string, object> res)
+    {
+        if (!Available("ru")) { res["noLang"] = true; return; }
+        string[] imgs = Scans.FetchImages(post);
+        if (imgs == null) return;
+        for (int i = 0; i < imgs.Length && i < 8; i++)
+        {
+            byte[] b = Scans.ImageBytes(imgs[i]);
+            string[] lines = Recognize(b, "ru", 3, 0.5);
+            List<string> baits;
+            if (!ParseSetup(lines, out baits)) continue;
+            res["img"] = i;
+            res["baits"] = baits.ToArray();
+            return;
+        }
+    }
+
+    private static T W<T>(IAsyncOperation<T> op)
+    {
+        while (op.Status == AsyncStatus.Started) Thread.Sleep(3);
+        if (op.Status != AsyncStatus.Completed) throw new InvalidOperationException("OCR " + op.Status);
+        return op.GetResults();
+    }
+
+    public static string[] Recognize(byte[] data, string lang, uint factor, double cropLeft)
+    {
+        InMemoryRandomAccessStream ms = new InMemoryRandomAccessStream();
+        DataWriter w = new DataWriter(ms);
+        w.WriteBytes(data);
+        W(w.StoreAsync());
+        w.DetachStream();
+        ms.Seek(0);
+        BitmapDecoder dec = W(BitmapDecoder.CreateAsync(ms));
+        uint x0 = (uint)(dec.PixelWidth * cropLeft);
+        uint f = factor;
+        while (f > 1 && (dec.PixelWidth * f > OcrEngine.MaxImageDimension || dec.PixelHeight * f > OcrEngine.MaxImageDimension)) f--;
+        BitmapTransform t = new BitmapTransform();
+        t.ScaledWidth = dec.PixelWidth * f;
+        t.ScaledHeight = dec.PixelHeight * f;
+        t.InterpolationMode = BitmapInterpolationMode.Fant;
+        BitmapBounds bb = new BitmapBounds();
+        bb.X = x0 * f; bb.Y = 0; bb.Width = (dec.PixelWidth-x0) * f; bb.Height = dec.PixelHeight * f;
+        t.Bounds = bb;
+        SoftwareBitmap sb = W(dec.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, t, ExifOrientationMode.IgnoreExifOrientation, ColorManagementMode.DoNotColorManage));
+        OcrEngine eng = OcrEngine.TryCreateFromLanguage(new Windows.Globalization.Language(lang));
+        if (eng == null) return new string[0];
+        OcrResult r = W(eng.RecognizeAsync(sb));
+        List<string> outL = new List<string>();
+        foreach (OcrLine ln in r.Lines) outL.Add(ln.Text);
+        return outL.ToArray();
+    }
+
+    private static MatchList Candidates()
+    {
+        if (candidates != null) return candidates;
+        List<string> loc = new List<string>(), en = new List<string>();
+        HashSet<string> keys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string b in GameData.Baits) keys.Add(b);
+        foreach (string d in GameData.DipKeys) keys.Add(d);
+        foreach (string k in keys)
+        {
+            foreach (string lg in new string[] { "ru", "en" })
+            {
+                string n = GameData.Translate(k, lg);
+                if (n.Length == 0) continue;
+                loc.Add(n); en.Add(k);
+            }
+        }
+        MatchList m = new MatchList();
+        m.Loc = loc.ToArray(); m.En = en.ToArray(); m.LocNorm = new string[m.Loc.Length];
+        for (int i = 0; i < m.Loc.Length; i++) m.LocNorm[i] = Fuzzy.Norm(m.Loc[i]);
+        candidates = m;
+        return m;
+    }
+
+    public static bool ParseSetup(string[] lines, out List<string> baits)
+    {
+        baits = new List<string>();
+        int start = -1;
+        for (int i = 0; i < lines.Length; i++) if (Header.IsMatch(lines[i].Trim())) { start = i; break; }
+        if (start < 0) return false;
+        MatchList c = Candidates();
+        for (int i = start + 1; i < lines.Length && baits.Count < 4; i++)
+        {
+            string l = lines[i].Trim();
+            if (!ItemEnd.IsMatch(l)) continue;
+            string name = ItemEnd.Replace(l, "").Trim();
+            name = Regex.Replace(name, @"(?<=\d)[sS]|[sS](?=\d)", "5");
+            name = Regex.Replace(name, @"(?<=\d)[oOоО]", "0");
+            name = Regex.Replace(name, @"(?<=\d)[lI|]|[lI|](?=\d)", "1");
+            if (name.Length < 5) continue;
+            double sc;
+            int idx = Fuzzy.Best(name, c.LocNorm, out sc);
+            string bare = Regex.Replace(name, @"^[A-Za-z0-9'&.\s]+\s(?=[^\u0000-\u007F])", "").Trim();
+            if (bare != name && bare.Length >= 5)
+            {
+                double sc2;
+                int idx2 = Fuzzy.Best(bare, c.LocNorm, out sc2);
+                if (idx2 >= 0 && sc2 > sc) { idx = idx2; sc = sc2; }
+            }
+            if (idx < 0 || sc < 0.72) continue;
+            if (!baits.Contains(c.En[idx])) baits.Add(c.En[idx]);
+        }
+        return true;
+    }
+}
