@@ -341,7 +341,9 @@
   "updateHide": "Ausblenden",
   "teaserLures": "Lockmittel an Beifänger {0} (keine oder zwei)",
   "lure": "Kunstköder",
-  "seaSinker": "Blei"
+  "seaSinker": "Blei",
+  "prefBaitSearch": "Köder suchen",
+  "prefBaitFishTitle": "Fische auf „{0}“: {1}"
  },
  "en": {
   "langName": "English",
@@ -685,7 +687,9 @@
   "updateHide": "Hide",
   "teaserLures": "Attractors on teaser {0} (none or two)",
   "lure": "Lure",
-  "seaSinker": "Sinker"
+  "seaSinker": "Sinker",
+  "prefBaitSearch": "Search bait",
+  "prefBaitFishTitle": "Fish on “{0}”: {1}"
  },
  "ru": {
   "langName": "Русский",
@@ -1026,7 +1030,9 @@
   "updateHide": "Скрыть",
   "teaserLures": "Привлекатели на отводе {0} (нет или два)",
   "lure": "Приманка",
-  "seaSinker": "Груз"
+  "seaSinker": "Груз",
+  "prefBaitSearch": "Поиск наживки",
+  "prefBaitFishTitle": "Рыба на «{0}»: {1}"
  },
  "fr": {
   "langName": "Français",
@@ -1367,7 +1373,9 @@
   "updateHide": "Masquer",
   "teaserLures": "Attractants sur l'avançon {0} (aucun ou deux)",
   "lure": "Leurre",
-  "seaSinker": "Plomb"
+  "seaSinker": "Plomb",
+  "prefBaitSearch": "Chercher un appât",
+  "prefBaitFishTitle": "Poissons sur « {0} » : {1}"
  },
  "es": {
   "langName": "Español",
@@ -1708,7 +1716,9 @@
   "updateHide": "Ocultar",
   "teaserLures": "Atrayentes en el brazo {0} (ninguno o dos)",
   "lure": "Señuelo",
-  "seaSinker": "Plomo"
+  "seaSinker": "Plomo",
+  "prefBaitSearch": "Buscar cebo",
+  "prefBaitFishTitle": "Peces con «{0}»: {1}"
  },
  "it": {
   "langName": "Italiano",
@@ -2049,7 +2059,9 @@
   "updateHide": "Nascondi",
   "teaserLures": "Attrattori sul bracciolo {0} (nessuno o due)",
   "lure": "Esca artificiale",
-  "seaSinker": "Piombo"
+  "seaSinker": "Piombo",
+  "prefBaitSearch": "Cerca esca",
+  "prefBaitFishTitle": "Pesci su «{0}»: {1}"
  },
  "pl": {
   "langName": "Polski",
@@ -2390,7 +2402,9 @@
   "updateHide": "Ukryj",
   "teaserLures": "Atraktory na przyponie {0} (brak lub dwa)",
   "lure": "Przynęta sztuczna",
-  "seaSinker": "Ciężarek"
+  "seaSinker": "Ciężarek",
+  "prefBaitSearch": "Szukaj przynęty",
+  "prefBaitFishTitle": "Ryby na „{0}”: {1}"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -2731,7 +2745,9 @@
   "updateHide": "Ocultar",
   "teaserLures": "Atrativos no braço {0} (nenhum ou dois)",
   "lure": "Isca artificial",
-  "seaSinker": "Chumbada"
+  "seaSinker": "Chumbada",
+  "prefBaitSearch": "Buscar isca",
+  "prefBaitFishTitle": "Peixes com “{0}”: {1}"
  },
  "nl": {
   "langName": "Nederlands",
@@ -3072,7 +3088,9 @@
   "updateHide": "Verbergen",
   "teaserLures": "Lokmiddelen aan zijlijn {0} (geen of twee)",
   "lure": "Kunstaas",
-  "seaSinker": "Lood"
+  "seaSinker": "Lood",
+  "prefBaitSearch": "Aas zoeken",
+  "prefBaitFishTitle": "Vissen op “{0}”: {1}"
  },
  "tr": {
   "langName": "Türkçe",
@@ -3413,7 +3431,9 @@
   "updateHide": "Gizle",
   "teaserLures": "Yan kol {0} cezbedicileri (yok veya iki)",
   "lure": "Suni yem",
-  "seaSinker": "Kurşun"
+  "seaSinker": "Kurşun",
+  "prefBaitSearch": "Yem ara",
+  "prefBaitFishTitle": "“{0}” ile balıklar: {1}"
  },
  "ro": {
   "langName": "Română",
@@ -3754,7 +3774,9 @@
   "updateHide": "Ascunde",
   "teaserLures": "Atractanți pe brațul {0} (niciunul sau doi)",
   "lure": "Năluca",
-  "seaSinker": "Plumb"
+  "seaSinker": "Plumb",
+  "prefBaitSearch": "Caută momeală",
+  "prefBaitFishTitle": "Pești pe „{0}”: {1}"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -4095,7 +4117,9 @@
   "updateHide": "Sembunyikan",
   "teaserLures": "Pemikat di cabang {0} (tidak ada atau dua)",
   "lure": "Umpan tiruan",
-  "seaSinker": "Pemberat"
+  "seaSinker": "Pemberat",
+  "prefBaitSearch": "Cari umpan",
+  "prefBaitFishTitle": "Ikan dengan “{0}”: {1}"
  },
  "ja": {
   "langName": "日本語",
@@ -4436,7 +4460,9 @@
   "updateHide": "非表示",
   "teaserLures": "枝 {0} のアトラクター (なし または 2つ)",
   "lure": "ルアー",
-  "seaSinker": "オモリ"
+  "seaSinker": "オモリ",
+  "prefBaitSearch": "エサを検索",
+  "prefBaitFishTitle": "「{0}」で釣れた魚: {1}"
  },
  "ko": {
   "langName": "한국어",
@@ -4777,7 +4803,9 @@
   "updateHide": "숨기기",
   "teaserLures": "가지줄 {0} 유인물 (없음 또는 2개)",
   "lure": "루어",
-  "seaSinker": "봉돌"
+  "seaSinker": "봉돌",
+  "prefBaitSearch": "미끼 검색",
+  "prefBaitFishTitle": "“{0}” 물고기: {1}"
  },
  "zh": {
   "langName": "简体中文",
@@ -5118,7 +5146,9 @@
   "updateHide": "隐藏",
   "teaserLures": "支线 {0} 的诱饵配件 (无或两个)",
   "lure": "拟饵",
-  "seaSinker": "铅坠"
+  "seaSinker": "铅坠",
+  "prefBaitSearch": "搜索鱼饵",
+  "prefBaitFishTitle": "“{0}” 钓到的鱼: {1}"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -5459,6 +5489,8 @@
   "updateHide": "隱藏",
   "teaserLures": "支線 {0} 的誘餌配件 (無或兩個)",
   "lure": "擬餌",
-  "seaSinker": "鉛墜"
+  "seaSinker": "鉛墜",
+  "prefBaitSearch": "搜尋魚餌",
+  "prefBaitFishTitle": "“{0}” 釣到的魚: {1}"
  }
 }
