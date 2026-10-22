@@ -26,8 +26,8 @@ internal sealed class Api
             {
                 GameData.Load();
                 UserStore.Load();
-                Community.Load();
                 Scans.Load();
+                Community.Load();
                 ready = true;
                 try { Active(new NameValueCollection { { "hours", "72" } }); } catch (Exception ex) { AppEnv.Log("Start", "Vorrechnen: " + ex.Message); }
                 timer = new Timer(delegate { Tick(); }, null, 2000, 600000);
@@ -47,6 +47,7 @@ internal sealed class Api
         if (stopping) return;
         DateTime sy = Community.Synced;
         if (!Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
+        Community.QueuePosts(72);
         if (ImageOcr.Available("ru")) Community.QueueRecentOcr(72);
     }
 
@@ -107,11 +108,9 @@ internal sealed class Api
         int idx;
         if (!int.TryParse(name.Substring(2, bar-2), out idx)) return false;
         if (Scans.PostKey(post) != post) return false;
-        string[] imgs = Scans.FetchImages(post);
-        if (imgs == null || idx < 0 || idx >= imgs.Length) return false;
         try
         {
-            data = Scans.ImageBytes(imgs[idx]);
+            data = Scans.ImageAt(post, idx);
             type = "image/jpeg";
             return data != null;
         }
