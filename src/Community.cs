@@ -322,14 +322,20 @@ internal static class Community
                 spots = null; spotsAll = null;
                 foreach (Report r in reports) { Lake lk; GameData.LakeById.TryGetValue(r.Lake, out lk); SetFish(r, lk); }
             }
+            DateTime since = DateTime.UtcNow.AddDays(-8);
+            List<Report> recent = reports.FindAll(r => r.Posted >= since);
             if (all)
             {
-                if (spotsAll == null) spotsAll = BuildSpots(reports);
+                if (spotsAll == null) spotsAll = BuildSpots(recent);
                 return spotsAll;
             }
             if (spots == null)
             {
-                spots = BuildSpots(reports.FindAll(HasSetup));
+                System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
+                List<Report> withSetup = recent.FindAll(HasSetup);
+                long t1 = sw.ElapsedMilliseconds;
+                spots = BuildSpots(withSetup);
+                AppEnv.Log("Spots", recent.Count + " Meldungen, Montage " + t1 + " ms, Spots " + (sw.ElapsedMilliseconds-t1) + " ms");
             }
             return spots;
         }
