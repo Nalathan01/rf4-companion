@@ -51,6 +51,8 @@ internal static class Community
     private static List<Dictionary<string, object>> skipped = new List<Dictionary<string, object>>();
     private static DateTime synced = DateTime.MinValue;
     private static List<Spot> spots;
+    private static List<Spot> spotsAll;
+    private static int ocrSeen = -1;
     private static readonly Regex Tg = new Regex(@"^https?://t\.me/([^/?]+)/(\d+)", RegexOptions.IgnoreCase);
     private static readonly Regex Vk = new Regex(@"vk\.com/wall(-?\d+)_", RegexOptions.IgnoreCase);
     private static readonly Regex Dc = new Regex(@"discord\.com/channels/(\d+)/(\d+)", RegexOptions.IgnoreCase);
@@ -212,7 +214,7 @@ internal static class Community
                 reports.Add(r);
                 added++;
             }
-            if (added > 0) { spots = null; Version++; }
+            if (added > 0) { spots = null; spotsAll = null; Version++; }
         }
         return added;
     }
@@ -265,14 +267,49 @@ internal static class Community
         AppEnv.WriteJsonFile(AppEnv.DataPath("community.json"), AppEnv.Obj("v", 2, "synced", sy, "source", "https://rf4intel.com", "reports", raws));
     }
 
-    public static List<Spot> Spots()
+    private static readonly Regex SetupWords = new Regex("(?i)наживк|приманк|прикорм|насадк|дип|бойл|pop ?up|кукуруз|червь|червя|опарыш|пеллетс|пелетс|воблер|блесн|джиг|твистер|виброхвост|силикон|бутерброд|тесто|мотыл|креветк|кальмар|филе|живец|монтаж|оснастк|пилкер|балансир");
+
+    public static bool HasSetup(Report r)
+    {
+        foreach (object b in AppEnv.GetList(r.Raw, "bait")) if (b != null && b.ToString().Trim().Length > 0) return true;
+        foreach (string k in new string[] { "baitDetail", "lure", "rig", "groundbait", "dip", "pva", "dryMix" }) if (r.S(k).Trim().Length > 0) return true;
+        string pk = Scans.PostKey(r.Url);
+        if (pk.Length == 0) return false;
+        if (SetupWords.IsMatch(Scans.Text(pk))) return true;
+        Dictionary<string, object> oc = ImageOcr.Result(pk);
+        return oc != null && AppEnv.GetList(oc, "baits").Count > 0;
+    }
+
+    public static List<Spot> Spots(bool all)
     {
         lock (gate)
         {
-            if (spots != null) return spots;
-            spots = BuildSpots(reports);
+            if (ocrSeen != ImageOcr.Version) { ocrSeen = ImageOcr.Version; spots = null; spotsAll = null; }
+            if (all)
+            {
+                if (spotsAll == null) spotsAll = BuildSpots(reports);
+                return spotsAll;
+            }
+            if (spots == null) spots = BuildSpots(reports.FindAll(HasSetup));
             return spots;
         }
+    }
+
+    public static void QueueRecentOcr(double hours)
+    {
+        DateTime since = DateTime.UtcNow.AddHours(-hours);
+        List<string> posts = new List<string>();
+        lock (gate)
+        {
+            foreach (Report r in reports)
+            {
+                if (r.Posted < since) continue;
+                string pk = Scans.PostKey(r.Url);
+                if (pk.Length == 0 || HasSetup(r)) continue;
+                posts.Add(pk);
+            }
+        }
+        foreach (string p in posts) ImageOcr.Request(p);
     }
 
     private static List<Spot> BuildSpots(List<Report> all)
