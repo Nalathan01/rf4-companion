@@ -22,7 +22,7 @@ static class Launcher {
         try {
             if (!File.Exists(script)) throw new FileNotFoundException(script);
             string dll = Path.Combine(dir, "RF4Comp.dll");
-            if (File.Exists(dll)) Assembly.LoadFrom(dll);
+            if (File.Exists(dll) && File.GetLastWriteTimeUtc(dll) >= File.GetLastWriteTimeUtc(script)) Assembly.LoadFrom(dll);
             var iss = InitialSessionState.CreateDefault();
             iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Bypass;
             using (var rs = RunspaceFactory.CreateRunspace(iss)) {

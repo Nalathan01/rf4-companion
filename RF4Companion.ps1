@@ -88,6 +88,10 @@ if ($args -notcontains "-Minimized" -and -not $Minimized) { try { Show-Splash } 
 
 $root = $PSScriptRoot
 $libsDir = Join-Path $root "Libs"
+$nativeDll = Join-Path $root "RF4Comp.dll"
+if (-not ("RF4Comp.CommLoader" -as [type]) -and (Test-Path -LiteralPath $nativeDll)) {
+    try { if ((Get-Item -LiteralPath $nativeDll).LastWriteTimeUtc -ge (Get-Item -LiteralPath (Join-Path $root "RF4Companion.ps1")).LastWriteTimeUtc) { Add-Type -Path $nativeDll } } catch { }
+}
 Add-Type -Path (Join-Path $libsDir "Microsoft.Xaml.Behaviors\Microsoft.Xaml.Behaviors.dll")
 Add-Type -Path (Join-Path $libsDir "ControlzEx\ControlzEx.dll")
 Add-Type -Path (Join-Path $libsDir "MahApps.Metro\MahApps.Metro.dll")
@@ -205,6 +209,81 @@ function Save-LearnedFish {
 }
 
 Load-LearnedFish
+
+if (-not ("RF4Comp.CommLoader" -as [type])) {
+    Add-Type -ReferencedAssemblies System.Web.Extensions -TypeDefinition @'
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web.Script.Serialization;
+namespace RF4Comp {
+    public static class CommLoader {
+        static object Parse(string path) {
+            if (!File.Exists(path)) return null;
+            var ser = new JavaScriptSerializer();
+            ser.MaxJsonLength = 268435456;
+            return ser.DeserializeObject(File.ReadAllText(path, Encoding.UTF8));
+        }
+        public static object[] Load(string path, IDictionary lakeFish) {
+            var reports = new ArrayList();
+            var ids = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            var d = Parse(path) as IDictionary;
+            if (d == null) return new object[] { reports, ids, "", 0 };
+            var sets = new Dictionary<string, HashSet<string>>();
+            foreach (DictionaryEntry e in lakeFish) {
+                var h = new HashSet<string>();
+                var arr = e.Value as IEnumerable;
+                if (arr != null) foreach (object f in arr) if (f != null) h.Add(f.ToString());
+                sets[e.Key.ToString()] = h;
+            }
+            var items = d.Contains("reports") ? d["reports"] as IEnumerable : null;
+            if (items != null) {
+                foreach (object o in items) {
+                    var r = o as IDictionary;
+                    if (r != null) {
+                        string lid = r["lake"] == null ? "" : r["lake"].ToString();
+                        HashSet<string> set;
+                        var fl = r["fish"] as IEnumerable;
+                        if (sets.TryGetValue(lid, out set) && set.Count > 0 && fl != null && !(fl is string)) {
+                            var keep = new List<object>();
+                            int n = 0;
+                            foreach (object f in fl) { if (f == null || f.ToString() == "") continue; n++; if (set.Contains(f.ToString())) keep.Add(f.ToString()); }
+                            if (keep.Count != n) r["fish"] = keep.ToArray();
+                        }
+                    }
+                    int idx = reports.Add(o);
+                    if (r != null) ids[r["id"] == null ? "" : r["id"].ToString()] = idx;
+                }
+            }
+            string synced = d.Contains("synced") && d["synced"] != null ? d["synced"].ToString() : "";
+            int v = 0;
+            if (d.Contains("v") && d["v"] != null) int.TryParse(d["v"].ToString(), out v);
+            return new object[] { reports, ids, synced, v };
+        }
+        public static Task<object[]> LoadAsync(string path, IDictionary lakeFish) { return Task.Run(() => Load(path, lakeFish)); }
+        public static Hashtable LoadMap(string path) {
+            var h = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            var d = Parse(path) as IDictionary;
+            if (d != null) foreach (DictionaryEntry e in d) h[e.Key.ToString()] = e.Value;
+            return h;
+        }
+        public static Task<Hashtable> LoadMapAsync(string path) { return Task.Run(() => LoadMap(path)); }
+    }
+}
+'@
+}
+
+$script:commLakeFish = @{}
+foreach ($l in @($game.lakes)) { $script:commLakeFish[[string]$l.id] = [string[]]@($l.fish) }
+$script:commTask = $null
+$script:scanTask = $null
+try {
+    $script:commTask = [RF4Comp.CommLoader]::LoadAsync((Join-Path $userDir "community.json"), $script:commLakeFish)
+    $script:scanTask = [RF4Comp.CommLoader]::LoadMapAsync((Join-Path $userDir "scan_cache.json"))
+} catch { }
 
 $script:trophyByFish = @{}
 foreach ($t in @($game.trophies)) { $script:trophyByFish[$t.fish] = $t }
@@ -362,8 +441,11 @@ function Get-FishChoices($lakeId) {
     @($list | Select-Object -Unique | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label)
 }
 
+$script:baitChoiceCache = @{}
+
 function Get-BaitChoices {
-    @($game.baits | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label)
+    if (-not $script:baitChoiceCache.ContainsKey($script:lang)) { $script:baitChoiceCache[$script:lang] = @($game.baits | ForEach-Object { New-Choice $_ (N $_) } | Sort-Object Label) }
+    $script:baitChoiceCache[$script:lang]
 }
 
 $script:itemCats = $null
@@ -974,6 +1056,7 @@ function Format-Coords($lake, $nx, $ny) {
                         <ComboBox x:Name="cmbPrefTable" Width="190" Margin="0,0,10,10"/>
                         <ComboBox x:Name="cmbPrefWindow" Width="220" Margin="0,0,10,10"/>
                         <ComboBox x:Name="cmbPrefWeek" Width="200" Margin="0,0,10,10"/>
+                        <TextBox x:Name="txtPrefBaitSearch" Tag="w:prefBaitSearch" Width="220" Margin="0,0,10,10" Controls:TextBoxHelper.ClearTextButton="True"/>
                         <Button x:Name="btnPrefHarvest" Tag="t:harvestNow" Margin="0,0,14,10" VerticalAlignment="Top" Visibility="Collapsed"/>
                         <TextBlock x:Name="txtPrefState" Foreground="{DynamicResource AppInkDim}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,10"/>
                     </DockPanel>
@@ -991,6 +1074,14 @@ function Format-Coords($lake, $nx, $ny) {
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock x:Name="txtPrefFish" Grid.Row="0" Tag="t:prefPickFish" Style="{StaticResource Heading}" TextWrapping="Wrap"/>
+                                <DataGrid x:Name="dgPrefBaitFish" Grid.Row="1" Visibility="Collapsed">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="t:fish" Binding="{Binding Fish}" Width="*"/>
+                                        <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
+                                        <DataGridTextColumn Header="t:records" Binding="{Binding Count}" SortMemberPath="CountSort" Width="70"/>
+                                        <DataGridTextColumn Header="t:prefFirstSeen" Binding="{Binding First}" SortMemberPath="FirstSort" Width="100"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
                                 <DataGrid x:Name="dgPrefBaits" Grid.Row="1">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="t:bait" Binding="{Binding Bait}" Width="*"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
@@ -1608,7 +1699,8 @@ namespace RF4Comp {
 $window.Add_SourceInitialized({
     try {
         $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper $window).Handle
-        $cmd = "powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File `"" + (Join-Path $root "RF4Companion.ps1") + "`""
+        $exe = Join-Path $root "RF4 Companion.exe"
+        $cmd = $(if (Test-Path -LiteralPath $exe) { "`"" + $exe + "`"" } else { "powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File `"" + (Join-Path $root "RF4Companion.ps1") + "`"" })
         [RF4Comp.TaskbarId]::Apply($hwnd, "Nalathan.RF4Companion", ($appIcon + ",0"), $cmd, "RF4 Companion") | Out-Null
     } catch { }
 })
@@ -2243,7 +2335,7 @@ function Update-BottomPanel {
     $gridSpotBait2.Visibility = $(if ($tk -eq "bottom" -or $tk -eq "float") { "Visible" } else { "Collapsed" })
     $panelSpotDip.Visibility = $panelBottom.Visibility
     $lblSpotBait.Text = $(if ($gridSpotBait2.Visibility -eq "Visible") { T "bait1" } elseif ($tk -eq "spin" -or $tk -eq "trolling") { T "lure" } else { T "bait" })
-    if (-not $isMar) { Set-BaitCombosFor $tk @($cmbSpotBait, $cmbSpotBait2) }
+    if (-not $isMar -and $script:startupDone) { Set-BaitCombosFor $tk @($cmbSpotBait, $cmbSpotBait2) }
 }
 
 function Get-RecipeChoices([string]$type) {
@@ -3000,20 +3092,303 @@ function Read-GzJson([string]$path) {
     (New-Serializer).DeserializeObject($t)
 }
 
+if (-not ("RF4Comp.WeekBuilder" -as [type])) {
+    Add-Type -ReferencedAssemblies System.Web.Extensions -TypeDefinition @'
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Web.Script.Serialization;
+namespace RF4Comp {
+    public static class ArchIO {
+        public static Hashtable LoadWeek(string path) {
+            var map = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            if (!File.Exists(path)) return map;
+            string t;
+            using (var fs = File.OpenRead(path))
+            using (var gz = new GZipStream(fs, CompressionMode.Decompress))
+            using (var sr = new StreamReader(gz, Encoding.UTF8)) t = sr.ReadToEnd();
+            var ser = new JavaScriptSerializer();
+            ser.MaxJsonLength = 268435456;
+            var d = ser.DeserializeObject(t) as IDictionary;
+            if (d == null || !d.Contains("items")) return map;
+            var items = d["items"] as IEnumerable;
+            if (items == null) return map;
+            foreach (object o in items) {
+                var it = o as IDictionary;
+                if (it == null) continue;
+                object k = it.Contains("k") ? it["k"] : null;
+                map[k == null ? "" : k.ToString()] = o;
+            }
+            return map;
+        }
+        public static Task<Hashtable> LoadWeekAsync(string path) { return Task.Run(() => LoadWeek(path)); }
+        public static string MinFsAfter(ICollection items, string bound) {
+            string min = null;
+            foreach (object o in items) {
+                var d = o as IDictionary; if (d == null) continue;
+                object v = d["fs"]; string fs = v == null ? "" : v.ToString();
+                if (fs.Length == 0 || string.CompareOrdinal(fs, bound) < 0) continue;
+                if (min == null || string.CompareOrdinal(fs, min) < 0) min = fs;
+            }
+            return min ?? "";
+        }
+        public static object ParseCloud(byte[] bytes) {
+            string t;
+            using (var ms = new MemoryStream(bytes))
+            using (var gz = new GZipStream(ms, CompressionMode.Decompress))
+            using (var sr = new StreamReader(gz, Encoding.UTF8)) t = sr.ReadToEnd();
+            var ser = new JavaScriptSerializer();
+            ser.MaxJsonLength = 268435456;
+            return ser.DeserializeObject(t);
+        }
+        static string Sv(IDictionary d, string k) { object o = d.Contains(k) ? d[k] : null; return o == null ? "" : o.ToString(); }
+        public static string[] Locations(object parsed) {
+            var h = new HashSet<string>();
+            var d = parsed as IDictionary;
+            var items = d == null || !d.Contains("items") ? null : d["items"] as IEnumerable;
+            if (items != null) foreach (object o in items) { var it = o as IDictionary; if (it != null) h.Add(Sv(it, "loc")); }
+            return new List<string>(h).ToArray();
+        }
+        public static int Merge(IDictionary map, object parsed, IDictionary lakeByLoc) {
+            int added = 0;
+            var d = parsed as IDictionary;
+            var items = d == null || !d.Contains("items") ? null : d["items"] as IEnumerable;
+            if (items == null) return 0;
+            foreach (object o in items) {
+                var it = o as IDictionary; if (it == null) continue;
+                string k = Sv(it, "k");
+                var m = map[k] as IDictionary;
+                if (m != null) {
+                    string fs = Sv(it, "fs"), ls = Sv(it, "ls");
+                    if (string.CompareOrdinal(fs, Sv(m, "fs")) < 0) m["fs"] = fs;
+                    if (string.CompareOrdinal(ls, Sv(m, "ls")) > 0) m["ls"] = ls;
+                    continue;
+                }
+                int w = 0; int.TryParse(Sv(it, "w"), out w);
+                object lk = lakeByLoc[Sv(it, "loc")];
+                var n = new Hashtable(StringComparer.OrdinalIgnoreCase);
+                n["k"] = k; n["t"] = Sv(it, "t"); n["r"] = Sv(it, "r"); n["f"] = Sv(it, "f"); n["w"] = w; n["l"] = lk == null ? "" : lk.ToString();
+                n["b"] = Sv(it, "b"); n["d"] = Sv(it, "d"); n["fs"] = Sv(it, "fs"); n["ls"] = Sv(it, "ls");
+                map[k] = n;
+                added++;
+            }
+            return added;
+        }
+    }
+    public static class PosIndex {
+        static readonly Regex Tg = new Regex(@"^https://t\.me/([^/?]+)/(\d+)");
+        static string S(object o) { return o == null ? "" : Convert.ToString(o, CultureInfo.InvariantCulture); }
+        public static object[] Build(IEnumerable a, IEnumerable b) {
+            var pos = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            var tg = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            foreach (IEnumerable src in new[] { a, b }) {
+                if (src == null) continue;
+                foreach (object o in src) {
+                    var r = o as IDictionary;
+                    if (r == null) continue;
+                    string k = S(r["lake"]) + "|" + S(r["x"]) + "|" + S(r["y"]);
+                    var l = pos[k] as ArrayList;
+                    if (l == null) { l = new ArrayList(); pos[k] = l; }
+                    l.Add(o);
+                    if (!Tg.IsMatch(S(r["url"]))) continue;
+                    var t = tg[k] as ArrayList;
+                    if (t == null) { t = new ArrayList(); tg[k] = t; }
+                    t.Add(o);
+                }
+            }
+            return new object[] { pos, tg };
+        }
+    }
+    public class WeekRec { public string Fish { get; set; } public int Weight { get; set; } public string Lake { get; set; } public string Loc { get; set; } public string Bait { get; set; } public string Player { get; set; } public string Date { get; set; } }
+    public class WeekRow { public string Fish { get; set; } public string Weight { get; set; } public int WeightSort { get; set; } public string Mark { get; set; } public string Lake { get; set; } public string Bait { get; set; } public string Player { get; set; } public string Date { get; set; } public string LakeId { get; set; } public int LakeSort { get; set; } public string FishKey { get; set; } }
+    public class BaitFishRow { public string Fish { get; set; } public string FishKey { get; set; } public string Bait { get; set; } public int Count { get; set; } public int CountSort { get; set; } public string First { get; set; } public double FirstSort { get; set; } }
+    public static class BaitSearch {
+        static string S(IDictionary d, string k) { object o = d[k]; return o == null ? "" : o.ToString(); }
+        public static string[] Parts(IEnumerable recs) {
+            var h = new HashSet<string>();
+            foreach (object o in recs) {
+                var d = Rec(o); if (d == null) continue;
+                foreach (var b in WeekBuilder.Parts(S(d, "b"))) h.Add(b);
+            }
+            return new List<string>(h).ToArray();
+        }
+        static IDictionary Rec(object o) {
+            var d = o as IDictionary;
+            if (d != null) return d;
+            if (o == null) return null;
+            var p = o.GetType().GetField("R");
+            return p == null ? null : p.GetValue(o) as IDictionary;
+        }
+        static object Hours(object o) {
+            if (o == null || o is IDictionary) return null;
+            var p = o.GetType().GetField("H");
+            return p == null ? null : p.GetValue(o);
+        }
+        public static List<BaitFishRow> Find(IEnumerable recs, string query, IDictionary partL, IDictionary fishL, string hoursFmt) {
+            var tokens = (query ?? "").ToLower().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            var match = new Dictionary<string, bool>();
+            var agg = new Dictionary<string, object[]>();
+            foreach (object o in recs) {
+                var d = Rec(o); if (d == null) continue;
+                foreach (var b in WeekBuilder.Parts(S(d, "b"))) {
+                    bool m;
+                    if (!match.TryGetValue(b, out m)) {
+                        object lo = partL[b];
+                        string hay = ((lo == null ? "" : lo.ToString()) + " " + b).ToLower();
+                        m = tokens.Length > 0;
+                        foreach (var t in tokens) if (!hay.Contains(t)) { m = false; break; }
+                        match[b] = m;
+                    }
+                    if (!m) continue;
+                    string f = S(d, "f");
+                    object[] e;
+                    if (!agg.TryGetValue(f, out e)) { e = new object[] { 0, null, new SortedSet<string>() }; agg[f] = e; }
+                    e[0] = (int)e[0] + 1;
+                    ((SortedSet<string>)e[2]).Add(b);
+                    object h = Hours(o);
+                    if (h is double && (e[1] == null || (double)h < (double)e[1])) e[1] = h;
+                    break;
+                }
+            }
+            var rows = new List<BaitFishRow>();
+            foreach (var kv in agg) {
+                var bl = new List<string>();
+                foreach (var b in (SortedSet<string>)kv.Value[2]) { object lo = partL[b]; bl.Add(lo == null ? b : lo.ToString()); }
+                object fl = fishL[kv.Key];
+                object h = kv.Value[1];
+                rows.Add(new BaitFishRow { Fish = fl == null ? kv.Key : fl.ToString(), FishKey = kv.Key, Bait = string.Join(", ", bl.ToArray()), Count = (int)kv.Value[0], CountSort = (int)kv.Value[0],
+                    First = h is double ? string.Format(hoursFmt, Math.Max(0, (int)Math.Floor((double)h))) : "", FirstSort = h is double ? (double)h : 1e9 });
+            }
+            rows.Sort((a, b) => b.CountSort.CompareTo(a.CountSort));
+            return rows;
+        }
+    }
+    public class WeekBaitRow { public string Bait { get; set; } public int Count { get; set; } public string Fish { get; set; } public string FishKey { get; set; } public string LakeId { get; set; } }
+    public static class WeekBuilder {
+        static readonly string[] Fmts = { "d.M.yy", "d.M.yyyy", "dd.MM.yy", "dd.MM.yyyy", "M/d/yy", "M/d/yyyy", "yyyy-MM-dd", "d/M/yy" };
+        static readonly Dictionary<string, object> DateMemo = new Dictionary<string, object>();
+        static string S(IDictionary d, string k) { object o = d[k]; return o == null ? "" : o.ToString(); }
+        public static List<string> Parts(string b) {
+            var l = new List<string>();
+            foreach (var x in (b ?? "").Split(';')) { var t = x.Trim(); if (t.Length > 0) l.Add(t); }
+            return l;
+        }
+        static object ParseDate(string t) {
+            object r;
+            if (DateMemo.TryGetValue(t ?? "", out r)) return r;
+            DateTime d;
+            r = DateTime.TryParseExact((t ?? "").Trim(), Fmts, CultureInfo.InvariantCulture, DateTimeStyles.None, out d) ? (object)d : null;
+            DateMemo[t ?? ""] = r;
+            return r;
+        }
+        public static List<WeekRec> FromArchive(IEnumerable weeks, string region) {
+            var l = new List<WeekRec>();
+            foreach (object w in weeks) {
+                var vals = w as ICollection;
+                if (vals == null) continue;
+                foreach (object o in vals) {
+                    var d = o as IDictionary;
+                    if (d == null || S(d, "t") != "n" || S(d, "r") != (region ?? "")) continue;
+                    int wt = 0; int.TryParse(S(d, "w"), NumberStyles.Integer, CultureInfo.InvariantCulture, out wt);
+                    l.Add(new WeekRec { Fish = S(d, "f"), Weight = wt, Lake = S(d, "l"), Loc = "", Bait = S(d, "b"), Player = S(d, "p"), Date = S(d, "d") });
+                }
+            }
+            return l;
+        }
+        public static bool HasPlayers(IEnumerable recs) { foreach (WeekRec r in recs) if (!string.IsNullOrEmpty(r.Player)) return true; return false; }
+        public static object[] Uniques(IEnumerable recs) {
+            var f = new HashSet<string>(); var p = new HashSet<string>(); var l = new HashSet<string>();
+            foreach (WeekRec r in recs) { f.Add(r.Fish ?? ""); l.Add(r.Lake ?? ""); foreach (var x in Parts(r.Bait)) p.Add(x); }
+            return new object[] { new List<string>(f).ToArray(), new List<string>(p).ToArray(), new List<string>(l).ToArray() };
+        }
+        static string L(IDictionary d, string k) { object o = d[k ?? ""]; return o == null ? (k ?? "") : o.ToString(); }
+        public static string FormatWeight(int g) {
+            if (g >= 1000) return string.Format(CultureInfo.CurrentCulture, "{0:0.###} kg", g / 1000.0);
+            return string.Format(CultureInfo.CurrentCulture, "{0:N0} g", (double)g);
+        }
+        public static object[] Build(IEnumerable recs, string lake, string q, object minDate, IDictionary fishL, IDictionary partL, IDictionary lakeL, IDictionary lakeRank, IDictionary trophy) {
+            var rows = new List<WeekRow>();
+            var bc = new Dictionary<string, int>();
+            var bf = new Dictionary<string, List<string>>();
+            var bl = new Dictionary<string, Dictionary<string, int>>();
+            var order = new List<string>();
+            var qt = (q ?? "").ToLower().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            string star = "\u2605";
+            foreach (WeekRec r in recs) {
+                if (!string.IsNullOrEmpty(lake) && r.Lake != lake) continue;
+                if (minDate is DateTime) { object cd = ParseDate(r.Date); if (cd is DateTime && (DateTime)cd < (DateTime)minDate) continue; }
+                var parts = Parts(r.Bait);
+                string fishLab = L(fishL, r.Fish);
+                var pl = new List<string>(); foreach (var x in parts) pl.Add(L(partL, x));
+                string baitLab = string.Join(" + ", pl.ToArray());
+                string lakeLab = string.IsNullOrEmpty(r.Lake) ? (r.Loc ?? "") : L(lakeL, r.Lake);
+                if (qt.Length > 0) {
+                    string hay = (fishLab + " " + r.Fish + " " + baitLab + " " + r.Bait + " " + lakeLab + " " + r.Player).ToLower();
+                    bool ok = true;
+                    foreach (var t in qt) if (!hay.Contains(t)) { ok = false; break; }
+                    if (!ok) continue;
+                }
+                string mark = "";
+                var tr = trophy[r.Fish ?? ""] as int[];
+                if (tr != null) { if (tr[1] > 0 && r.Weight >= tr[1]) mark = star + star; else if (tr[0] > 0 && r.Weight >= tr[0]) mark = star; }
+                object rk = lakeRank[r.Lake ?? ""];
+                rows.Add(new WeekRow { Fish = fishLab, Weight = FormatWeight(r.Weight), WeightSort = r.Weight, Mark = mark, Lake = lakeLab, Bait = baitLab, Player = r.Player, Date = r.Date, LakeId = r.Lake, LakeSort = rk == null ? 999 : Convert.ToInt32(rk), FishKey = r.Fish });
+                foreach (var b in parts) {
+                    if (!bc.ContainsKey(b)) { bc[b] = 0; bf[b] = new List<string>(); bl[b] = new Dictionary<string, int>(); order.Add(b); }
+                    bc[b]++;
+                    if (!bf[b].Contains(r.Fish)) bf[b].Add(r.Fish);
+                    if (!string.IsNullOrEmpty(r.Lake)) { int n; bl[b].TryGetValue(r.Lake, out n); bl[b][r.Lake] = n + 1; }
+                }
+            }
+            var cmp = StringComparer.Create(CultureInfo.CurrentCulture, true);
+            rows.Sort((a, b) => { int c = cmp.Compare(a.Fish, b.Fish); return c != 0 ? c : b.WeightSort.CompareTo(a.WeightSort); });
+            var brows = new List<WeekBaitRow>();
+            foreach (var k in order) {
+                string top = ""; int tn = 0;
+                foreach (var kv in bl[k]) if (kv.Value > tn) { tn = kv.Value; top = kv.Key; }
+                var fl = new List<string>(); for (int i = 0; i < bf[k].Count && i < 6; i++) fl.Add(L(fishL, bf[k][i]));
+                brows.Add(new WeekBaitRow { Bait = L(partL, k), Count = bc[k], Fish = string.Join(", ", fl.ToArray()), FishKey = bf[k].Count > 0 ? bf[k][0] : "", LakeId = !string.IsNullOrEmpty(lake) ? lake : top });
+            }
+            brows.Sort((a, b) => b.Count.CompareTo(a.Count));
+            return new object[] { rows, brows };
+        }
+    }
+}
+'@
+}
+
 function Get-WeekFile([string]$id) { Join-Path $script:archDir ("week_" + $id + ".json.gz") }
+
+$script:archLoads = @{}
 
 function Get-ArchWeek([string]$id) {
     if ($script:archWeeks.ContainsKey($id)) { return $script:archWeeks[$id] }
-    $map = @{}
+    $map = $null
     $f = Get-WeekFile $id
-    if (Test-Path -LiteralPath $f) {
-        try {
-            $d = Read-GzJson $f
-            foreach ($it in $d["items"]) { $map[[string]$it["k"]] = $it }
-        } catch { Write-ErrorLog ("Archiv lesen: " + $f + " " + $_.Exception.Message) }
-    }
+    try {
+        if ($script:archLoads.ContainsKey($id)) { $map = $script:archLoads[$id].Result }
+        else { $map = [RF4Comp.ArchIO]::LoadWeek($f) }
+    } catch { Write-ErrorLog ("Archiv lesen: " + $f + " " + $_.Exception.Message) }
+    $script:archLoads.Remove($id)
+    if ($null -eq $map) { $map = New-Object System.Collections.Hashtable ([System.StringComparer]::OrdinalIgnoreCase) }
     $script:archWeeks[$id] = $map
     $map
+}
+
+function Start-ArchPreload {
+    if (-not $script:archCurId) { return }
+    $prev = ([datetime]::ParseExact($script:archCurId, "yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)).AddDays(-7).ToString("yyyy-MM-dd")
+    foreach ($id in @($script:archCurId, $prev)) {
+        if ($script:archWeeks.ContainsKey($id) -or $script:archLoads.ContainsKey($id)) { continue }
+        $f = Get-WeekFile $id
+        if (Test-Path -LiteralPath $f) { $script:archLoads[$id] = [RF4Comp.ArchIO]::LoadWeekAsync($f) }
+    }
 }
 
 function Save-ArchWeeks {
@@ -3038,6 +3413,15 @@ function Load-ArchState {
 
 function Get-WeekIdForDate([datetime]$d) { $d.Date.AddDays(-[int]$d.DayOfWeek).ToString("yyyy-MM-dd") }
 
+function Get-TableWeekId([datetime]$minDate) {
+    $id = Get-WeekIdForDate $minDate
+    $u = (Get-Date).ToUniversalTime()
+    if ($minDate.DayOfWeek -eq [System.DayOfWeek]::Sunday -and $u.DayOfWeek -eq [System.DayOfWeek]::Sunday -and $u.Date -eq $minDate.Date -and ($u.Hour -lt 18 -or ($u.Hour -eq 18 -and $u.Minute -lt 30))) {
+        $id = $minDate.Date.AddDays(-7).ToString("yyyy-MM-dd")
+    }
+    $id
+}
+
 function Get-UtcNowIso { (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") }
 
 $script:resetUtcMemo = @{}
@@ -3046,7 +3430,8 @@ function Get-WeekResetUtc([string]$id) {
     $map = Get-ArchWeek $id
     $mk = $id + "|" + $map.Count
     if ($script:resetUtcMemo.ContainsKey($mk)) { return $script:resetUtcMemo[$mk] }
-    $min = [RF4Comp.ResetBuilder]::MinFs($map.Values)
+    $bound = ([datetime]::ParseExact($id, "yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)).AddHours(18.5).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $min = [RF4Comp.ArchIO]::MinFsAfter($map.Values, $bound)
     $res = $(if ($min) { [datetime]::Parse($min, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal) } else { $null })
     $script:resetUtcMemo[$mk] = $res
     $res
@@ -3083,7 +3468,7 @@ function Receive-HarvestPage([string]$raw) {
             $minD = $null
             foreach ($o in $items) { $d = Parse-RecordDate ([string]$o["date"]); if ($d -and (-not $minD -or $d -lt $minD)) { $minD = $d } }
             if ($minD) {
-                $id = Get-WeekIdForDate $minD
+                $id = Get-TableWeekId $minD
                 if (-not $script:archCurId -or $id -gt $script:archCurId) { $script:archCurId = $id }
                 $map = Get-ArchWeek $id
                 $now = [string](Get-UtcNowIso)
@@ -3110,7 +3495,7 @@ function Finish-Harvest {
     Save-ArchWeeks
     $btnPrefHarvest.IsEnabled = $true
     Update-PrefState
-    Refresh-Prefs
+    Request-Prefs
     $script:weeklyStale = $true
     Refresh-Weekly
     Start-IntelBackfill
@@ -3144,7 +3529,7 @@ function Apply-IntelBackfill {
         $fs = $script:intelMap[$key]
         if ($fs -and $fs -lt [string]$it["fs"]) { $it["fs"] = [string]$fs; $n++ }
     }
-    if ($n -gt 0) { $script:archDirty[$script:archCurId] = $true; Save-ArchWeeks; Refresh-Prefs }
+    if ($n -gt 0) { $script:archDirty[$script:archCurId] = $true; Save-ArchWeeks; Request-Prefs }
 }
 
 $script:intelTask = $null
@@ -3296,20 +3681,24 @@ namespace RF4Comp {
                 string who = kp.Length >= 7 ? kp[6] : S(d, "p");
                 string f = S(d, "f"), w = S(d, "w"), dt = S(d, "d"), b = S(d, "b"), r = S(d, "r"), t = S(d, "t");
                 string gk = who + "|" + f + "|" + w + "|" + dt + "|" + b;
+                string rk = "R#" + r + "|" + t + "|" + f + "|" + w + "|" + dt + "|" + b;
                 bool atCap = fs == firstCap[r + "|" + t];
                 ResetGroup g;
-                if (!groups.TryGetValue(gk, out g)) {
+                if (!groups.TryGetValue(rk, out g) && !groups.TryGetValue(gk, out g)) {
                     g = new ResetGroup { Fish = f, Lake = S(d, "l"), Bait = b, Date = dt, Fs = fs, AtCap = atCap };
                     int wi; int.TryParse(w, out wi); g.W = wi;
                     groups[gk] = g;
+                    groups[rk] = g;
                 } else {
+                    if (!groups.ContainsKey(gk)) groups[gk] = g;
+                    if (!groups.ContainsKey(rk)) groups[rk] = g;
                     int c = string.CompareOrdinal(fs, g.Fs);
                     if (c < 0) { g.Fs = fs; g.AtCap = atCap; } else if (c == 0 && atCap) g.AtCap = true;
                 }
                 if (!g.Regions.Contains(r)) g.Regions.Add(r);
                 if (!g.Tables.Contains(t)) g.Tables.Add(t);
             }
-            var list = new List<ResetGroup>(groups.Values);
+            var list = new List<ResetGroup>(new HashSet<ResetGroup>(groups.Values));
             foreach (var g in list) {
                 var parts = Parts(g.Bait); HashSet<string> pb; prev.TryGetValue(g.Fish, out pb);
                 var nl = new List<string>();
@@ -3474,6 +3863,96 @@ function Get-BaitAromas([string]$bait) {
     @($keys)
 }
 
+if (-not ("RF4Comp.PrefBuilder" -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
+namespace RF4Comp {
+    public class PrefRec { public object R; public object H; }
+    public class PrefFish { public int N; public HashSet<string> Baits = new HashSet<string>(); public Dictionary<string, int> Aroma = new Dictionary<string, int>(); }
+    public class PrefAgg { public Dictionary<string, PrefFish> ByFish = new Dictionary<string, PrefFish>(); public Dictionary<string, int> AromaTot = new Dictionary<string, int>(); }
+    public static class PrefBuilder {
+        static readonly string[] Fmts = { "d.M.yy", "d.M.yyyy", "dd.MM.yy", "dd.MM.yyyy", "M/d/yy", "M/d/yyyy", "yyyy-MM-dd", "d/M/yy" };
+        static readonly Dictionary<string, string[]> AromaMemo = new Dictionary<string, string[]>();
+        static Regex[] rules; static string[] ruleKeys; static string ruleSig = "";
+        static string S(IDictionary d, string k) { object o = d[k]; return o == null ? "" : o.ToString(); }
+        static List<string> Parts(string b) {
+            var l = new List<string>();
+            foreach (var x in (b ?? "").Split(';')) { var t = x.Trim(); if (t.Length > 0) l.Add(t); }
+            return l;
+        }
+        public static object ParseDate(string t) {
+            DateTime d;
+            if (DateTime.TryParseExact((t ?? "").Trim(), Fmts, CultureInfo.InvariantCulture, DateTimeStyles.None, out d)) return d;
+            return null;
+        }
+        public static List<PrefRec> Records(ICollection items, object resetUtc, int windowDays) {
+            var l = new List<PrefRec>();
+            var memo = new Dictionary<string, object>();
+            foreach (object o in items) {
+                var d = o as IDictionary; if (d == null) continue;
+                object h = null;
+                if (resetUtc is DateTime) {
+                    DateTime rs = (DateTime)resetUtc, seen;
+                    if (DateTime.TryParse(S(d, "fs"), CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out seen)) {
+                        string ds = S(d, "d"); object cd;
+                        if (!memo.TryGetValue(ds, out cd)) { cd = ParseDate(ds); memo[ds] = cd; }
+                        if (cd is DateTime) { DateTime bound = ((DateTime)cd).Date.AddDays(1).ToUniversalTime(); if (bound < seen) seen = bound; }
+                        h = Math.Max(0.0, seen.Subtract(rs).TotalHours);
+                    }
+                }
+                if (windowDays > 0 && (h == null || (double)h > windowDays)) continue;
+                l.Add(new PrefRec { R = o, H = h });
+            }
+            return l;
+        }
+        static string[] Aromas(string bait) {
+            string[] a;
+            if (AromaMemo.TryGetValue(bait, out a)) return a;
+            var keys = new List<string>();
+            foreach (var p in Parts(bait)) {
+                string x = p.ToLowerInvariant(), hit = "other";
+                for (int i = 0; i < rules.Length; i++) if (rules[i].IsMatch(x)) { hit = ruleKeys[i]; break; }
+                if (!keys.Contains(hit)) keys.Add(hit);
+            }
+            a = keys.ToArray();
+            AromaMemo[bait] = a;
+            return a;
+        }
+        public static PrefAgg Aggregate(IEnumerable recs, string[] keys, string[] patterns) {
+            string sig = string.Join("\n", keys) + "\n" + string.Join("\n", patterns);
+            if (sig != ruleSig) {
+                rules = new Regex[patterns.Length];
+                for (int i = 0; i < patterns.Length; i++) rules[i] = new Regex(patterns[i], RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                ruleKeys = keys; ruleSig = sig; AromaMemo.Clear();
+            }
+            var agg = new PrefAgg();
+            foreach (object o in recs) {
+                var pr = o as PrefRec; if (pr == null) continue;
+                var d = pr.R as IDictionary; if (d == null) continue;
+                string f = S(d, "f"), b = S(d, "b");
+                PrefFish e;
+                if (!agg.ByFish.TryGetValue(f, out e)) { e = new PrefFish(); agg.ByFish[f] = e; }
+                e.N++;
+                foreach (var p in Parts(b)) e.Baits.Add(p.ToLowerInvariant());
+                foreach (var a in Aromas(b)) {
+                    int c; e.Aroma.TryGetValue(a, out c); e.Aroma[a] = c + 1;
+                    agg.AromaTot.TryGetValue(a, out c); agg.AromaTot[a] = c + 1;
+                }
+            }
+            return agg;
+        }
+    }
+}
+'@
+}
+
+$script:aromaKeys = [string[]]@($script:aromaRules | ForEach-Object { $_[0] })
+$script:aromaPats = [string[]]@($script:aromaRules | ForEach-Object { $_[1] })
+
 function Get-PrefRecords {
     $week = Get-ComboKey $cmbPrefWeek
     $ids = @()
@@ -3490,21 +3969,12 @@ function Get-PrefRecords {
     $out = New-Object System.Collections.ArrayList
     foreach ($id in $ids) {
         $rs = Get-WeekResetUtc $id
-        foreach ($it in [RF4Comp.ResetBuilder]::Where((Get-ArchWeek $id).Values, "l", $lake, "t", $tbl)) {
-            $h = $null
-            if ($rs) {
-                $seen = [datetime]::Parse([string]$it["fs"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AdjustToUniversal)
-                $cd = Parse-RecordDate ([string]$it["d"])
-                if ($cd) { $bound = $cd.Date.AddDays(1).ToUniversalTime(); if ($bound -lt $seen) { $seen = $bound } }
-                $h = [math]::Max(0, ($seen-$rs).TotalHours)
-            }
-            if ($win -gt 0 -and ($null -eq $h -or $h -gt $win)) { continue }
-            $out.Add([pscustomobject]@{ R = $it; H = $h }) | Out-Null
-        }
+        $out.AddRange([RF4Comp.PrefBuilder]::Records([RF4Comp.ResetBuilder]::Where((Get-ArchWeek $id).Values, "l", $lake, "t", $tbl), [object]$rs, [int]$win))
     }
     $out
 }
 
+if (-not ("RF4Heat" -as [type])) {
 Add-Type -ReferencedAssemblies PresentationFramework, PresentationCore, WindowsBase, System.Xaml -TypeDefinition @"
 using System;
 using System.Globalization;
@@ -3523,25 +3993,21 @@ public class RF4Heat : IValueConverter {
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) { throw new NotSupportedException(); }
 }
 "@
+}
 $script:heatConv = New-Object RF4Heat
 
 function Refresh-Prefs {
     if (-not $dgPrefs) { return }
+    $script:prefsPending = $false
     $recs = @(Get-PrefRecords)
+    $sig = "{0}|{1}|{2}|{3}|{4}|{5}|{6}" -f (Get-ComboKey $cmbPrefLake), (Get-ComboKey $cmbPrefTable), (Get-ComboKey $cmbPrefWindow), (Get-ComboKey $cmbPrefWeek), $script:archCurId, $script:lang, $recs.Count
+    if ($sig -eq $script:prefSig -and $dgPrefs.ItemsSource) { Update-PrefState; return }
+    $script:prefSig = $sig
+    $keepFish = $script:prefSelFish
     $script:prefRecs = $recs
-    $byFish = @{}
-    $aromaTot = @{}
-    foreach ($x in $recs) {
-        $f = [string]$x.R["f"]
-        if (-not $byFish.ContainsKey($f)) { $byFish[$f] = @{ N = 0; Baits = @{}; Aroma = @{} } }
-        $e = $byFish[$f]
-        $e.N = $e.N + 1
-        foreach ($b in (Split-Baits ([string]$x.R["b"]))) { $e.Baits[$b.ToLower()] = $true }
-        foreach ($a in (Get-BaitAromas ([string]$x.R["b"]))) {
-            if ($e.Aroma.ContainsKey($a)) { $e.Aroma[$a]++ } else { $e.Aroma[$a] = 1 }
-            if ($aromaTot.ContainsKey($a)) { $aromaTot[$a]++ } else { $aromaTot[$a] = 1 }
-        }
-    }
+    $agg = [RF4Comp.PrefBuilder]::Aggregate($recs, $script:aromaKeys, $script:aromaPats)
+    $byFish = $agg.ByFish
+    $aromaTot = $agg.AromaTot
     $dt = New-Object System.Data.DataTable
     $cFish = "fish"
     $cRec = "rec"
@@ -3580,8 +4046,41 @@ function Refresh-Prefs {
     $dgPrefs.ItemsSource = $dv
     $dgPrefBaits.ItemsSource = $null
     $txtPrefFish.Text = T "prefPickFish"
-    if ($dv.Count -gt 0) { $dgPrefs.SelectedIndex = 0 }
+    $sel = -1
+    if ($keepFish) { for ($i = 0; $i -lt $dv.Count; $i++) { if ($script:prefFishByLabel[[string]$dv[$i].Row[0]] -eq $keepFish) { $sel = $i; break } } }
+    if ($sel -lt 0 -and $dv.Count -gt 0) { $sel = 0 }
+    if ($sel -ge 0) { $dgPrefs.SelectedIndex = $sel; $dgPrefs.ScrollIntoView($dgPrefs.SelectedItem) }
+    Show-PrefBaitSearch
     Update-PrefState
+}
+
+function Show-PrefBaitSearch {
+    $q = "$($txtPrefBaitSearch.Text)".Trim()
+    if (-not $q) {
+        $dgPrefBaitFish.Visibility = "Collapsed"
+        $dgPrefBaits.Visibility = "Visible"
+        if ($script:prefSelFish) { Show-PrefFishBaits $script:prefSelFish } else { $txtPrefFish.Text = T "prefPickFish" }
+        return
+    }
+    if ($script:bsLang -ne $script:lang) { $script:bsPart = @{}; $script:bsFish = @{}; $script:bsLang = $script:lang }
+    $recs = $script:prefRecs
+    foreach ($b in [RF4Comp.BaitSearch]::Parts($recs)) { if (-not $script:bsPart.ContainsKey($b)) { $script:bsPart[$b] = N $b } }
+    foreach ($x in @($script:prefFishByLabel.Values)) { if (-not $script:bsFish.ContainsKey($x)) { $script:bsFish[$x] = N $x } }
+    $rows = [RF4Comp.BaitSearch]::Find($recs, $q, $script:bsPart, $script:bsFish, (T "prefHoursAfter"))
+    $dgPrefBaitFish.ItemsSource = $rows
+    $dgPrefBaits.Visibility = "Collapsed"
+    $dgPrefBaitFish.Visibility = "Visible"
+    $txtPrefFish.Text = (T "prefBaitFishTitle") -f $q, $rows.Count
+}
+
+$script:prefsPending = $true
+
+function Test-PrefsVisible {
+    $tabs.SelectedItem -and [string]$tabs.SelectedItem.Tag -eq "t:tabPlan" -and $tabsPlan.SelectedItem -and [string]$tabsPlan.SelectedItem.Tag -eq "t:tabPrefs"
+}
+
+function Request-Prefs {
+    if (Test-PrefsVisible) { Refresh-Prefs } else { $script:prefsPending = $true; Update-PrefState }
 }
 
 function Show-PrefFishBaits([string]$fish) {
@@ -3603,8 +4102,9 @@ function Show-PrefFishBaits([string]$fish) {
         }
     }
     $dgPrefBaits.ItemsSource = @($rows | Sort-Object CountSort -Descending)
-    $txtPrefFish.Text = N $fish
     $script:prefSelFish = $fish
+    if ("$($txtPrefBaitSearch.Text)".Trim()) { return }
+    $txtPrefFish.Text = N $fish
 }
 
 function Update-PrefState {
@@ -3687,7 +4187,7 @@ function Next-CloudFile {
         Save-CloudState
         Save-ArchWeeks
         if ($script:intelMap -and $script:intelMap.Count -gt 0) { Apply-IntelBackfill }
-        Refresh-Prefs
+        Request-Prefs
         $script:weeklyStale = $true
         Refresh-Weekly
         Start-IntelBackfill
@@ -3699,27 +4199,17 @@ function Next-CloudFile {
     $script:cloudTimer.Start()
 }
 
+$script:locLake = @{}
+
 function Merge-CloudWeek([string]$id, [byte[]]$bytes) {
-    $ms = New-Object System.IO.MemoryStream (, $bytes)
-    $gz = New-Object System.IO.Compression.GZipStream($ms, [System.IO.Compression.CompressionMode]::Decompress)
-    $sr = New-Object System.IO.StreamReader($gz, [System.Text.Encoding]::UTF8)
-    $d = (New-Serializer).DeserializeObject($sr.ReadToEnd())
-    $sr.Dispose()
+    $d = [RF4Comp.ArchIO]::ParseCloud($bytes)
+    foreach ($loc in [RF4Comp.ArchIO]::Locations($d)) { if (-not $script:locLake.ContainsKey($loc)) { $script:locLake[$loc] = [string](Get-LakeIdByLocation $loc) } }
     if (-not $script:cloudRebuilt.ContainsKey($id)) {
-        $script:archWeeks[$id] = @{}
+        $script:archWeeks[$id] = New-Object System.Collections.Hashtable ([System.StringComparer]::OrdinalIgnoreCase)
         $script:cloudRebuilt[$id] = $true
     }
     $map = Get-ArchWeek $id
-    foreach ($it in $d["items"]) {
-        $k = [string]$it["k"]
-        if ($map.ContainsKey($k)) {
-            $m = $map[$k]
-            if ([string]$it["fs"] -lt [string]$m["fs"]) { $m["fs"] = [string]$it["fs"] }
-            if ([string]$it["ls"] -gt [string]$m["ls"]) { $m["ls"] = [string]$it["ls"] }
-            continue
-        }
-        $map[$k] = @{ k = $k; t = [string]$it["t"]; r = [string]$it["r"]; f = [string]$it["f"]; w = [int]$it["w"]; l = [string](Get-LakeIdByLocation ([string]$it["loc"])); b = [string]$it["b"]; d = [string]$it["d"]; fs = [string]$it["fs"]; ls = [string]$it["ls"] }
-    }
+    [void][RF4Comp.ArchIO]::Merge($map, $d, $script:locLake)
     if (-not $script:archCurId -or $id -gt $script:archCurId) { $script:archCurId = $id }
     $script:archDirty[$id] = $true
 }
@@ -4516,14 +5006,11 @@ function Build-WeeklyFromArchive([string]$region) {
     $ids = @($script:archCurId)
     $prev = $cur.AddDays(-7).ToString("yyyy-MM-dd")
     if ($script:archWeeks.ContainsKey($prev) -or (Test-Path -LiteralPath (Get-WeekFile $prev))) { $ids += $prev }
-    $items = New-Object System.Collections.ArrayList
-    foreach ($id in $ids) {
-        foreach ($it in [RF4Comp.ResetBuilder]::Where((Get-ArchWeek $id).Values, "t", "n", "r", $region)) {
-            $items.Add([pscustomobject]@{ fish = [string]$it["f"]; weight = [int]$it["w"]; lake = [string]$it["l"]; loc = ""; bait = [string]$it["b"]; player = [string]$it["p"]; date = [string]$it["d"] }) | Out-Null
-        }
-    }
+    $weeks = New-Object System.Collections.ArrayList
+    foreach ($id in $ids) { $weeks.Add((Get-ArchWeek $id).Values) | Out-Null }
+    $items = [RF4Comp.WeekBuilder]::FromArchive($weeks, $region)
     if ($items.Count -eq 0) { return $false }
-    $script:weekly = @($items)
+    $script:weekly = $items
     $script:weekTime = $(if ($script:cloudLast) { $script:cloudLast } else { $script:lastHarvest })
     return $true
 }
@@ -4540,84 +5027,51 @@ function Refresh-Weekly {
     Refresh-WeeklyNow
 }
 
+function Get-WeekRecs {
+    $w = $script:weekly
+    if ($w -is [System.Collections.Generic.List[RF4Comp.WeekRec]]) { return $w }
+    $l = New-Object 'System.Collections.Generic.List[RF4Comp.WeekRec]'
+    foreach ($r in @($w)) {
+        if (-not $r) { continue }
+        $l.Add((New-Object RF4Comp.WeekRec -Property @{ Fish = [string]$r.fish; Weight = [int]$r.weight; Lake = [string]$r.lake; Loc = [string]$r.loc; Bait = [string]$r.bait; Player = [string]$r.player; Date = [string]$r.date }))
+    }
+    $script:weekly = $l
+    $l
+}
+
+function Update-WeekLabels($recs) {
+    if ($script:wkLabLang -ne $script:lang) {
+        $script:wkLab = @{ Fish = @{}; Part = @{}; Lake = @{}; Rank = @{}; Trophy = @{} }
+        $script:wkLabLang = $script:lang
+        foreach ($k in @($script:trophyByFish.Keys)) { $t = $script:trophyByFish[$k]; $script:wkLab.Trophy[$k] = [int[]]@([int]$t.trophy, [int]$t.rare) }
+    }
+    $u = [RF4Comp.WeekBuilder]::Uniques($recs)
+    foreach ($x in $u[0]) { if (-not $script:wkLab.Fish.ContainsKey($x)) { $script:wkLab.Fish[$x] = N $x } }
+    foreach ($x in $u[1]) { if (-not $script:wkLab.Part.ContainsKey($x)) { $script:wkLab.Part[$x] = N $x } }
+    foreach ($x in $u[2]) {
+        if (-not $script:wkLab.Lake.ContainsKey($x)) { $script:wkLab.Lake[$x] = $(if ($x) { Get-LakeName $x } else { "" }); $script:wkLab.Rank[$x] = Get-LakeRank $x }
+    }
+}
+
 function Refresh-WeeklyNow {
     if ($script:weeklyStale) {
         $script:weeklyStale = $false
         $script:weekFromCloud = Build-WeeklyFromArchive $script:weekRegion
         if (-not $script:weekFromCloud) { Load-WeeklyCache }
-        $hasPlayers = @($script:weekly | Where-Object { $_.player } | Select-Object -First 1).Count -gt 0
+        $hasPlayers = [RF4Comp.WeekBuilder]::HasPlayers((Get-WeekRecs))
         foreach ($c in $dgWeek.Columns) { if ($c.Binding -and $c.Binding.Path.Path -eq "Player") { $c.Visibility = $(if ($hasPlayers) { "Visible" } else { "Collapsed" }) } }
     }
+    $recs = Get-WeekRecs
     $lf = Get-ComboKey $cmbWeekLake
     $q = "$($txtWeekSearch.Text)".Trim().ToLower()
     $wd = Get-KeyDays (Get-ComboKey $cmbWeekDays)
     $minDate = $null
     if ($wd -gt 0) { $minDate = (Get-Date).Date.AddDays(1-$wd) }
-    $rows = New-Object System.Collections.ArrayList
-    $filtered = New-Object System.Collections.ArrayList
-    if ($script:wkMemoLang -ne $script:lang) { $script:wkMemo = @{}; $script:wkMemoLang = $script:lang }
-    $m = $script:wkMemo
-    foreach ($r in $script:weekly) {
-        if ($lf -and $r.lake -ne $lf) { continue }
-        if ($minDate) {
-            $dk = "d|" + $r.date
-            if (-not $m.ContainsKey($dk)) { $m[$dk] = Parse-RecordDate "$($r.date)" }
-            $rd = $m[$dk]
-            if ($rd -and $rd -lt $minDate) { continue }
-        }
-        $fk = "f|" + $r.fish
-        $fishL = $m[$fk]
-        if ($null -eq $fishL) { $fishL = N $r.fish; $m[$fk] = $fishL }
-        $bk = "b|" + $r.bait
-        $baitL = $m[$bk]
-        if ($null -eq $baitL) { $baitL = (@(Split-Baits $r.bait | ForEach-Object { N $_ }) -join " + "); $m[$bk] = $baitL }
-        $lakeL = $r.loc
-        if ($r.lake) {
-            $lk = "l|" + $r.lake
-            $lakeL = $m[$lk]
-            if ($null -eq $lakeL) { $lakeL = Get-LakeName $r.lake; $m[$lk] = $lakeL }
-        }
-        $rk = "r|" + $r.lake
-        if (-not $m.ContainsKey($rk)) { $m[$rk] = Get-LakeRank $r.lake }
-        $wk = "w|" + $r.weight
-        if (-not $m.ContainsKey($wk)) { $m[$wk] = Format-Weight $r.weight }
-        $mk = "m|" + $r.fish + "|" + $r.weight
-        if (-not $m.ContainsKey($mk)) { $m[$mk] = Get-TrophyMark $r.fish $r.weight }
-        if ($q) {
-            $hay = ("{0} {1} {2} {3} {4} {5}" -f $fishL, $r.fish, $baitL, $r.bait, $lakeL, $r.player).ToLower()
-            if (-not $hay.Contains($q)) { continue }
-        }
-        $filtered.Add($r) | Out-Null
-        $rows.Add([pscustomobject]@{
-            Fish = $fishL; Weight = $m[$wk]; WeightSort = [int]$r.weight
-            Mark = $m[$mk]; Lake = $lakeL; Bait = $baitL; Player = $r.player; Date = $r.date
-            LakeId = $r.lake; LakeSort = $m[$rk]; FishKey = $r.fish
-        }) | Out-Null
-    }
-    $dgWeek.ItemsSource = @($rows | Sort-Object @{ Expression = "Fish" }, @{ Expression = "WeightSort"; Descending = $true })
-
-    $bc = @{}
-    $bf = @{}
-    $bl = @{}
-    foreach ($r in $filtered) {
-        $sk = "s|" + $r.bait
-        if (-not $m.ContainsKey($sk)) { $m[$sk] = @(Split-Baits $r.bait) }
-        foreach ($b in $m[$sk]) {
-            if (-not $bc.ContainsKey($b)) { $bc[$b] = 0; $bf[$b] = New-Object System.Collections.ArrayList; $bl[$b] = New-Object System.Collections.ArrayList }
-            $bc[$b] = $bc[$b] + 1
-            if (-not $bf[$b].Contains($r.fish)) { $bf[$b].Add($r.fish) | Out-Null }
-            if ($r.lake) { $bl[$b].Add([string]$r.lake) | Out-Null }
-        }
-    }
-    $brows = @()
-    foreach ($k in $bc.Keys) {
-        $topLake = @($bl[$k] | Group-Object | Sort-Object Count -Descending | Select-Object -First 1 | ForEach-Object { $_.Name })
-        $brows += [pscustomobject]@{
-            Bait = (N $k); Count = $bc[$k]; Fish = ((@($bf[$k]) | Select-Object -First 6 | ForEach-Object { N $_ }) -join ", ")
-            FishKey = [string]@($bf[$k])[0]; LakeId = $(if ($lf) { $lf } elseif ($topLake.Count -gt 0) { $topLake[0] } else { "" })
-        }
-    }
-    $dgWeekBaits.ItemsSource = @($brows | Sort-Object Count -Descending)
+    Update-WeekLabels $recs
+    $res = [RF4Comp.WeekBuilder]::Build($recs, [string]$lf, $q, $minDate, $script:wkLab.Fish, $script:wkLab.Part, $script:wkLab.Lake, $script:wkLab.Rank, $script:wkLab.Trophy)
+    $rows = $res[0]
+    $dgWeek.ItemsSource = $rows
+    $dgWeekBaits.ItemsSource = $res[1]
     if ($lf) { $txtWeekBaitsTitle.Text = "{0}: {1}" -f (T "topBaits"), (Get-LakeName $lf) }
     else { $txtWeekBaitsTitle.Text = T "topBaits" }
     if (-not $script:weekLoading) {
@@ -4769,15 +5223,16 @@ function Load-Community {
     $script:commClusterCache = @{}
     if (-not (Test-Path $script:commFile)) { return }
     try {
-        $d = (New-Serializer).DeserializeObject([System.IO.File]::ReadAllText($script:commFile, [System.Text.Encoding]::UTF8))
-        if ($d["synced"]) { $script:commSynced = [datetime]::Parse([string]$d["synced"], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind) }
-        foreach ($r in $d["reports"]) {
-            $idx = $script:commReports.Add((Clean-ReportFish $r))
-            $script:commIds[[string]$r["id"]] = $idx
-        }
-        if ([int]$d["v"] -lt 2) { $script:commSynced = $null }
+        $t = $script:commTask
+        $script:commTask = $null
+        $res = $(if ($t) { $t.Result } else { [RF4Comp.CommLoader]::Load($script:commFile, $script:commLakeFish) })
+        $script:commReports = $res[0]
+        $script:commIds = $res[1]
+        if ($res[2]) { $script:commSynced = [datetime]::Parse([string]$res[2], [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind) }
+        if ([int]$res[3] -lt 2) { $script:commSynced = $null }
     } catch {
-        $script:commReports.Clear()
+        $script:commReports = New-Object System.Collections.ArrayList
+        $script:commIds = @{}
     }
 }
 
@@ -5683,10 +6138,12 @@ function Format-Dir16([double]$deg) {
 }
 
 function Load-Scans {
+    $t = $script:scanTask
+    $script:scanTask = $null
     if (-not (Test-Path -LiteralPath $script:scanFile)) { return }
     try {
-        $d = (New-Serializer).DeserializeObject([System.IO.File]::ReadAllText($script:scanFile, [System.Text.Encoding]::UTF8))
-        foreach ($k in $d.Keys) { $script:scans[[string]$k] = $d[$k] }
+        $h = $(if ($t) { $t.Result } else { [RF4Comp.CommLoader]::LoadMap($script:scanFile) })
+        if ($script:scans.Count -eq 0) { $script:scans = $h } else { foreach ($k in $h.Keys) { $script:scans[[string]$k] = $h[$k] } }
     } catch { }
 }
 
@@ -5707,16 +6164,9 @@ function Get-PostedTime($r) {
 function Ensure-PosIndex {
     $cnt = $script:commReports.Count + $script:sharedReports.Count
     if ($script:tgIndex -and $script:tgIndexCount -eq $cnt) { return }
-    $script:tgIndex = @{}
-    $script:posIndex = @{}
-    foreach ($t in (@($script:commReports) + @($script:sharedReports))) {
-        $k = "{0}|{1}|{2}" -f $t["lake"], $t["x"], $t["y"]
-        if (-not $script:posIndex.ContainsKey($k)) { $script:posIndex[$k] = New-Object System.Collections.ArrayList }
-        $script:posIndex[$k].Add($t) | Out-Null
-        if (-not (Get-TgKey ([string]$t["url"]))) { continue }
-        if (-not $script:tgIndex.ContainsKey($k)) { $script:tgIndex[$k] = New-Object System.Collections.ArrayList }
-        $script:tgIndex[$k].Add($t) | Out-Null
-    }
+    $pi = [RF4Comp.PosIndex]::Build($script:commReports, $script:sharedReports)
+    $script:posIndex = $pi[0]
+    $script:tgIndex = $pi[1]
     $script:tgIndexCount = $cnt
     $script:crossCache = @{}
 }
@@ -8325,7 +8775,7 @@ function Apply-Language {
     Set-Choices $cmbSpotFish (Get-FishChoices $lakeId)
     Set-ComboKey $cmbSpotFish $f
     foreach ($cb in @($cmbSpotBait, $cmbSpotBait2)) { $cb.Tag = $null }
-    Set-BaitCombosFor (Get-ComboKey $cmbSpotTech) @($cmbSpotBait, $cmbSpotBait2)
+    if ($script:startupDone) { Set-BaitCombosFor (Get-ComboKey $cmbSpotTech) @($cmbSpotBait, $cmbSpotBait2) }
     $b = Get-ComboKey $cmbSpotDip
     Set-Choices $cmbSpotDip (Get-DipChoices)
     Set-ComboKey $cmbSpotDip $b
@@ -8394,7 +8844,7 @@ function Apply-Language {
     Set-Choices $cmbCatchFish (Get-FishChoices $k)
     Set-ComboKey $cmbCatchFish $f
     foreach ($cb in @($cmbCatchBait, $cmbCatchBait2)) { $cb.Tag = $null }
-    Set-BaitCombosFor (Get-ComboKey $cmbCatchTech) @($cmbCatchBait, $cmbCatchBait2)
+    if ($script:startupDone) { Set-BaitCombosFor (Get-ComboKey $cmbCatchTech) @($cmbCatchBait, $cmbCatchBait2) }
     $b = Get-ComboKey $cmbCatchDip
     Set-Choices $cmbCatchDip (Get-DipChoices)
     Set-ComboKey $cmbCatchDip $b
@@ -8417,9 +8867,11 @@ function Apply-Language {
     Set-Choices $cmbWebLake (Get-LakeChoices -MapsOnly)
     Set-ComboKey $cmbWebLake $k
     Refresh-WebFishChoices
-    $b = Get-ComboKey $cmbWebBait
-    Set-Choices $cmbWebBait (Get-BaitChoices)
-    Set-ComboKey $cmbWebBait $b
+    if ($script:startupDone) {
+        $b = Get-ComboKey $cmbWebBait
+        Set-Choices $cmbWebBait (Get-BaitChoices)
+        Set-ComboKey $cmbWebBait $b
+    }
 
     $k = Get-ComboKey $cmbRecType
     Set-Choices $cmbRecType @((New-Choice "groundbait" (T "groundbait")), (New-Choice "pva" (T "pva")))
@@ -8428,18 +8880,17 @@ function Apply-Language {
 
     Draw-Markers
     Refresh-LakeSpotList
-    Refresh-SpotsGrid
-    Refresh-Catches
+    if ($script:startupDone) { Refresh-SpotsGrid; Refresh-Catches }
     Refresh-Lakes
-    Refresh-Trophies
+    if ($script:startupDone) { Refresh-Trophies }
     Refresh-Recipes
     Set-SplashStep "splashWeekly" 58
     Refresh-Weekly
     Update-BottomPanel
     Update-RecipeLabels
-    Update-TrackerUi
+    if ($script:startupDone) { Update-TrackerUi }
     Set-SplashStep "splashSpots" 78
-    Update-CommState
+    if ($script:startupDone) { Update-CommState }
     if ($script:commSel) { Show-CommCluster $script:commSel }
     Set-Status ""
 }
@@ -8657,6 +9108,7 @@ $tabsPlan.Add_SelectionChanged({
     param($sender, $e)
     if ($e.OriginalSource -ne $tabsPlan) { return }
     if ($script:weeklyPending -and (Test-WeeklyVisible)) { $script:weeklyPending = $false; Refresh-WeeklyNow }
+    if ($script:prefsPending -and (Test-PrefsVisible)) { Refresh-Prefs }
     if ($tabsPlan.SelectedItem -eq $tabReset) { Refresh-Reset }
     if ($tabsPlan.SelectedItem -and $tabsPlan.SelectedItem.Tag -eq "t:tabTarget") { Refresh-Target }
 })
@@ -9064,7 +9516,6 @@ $window.Add_PreviewKeyDown({
 Set-SplashStep "splashRecords" 30
 Set-Choices $cmbWeekRegion @($script:weekRegions | ForEach-Object { New-Choice $_ $_ })
 Set-ComboKey $cmbWeekRegion $script:weekRegion
-Load-WeeklyCache
 
 $cmbWeekRegion.Add_SelectionChanged({
     if ($script:busy -or -not $cmbWeekRegion.SelectedItem) { return }
@@ -9202,14 +9653,24 @@ $dgPrefs.Add_AutoGeneratingColumn({
 Load-ArchState
 $script:weeklyStale = $true
 $script:harvCheckTimer.Start()
-$txtWeekSearch.Add_TextChanged({ Refresh-Weekly })
+$script:weekSearchTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:weekSearchTimer.Interval = [TimeSpan]::FromMilliseconds(350)
+$script:weekSearchTimer.Add_Tick({ $script:weekSearchTimer.Stop(); Refresh-Weekly })
+$txtWeekSearch.Add_TextChanged({ $script:weekSearchTimer.Stop(); $script:weekSearchTimer.Start() })
+$script:prefSearchTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:prefSearchTimer.Interval = [TimeSpan]::FromMilliseconds(350)
+$script:prefSearchTimer.Add_Tick({ $script:prefSearchTimer.Stop(); Show-PrefBaitSearch })
+$txtPrefBaitSearch.Add_TextChanged({ $script:prefSearchTimer.Stop(); $script:prefSearchTimer.Start() })
 
 $tabs.Add_SelectionChanged({
     param($sender, $e)
     if ($e.OriginalSource -ne $tabs) { return }
+    Complete-DeferredUi
     $it = $tabs.SelectedItem
     if ($it -and $it.Tag -ne "t:tabMap" -and -not $script:harvCur) { Set-Status "" }
     if ($it -and $it.Tag -eq "t:tabPlan" -and $tabsPlan.SelectedItem -and $tabsPlan.SelectedItem.Tag -eq "t:tabTarget") { Refresh-Target }
+    if ($script:weeklyPending -and (Test-WeeklyVisible)) { $script:weeklyPending = $false; Refresh-WeeklyNow }
+    if ($script:prefsPending -and (Test-PrefsVisible)) { Refresh-Prefs }
     if ($it -and $it.Tag -eq "t:tabCommunity" -and -not $script:wvWeb -and -not $script:jumpUrl) {
         Open-SelectedSite
     }
@@ -9640,11 +10101,63 @@ $window.Add_ContentRendered({
     $script:busy = $false
     Load-MapLake $k
     if ($OpenSpot -match "^([a-z_]+):(\d+):(\d+)$") { Open-CommSpot $Matches[1] ([int]$Matches[2]) ([int]$Matches[3]) }
+    $script:startupDone = $true
+    Start-ArchPreload
+    $script:warmTimer = New-Object System.Windows.Threading.DispatcherTimer
+    $script:warmTimer.Interval = [TimeSpan]::FromMilliseconds(300)
+    $script:warmTimer.Add_Tick({ Step-Warmup })
+    $script:warmTimer.Start()
     $script:scanStartTimer = New-Object System.Windows.Threading.DispatcherTimer
     $script:scanStartTimer.Interval = [TimeSpan]::FromSeconds(8)
     $script:scanStartTimer.Add_Tick({ $script:scanStartTimer.Stop(); Start-ScanQueue })
     $script:scanStartTimer.Start()
 })
+
+$script:warmQueue = $null
+$script:warmStage = $null
+$script:uiDone = $false
+
+function Complete-DeferredUi {
+    if ($script:uiDone -or -not $script:startupDone) { return }
+    $script:uiDone = $true
+    $b = Get-ComboKey $cmbWebBait
+    Set-Choices $cmbWebBait (Get-BaitChoices)
+    Set-ComboKey $cmbWebBait $b
+    Set-BaitCombosFor (Get-ComboKey $cmbSpotTech) @($cmbSpotBait, $cmbSpotBait2)
+    Set-BaitCombosFor (Get-ComboKey $cmbCatchTech) @($cmbCatchBait, $cmbCatchBait2)
+    Update-CommState
+    Update-TrackerUi
+    Refresh-SpotsGrid
+    Refresh-Catches
+    Refresh-Trophies
+}
+
+function Step-Warmup {
+    if (-not $script:uiDone) { Complete-DeferredUi; return }
+    $script:warmTimer.Interval = [TimeSpan]::FromMilliseconds(40)
+    if ($null -eq $script:warmQueue) {
+        Ensure-PosIndex
+        $cut = (Get-Date).ToUniversalTime().AddDays(-60).ToString("yyyy-MM-ddTHH:mm:ss")
+        $script:warmQueue = New-Object System.Collections.Queue
+        foreach ($r in (Get-AllCommReports)) { if ([string]::CompareOrdinal([string]$r["posted"], $cut) -ge 0) { $script:warmQueue.Enqueue($r) } }
+        return
+    }
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($script:warmQueue.Count -gt 0 -and $sw.ElapsedMilliseconds -lt 25) { $null = Get-ReportPos ($script:warmQueue.Dequeue()) }
+    if ($script:warmQueue.Count -gt 0) { return }
+    $script:warmTimer.Interval = [TimeSpan]::FromMilliseconds(400)
+    if ($null -eq $script:warmStage) { $script:warmStage = 0 }
+    $script:warmStage++
+    try {
+        switch ($script:warmStage) {
+            1 { foreach ($id in @($script:archLoads.Keys)) { if ($script:archLoads[$id].IsCompleted) { $null = Get-ArchWeek $id } } }
+            2 { Refresh-Target }
+            3 { if ($script:weeklyStale -or $script:weeklyPending) { $script:weeklyPending = $false; Refresh-WeeklyNow } }
+            4 { if ($script:prefsPending) { Refresh-Prefs } }
+            default { $script:warmTimer.Stop() }
+        }
+    } catch { Write-ErrorLog ("Vorladen: " + $_.Exception.Message) }
+}
 
 function Open-CommSpot([string]$lakeId, [int]$x, [int]$y) {
     $tabs.SelectedIndex = 0
