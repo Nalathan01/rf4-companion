@@ -97,6 +97,29 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .mapbox .maplabel { position: absolute; left: 12px; top: 10px; background: rgba(17,19,21,0.78); border-radius: 8px; padding: 4px 10px; font-weight: 650; font-size: 13px; }
 .mapbox .maphint { position: absolute; left: 12px; bottom: 10px; background: rgba(17,19,21,0.78); border-radius: 8px; padding: 3px 9px; font-size: 12px; color: var(--muted); }
 
+.detail { flex: 1; min-height: 0; overflow-y: auto; margin-top: 14px; }
+.map-col .mapbox { flex: 1.15; }
+.d-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 2px 2px 10px; }
+.d-head h3 { margin: 0; font-family: var(--font-display); font-size: 19px; }
+.d-head .d-sum { color: var(--muted); font-size: 12.5px; }
+.ev { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; padding: 11px 13px; margin-bottom: 9px; }
+.ev-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.ev-fish { font-weight: 650; }
+.ev-fish .w { color: var(--accent); margin-left: 6px; font-weight: 600; }
+.ev-time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.ev-facts { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--ink-2); font-size: 12.5px; margin-top: 4px; }
+.ev-det { font-size: 12.5px; color: var(--ink-2); margin-top: 5px; }
+.ev-det b { color: var(--muted); font-weight: 600; }
+.ev-src { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 6px; }
+.src { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--ink-2); background: transparent; cursor: pointer; }
+.src:hover { color: var(--ink); border-color: var(--accent); }
+.src.off { cursor: default; opacity: 0.7; border-style: dashed; }
+.src.off:hover { border-color: var(--line); color: var(--ink-2); }
+.thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.thumbs img { height: 74px; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; background: var(--surface-2); }
+.lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; place-items: center; z-index: 50; cursor: zoom-out; }
+.lightbox.show { display: grid; }
+.lightbox img { max-width: 92vw; max-height: 90vh; border-radius: 10px; }
 .placeholder { margin: auto; text-align: center; color: var(--muted); max-width: 520px; }
 .placeholder h2 { color: var(--ink); font-family: var(--font-display); }
 .status { position: fixed; right: 16px; bottom: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 12.5px; color: var(--ink-2); display: none; }
@@ -137,12 +160,14 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       </div>
       <div class="col map-col">
         <div class="mapbox" id="mapbox"><canvas id="map"></canvas><div class="maplabel" id="mapLabel"></div><div class="maphint" id="mapHint"></div></div>
+        <div class="detail" id="detail"></div>
       </div>
     </div>
   </section>
   <section class="view" id="view-log"><div class="placeholder"><h2 data-t="navLog">Mein Fangbuch</h2><p>…</p></div></section>
 </main>
 <div class="status" id="status"></div>
+<div class="lightbox" id="lightbox"><img id="lbImg"></div>
 <script>
 const TOKEN = new URLSearchParams(location.search).get("t");
 let S = {}, INIT = null, ACTIVE = [], HOURS = 24, LAKE = "", SEL = null, DATAV = -1;
@@ -197,6 +222,8 @@ async function loadActive() {
   if (!SEL || !ACTIVE.find(s => s.key === SEL)) SEL = ACTIVE.length ? ACTIVE[0].key : null;
   renderCards();
   drawMap();
+  DETAIL_KEY = null;
+  loadDetail();
 }
 function heat(s) { return s.hoursAgo < 6 ? "hot" : (s.hoursAgo < 24 ? "warm" : ""); }
 function renderCards() {
@@ -209,7 +236,7 @@ function renderCards() {
       <div class="line">${s.fish.map(f => `<span class="tag">${esc(f.name)}</span>`).join("")}${s.baits.map(b => `<span class="tag b">${esc(b.name)}</span>`).join("")}</div>
       <div class="meta"><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}</span><span>${esc(s.sources.join(", "))}</span>${s.clip ? `<span>Clip ${esc(s.clip)} m</span>` : ""}</div>
     </div>`).join("");
-  document.querySelectorAll(".card").forEach(c => c.onclick = () => { SEL = c.dataset.key; renderCards(); drawMap(); });
+  document.querySelectorAll(".card").forEach(c => c.onclick = () => { SEL = c.dataset.key; renderCards(); drawMap(); loadDetail(); });
 }
 const IMG = {};
 let VIEW = { lake: null, zoom: 1, cx: 0.5, cy: 0.5 };
@@ -246,7 +273,41 @@ function drawMap() {
     }
   }
 }
-function openSpotKey(k) { SEL = k; renderCards(); drawMap(); }
+function openSpotKey(k) { SEL = k; renderCards(); drawMap(); loadDetail(); }
+let DETAIL_KEY = null;
+async function loadDetail() {
+  const key = SEL;
+  if (!key) { $("detail").innerHTML = ""; return; }
+  if (DETAIL_KEY === key) return;
+  DETAIL_KEY = key;
+  let d;
+  try { d = await api("/api/spot?key=" + encodeURIComponent(key)); } catch (e) { $("detail").innerHTML = ""; return; }
+  if (SEL !== key) return;
+  const dirs = d.dirs.length ? T("castDir", "Wurfrichtung") + ": " + d.dirs.slice(0, 3).map(x => x.dir + (x.n > 1 ? " (" + x.n + ")" : "")).join(", ") : "";
+  const sum = T("catchesN", "{0} Fänge").replace("{0}", d.totalEvents) + " · " + T("reportsN", "{0} Meldungen").replace("{0}", d.totalReports);
+  $("detail").innerHTML = `<div class="d-head"><h3>${esc(d.lakeName)} · ${esc(d.name)}</h3><span class="d-sum">${esc(sum)}${dirs ? " · " + esc(dirs) : ""}</span></div>` +
+    d.events.map((e, i) => `
+    <div class="ev">
+      <div class="ev-top"><div class="ev-fish">${esc(e.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}${e.weight ? `<span class="w">${esc(e.weight)}</span>` : ""}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
+      <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}</div>
+      ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}</div>`).join("")}
+      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}">${esc(s.label)} ↗</button>` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>`).join("")}</div>
+      ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : ""}
+    </div>`).join("");
+  document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
+  document.querySelectorAll("#detail .thumbs").forEach(th => {
+    const n = +th.dataset.n, cnt = n > 0 ? Math.min(n, 4) : 2;
+    for (let i = 0; i < cnt; i++) {
+      const im = document.createElement("img"); im.loading = "lazy";
+      im.src = "/img/tg?p=" + encodeURIComponent(th.dataset.post) + "&i=" + i + "&t=" + TOKEN;
+      im.onerror = () => im.remove();
+      im.onclick = () => { $("lbImg").src = im.src; $("lightbox").classList.add("show"); };
+      th.appendChild(im);
+    }
+  });
+}
+const DET = { baitDetail: "baitExact", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed" };
+$("lightbox").onclick = () => $("lightbox").classList.remove("show");
 (function mapInput() {
   const cv = $("map"); let drag = null;
   cv.addEventListener("wheel", e => { e.preventDefault(); const f = e.deltaY < 0 ? 1.2 : 1 / 1.2; VIEW.zoom = Math.max(1, Math.min(8, VIEW.zoom * f)); drawMap(); }, { passive: false });

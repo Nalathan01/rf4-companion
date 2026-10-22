@@ -166,7 +166,8 @@ internal sealed class AppServer
             if (path.StartsWith("/img/"))
             {
                 byte[] b; string type;
-                if (api.Image(path.Substring(5), out b, out type)) Send(ctx, 200, b, type, true);
+                string iname = path == "/img/tg" ? "tg" + (req.QueryString["i"] ?? "0") + "|" + (req.QueryString["p"] ?? "") : path.Substring(5);
+                if (api.Image(iname, out b, out type)) Send(ctx, 200, b, type, true);
                 else Send(ctx, 404, new byte[0], "text/plain", false);
                 return;
             }
