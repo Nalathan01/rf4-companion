@@ -50,7 +50,7 @@ internal sealed class Api
         if (!Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Records.Refresh();
         Community.QueuePosts(72);
-        if (ImageOcr.Available("ru")) Community.QueueRecentOcr(72);
+        if (ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
     }
 
     private void WaitReady()
@@ -81,6 +81,17 @@ internal sealed class Api
                 return Init();
             case "/api/active": return Active(q);
             case "/api/spot": return SpotDetail(q["key"] ?? "");
+            case "/api/devocr":
+                {
+                    if (AppEnv.DevRoot == null) throw new AppError("unknown", path);
+                    byte[] img = System.IO.File.ReadAllBytes(q["file"]);
+                    List<string> found;
+                    string used;
+                    bool ok = ImageOcr.ReadSetup(img, out found, out used);
+                    List<object> names = new List<object>();
+                    foreach (string k in found) names.Add(k + " = " + GameData.Translate(k, Lang));
+                    return AppEnv.Obj("ok", ok, "used", used, "baits", names);
+                }
             case "/api/open":
                 {
                     string u = AppEnv.GetString(args, "url");

@@ -9,7 +9,7 @@ internal static class Fuzzy
     public static string Norm(string s)
     {
         StringBuilder sb = new StringBuilder();
-        foreach (char ch in (s ?? "").ToLowerInvariant()) if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+        foreach (char ch in (s ?? "").ToLowerInvariant()) if (char.IsLetterOrDigit(ch)) sb.Append(ch == 'ё' ? 'е' : ch);
         return sb.ToString();
     }
 

@@ -18,8 +18,31 @@ internal static class ImageOcr
     private static MatchList candidates;
     private static bool dirty;
     public static int Version;
-    private static readonly Regex Header = new Regex(@"^(Монтаж|Angelmontage|Rig|Montaż|Комбинация наживок|Köder\s*Kombination|Bait\s*combination)\b", RegexOptions.IgnoreCase);
+    private static readonly Regex Header = new Regex(@"^(Монтаж|Оснастка|Angelmontage|Rig|Montaż|Mocowanie|Montage|Montaje|Montaggio|Montagem|Montaj|Takım|Комбинация наживок|Köder\s*Kombination|Bait\s*combination)\b", RegexOptions.IgnoreCase);
+    private static string latin;
+
+    private static string LatinLang()
+    {
+        if (latin != null) return latin;
+        string pick = "";
+        try
+        {
+            foreach (string want in new string[] { "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "it-IT", "pl-PL", "pt-BR", "nl-NL" })
+                if (OcrEngine.IsLanguageSupported(new Windows.Globalization.Language(want))) { pick = want; break; }
+            if (pick.Length == 0)
+                foreach (Windows.Globalization.Language l in OcrEngine.AvailableRecognizerLanguages)
+                    if (l.LanguageTag.StartsWith("en") || l.LanguageTag.StartsWith("de") || l.LanguageTag.StartsWith("fr") || l.LanguageTag.StartsWith("es") || l.LanguageTag.StartsWith("pl")) { pick = l.LanguageTag; break; }
+        }
+        catch (Exception) { }
+        latin = pick;
+        return pick;
+    }
     private static readonly Regex ItemEnd = new Regex(@"\s[OoО0©ф@®]\s*$");
+
+    public static bool AnyAvailable()
+    {
+        return Available("ru") || LatinLang().Length > 0;
+    }
 
     public static bool Available(string lang)
     {
@@ -103,20 +126,42 @@ internal static class ImageOcr
 
     private static void Scan(string post, Dictionary<string, object> res)
     {
-        if (!Available("ru")) { res["noLang"] = true; return; }
+        bool ru = Available("ru");
+        string lat = LatinLang();
+        if (!ru && lat.Length == 0) { res["noLang"] = true; return; }
         string[] imgs = Scans.FetchImages(post);
         if (imgs == null) return;
         for (int i = 0; i < imgs.Length && i < 10; i++)
         {
             byte[] b = Scans.ImageAt(post, i);
             if (b == null) continue;
-            string[] lines = Recognize(b, "ru", 3, 0.5);
             List<string> baits;
-            if (!ParseSetup(lines, out baits)) continue;
-            res["img"] = i;
-            res["baits"] = baits.ToArray();
-            return;
+            string used;
+            if (ReadSetup(b, ru, lat, out baits, out used))
+            {
+                res["img"] = i;
+                res["baits"] = baits.ToArray();
+                res["ocr"] = used;
+                return;
+            }
         }
+    }
+
+    public static bool ReadSetup(byte[] b, bool ru, string lat, out List<string> baits, out string used)
+    {
+        foreach (double crop in new double[] { 0.5, 0.0 })
+        {
+            if (ru && ParseSetup(Recognize(b, "ru", 3, crop), out baits)) { used = "ru"; return true; }
+            if (lat.Length > 0 && ParseSetup(Recognize(b, lat, crop > 0 ? 3u : 2u, crop), out baits)) { used = lat; return true; }
+        }
+        baits = new List<string>();
+        used = "";
+        return false;
+    }
+
+    public static bool ReadSetup(byte[] b, out List<string> baits, out string used)
+    {
+        return ReadSetup(b, Available("ru"), LatinLang(), out baits, out used);
     }
 
     private static T W<T>(IAsyncOperation<T> op)
@@ -163,10 +208,10 @@ internal static class ImageOcr
         foreach (string d in GameData.DipKeys) keys.Add(d);
         foreach (string k in keys)
         {
-            foreach (string lg in new string[] { "ru", "en" })
+            foreach (string lg in GameData.Languages())
             {
                 string n = GameData.Translate(k, lg);
-                if (n.Length == 0) continue;
+                if (n.Length == 0 || (lg != "en" && n == k)) continue;
                 loc.Add(n); en.Add(k);
             }
         }
@@ -195,12 +240,19 @@ internal static class ImageOcr
             if (name.Length < 5) continue;
             double sc;
             int idx = Fuzzy.Best(name, c.LocNorm, out sc);
+            List<string> variants = new List<string>();
             string bare = Regex.Replace(name, @"^[A-Za-z0-9'&.\s]+\s(?=[^\u0000-\u007F])", "").Trim();
-            if (bare != name && bare.Length >= 5)
+            if (bare != name && bare.Length >= 5) variants.Add(bare);
+            string[] words = name.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int k = 1; k <= 3 && words.Length-k >= 2; k++) variants.Add(string.Join(" ", words, k, words.Length-k));
+            if (sc < 0.8)
             {
-                double sc2;
-                int idx2 = Fuzzy.Best(bare, c.LocNorm, out sc2);
-                if (idx2 >= 0 && sc2 > sc) { idx = idx2; sc = sc2; }
+                foreach (string v in variants)
+                {
+                    double sc2;
+                    int idx2 = Fuzzy.Best(v, c.LocNorm, out sc2);
+                    if (idx2 >= 0 && sc2 > sc + 0.05) { idx = idx2; sc = sc2; }
+                }
             }
             if (idx < 0 || sc < 0.72) continue;
             if (!baits.Contains(c.En[idx])) baits.Add(c.En[idx]);
