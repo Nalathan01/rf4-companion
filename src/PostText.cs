@@ -279,6 +279,50 @@ internal static class PostText
         }
     }
 
+    public static bool HasKnownItem(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return false;
+        foreach (string part in Regex.Split(text, @"\s\+\s|\s*,\s*|\s*;\s*"))
+        {
+            string x = part.Trim();
+            if (x.Length < 3) continue;
+            int k = x.LastIndexOf("<==", StringComparison.Ordinal);
+            if (k >= 0) x = x.Substring(k + 3).Trim();
+            if (ResolveKey(x) != null) return true;
+            string loc;
+            foreach (string ol in new string[] { "ru", "pl", "de", "fr", "es", "it" })
+                if (Match(x, Items(ol), 0.9, out loc) != null) return true;
+        }
+        return false;
+    }
+
+    private static readonly Dictionary<string, string> normMemo = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    public static string NormalizedPost(string txt)
+    {
+        if (string.IsNullOrEmpty(txt)) return "";
+        lock (gate)
+        {
+            string c;
+            if (normMemo.TryGetValue(txt, out c)) return c;
+            StringBuilder sb = new StringBuilder();
+            foreach (string line in txt.Split('\n'))
+            {
+                string l = Regex.Replace(line, @"#\S+", " ");
+                if (Regex.IsMatch(l, @"(?i)(Предложить пост|Поиск по водо|Барахолка|Мы в |Поделиться|Подписаться|Наш чат|Авторын|Разместить|Список)")) continue;
+                foreach (char ch in l.ToLowerInvariant()) if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+            }
+            string res = sb.Length >= 12 ? sb.ToString() : "";
+            normMemo[txt] = res;
+            return res;
+        }
+    }
+
+    public static bool Mixed(string txt)
+    {
+        return !string.IsNullOrEmpty(txt) && Regex.IsMatch(txt, @"(?i)разнорыб");
+    }
+
     public static string ResolveKey(string x)
     {
         x = (x ?? "").Trim();

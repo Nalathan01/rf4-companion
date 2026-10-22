@@ -300,10 +300,11 @@ internal static class Community
     public static bool HasSetup(Report r)
     {
         foreach (object b in AppEnv.GetList(r.Raw, "bait")) if (b != null && b.ToString().Trim().Length > 0) return true;
-        foreach (string k in new string[] { "baitDetail", "lure", "rig", "groundbait", "dip", "pva", "dryMix" }) if (r.S(k).Trim().Length > 0) return true;
+        foreach (string k in new string[] { "baitDetail", "lure", "groundbait", "dip", "pva", "dryMix" }) if (PostText.HasKnownItem(r.S(k))) return true;
         string pk = Scans.PostKey(r.Url);
         if (pk.Length == 0) return Records.Match(r) != null;
-        if (SetupWords.IsMatch(Scans.Text(pk))) return true;
+        Dictionary<string, string> info = PostText.Parse(Scans.Text(pk));
+        foreach (string k in new string[] { "baitDetail", "groundbait", "dip", "pva" }) if (info.ContainsKey(k)) return true;
         Dictionary<string, object> oc = ImageOcr.Result(pk);
         if (oc != null && AppEnv.GetList(oc, "baits").Count > 0) return true;
         return Records.Match(r) != null;
@@ -407,10 +408,15 @@ internal static class Community
     {
         s.Reports.Sort((a, b) => a.Posted.CompareTo(b.Posted));
         List<SpotEvent> open = new List<SpotEvent>();
+        Dictionary<string, SpotEvent> byText = new Dictionary<string, SpotEvent>(StringComparer.Ordinal);
         foreach (Report r in s.Reports)
         {
             SpotEvent hit = null;
-            foreach (SpotEvent e in open)
+            string pk0 = Scans.PostKey(r.Url);
+            string norm = pk0.Length > 0 ? PostText.NormalizedPost(Scans.Text(pk0)) : "";
+            SpotEvent same;
+            if (norm.Length > 0 && byText.TryGetValue(norm, out same) && r.Posted.Subtract(same.Last).TotalHours <= 72) hit = same;
+            if (hit == null) foreach (SpotEvent e in open)
             {
                 if (r.Posted.Subtract(e.Last).TotalHours > 6) continue;
                 bool fishOk = e.FishKey.Length == 0 || r.FishKey.Length == 0 || e.FishKey == r.FishKey;
@@ -422,6 +428,7 @@ internal static class Community
             if (hit.FishKey.Length == 0 && r.FishKey.Length > 0) hit.FishKey = r.FishKey;
             hit.Reports.Add(r);
             hit.Last = r.Posted;
+            if (norm.Length > 0) byText[norm] = hit;
             open.RemoveAll(e => r.Posted.Subtract(e.Last).TotalHours > 6);
         }
         s.Last = s.Reports.Count > 0 ? s.Reports[s.Reports.Count-1].Posted : DateTime.MinValue;
