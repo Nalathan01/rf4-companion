@@ -285,14 +285,19 @@ internal sealed class Api
         for (int i = 0; i < evList.Count; i++)
         {
             if (!evList[i].Confirm) continue;
+            int pick = -1, first = -1;
             for (int j = i + 1; j < evList.Count; j++)
             {
                 if (evList[j].Confirm) continue;
-                Dictionary<string, string> dj = evObjs[j]["detail"] as Dictionary<string, string>;
-                string bait = dj != null && dj.ContainsKey("baitDetail") ? dj["baitDetail"] : "";
-                evObjs[i]["confirmOf"] = AppEnv.Obj("hoursAgo", evObjs[j]["hoursAgo"], "bait", bait, "dip", dj != null && dj.ContainsKey("dip") ? dj["dip"] : "");
-                break;
+                if (evList[i].Last.Subtract(evList[j].Last).TotalHours > Community.ConfirmHours) break;
+                if (first < 0) first = j;
+                Dictionary<string, string> dj0 = evObjs[j]["detail"] as Dictionary<string, string>;
+                if (dj0 != null && dj0.ContainsKey("baitDetail")) { pick = j; break; }
             }
+            if (pick < 0) pick = first;
+            if (pick < 0) continue;
+            Dictionary<string, string> dj = evObjs[pick]["detail"] as Dictionary<string, string>;
+            evObjs[i]["confirmOf"] = AppEnv.Obj("hoursAgo", evObjs[pick]["hoursAgo"], "bait", dj != null && dj.ContainsKey("baitDetail") ? dj["baitDetail"] : "", "dip", dj != null && dj.ContainsKey("dip") ? dj["dip"] : "");
         }
         return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
             "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
