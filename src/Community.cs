@@ -21,6 +21,7 @@ internal sealed class Report
     public bool Linkable;
     public List<string> Fish = new List<string>();
     public string FishKey;
+    public string Guild = "";
 
     public string S(string key) { return AppEnv.GetString(Raw, key); }
 }
@@ -30,6 +31,7 @@ internal sealed class SpotEvent
     public DateTime First, Last;
     public string FishKey;
     public List<Report> Reports = new List<Report>();
+    public bool Confirm;
 }
 
 internal sealed class Spot
@@ -40,6 +42,7 @@ internal sealed class Spot
     public string Mark;
     public List<Report> Reports = new List<Report>();
     public List<SpotEvent> Events = new List<SpotEvent>();
+    public HashSet<Report> Confirms = new HashSet<Report>();
     public DateTime Last;
 }
 
@@ -137,7 +140,7 @@ internal static class Community
         m = Vk.Match(u);
         if (m.Success) { r.SourceKey = "vk:" + m.Groups[1].Value; r.SourceLabel = "VK"; r.Linkable = true; return; }
         m = Dc.Match(u);
-        if (m.Success) { r.SourceKey = "dc:" + m.Groups[2].Value; r.SourceLabel = "Discord"; r.Linkable = false; return; }
+        if (m.Success) { r.SourceKey = "dc:" + m.Groups[2].Value; r.SourceLabel = "Discord"; r.Linkable = false; r.Guild = m.Groups[1].Value; return; }
         if (u.Length == 0) { r.SourceKey = "companion:" + r.Id; r.SourceLabel = "RF4 Companion"; r.Linkable = false; return; }
         r.SourceKey = "web:" + u; r.SourceLabel = "Web"; r.Linkable = true;
     }
@@ -252,6 +255,7 @@ internal static class Community
         r["pva"] = AppEnv.GetString(p, "pva");
         r["reelSpeed"] = AppEnv.GetString(p, "reel_speed");
         r["weight"] = p.ContainsKey("weight_kg") ? p["weight_kg"] : null;
+        r["type"] = AppEnv.GetString(p, "post_type");
         return r;
     }
 
@@ -290,7 +294,13 @@ internal static class Community
                 if (spotsAll == null) spotsAll = BuildSpots(reports);
                 return spotsAll;
             }
-            if (spots == null) spots = BuildSpots(reports.FindAll(HasSetup));
+            if (spots == null)
+            {
+                List<Report> setup = new List<Report>(), rest = new List<Report>();
+                foreach (Report r in reports) { if (HasSetup(r)) setup.Add(r); else rest.Add(r); }
+                spots = BuildSpots(setup);
+                AttachConfirms(spots, rest);
+            }
             return spots;
         }
     }
@@ -364,6 +374,45 @@ internal static class Community
         return result;
     }
 
+    public const double ConfirmHours = 48;
+
+    private static void AttachConfirms(List<Spot> list, List<Report> rest)
+    {
+        Dictionary<string, List<Spot>> byLake = new Dictionary<string, List<Spot>>(StringComparer.OrdinalIgnoreCase);
+        foreach (Spot s in list)
+        {
+            List<Spot> l;
+            if (!byLake.TryGetValue(s.Lake, out l)) { l = new List<Spot>(); byLake[s.Lake] = l; }
+            l.Add(s);
+        }
+        HashSet<Spot> touched = new HashSet<Spot>();
+        foreach (Report r in rest)
+        {
+            if (r.X < 0 || r.Y < 0 || r.Posted == DateTime.MinValue) continue;
+            List<Spot> l;
+            if (!byLake.TryGetValue(r.Lake, out l)) continue;
+            SeaMark sm = SeaMarks.Nearest(r.Lake, r.X, r.Y);
+            foreach (Spot s in l)
+            {
+                bool here = sm != null ? s.Mark == sm.Key : (s.Mark == null && Math.Abs(s.X-r.X) <= 2 && Math.Abs(s.Y-r.Y) <= 2);
+                if (!here) continue;
+                bool fits = false;
+                foreach (Report sr in s.Reports)
+                {
+                    if (s.Confirms.Contains(sr)) continue;
+                    double h = r.Posted.Subtract(sr.Posted).TotalHours;
+                    if (h >= 0 && h <= ConfirmHours) { fits = true; break; }
+                }
+                if (!fits) continue;
+                s.Reports.Add(r);
+                s.Confirms.Add(r);
+                touched.Add(s);
+                break;
+            }
+        }
+        foreach (Spot s in touched) { s.Events.Clear(); BuildEvents(s); }
+    }
+
     private static void BuildEvents(Spot s)
     {
         s.Reports.Sort((a, b) => a.Posted.CompareTo(b.Posted));
@@ -384,6 +433,12 @@ internal static class Community
             hit.Reports.Add(r);
             hit.Last = r.Posted;
             open.RemoveAll(e => r.Posted.Subtract(e.Last).TotalHours > 6);
+        }
+        foreach (SpotEvent e in s.Events)
+        {
+            bool all = e.Reports.Count > 0;
+            foreach (Report r in e.Reports) if (!s.Confirms.Contains(r)) { all = false; break; }
+            e.Confirm = all;
         }
         s.Last = s.Reports.Count > 0 ? s.Reports[s.Reports.Count-1].Posted : DateTime.MinValue;
     }

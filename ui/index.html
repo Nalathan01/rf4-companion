@@ -117,6 +117,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .src:hover { color: var(--ink); border-color: var(--accent); }
 .src.off { cursor: default; opacity: 0.7; border-style: dashed; }
 .src.off:hover { border-color: var(--line); color: var(--ink-2); }
+.confirm { font-size: 11px; font-weight: 650; color: #06202b; background: var(--warm); border-radius: 6px; padding: 1px 6px; margin-right: 7px; }
 .fromimg { font-size: 11px; color: var(--accent); border: 1px solid rgba(79,168,201,0.4); border-radius: 6px; padding: 0 5px; margin-left: 4px; }
 .orig { margin-top: 7px; font-size: 12.5px; }
 .orig summary { cursor: pointer; color: var(--muted); }
@@ -246,7 +247,7 @@ function renderCards() {
       <div class="where">${esc(s.lakeName)}<small>${esc(s.name)}</small></div>
       <div class="ago">${esc(ago(s.hoursAgo))}</div>
       <div class="line">${s.fish.map(f => `<span class="tag">${esc(f.name)}</span>`).join("")}${s.baits.map(b => `<span class="tag b">${esc(b.name)}</span>`).join("")}</div>
-      <div class="meta"><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}</span><span>${esc(s.sources.join(", "))}</span>${s.clip ? `<span>Clip ${esc(s.clip)} m</span>` : ""}</div>
+      <div class="meta"><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.confirms ? " · " + esc(T("confirmsN", "davon {0} Bestätigungen").replace("{0}", s.confirms)) : ""}</span><span>${esc(s.sources.join(", "))}</span>${s.clip ? `<span>Clip ${esc(s.clip)} m</span>` : ""}</div>
     </div>`).join("");
   document.querySelectorAll(".card").forEach(c => c.onclick = () => { SEL = c.dataset.key; renderCards(); drawMap(); loadDetail(); });
 }
@@ -308,10 +309,10 @@ async function loadDetail() {
   $("detail").innerHTML = `<div class="d-head"><h3>${esc(d.lakeName)} · ${esc(d.name)}</h3><span class="d-sum">${esc(sum)}${dirs ? " · " + esc(dirs) : ""}</span></div>` +
     d.events.map((e, i) => `
     <div class="ev">
-      <div class="ev-top"><div class="ev-fish">${esc(e.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}${e.weight ? `<span class="w">${esc(e.weight)}</span>` : ""}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
+      <div class="ev-top"><div class="ev-fish">${e.confirm ? `<span class="confirm">${esc(T("confirmation", "Bestätigung"))}</span>` : ""}${esc(e.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}${e.weight ? `<span class="w">${esc(e.weight)}</span>` : ""}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
       ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}</div>`).join("")}
-      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}">${esc(s.label)} ↗</button>` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>`).join("")}</div>
+      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}">${esc(s.label)} ↗</button>` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
       ${e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="ru" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : ""}
     </div>`).join("");

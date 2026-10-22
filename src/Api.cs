@@ -211,7 +211,12 @@ internal sealed class Api
             bool fromImage = false;
             foreach (Report r in e.Reports)
             {
-                if (seenSrc.Add(r.SourceKey)) src.Add(AppEnv.Obj("label", r.SourceLabel, "url", r.Linkable ? r.Url : "", "members", r.SourceKey.StartsWith("dc:")));
+                if (seenSrc.Add(r.SourceKey))
+                {
+                    string[] dc = r.Guild.Length > 0 ? DiscordInfo.Lookup(r.Guild) : null;
+                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"),
+                        "invite", dc != null && dc.Length > 1 ? dc[1] : ""));
+                }
                 string pk = Scans.PostKey(r.Url);
                 if (pk.Length > 0)
                 {
@@ -271,7 +276,7 @@ internal sealed class Api
             events.Add(AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage));
+                "confirm", e.Confirm, "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage));
         }
         return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
             "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
@@ -318,8 +323,10 @@ internal sealed class Api
             Dictionary<string, int> clips = new Dictionary<string, int>();
             HashSet<string> sources = new HashSet<string>();
             List<string> sourceLabels = new List<string>();
+            int confirms = 0;
             foreach (SpotEvent e in recent)
             {
+                if (e.Confirm) confirms++;
                 HashSet<string> ef = new HashSet<string>();
                 HashSet<string> eb = new HashSet<string>();
                 foreach (Report r in e.Reports)
@@ -333,7 +340,7 @@ internal sealed class Api
                         if (pk.Length > 0 && PostText.Parse(Scans.Text(pk)).TryGetValue("clip", out pc)) c = pc;
                     }
                     if (c.Length > 0) { int n; clips.TryGetValue(c, out n); clips[c] = n + 1; }
-                    if (sources.Add(r.SourceKey)) sourceLabels.Add(r.SourceLabel);
+                    if (sources.Add(r.SourceKey)) sourceLabels.Add(SourceName(r));
                 }
                 foreach (string f in ef) { int n; fish.TryGetValue(f, out n); fish[f] = n + 1; }
                 foreach (string b in eb) { int n; baits.TryGetValue(b, out n); baits[b] = n + 1; }
@@ -348,13 +355,20 @@ internal sealed class Api
                 "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
                 "sea", s.Mark != null, "x", s.X, "y", s.Y, "nx", norm[0], "ny", norm[1],
                 "last", s.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(s.Last).TotalHours, 1),
-                "catches", recent.Count, "reports", rr.Count, "score", Math.Round(score, 3),
+                "catches", recent.Count, "confirms", confirms, "reports", rr.Count, "score", Math.Round(score, 3),
                 "fish", Top(fish, 4, lang), "baits", Top(baits, 3, lang),
                 "clip", clips.Count > 0 ? clips.OrderByDescending(kv => kv.Value).First().Key : "",
                 "sources", sourceLabels.Distinct().ToArray(), "sourceCount", sources.Count));
         }
         rows.Sort((a, b) => ((double)((Dictionary<string, object>)b)["score"]).CompareTo((double)((Dictionary<string, object>)a)["score"]));
         return AppEnv.Obj("hours", hours, "spots", rows, "syncing", Community.Syncing, "synced", Community.Synced == DateTime.MinValue ? "" : Community.Synced.ToString("o", CultureInfo.InvariantCulture));
+    }
+
+    private static string SourceName(Report r)
+    {
+        if (r.Guild.Length == 0) return r.SourceLabel;
+        string[] dc = DiscordInfo.Lookup(r.Guild);
+        return dc != null ? "Discord · " + dc[0] : "Discord";
     }
 
     private static object[] Top(Dictionary<string, int> d, int n, string lang)
