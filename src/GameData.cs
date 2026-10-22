@@ -33,6 +33,26 @@ internal static class GameData
     public static readonly Dictionary<string, int[]> Trophies = new Dictionary<string, int[]>(StringComparer.Ordinal);
     public static readonly List<string> Baits = new List<string>();
     public static readonly List<string> DipKeys = new List<string>();
+    private static HashSet<string> baitSet;
+
+    public static bool IsBait(string en)
+    {
+        if (string.IsNullOrEmpty(en)) return false;
+        if (baitSet == null)
+        {
+            HashSet<string> h = new HashSet<string>(Baits, StringComparer.Ordinal);
+            try
+            {
+                Dictionary<string, object> cats = AppEnv.Json.DeserializeObject(AppEnv.ResourceText("data/itemcats.json") ?? "{}") as Dictionary<string, object>;
+                if (cats != null)
+                    foreach (string c in new string[] { "spinlure", "pilker", "seasoft", "fillet", "deadfish", "teaser", "seanatural" })
+                        foreach (object o in AppEnv.GetList(cats, c)) if (o != null) h.Add(o.ToString());
+            }
+            catch (Exception) { }
+            baitSet = h;
+        }
+        return baitSet.Contains(en);
+    }
     private static List<string[]> itemList;
     public static Dictionary<string, object> Lang;
     private static Dictionary<string, string[]> itemRows;

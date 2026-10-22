@@ -282,18 +282,29 @@ internal static class PostText
     public static bool HasKnownItem(string text)
     {
         if (string.IsNullOrEmpty(text)) return false;
+        int k = text.LastIndexOf("<==", StringComparison.Ordinal);
+        if (k >= 0) text = text.Substring(k + 3);
         foreach (string part in Regex.Split(text, @"\s\+\s|\s*,\s*|\s*;\s*"))
         {
-            string x = part.Trim();
-            if (x.Length < 3) continue;
-            int k = x.LastIndexOf("<==", StringComparison.Ordinal);
-            if (k >= 0) x = x.Substring(k + 3).Trim();
-            if (ResolveKey(x) != null) return true;
-            string loc;
-            foreach (string ol in new string[] { "ru", "pl", "de", "fr", "es", "it" })
-                if (Match(x, Items(ol), 0.9, out loc) != null) return true;
+            string k2 = ResolveAny(part);
+            if (k2 != null && GameData.IsBait(k2)) return true;
         }
         return false;
+    }
+
+    public static string ResolveAny(string x)
+    {
+        string k = ResolveKey(x);
+        if (k != null) return k;
+        x = (x ?? "").Trim();
+        if (x.Length < 4) return null;
+        string loc;
+        foreach (string ol in new string[] { "pl", "de", "fr", "es", "it", "ru" })
+        {
+            k = Match(x, Items(ol), 0.9, out loc);
+            if (k != null) return k;
+        }
+        return null;
     }
 
     private static readonly Dictionary<string, string> normMemo = new Dictionary<string, string>(StringComparer.Ordinal);
