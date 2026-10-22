@@ -197,6 +197,8 @@ internal sealed class Api
         GameData.LakeById.TryGetValue(s.Lake, out lake);
         DateTime now = DateTime.UtcNow;
         List<object> events = new List<object>();
+        List<Dictionary<string, object>> evObjs = new List<Dictionary<string, object>>();
+        List<SpotEvent> evList = new List<SpotEvent>();
         Dictionary<string, int> dirs = new Dictionary<string, int>();
         foreach (SpotEvent e in s.Events.OrderByDescending(x => x.Last).Take(60))
         {
@@ -272,10 +274,25 @@ internal sealed class Api
             if (dir.Length > 0) { int n; dirs.TryGetValue(dir, out n); dirs[dir] = n + 1; }
             int imgCount = 0;
             if (imgPost.Length > 0) { string[] im = Scans.Images(imgPost); imgCount = im == null ? -1 : im.Length; }
-            events.Add(AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
+            Dictionary<string, object> eo = AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "confirm", e.Confirm, "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage));
+                "confirm", e.Confirm, "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage);
+            events.Add(eo);
+            evObjs.Add(eo);
+            evList.Add(e);
+        }
+        for (int i = 0; i < evList.Count; i++)
+        {
+            if (!evList[i].Confirm) continue;
+            for (int j = i + 1; j < evList.Count; j++)
+            {
+                if (evList[j].Confirm) continue;
+                Dictionary<string, string> dj = evObjs[j]["detail"] as Dictionary<string, string>;
+                string bait = dj != null && dj.ContainsKey("baitDetail") ? dj["baitDetail"] : "";
+                evObjs[i]["confirmOf"] = AppEnv.Obj("hoursAgo", evObjs[j]["hoursAgo"], "bait", bait, "dip", dj != null && dj.ContainsKey("dip") ? dj["dip"] : "");
+                break;
+            }
         }
         return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
             "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
