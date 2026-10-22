@@ -223,7 +223,7 @@ internal sealed class Api
                 if (seenSrc.Add(r.SourceKey))
                 {
                     string[] dc = r.Guild.Length > 0 ? DiscordInfo.Lookup(r.Guild) : null;
-                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"),
+                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"),
                         "invite", dc != null && dc.Length > 1 ? dc[1] : ""));
                 }
                 string pk = Scans.PostKey(r.Url);
