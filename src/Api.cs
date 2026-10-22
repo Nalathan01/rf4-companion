@@ -64,7 +64,7 @@ internal sealed class Api
         Dictionary<string, object> args = body.Length > 0 ? AppEnv.Json.DeserializeObject(body) as Dictionary<string, object> : null;
         if (path == "/api/ping")
         {
-            return AppEnv.Obj("ok", true, "ready", ready, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version,
+            return AppEnv.Obj("ok", true, "ready", ready, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
                 "update", Updater.Available, "spot", server.TakePendingSpot());
         }
         WaitReady();
@@ -137,6 +137,16 @@ internal sealed class Api
         return string.Join(" + ", parts.ToArray());
     }
 
+    private static readonly System.Text.RegularExpressions.Regex Footer = new System.Text.RegularExpressions.Regex(@"(?i)(Предложить пост|Поиск по водо|Барахолка|Мы в ВК|Мы в ТГ|Мы в MAX|Поделиться точкой|Подписаться|Наш чат)");
+
+    private static string StripFooter(string t)
+    {
+        if (string.IsNullOrEmpty(t)) return "";
+        List<string> keep = new List<string>();
+        foreach (string line in t.Replace(((char)13).ToString(), "").Split((char)10)) if (!Footer.IsMatch(line)) keep.Add(line);
+        return string.Join(((char)10).ToString(), keep.ToArray()).Trim();
+    }
+
     private object SpotDetail(string key)
     {
         string lang = Lang;
@@ -156,7 +166,8 @@ internal sealed class Api
             double deg = -1;
             double weight = 0;
             Dictionary<string, string> detail = new Dictionary<string, string>();
-            string clip = "", depth = "", method = "", postText = "";
+            string clip = "", depth = "", method = "", postText = "", temp = "";
+            bool fromImage = false;
             foreach (Report r in e.Reports)
             {
                 if (seenSrc.Add(r.SourceKey)) src.Add(AppEnv.Obj("label", r.SourceLabel, "url", r.Linkable ? r.Url : "", "members", r.SourceKey.StartsWith("dc:")));
@@ -185,11 +196,29 @@ internal sealed class Api
                 string pv;
                 if (clip.Length == 0 && info.TryGetValue("clip", out pv)) clip = pv;
                 if (depth.Length == 0 && info.TryGetValue("depth", out pv)) depth = pv;
+                if (info.TryGetValue("temp", out pv)) temp = GameData.Ui(lang, "temp_" + pv, pv);
                 foreach (string dk in new string[] { "baitDetail", "dip", "groundbait", "pva", "reelSpeed" })
                 {
                     if (detail.ContainsKey(dk) || !info.TryGetValue(dk, out pv)) continue;
                     string v = dk == "reelSpeed" ? pv : PostText.CleanItems(pv, lang);
                     if (v.Length > 0) detail[dk] = v;
+                }
+            }
+            if (!detail.ContainsKey("baitDetail") && imgPost.Length > 0)
+            {
+                Dictionary<string, object> oc = ImageOcr.Result(imgPost);
+                if (oc == null) ImageOcr.Request(imgPost);
+                else
+                {
+                    List<string> bl = new List<string>(), dl = new List<string>();
+                    foreach (object o in AppEnv.GetList(oc, "baits"))
+                    {
+                        string k = o.ToString();
+                        string label = GameData.Translate(k, lang);
+                        if (GameData.DipKeys.Contains(k)) dl.Add(label); else bl.Add(label);
+                    }
+                    if (bl.Count > 0) { detail["baitDetail"] = string.Join(" + ", bl.ToArray()); fromImage = true; }
+                    if (dl.Count > 0 && !detail.ContainsKey("dip")) { detail["dip"] = string.Join(" + ", dl.ToArray()); fromImage = true; }
                 }
             }
             List<string> fish = new List<string>();
@@ -201,7 +230,7 @@ internal sealed class Api
             events.Add(AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", postText));
+                "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage));
         }
         return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
             "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),

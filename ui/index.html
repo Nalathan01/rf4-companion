@@ -115,6 +115,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .src:hover { color: var(--ink); border-color: var(--accent); }
 .src.off { cursor: default; opacity: 0.7; border-style: dashed; }
 .src.off:hover { border-color: var(--line); color: var(--ink-2); }
+.fromimg { font-size: 11px; color: var(--accent); border: 1px solid rgba(79,168,201,0.4); border-radius: 6px; padding: 0 5px; margin-left: 4px; }
 .orig { margin-top: 7px; font-size: 12.5px; }
 .orig summary { cursor: pointer; color: var(--muted); }
 .orig summary:hover { color: var(--ink-2); }
@@ -175,6 +176,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 <div class="lightbox" id="lightbox"><img id="lbImg"></div>
 <script>
 const TOKEN = new URLSearchParams(location.search).get("t");
+let OCRV = -1;
 let S = {}, INIT = null, ACTIVE = [], HOURS = 24, LAKE = "", SEL = null, DATAV = -1;
 const $ = id => document.getElementById(id);
 function T(k, fb) { return (S[k] != null && S[k] !== "") ? S[k] : (fb != null ? fb : k); }
@@ -217,6 +219,8 @@ async function ping() {
     if (p.syncing) $("status").textContent = T("syncing", "Wird abgeglichen") + (p.syncState ? " · " + p.syncState : "");
     if (DATAV !== -1 && p.data !== DATAV) loadActive();
     DATAV = p.data;
+    if (OCRV !== -1 && p.ocr !== OCRV) { DETAIL_KEY = null; loadDetail(); }
+    OCRV = p.ocr;
     if (p.spot) openSpotKey(p.spot);
   } catch (e) {}
 }
@@ -302,8 +306,8 @@ async function loadDetail() {
     d.events.map((e, i) => `
     <div class="ev">
       <div class="ev-top"><div class="ev-fish">${esc(e.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}${e.weight ? `<span class="w">${esc(e.weight)}</span>` : ""}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
-      <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}</div>
-      ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}</div>`).join("")}
+      <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
+      ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}</div>`).join("")}
       <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}">${esc(s.label)} ↗</button>` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>`).join("")}</div>
       ${e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="ru" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : ""}
