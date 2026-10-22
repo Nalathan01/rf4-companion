@@ -318,6 +318,7 @@ internal static class PostText
                 string loc;
                 key = Match(x, en, 0.88, out loc);
                 if (key == null && Regex.IsMatch(x, @"^[A-Za-z0-9 '&./]+$")) continue;
+                if (key == null && (x.Contains(":") || Regex.IsMatch(x, @"(?i)(^|\s)(typ|waga|ilo|porcj|szt)"))) continue;
                 if (key == null) key = x;
             }
             if (!seen.Add(key)) continue;
