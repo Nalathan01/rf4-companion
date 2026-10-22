@@ -32,6 +32,8 @@ internal static class GameData
     public static readonly Dictionary<string, Dictionary<string, object>> Names = new Dictionary<string, Dictionary<string, object>>(StringComparer.Ordinal);
     public static readonly Dictionary<string, int[]> Trophies = new Dictionary<string, int[]>(StringComparer.Ordinal);
     public static readonly List<string> Baits = new List<string>();
+    public static readonly List<string> DipKeys = new List<string>();
+    private static List<string[]> itemList;
     public static Dictionary<string, object> Lang;
     private static Dictionary<string, string[]> itemRows;
     private static string[] itemLangs;
@@ -69,7 +71,7 @@ internal static class GameData
         Dictionary<string, object> names = g.ContainsKey("names") ? g["names"] as Dictionary<string, object> : null;
         if (names != null) foreach (KeyValuePair<string, object> kv in names) { Dictionary<string, object> v = kv.Value as Dictionary<string, object>; if (v != null) Names[kv.Key] = v; }
         Dictionary<string, object> dips = AppEnv.Json.DeserializeObject(AppEnv.ResourceText("data/dips.json") ?? "{}") as Dictionary<string, object>;
-        if (dips != null) foreach (KeyValuePair<string, object> kv in dips) { Dictionary<string, object> v = kv.Value as Dictionary<string, object>; if (v != null) Names[kv.Key] = v; }
+        if (dips != null) foreach (KeyValuePair<string, object> kv in dips) { Dictionary<string, object> v = kv.Value as Dictionary<string, object>; if (v != null) { Names[kv.Key] = v; DipKeys.Add(kv.Key); } }
         foreach (object o in AppEnv.GetList(g, "trophies"))
         {
             Dictionary<string, object> t = o as Dictionary<string, object>;
@@ -146,8 +148,37 @@ internal static class GameData
                 if (!rows.ContainsKey(a[0])) rows[a[0]] = a;
             }
             itemLangs = langs.ToArray();
+            itemList = new List<string[]>(rows.Values);
             itemRows = rows;
         }
+    }
+
+    public static List<string[]> ItemRows()
+    {
+        EnsureItems();
+        return itemList;
+    }
+
+    public static string[] ItemLangs()
+    {
+        EnsureItems();
+        return itemLangs;
+    }
+
+    public static bool HasItem(string en)
+    {
+        EnsureItems();
+        return itemRows.ContainsKey(en);
+    }
+
+    public static string Ui(string lang, string key, string fallback)
+    {
+        object v;
+        Dictionary<string, object> cur = Lang != null && Lang.ContainsKey(lang) ? Lang[lang] as Dictionary<string, object> : null;
+        if (cur != null && cur.TryGetValue(key, out v) && v != null && v.ToString().Length > 0) return v.ToString();
+        Dictionary<string, object> en = Lang != null && Lang.ContainsKey("en") ? Lang["en"] as Dictionary<string, object> : null;
+        if (en != null && en.TryGetValue(key, out v) && v != null && v.ToString().Length > 0) return v.ToString();
+        return fallback;
     }
 
     public static Dictionary<string, object> Strings(string lang)

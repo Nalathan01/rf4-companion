@@ -1,0 +1,283 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
+
+internal static class Fuzzy
+{
+    public static string Norm(string s)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (char ch in (s ?? "").ToLowerInvariant()) if (char.IsLetterOrDigit(ch)) sb.Append(ch);
+        return sb.ToString();
+    }
+
+    private static int Lev(string a, string b)
+    {
+        int[] prev = new int[b.Length + 1];
+        int[] cur = new int[b.Length + 1];
+        for (int j = 0; j <= b.Length; j++) prev[j] = j;
+        for (int i = 1; i <= a.Length; i++)
+        {
+            cur[0] = i;
+            for (int j = 1; j <= b.Length; j++)
+            {
+                int cost = a[i-1] == b[j-1] ? 0 : 1;
+                cur[j] = Math.Min(Math.Min(cur[j-1] + 1, prev[j] + 1), prev[j-1] + cost);
+            }
+            int[] t = prev; prev = cur; cur = t;
+        }
+        return prev[b.Length];
+    }
+
+    public static int Best(string query, string[] normCandidates, out double score)
+    {
+        string q = Norm(query);
+        score = 0;
+        if (q.Length < 2) return -1;
+        int best = -1;
+        for (int i = 0; i < normCandidates.Length; i++)
+        {
+            string c = normCandidates[i];
+            if (c.Length == 0) continue;
+            if (Math.Abs(c.Length-q.Length) > Math.Max(c.Length, q.Length) / 2) continue;
+            double sc = 1.0-(double)Lev(q, c) / Math.Max(q.Length, c.Length);
+            if (sc > score) { score = sc; best = i; }
+        }
+        return best;
+    }
+}
+
+internal sealed class MatchList
+{
+    public string[] Loc, LocNorm, En;
+}
+
+internal static class PostText
+{
+    private static readonly object gate = new object();
+    private static readonly Dictionary<string, MatchList> lists = new Dictionary<string, MatchList>();
+    private static MatchList ruNoDigit, ruDips;
+    private static HashSet<string> dipKeys;
+    private static readonly Dictionary<string, string> memo = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static readonly Dictionary<string, Dictionary<string, string>> parsed = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+    private static readonly Dictionary<string, string> cleanMemo = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static readonly string Dash = "[:\\" + (char)45 + (char)0x2013 + (char)0x2014 + "]";
+
+    private static MatchList Items(string lang)
+    {
+        lock (gate)
+        {
+            MatchList m;
+            if (lists.TryGetValue(lang, out m)) return m;
+            List<string[]> rows = GameData.ItemRows();
+            int idx = Math.Max(0, Array.IndexOf(GameData.ItemLangs(), lang));
+            m = new MatchList();
+            m.Loc = new string[rows.Count]; m.En = new string[rows.Count]; m.LocNorm = new string[rows.Count];
+            for (int i = 0; i < rows.Count; i++)
+            {
+                m.En[i] = rows[i][0];
+                m.Loc[i] = idx < rows[i].Length && rows[i][idx].Length > 0 ? rows[i][idx] : rows[i][0];
+                m.LocNorm[i] = Fuzzy.Norm(m.Loc[i]);
+            }
+            lists[lang] = m;
+            return m;
+        }
+    }
+
+    private static void EnsureRu()
+    {
+        if (ruNoDigit != null) return;
+        MatchList ru = Items("ru");
+        List<string> nl = new List<string>(), ne = new List<string>();
+        for (int i = 0; i < ru.Loc.Length; i++) if (!Regex.IsMatch(ru.Loc[i], @"\d")) { nl.Add(ru.Loc[i]); ne.Add(ru.En[i]); }
+        List<string> dl = new List<string>(), de = new List<string>();
+        HashSet<string> dk = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string k in GameData.DipKeys)
+        {
+            dk.Add(k);
+            Dictionary<string, object> e;
+            if (!GameData.Names.TryGetValue(k, out e)) continue;
+            string r = AppEnv.GetString(e, "ru");
+            if (r.Length == 0) continue;
+            dl.Add(r); de.Add(k);
+            string flav = Regex.Replace(r, @"^[A-Za-z'&.\s]+\s(?=[^\x00-\x7F])", "").Trim();
+            if (flav != r) { dl.Add(flav); de.Add(k); }
+        }
+        ruDips = Make(dl, de);
+        dipKeys = dk;
+        ruNoDigit = Make(nl, ne);
+    }
+
+    private static MatchList Make(List<string> loc, List<string> en)
+    {
+        MatchList m = new MatchList();
+        m.Loc = loc.ToArray(); m.En = en.ToArray(); m.LocNorm = new string[m.Loc.Length];
+        for (int i = 0; i < m.Loc.Length; i++) m.LocNorm[i] = Fuzzy.Norm(m.Loc[i]);
+        return m;
+    }
+
+    private static string Match(string text, MatchList l, double min, out string loc)
+    {
+        double sc;
+        int i = Fuzzy.Best(text, l.LocNorm, out sc);
+        loc = i >= 0 ? l.Loc[i] : null;
+        return i >= 0 && sc >= min ? l.En[i] : null;
+    }
+
+    private static List<string> TranslateRu(string text, bool dip, out int total)
+    {
+        EnsureRu();
+        List<string> keys = new List<string>();
+        total = 0;
+        string clean = Regex.Replace(text, "[«»\"“”]", "").Trim().TrimEnd('.', '!', ';', ' ');
+        foreach (string raw in Regex.Split(clean, @"\s*\+\s*|\s*,\s*|\s*;\s*"))
+        {
+            string part = raw.Trim().TrimEnd('.');
+            if (part.Length < 3) continue;
+            bool crushed = Regex.IsMatch(part, "(?i)дробл|измельч");
+            part = Regex.Replace(part, @"(?i)\(?\s*(дробл|измельч)[а-я]*\.?\s*\)?", "").Trim();
+            List<string> variants = new List<string> { part };
+            Match mm = Regex.Match(part, @"^(.*?\D)\s*(\d+(?:\s*/\s*\d+)+)$");
+            if (mm.Success)
+            {
+                variants.Clear();
+                foreach (string n in Regex.Split(mm.Groups[2].Value, @"\s*/\s*")) variants.Add(mm.Groups[1].Value.Trim() + " " + n);
+            }
+            foreach (string v in variants)
+            {
+                total++;
+                string mk = (dip ? "d|" : "i|") + v;
+                string hit;
+                lock (gate)
+                {
+                    if (!memo.TryGetValue(mk, out hit))
+                    {
+                        string loc = null;
+                        hit = null;
+                        if (dip) hit = Match(v, ruDips, 0.8, out loc);
+                        if (hit == null) hit = Match(v, Items("ru"), 0.82, out loc);
+                        else loc = null;
+                        if (hit == null && v.Contains("е")) hit = Match(v.Replace("е", "ё"), Items("ru"), 0.82, out loc);
+                        if (hit != null && !Regex.IsMatch(v, @"\d") && loc != null && Regex.IsMatch(loc, @"\d"))
+                        {
+                            hit = Match(v, ruNoDigit, 0.82, out loc);
+                            if (hit == null) hit = Match(v, ruDips, 0.85, out loc);
+                        }
+                        memo[mk] = hit ?? "";
+                    }
+                }
+                if (string.IsNullOrEmpty(hit)) continue;
+                keys.Add(crushed ? hit + " (crushed)" : hit);
+            }
+        }
+        return keys;
+    }
+
+    private static bool IsDip(string k)
+    {
+        foreach (string d in dipKeys) if (d == k || d.EndsWith(" " + k, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    public static Dictionary<string, string> Parse(string txt)
+    {
+        Dictionary<string, string> o = new Dictionary<string, string>();
+        if (string.IsNullOrEmpty(txt)) return o;
+        lock (gate) { Dictionary<string, string> c; if (parsed.TryGetValue(txt, out c)) return c; }
+        string t = txt.Replace("ё", "е").Replace("Ё", "Е");
+        Match m = Regex.Match(t, @"(?i)клипс[а-я]*(?:\s*или\s*глубин[а-я]*)?\s*" + Dash + @"?\s*(\d{1,3})(?:[.,]\d)?\s*(см)?");
+        if (m.Success && !m.Groups[2].Success) o["clip"] = m.Groups[1].Value;
+        m = Regex.Match(t, @"(?i)глубин[а-я]*\s*" + Dash + @"?\s*(\d+(?:[.,]\d+)?)\s*(см|м)?");
+        if (m.Success)
+        {
+            double val = double.Parse(m.Groups[1].Value.Replace(",", "."), CultureInfo.InvariantCulture);
+            string unit = m.Groups[2].Value;
+            if (unit == "см" || (unit.Length == 0 && val > 15)) val = val / 100;
+            o["depth"] = Math.Round(val, 2).ToString(CultureInfo.InvariantCulture);
+            string cl;
+            if (o.TryGetValue("clip", out cl) && cl == m.Groups[1].Value) o.Remove("clip");
+        }
+        m = Regex.Match(t, @"(?i)скорост[а-я]*(?:\s*проводки)?\s*" + Dash + @"?\s*(\d{1,3})");
+        if (m.Success) o["reelSpeed"] = m.Groups[1].Value;
+        m = Regex.Match(t, @"(?i)температур[а-я]*(?:\s*воды)?\s*" + Dash + @"?\s*(холодн|нормальн|тепл)");
+        if (m.Success) { string v = m.Groups[1].Value.ToLowerInvariant(); o["temp"] = v == "холодн" ? "cold" : (v == "тепл" ? "warm" : "normal"); }
+        string baitTxt = "", dipTxt = "", gbTxt = "", pvaTxt = "", comment = "";
+        foreach (string line in t.Split('\n'))
+        {
+            string l = Regex.Replace(line, @"^[^\p{L}]+", "").Trim();
+            Match lm;
+            if ((lm = Regex.Match(l, @"^(?i)(наживк[а-я]*|приманк[а-я]*)\s*" + Dash + @"\s*(.+)$")).Success) { baitTxt = lm.Groups[2].Value; continue; }
+            if ((lm = Regex.Match(l, @"^(?i)дип[а-я]*\s*" + Dash + @"\s*(.+)$")).Success) { dipTxt = lm.Groups[1].Value; continue; }
+            if ((lm = Regex.Match(l, @"^(?i)прикорм[а-я]*\s*" + Dash + @"\s*(.+)$")).Success) { gbTxt = lm.Groups[1].Value; continue; }
+            if ((lm = Regex.Match(l, @"^(?i)(пва|pva)[а-я]*\s*" + Dash + @"\s*(.+)$")).Success) { pvaTxt = lm.Groups[2].Value; continue; }
+            if (line.Contains("💬") || Regex.IsMatch(l, "^(?i)комментари")) comment = Regex.Replace(l, @"^(?i)комментари[а-я]*(\s*игрока)?\s*" + Dash + @"?\s*", "");
+        }
+        if (baitTxt.Length == 0 && gbTxt.Length == 0 && comment.Length > 0)
+        {
+            string[] sp = Regex.Split(comment, @"(?i)\.?\s*прикорм[а-я]*\s*" + Dash + @"?\s*");
+            int total;
+            List<string> cand = TranslateRu(sp[0], false, out total);
+            if (cand.Count > 0 && cand.Count * 2 >= total) baitTxt = sp[0];
+            if (sp.Length > 1) gbTxt = sp[1];
+        }
+        int tt;
+        if (baitTxt.Length > 0)
+        {
+            List<string> b = new List<string>(), d = new List<string>();
+            foreach (string k in TranslateRu(baitTxt, false, out tt)) { if (IsDip(k)) d.Add(k); else b.Add(k); }
+            if (b.Count > 0) o["baitDetail"] = string.Join(" + ", b.ToArray());
+            if (d.Count > 0) o["dip"] = string.Join(" + ", d.ToArray());
+        }
+        if (dipTxt.Length > 0)
+        {
+            List<string> all = TranslateRu(dipTxt, true, out tt);
+            if (all.Count > 0) o["dip"] = string.Join(" + ", all.ToArray());
+        }
+        if (gbTxt.Length > 0) { List<string> g = TranslateRu(gbTxt, false, out tt); if (g.Count > 0) o["groundbait"] = string.Join(" + ", g.ToArray()); }
+        if (pvaTxt.Length > 0) { List<string> p = TranslateRu(pvaTxt, false, out tt); if (p.Count > 0) o["pva"] = string.Join(", ", p.ToArray()); }
+        lock (gate) parsed[txt] = o;
+        return o;
+    }
+
+    public static string CleanItems(string text, string lang)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        string ck = lang + "|" + text;
+        lock (gate) { string c; if (cleanMemo.TryGetValue(ck, out c)) return c; }
+        MatchList en = Items("en");
+        List<string> parts = new List<string>();
+        HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        List<string> pieces = new List<string>();
+        foreach (string raw0 in Regex.Split(text, @"\s\+\s|\s*,\s*|\s*;\s*"))
+        {
+            string r0 = raw0.Trim();
+            Match mm = Regex.Match(r0, @"^(.*?\D)\s*(\d+(?:\s*/\s*\d+)+)$");
+            if (mm.Success) foreach (string n in Regex.Split(mm.Groups[2].Value, @"\s*/\s*")) pieces.Add(mm.Groups[1].Value.Trim() + " " + n);
+            else pieces.Add(r0);
+        }
+        foreach (string raw in pieces)
+        {
+            string x = raw.Trim();
+            bool crushed = x.EndsWith(" (crushed)");
+            if (crushed) x = x.Substring(0, x.Length-10);
+            if (x.Length == 0) continue;
+            string key;
+            if (GameData.Names.ContainsKey(x) || GameData.HasItem(x)) key = x;
+            else
+            {
+                string loc;
+                key = Match(x, en, 0.88, out loc);
+                if (key == null && Regex.IsMatch(x, @"^[A-Za-z0-9 '&./]+$")) continue;
+                if (key == null) key = x;
+            }
+            if (!seen.Add(key)) continue;
+            string label = GameData.Translate(key, lang);
+            parts.Add(crushed ? label + " (" + GameData.Ui(lang, "crushed", "crushed") + ")" : label);
+        }
+        string res = string.Join(" + ", parts.ToArray());
+        lock (gate) cleanMemo[ck] = res;
+        return res;
+    }
+}

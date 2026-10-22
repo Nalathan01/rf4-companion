@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" translate="no">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -115,6 +115,11 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .src:hover { color: var(--ink); border-color: var(--accent); }
 .src.off { cursor: default; opacity: 0.7; border-style: dashed; }
 .src.off:hover { border-color: var(--line); color: var(--ink-2); }
+.orig { margin-top: 7px; font-size: 12.5px; }
+.orig summary { cursor: pointer; color: var(--muted); }
+.orig summary:hover { color: var(--ink-2); }
+.orig div { white-space: pre-wrap; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; margin-top: 5px; color: var(--ink-2); }
+.orig small { display: block; color: var(--muted); margin-top: 4px; }
 .thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .thumbs img { height: 74px; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; background: var(--surface-2); }
 .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; place-items: center; z-index: 50; cursor: zoom-out; }
@@ -300,6 +305,7 @@ async function loadDetail() {
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}</div>
       ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}</div>`).join("")}
       <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}">${esc(s.label)} ↗</button>` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>`).join("")}</div>
+      ${e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="ru" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : ""}
     </div>`).join("");
   document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
