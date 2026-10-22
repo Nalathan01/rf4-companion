@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RF4 Companion</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234fa8c9'/%3E%3Cpath d='M6 17c4-6 12-7 17-1l3-3v8l-3-3c-5 6-13 5-17-1z' fill='%2306202b'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #111315;
+  --rail: #16181b;
+  --surface: #1b1e21;
+  --surface-2: #22262a;
+  --surface-3: #2a2f34;
+  --line: #2c3136;
+  --line-soft: #23272b;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #8a8d88;
+  --accent: #4fa8c9;
+  --accent-hover: #67b9d7;
+  --accent-soft: rgba(79, 168, 201, 0.14);
+  --accent-ink: #06202b;
+  --hot: #e0803a;
+  --warm: #d8b24a;
+  --cold: #5f625d;
+  --radius: 14px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.45; display: flex; flex-direction: column; overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 8px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+header { display: flex; align-items: center; gap: 18px; padding: 14px 22px; border-bottom: 1px solid var(--line-soft); background: var(--rail); }
+.brand { display: flex; align-items: center; gap: 11px; min-width: 210px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(145deg, #74c3e0, #2f86a7); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(79,168,201,0.25), inset 0 1px 0 rgba(255,255,255,0.3); }
+.brand h1 { font-family: var(--font-display); font-size: 16px; font-weight: 650; margin: 0; }
+.brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
+nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
+.nav-btn { border: 1px solid transparent; background: transparent; border-radius: 999px; padding: 8px 18px; cursor: pointer; color: var(--ink-2); font-weight: 600; }
+.nav-btn:hover { background: var(--surface); color: var(--ink); }
+.nav-btn.active { background: var(--accent-soft); border-color: rgba(79,168,201,0.5); color: var(--ink); }
+.head-acts { display: flex; align-items: center; gap: 8px; min-width: 210px; justify-content: flex-end; }
+.icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--ink-2); }
+.icon-btn:hover { color: var(--ink); border-color: var(--surface-3); }
+.upd { display: none; align-items: center; gap: 8px; background: var(--accent-soft); border: 1px solid rgba(79,168,201,0.4); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 12.5px; }
+.upd.show { display: flex; }
+
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 14px; cursor: pointer; font-weight: 600; }
+.btn:hover { border-color: var(--surface-3); background: var(--surface-3); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { background: var(--accent-hover); }
+.btn.small { padding: 4px 10px; font-size: 12.5px; border-radius: 8px; }
+
+main { flex: 1; min-height: 0; display: flex; }
+.view { flex: 1; min-height: 0; display: none; }
+.view.active { display: flex; }
+
+.split { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(420px, 1.1fr); width: 100%; min-height: 0; }
+.col { min-height: 0; overflow-y: auto; padding: 22px 24px; }
+.col.map-col { padding: 22px 24px 22px 0; display: flex; flex-direction: column; }
+.title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.title-row h2 { font-family: var(--font-display); font-size: 26px; margin: 0; font-weight: 700; letter-spacing: -0.3px; }
+.sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 7px; cursor: pointer; color: var(--ink-2); font-weight: 600; font-size: 13px; }
+.seg button.on { background: var(--surface-3); color: var(--ink); }
+select { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; min-width: 200px; }
+
+.cards { display: flex; flex-direction: column; gap: 10px; }
+.card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 13px 15px; cursor: pointer; display: grid; grid-template-columns: 14px 1fr auto; gap: 4px 12px; transition: border-color 0.15s, background 0.15s; }
+.card:hover { border-color: var(--line); background: var(--surface-2); }
+.card.sel { border-color: rgba(79,168,201,0.65); box-shadow: inset 3px 0 0 var(--accent); }
+.dot { width: 11px; height: 11px; border-radius: 50%; margin-top: 6px; background: var(--cold); }
+.dot.hot { background: var(--hot); box-shadow: 0 0 0 4px rgba(224,128,58,0.18); }
+.dot.warm { background: var(--warm); }
+.card .where { font-weight: 650; font-size: 15px; }
+.card .where small { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 6px; }
+.card .ago { color: var(--ink-2); font-size: 12.5px; text-align: right; white-space: nowrap; }
+.card .line { grid-column: 2 / 4; color: var(--ink-2); font-size: 13px; }
+.card .meta { grid-column: 2 / 4; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.tag { display: inline-block; background: var(--surface-3); border-radius: 6px; padding: 1px 7px; margin: 0 4px 2px 0; font-size: 12.5px; color: var(--ink); }
+.tag.b { background: rgba(79,168,201,0.16); }
+.empty { color: var(--muted); padding: 30px 10px; text-align: center; }
+
+.mapbox { position: relative; flex: 1; min-height: 0; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; }
+.mapbox canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+.mapbox .maplabel { position: absolute; left: 12px; top: 10px; background: rgba(17,19,21,0.78); border-radius: 8px; padding: 4px 10px; font-weight: 650; font-size: 13px; }
+.mapbox .maphint { position: absolute; left: 12px; bottom: 10px; background: rgba(17,19,21,0.78); border-radius: 8px; padding: 3px 9px; font-size: 12px; color: var(--muted); }
+
+.placeholder { margin: auto; text-align: center; color: var(--muted); max-width: 520px; }
+.placeholder h2 { color: var(--ink); font-family: var(--font-display); }
+.status { position: fixed; right: 16px; bottom: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 12.5px; color: var(--ink-2); display: none; }
+.status.show { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-mark"><svg width="20" height="20" viewBox="0 0 32 32"><path d="M5 17c4-6 12-7 17-1l4-4v10l-4-4c-5 6-13 5-17-1z" fill="#06202b"/></svg></div>
+    <div><h1>RF4 Companion</h1><p id="ver"></p></div>
+  </div>
+  <nav>
+    <button class="nav-btn" data-view="find" data-t="navFind">Fisch finden</button>
+    <button class="nav-btn active" data-view="active" data-t="navActive">Aktive Spots</button>
+    <button class="nav-btn" data-view="log" data-t="navLog">Mein Fangbuch</button>
+  </nav>
+  <div class="head-acts">
+    <div class="upd" id="upd"><span id="updText"></span><button class="btn small primary" id="updBtn" data-t="updateNow">Aktualisieren</button></div>
+    <select id="lang" style="min-width:0"></select>
+    <button class="icon-btn" id="gear" title=""><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
+  </div>
+</header>
+<main>
+  <section class="view" id="view-find"><div class="placeholder"><h2 data-t="navFind">Fisch finden</h2><p>…</p></div></section>
+  <section class="view active" id="view-active">
+    <div class="split">
+      <div class="col">
+        <div class="title-row"><h2 data-t="activeTitle">Aktive Spots</h2><button class="btn small" id="syncBtn" data-t="refresh">Aktualisieren</button></div>
+        <p class="sub" id="activeSub"></p>
+        <div class="filters">
+          <div class="seg" id="hoursSeg">
+            <button data-h="6">6 h</button><button data-h="24" class="on">24 h</button><button data-h="72">3 d</button><button data-h="168">7 d</button>
+          </div>
+          <select id="lakeSel"></select>
+        </div>
+        <div class="cards" id="cards"></div>
+      </div>
+      <div class="col map-col">
+        <div class="mapbox" id="mapbox"><canvas id="map"></canvas><div class="maplabel" id="mapLabel"></div><div class="maphint" id="mapHint"></div></div>
+      </div>
+    </div>
+  </section>
+  <section class="view" id="view-log"><div class="placeholder"><h2 data-t="navLog">Mein Fangbuch</h2><p>…</p></div></section>
+</main>
+<div class="status" id="status"></div>
+<script>
+const TOKEN = new URLSearchParams(location.search).get("t");
+let S = {}, INIT = null, ACTIVE = [], HOURS = 24, LAKE = "", SEL = null, DATAV = -1;
+const $ = id => document.getElementById(id);
+function T(k, fb) { return (S[k] != null && S[k] !== "") ? S[k] : (fb != null ? fb : k); }
+async function api(path, body) {
+  const r = await fetch(path + (path.includes("?") ? "&" : "?") + "t=" + TOKEN, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error + (j.arg ? ": " + j.arg : ""));
+  return j;
+}
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function ago(h) {
+  if (h < 1) return T("agoMinutes", "vor {0} Min.").replace("{0}", Math.max(1, Math.round(h * 60)));
+  if (h < 48) return T("agoHours", "vor {0} Std.").replace("{0}", Math.round(h));
+  return T("agoDays", "vor {0} Tagen").replace("{0}", Math.round(h / 24));
+}
+function applyStrings() {
+  document.querySelectorAll("[data-t]").forEach(el => { const k = el.getAttribute("data-t"); if (S[k]) el.textContent = S[k]; });
+  $("gear").title = T("settings", "Einstellungen");
+  document.documentElement.lang = INIT.lang;
+}
+async function boot() {
+  for (let i = 0; i < 100; i++) { try { const p = await api("/api/ping"); if (p.ready) break; } catch (e) {} await new Promise(r => setTimeout(r, 150)); }
+  INIT = await api("/api/init");
+  S = INIT.strings;
+  $("ver").textContent = "Version " + INIT.version;
+  $("lang").innerHTML = INIT.langs.map(l => `<option value="${l}" ${l === INIT.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("");
+  fillLakes();
+  applyStrings();
+  await loadActive();
+  setInterval(ping, 5000);
+}
+function fillLakes() {
+  $("lakeSel").innerHTML = `<option value="">${esc(T("allLakes", "Alle Gewässer"))}</option>` + INIT.lakes.filter(l => l.map).map(l => `<option value="${l.id}" ${l.id === LAKE ? "selected" : ""}>${esc(l.name)}</option>`).join("");
+}
+async function ping() {
+  try {
+    const p = await api("/api/ping");
+    if (p.update) { $("upd").classList.add("show"); $("updText").textContent = T("updateAvailable", "Version {0} ist verfügbar").replace("{0}", p.update); }
+    $("status").classList.toggle("show", !!p.syncing);
+    if (p.syncing) $("status").textContent = T("syncing", "Wird abgeglichen") + (p.syncState ? " · " + p.syncState : "");
+    if (DATAV !== -1 && p.data !== DATAV) loadActive();
+    DATAV = p.data;
+    if (p.spot) openSpotKey(p.spot);
+  } catch (e) {}
+}
+async function loadActive() {
+  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE));
+  ACTIVE = r.spots;
+  $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
+  if (!SEL || !ACTIVE.find(s => s.key === SEL)) SEL = ACTIVE.length ? ACTIVE[0].key : null;
+  renderCards();
+  drawMap();
+}
+function heat(s) { return s.hoursAgo < 6 ? "hot" : (s.hoursAgo < 24 ? "warm" : ""); }
+function renderCards() {
+  if (!ACTIVE.length) { $("cards").innerHTML = `<div class="empty">${esc(T("activeEmpty", "Keine Meldungen in diesem Zeitraum."))}</div>`; return; }
+  $("cards").innerHTML = ACTIVE.map(s => `
+    <div class="card ${s.key === SEL ? "sel" : ""}" data-key="${esc(s.key)}">
+      <div class="dot ${heat(s)}"></div>
+      <div class="where">${esc(s.lakeName)}<small>${esc(s.name)}</small></div>
+      <div class="ago">${esc(ago(s.hoursAgo))}</div>
+      <div class="line">${s.fish.map(f => `<span class="tag">${esc(f.name)}</span>`).join("")}${s.baits.map(b => `<span class="tag b">${esc(b.name)}</span>`).join("")}</div>
+      <div class="meta"><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}</span><span>${esc(s.sources.join(", "))}</span>${s.clip ? `<span>Clip ${esc(s.clip)} m</span>` : ""}</div>
+    </div>`).join("");
+  document.querySelectorAll(".card").forEach(c => c.onclick = () => { SEL = c.dataset.key; renderCards(); drawMap(); });
+}
+const IMG = {};
+let VIEW = { lake: null, zoom: 1, cx: 0.5, cy: 0.5 };
+function lakeById(id) { return INIT.lakes.find(l => l.id === id); }
+function drawMap() {
+  const sel = ACTIVE.find(s => s.key === SEL);
+  const lakeId = sel ? sel.lake : (LAKE || null);
+  const cv = $("map"), box = $("mapbox");
+  const w = box.clientWidth, h = box.clientHeight, dpr = window.devicePixelRatio || 1;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const lake = lakeId ? lakeById(lakeId) : null;
+  $("mapLabel").textContent = lake ? lake.name + (sel ? " · " + sel.name : "") : "";
+  $("mapHint").textContent = lake ? "" : T("mapPickSpot", "Spot links anklicken");
+  if (!lake || !lake.map) return;
+  if (VIEW.lake !== lake.id) { VIEW = { lake: lake.id, zoom: 1, cx: 0.5, cy: 0.5 }; }
+  let img = IMG[lake.map];
+  if (!img) { img = new Image(); img.onload = drawMap; img.src = lake.map; IMG[lake.map] = img; return; }
+  if (!img.complete) return;
+  const side = Math.min(w, h) * VIEW.zoom;
+  const ox = w / 2-VIEW.cx * side, oy = h / 2-VIEW.cy * side;
+  g.imageSmoothingQuality = "high";
+  g.drawImage(img, ox, oy, side, side);
+  for (const s of ACTIVE) {
+    if (s.lake !== lake.id) continue;
+    const x = ox + s.nx * side, y = oy + s.ny * side, isSel = s.key === SEL;
+    const col = s.hoursAgo < 6 ? "#e0803a" : (s.hoursAgo < 24 ? "#d8b24a" : "#8a8d88");
+    g.beginPath(); g.arc(x, y, isSel ? 9 : 6, 0, Math.PI * 2);
+    g.fillStyle = col; g.fill(); g.lineWidth = isSel ? 3 : 2; g.strokeStyle = isSel ? "#ffffff" : "rgba(17,19,21,0.85)"; g.stroke();
+    if (isSel || VIEW.zoom > 1.6) {
+      g.font = "600 12px Segoe UI"; const t = s.name; const tw = g.measureText(t).width;
+      g.fillStyle = "rgba(17,19,21,0.82)"; g.fillRect(x + 11, y-9, tw + 10, 18);
+      g.fillStyle = "#f0efec"; g.fillText(t, x + 16, y + 4);
+    }
+  }
+}
+function openSpotKey(k) { SEL = k; renderCards(); drawMap(); }
+(function mapInput() {
+  const cv = $("map"); let drag = null;
+  cv.addEventListener("wheel", e => { e.preventDefault(); const f = e.deltaY < 0 ? 1.2 : 1 / 1.2; VIEW.zoom = Math.max(1, Math.min(8, VIEW.zoom * f)); drawMap(); }, { passive: false });
+  cv.addEventListener("mousedown", e => { drag = { x: e.clientX, y: e.clientY, cx: VIEW.cx, cy: VIEW.cy }; cv.style.cursor = "grabbing"; });
+  window.addEventListener("mouseup", () => { drag = null; cv.style.cursor = "grab"; });
+  window.addEventListener("mousemove", e => { if (!drag) return; const side = Math.min(cv.clientWidth, cv.clientHeight) * VIEW.zoom; VIEW.cx = drag.cx-(e.clientX-drag.x) / side; VIEW.cy = drag.cy-(e.clientY-drag.y) / side; drawMap(); });
+  window.addEventListener("resize", drawMap);
+})();
+document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + b.dataset.view));
+  if (b.dataset.view === "active") drawMap();
+});
+$("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS = +b.dataset.h; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadActive(); });
+$("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
+$("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
+$("lang").onchange = async () => { INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); loadActive(); };
+$("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
+boot();
+</script>
+</body>
+</html>
