@@ -12,6 +12,17 @@ internal sealed class Api
     private volatile bool ready;
     private Timer timer;
     private volatile bool stopping;
+    private volatile bool started;
+    private volatile string step = "bootGame";
+    private volatile int stepPct;
+    private readonly System.Diagnostics.Stopwatch startClock = System.Diagnostics.Stopwatch.StartNew();
+
+    private void Step(string key, int pct)
+    {
+        if (step.Length > 0) AppEnv.Log("Start", step + " fertig nach " + startClock.ElapsedMilliseconds + " ms");
+        step = key;
+        stepPct = pct;
+    }
 
     public Api(AppServer s)
     {
@@ -24,16 +35,25 @@ internal sealed class Api
         {
             try
             {
+                Step("bootGame", 5);
                 GameData.Load();
+                Step("bootData", 20);
                 UserStore.Load();
                 Scans.Load();
                 Community.Load();
-                ThreadPool.QueueUserWorkItem(delegate { try { Records.Refresh(); } catch (Exception ex) { AppEnv.Log("Rekorde", ex.Message); } });
+                ThreadPool.QueueUserWorkItem(delegate { try { Records.Refresh(); } catch (Exception ex) { AppEnv.Log("Rekorde", ex.Message); Records.Loaded = true; } });
                 ready = true;
-                try { Active(new NameValueCollection { { "hours", "72" } }); } catch (Exception ex) { AppEnv.Log("Start", "Vorrechnen: " + ex.Message); }
+                Step("bootSpots", 40);
+                try { Active(new NameValueCollection { { "hours", "168" } }); } catch (Exception ex) { AppEnv.Log("Start", "Vorrechnen: " + ex.Message); }
+                Step("bootRecords", 65);
+                for (int i = 0; i < 1200 && !Records.Loaded; i++) Thread.Sleep(50);
+                Step("bootFinish", 90);
+                try { Active(new NameValueCollection { { "hours", "168" } }); } catch (Exception ex) { AppEnv.Log("Start", "Vorrechnen: " + ex.Message); }
+                Step("", 100);
                 timer = new Timer(delegate { Tick(); }, null, 2000, 600000);
             }
             catch (Exception ex) { AppEnv.Log("Start", ex.ToString()); }
+            finally { started = true; }
         });
     }
 
@@ -69,7 +89,7 @@ internal sealed class Api
         Dictionary<string, object> args = body.Length > 0 ? AppEnv.Json.DeserializeObject(body) as Dictionary<string, object> : null;
         if (path == "/api/ping")
         {
-            return AppEnv.Obj("ok", true, "ready", ready, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
+            return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct,"syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
                 "update", Updater.Available, "spot", server.TakePendingSpot());
         }
         WaitReady();

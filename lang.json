@@ -343,7 +343,12 @@
   "lure": "Kunstköder",
   "seaSinker": "Blei",
   "prefBaitSearch": "Köder suchen",
-  "prefBaitFishTitle": "Fische auf „{0}“: {1}"
+  "prefBaitFishTitle": "Fische auf „{0}“: {1}",
+  "bootGame": "Spieldaten werden geladen",
+  "bootData": "Meldungen werden geladen",
+  "bootSpots": "Spots werden ausgewertet",
+  "bootRecords": "Rekordlisten werden geladen",
+  "bootFinish": "Fast fertig"
  },
  "en": {
   "langName": "English",
@@ -689,7 +694,12 @@
   "lure": "Lure",
   "seaSinker": "Sinker",
   "prefBaitSearch": "Search bait",
-  "prefBaitFishTitle": "Fish on “{0}”: {1}"
+  "prefBaitFishTitle": "Fish on “{0}”: {1}",
+  "bootGame": "Loading game data",
+  "bootData": "Loading reports",
+  "bootSpots": "Evaluating spots",
+  "bootRecords": "Loading record lists",
+  "bootFinish": "Almost done"
  },
  "ru": {
   "langName": "Русский",
