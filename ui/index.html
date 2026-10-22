@@ -132,9 +132,23 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .placeholder h2 { color: var(--ink); font-family: var(--font-display); }
 .status { position: fixed; right: 16px; bottom: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 12.5px; color: var(--ink-2); display: none; }
 .status.show { display: block; }
+.boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
+.boot.hide { opacity: 0; pointer-events: none; }
+.boot-box { width: min(420px, 86vw); text-align: center; }
+.boot-box .brand-mark { width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 16px; }
+.boot-box h2 { font-family: var(--font-display); font-size: 24px; margin: 0 0 22px; color: var(--ink); }
+.boot-bar { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.boot-bar div { height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .4s; }
+.boot-step { margin-top: 12px; color: var(--muted); font-size: 13.5px; min-height: 1.4em; }
 </style>
 </head>
 <body>
+<div class="boot" id="boot"><div class="boot-box">
+  <div class="brand-mark"><svg width="30" height="30" viewBox="0 0 32 32"><path d="M5 17c4-6 12-7 17-1l4-4v10l-4-4c-5 6-13 5-17-1z" fill="#06202b"/></svg></div>
+  <h2>RF4 Companion</h2>
+  <div class="boot-bar"><div id="bootBar"></div></div>
+  <div class="boot-step" id="bootStep">Wird gestartet</div>
+</div></div>
 <header>
   <div class="brand">
     <div class="brand-mark"><svg width="20" height="20" viewBox="0 0 32 32"><path d="M5 17c4-6 12-7 17-1l4-4v10l-4-4c-5 6-13 5-17-1z" fill="#06202b"/></svg></div>
@@ -201,14 +215,27 @@ function applyStrings() {
   document.documentElement.lang = INIT.lang;
 }
 async function boot() {
-  for (let i = 0; i < 100; i++) { try { const p = await api("/api/ping"); if (p.ready) break; } catch (e) {} await new Promise(r => setTimeout(r, 150)); }
-  INIT = await api("/api/init");
+  const BOOT = { bootGame: "Spieldaten werden geladen", bootData: "Meldungen werden geladen", bootSpots: "Spots werden ausgewertet", bootRecords: "Rekordlisten werden geladen", bootFinish: "Fast fertig" };
+  const until = Date.now() + 90000;
+  while (Date.now() < until) {
+    try {
+      const p = await api("/api/ping");
+      if (p.ready && !INIT) { INIT = await api("/api/init"); S = INIT.strings; }
+      $("bootBar").style.width = (p.started ? 100 : p.stepPct || 0) + "%";
+      if (p.step) $("bootStep").textContent = T(p.step, BOOT[p.step] || "");
+      if (p.started) break;
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 200));
+  }
+  if (!INIT) INIT = await api("/api/init");
   S = INIT.strings;
   $("ver").textContent = "Version " + INIT.version;
   $("lang").innerHTML = INIT.langs.map(l => `<option value="${l}" ${l === INIT.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("");
   fillLakes();
   applyStrings();
   await loadActive();
+  $("boot").classList.add("hide");
+  setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);
 }
 function fillLakes() {
