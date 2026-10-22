@@ -120,7 +120,7 @@ internal sealed class AppServer
         if (edge != null)
         {
             string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"RF4Companion\edge");
-            ProcessStartInfo psi = new ProcessStartInfo(edge, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --window-size=1480,940 --no-first-run");
+            ProcessStartInfo psi = new ProcessStartInfo(edge, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --start-maximized --no-first-run");
             psi.UseShellExecute = false;
             windowStart = DateTime.Now;
             window = Process.Start(psi);

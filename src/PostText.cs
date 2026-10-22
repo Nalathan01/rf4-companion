@@ -31,17 +31,41 @@ internal static class Fuzzy
         return prev[b.Length];
     }
 
+    public static byte[] Hist(string norm)
+    {
+        byte[] h = new byte[32];
+        foreach (char ch in norm) { int b = ch & 31; if (h[b] < 255) h[b]++; }
+        return h;
+    }
+
     public static int Best(string query, string[] normCandidates, out double score)
+    {
+        return Best(query, normCandidates, null, 0, out score);
+    }
+
+    public static int Best(string query, string[] normCandidates, byte[][] hists, double min, out double score)
     {
         string q = Norm(query);
         score = 0;
         if (q.Length < 2) return -1;
+        byte[] hq = hists != null ? Hist(q) : null;
         int best = -1;
         for (int i = 0; i < normCandidates.Length; i++)
         {
             string c = normCandidates[i];
             if (c.Length == 0) continue;
-            if (Math.Abs(c.Length-q.Length) > Math.Max(c.Length, q.Length) / 2) continue;
+            int mx = Math.Max(c.Length, q.Length), diff = Math.Abs(c.Length-q.Length);
+            if (diff > mx / 2) continue;
+            double ub = 1.0-(double)diff / mx;
+            if (ub <= score || ub < min) continue;
+            if (hq != null)
+            {
+                byte[] hc = hists[i];
+                int common = 0;
+                for (int b = 0; b < 32; b++) common += Math.Min(hq[b], hc[b]);
+                ub = (double)common / mx;
+                if (ub <= score || ub < min) continue;
+            }
             double sc = 1.0-(double)Lev(q, c) / Math.Max(q.Length, c.Length);
             if (sc > score) { score = sc; best = i; }
         }
@@ -52,6 +76,21 @@ internal static class Fuzzy
 internal sealed class MatchList
 {
     public string[] Loc, LocNorm, En;
+    private byte[][] hists;
+
+    public byte[][] Hists
+    {
+        get
+        {
+            if (hists == null)
+            {
+                byte[][] h = new byte[LocNorm.Length][];
+                for (int i = 0; i < h.Length; i++) h[i] = Fuzzy.Hist(LocNorm[i]);
+                hists = h;
+            }
+            return hists;
+        }
+    }
 }
 
 internal static class PostText
@@ -121,7 +160,7 @@ internal static class PostText
     private static string Match(string text, MatchList l, double min, out string loc)
     {
         double sc;
-        int i = Fuzzy.Best(text, l.LocNorm, out sc);
+        int i = Fuzzy.Best(text, l.LocNorm, l.Hists, min, out sc);
         loc = i >= 0 ? l.Loc[i] : null;
         return i >= 0 && sc >= min ? l.En[i] : null;
     }
@@ -292,19 +331,48 @@ internal static class PostText
         return false;
     }
 
+    private static readonly Dictionary<string, string> anyMemo = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static Dictionary<string, string> exactAll;
+
+    private static string OtherLangs(string x)
+    {
+        string mk = (x ?? "").Trim();
+        string hit;
+        lock (gate)
+        {
+            if (anyMemo.TryGetValue(mk, out hit)) return hit;
+            if (exactAll == null)
+            {
+                Dictionary<string, string> ex = new Dictionary<string, string>(StringComparer.Ordinal);
+                foreach (string ol in new string[] { "pl", "de", "fr", "es", "it", "ru" })
+                {
+                    MatchList ml = Items(ol);
+                    for (int i = 0; i < ml.LocNorm.Length; i++) if (ml.LocNorm[i].Length > 0 && !ex.ContainsKey(ml.LocNorm[i])) ex[ml.LocNorm[i]] = ml.En[i];
+                }
+                exactAll = ex;
+            }
+        }
+        hit = null;
+        if (!exactAll.TryGetValue(Fuzzy.Norm(mk), out hit) && mk.Length >= 4)
+        {
+            string loc;
+            foreach (string ol in new string[] { "pl", "de", "fr", "es", "it", "ru" })
+            {
+                hit = Match(mk, Items(ol), 0.9, out loc);
+                if (hit != null) break;
+            }
+        }
+        lock (gate) anyMemo[mk] = hit;
+        return hit;
+    }
+
     public static string ResolveAny(string x)
     {
         string k = ResolveKey(x);
         if (k != null) return k;
         x = (x ?? "").Trim();
         if (x.Length < 4) return null;
-        string loc;
-        foreach (string ol in new string[] { "pl", "de", "fr", "es", "it", "ru" })
-        {
-            k = Match(x, Items(ol), 0.9, out loc);
-            if (k != null) return k;
-        }
-        return null;
+        return OtherLangs(x);
     }
 
     private static readonly Dictionary<string, string> normMemo = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -340,16 +408,21 @@ internal static class PostText
         if (x.EndsWith(" (crushed)")) x = x.Substring(0, x.Length-10);
         if (x.Length == 0) return null;
         if (GameData.Names.ContainsKey(x) || GameData.HasItem(x)) return x;
+        string hit;
+        lock (gate) if (keyMemo.TryGetValue(x, out hit)) return hit;
         string loc;
-        return Match(x, Items("en"), 0.88, out loc);
+        hit = Match(x, Items("en"), 0.88, out loc);
+        lock (gate) keyMemo[x] = hit;
+        return hit;
     }
+
+    private static readonly Dictionary<string, string> keyMemo = new Dictionary<string, string>(StringComparer.Ordinal);
 
     public static string CleanItems(string text, string lang)
     {
         if (string.IsNullOrEmpty(text)) return "";
         string ck = lang + "|" + text;
         lock (gate) { string c; if (cleanMemo.TryGetValue(ck, out c)) return c; }
-        MatchList en = Items("en");
         List<string> parts = new List<string>();
         HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         List<string> pieces = new List<string>();
@@ -370,16 +443,8 @@ internal static class PostText
             if (GameData.Names.ContainsKey(x) || GameData.HasItem(x)) key = x;
             else
             {
-                string loc;
-                key = Match(x, en, 0.88, out loc);
-                if (key == null)
-                {
-                    foreach (string ol in new string[] { "pl", "de", "fr", "es", "it", "ru" })
-                    {
-                        key = Match(x, Items(ol), 0.9, out loc);
-                        if (key != null) break;
-                    }
-                }
+                key = ResolveKey(x);
+                if (key == null) key = OtherLangs(x);
                 if (key == null && Regex.IsMatch(x, @"^[A-Za-z0-9 '&./]+$")) continue;
                 if (key == null && (x.Contains(":") || Regex.IsMatch(x, @"(?i)(^|\s)(typ|waga|ilo|porcj|szt)"))) continue;
                 if (key == null) key = x;
