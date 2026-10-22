@@ -27,6 +27,7 @@ internal sealed class Api
                 GameData.Load();
                 UserStore.Load();
                 Community.Load();
+                Scans.Load();
                 ready = true;
                 timer = new Timer(delegate { Tick(); }, null, 2000, 600000);
             }
@@ -74,6 +75,14 @@ internal sealed class Api
                 UserStore.Set("lang", AppEnv.GetString(args, "lang"));
                 return Init();
             case "/api/active": return Active(q);
+            case "/api/spot": return SpotDetail(q["key"] ?? "");
+            case "/api/open":
+                {
+                    string u = AppEnv.GetString(args, "url");
+                    if (!u.StartsWith("https://") && !u.StartsWith("http://")) throw new AppError("badUrl", u);
+                    System.Diagnostics.Process.Start(u);
+                    return AppEnv.Obj("ok", true);
+                }
             case "/api/sync":
                 ThreadPool.QueueUserWorkItem(delegate { Community.Sync(AppEnv.GetBool(args, "full")); });
                 return AppEnv.Obj("ok", true);
@@ -89,7 +98,102 @@ internal sealed class Api
     {
         data = null;
         type = null;
-        return false;
+        if (!name.StartsWith("tg")) return false;
+        int bar = name.IndexOf('|');
+        if (bar < 0) return false;
+        string post = name.Substring(bar + 1);
+        int idx;
+        if (!int.TryParse(name.Substring(2, bar-2), out idx)) return false;
+        if (Scans.PostKey(post) != post) return false;
+        string[] imgs = Scans.FetchImages(post);
+        if (imgs == null || idx < 0 || idx >= imgs.Length) return false;
+        try
+        {
+            data = Scans.ImageBytes(imgs[idx]);
+            type = "image/jpeg";
+            return data != null;
+        }
+        catch (Exception ex) { AppEnv.Log("Bilder", ex.Message); return false; }
+    }
+
+    private static readonly string[] DetailKeys = { "baitDetail", "lure", "rig", "dip", "groundbait", "dryMix", "pva", "reelSpeed" };
+
+    private static string CleanDetail(string t, string lang)
+    {
+        if (string.IsNullOrEmpty(t)) return "";
+        int k = t.LastIndexOf("<==", StringComparison.Ordinal);
+        if (k >= 0) t = t.Substring(k + 3);
+        t = System.Text.RegularExpressions.Regex.Replace(t, @"^\s*\(?\s*(Bait|Köder|Наживка)\s*\)?\s*:\s*", "");
+        t = System.Text.RegularExpressions.Regex.Replace(t, @"^\s*(By catch date|By weight|By time|Nach Fangzeit)\s*", "");
+        t = t.Replace("©", "");
+        List<string> parts = new List<string>();
+        HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string x0 in System.Text.RegularExpressions.Regex.Split(t, @"\s\+\s"))
+        {
+            string x = x0.Trim();
+            if (x.Length == 0 || !seen.Add(x)) continue;
+            parts.Add(GameData.Translate(x, lang));
+        }
+        return string.Join(" + ", parts.ToArray());
+    }
+
+    private object SpotDetail(string key)
+    {
+        string lang = Lang;
+        Dictionary<string, object> strings = GameData.Strings(lang);
+        Spot s = Community.Spots().FirstOrDefault(x => x.Key == key);
+        if (s == null) throw new AppError("spotGone", key);
+        Lake lake;
+        GameData.LakeById.TryGetValue(s.Lake, out lake);
+        DateTime now = DateTime.UtcNow;
+        List<object> events = new List<object>();
+        Dictionary<string, int> dirs = new Dictionary<string, int>();
+        foreach (SpotEvent e in s.Events.OrderByDescending(x => x.Last).Take(60))
+        {
+            List<object> src = new List<object>();
+            HashSet<string> seenSrc = new HashSet<string>();
+            string imgPost = "";
+            double deg = -1;
+            double weight = 0;
+            Dictionary<string, string> detail = new Dictionary<string, string>();
+            string clip = "", depth = "", method = "", postText = "";
+            foreach (Report r in e.Reports)
+            {
+                if (seenSrc.Add(r.SourceKey)) src.Add(AppEnv.Obj("label", r.SourceLabel, "url", r.Linkable ? r.Url : "", "members", r.SourceKey.StartsWith("dc:")));
+                string pk = Scans.PostKey(r.Url);
+                if (pk.Length > 0)
+                {
+                    if (imgPost.Length == 0) imgPost = pk;
+                    if (deg < 0) deg = Scans.Degrees(pk);
+                    if (postText.Length == 0) postText = Scans.Text(pk);
+                }
+                double w = AppEnv.GetDouble(r.Raw, "weight", 0);
+                if (w > weight) weight = w;
+                if (clip.Length == 0) clip = r.S("clip");
+                if (depth.Length == 0) depth = r.S("depth");
+                if (method.Length == 0) method = r.S("method");
+                foreach (string dk in DetailKeys)
+                {
+                    if (detail.ContainsKey(dk)) continue;
+                    string v = dk == "reelSpeed" ? r.S(dk) : CleanDetail(r.S(dk), lang);
+                    if (v.Length > 0) detail[dk] = v;
+                }
+            }
+            List<string> fish = new List<string>();
+            foreach (Report r in e.Reports) foreach (string f in r.Fish) { string n = GameData.Translate(f, lang); if (!fish.Contains(n)) fish.Add(n); }
+            string dir = deg >= 0 ? Scans.Dir16(deg, lang) : "";
+            if (dir.Length > 0) { int n; dirs.TryGetValue(dir, out n); dirs[dir] = n + 1; }
+            int imgCount = 0;
+            if (imgPost.Length > 0) { string[] im = Scans.Images(imgPost); imgCount = im == null ? -1 : im.Length; }
+            events.Add(AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
+                "fish", fish.ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
+                "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
+                "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", postText));
+        }
+        return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
+            "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
+            "sea", s.Mark != null, "x", s.X, "y", s.Y, "events", events, "totalEvents", s.Events.Count, "totalReports", s.Reports.Count,
+            "dirs", dirs.OrderByDescending(kv => kv.Value).Select(kv => (object)AppEnv.Obj("dir", kv.Key, "n", kv.Value)).ToArray());
     }
 
     private object Init()
