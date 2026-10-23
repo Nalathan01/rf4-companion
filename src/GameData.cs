@@ -10,6 +10,7 @@ internal sealed class Lake
     public int Order;
     public int Rank;
     public Dictionary<string, object> Names;
+    public Dictionary<string, object> Desc;
     public string MapKey;
     public double XMin, XMax, YSouth, YNorth;
     public bool HasBounds;
@@ -104,6 +105,7 @@ internal static class GameData
             l.Id = AppEnv.GetString(d, "id");
             l.Order = (int)AppEnv.GetDouble(d, "order", 0);
             l.Names = d.ContainsKey("name") ? d["name"] as Dictionary<string, object> : null;
+            l.Desc = d.ContainsKey("desc") ? d["desc"] as Dictionary<string, object> : null;
             l.MapKey = AppEnv.GetString(d, "mapKey");
             Dictionary<string, object> b = d.ContainsKey("bounds") ? d["bounds"] as Dictionary<string, object> : null;
             if (b != null)

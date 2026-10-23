@@ -148,6 +148,12 @@ internal sealed class Api
             case "/api/sync":
                 ThreadPool.QueueUserWorkItem(delegate { Community.Sync(AppEnv.GetBool(args, "full")); });
                 return AppEnv.Obj("ok", true);
+            case "/api/lookup": return Lookup.Data(Lang);
+            case "/api/ocrlangs": return Lookup.OcrLangs();
+            case "/api/ocrinstall": return Lookup.InstallOcr(AppEnv.GetString(args, "tag"));
+            case "/api/about":
+                if (AppEnv.GetBool(args, "check")) Updater.CheckInBackground();
+                return AppEnv.Obj("version", Updater.CurrentText, "update", Updater.Available, "notes", Updater.Notes, "dataDir", AppEnv.DataDir);
             case "/api/update":
                 Updater.Install();
                 server.Quit(true);
