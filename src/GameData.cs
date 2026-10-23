@@ -63,6 +63,35 @@ internal static class GameData
 
     private static readonly Dictionary<string, Dictionary<string, string>> reverse = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
 
+    private static readonly Dictionary<string, string> keyCache = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    public static string ToKey(string name)
+    {
+        name = (name ?? "").Trim();
+        if (name.Length == 0 || Names.ContainsKey(name) || HasItem(name)) return name;
+        lock (keyCache) { string c; if (keyCache.TryGetValue(name, out c)) return c; }
+        string k = name;
+        string[] words = name.Split(' ');
+        for (int skip = 0; skip <= 3 && skip < words.Length-1 && k == name; skip++)
+        {
+            string part = string.Join(" ", words, skip, words.Length-skip);
+            if (skip > 0 && (Names.ContainsKey(part) || HasItem(part))) { k = part; break; }
+            foreach (string l in Languages())
+            {
+                string u = Untranslate(part, l);
+                if (u != part) { k = u; break; }
+            }
+        }
+        lock (keyCache) keyCache[name] = k;
+        return k;
+    }
+
+    public static bool Plausible(string fish, double grams)
+    {
+        int[] t;
+        return !(grams > 0 && Trophies.TryGetValue(fish ?? "", out t) && t[1] > 0 && grams > t[1] * 1.6);
+    }
+
     public static string Untranslate(string name, string lang)
     {
         name = (name ?? "").Trim();
