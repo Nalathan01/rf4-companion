@@ -96,7 +96,7 @@ internal static class Fangbuch
                 "x", xy != null ? xy[0].ToString(CultureInfo.InvariantCulture) : "", "y", xy != null ? xy[1].ToString(CultureInfo.InvariantCulture) : "",
                 "fish", Tr(S(s, "fish"), lang), "bait", Tr(S(s, "bait"), lang), "bait2", Tr(S(s, "bait2"), lang), "dip", Tr(S(s, "dip"), lang),
                 "groundbait", S(s, "groundbait"), "pva", S(s, "pva"), "tech", S(s, "tech"), "dist", S(s, "dist"), "depth", S(s, "depth"), "notes", S(s, "notes"),
-                "catches", catches.Count(c => S(c, "spotId") == id), "share", AppEnv.GetBool(s, "share"),
+                "catches", catches.Count(c => S(c, "spotId") == id),
                 "nx", AppEnv.GetDouble(s, "nx", -1), "ny", AppEnv.GetDouble(s, "ny", -1)));
         }
 
@@ -160,7 +160,6 @@ internal static class Fangbuch
             }
             if (S(c, "fish").Length == 0) throw new AppError("fishMissing", null);
             UserStore.Set("catches", catches);
-            Share.Queue(false);
             return AppEnv.Obj("id", c["id"]);
         }
     }
@@ -175,7 +174,6 @@ internal static class Fangbuch
             int before = l.Count;
             l.RemoveAll(x => set.Contains(S(x, "id")));
             UserStore.Set(key, l);
-            Share.Queue(false);
             return AppEnv.Obj("removed", before-l.Count);
         }
     }
@@ -199,7 +197,6 @@ internal static class Fangbuch
             rc["lakes"] = GameData.LakeById.TryGetValue(lake, out l) ? new object[] { l.Name("en") } : new object[0];
             if (S(rc, "name").Length == 0) throw new AppError("nameMissing", null);
             UserStore.Set("recipes", recipes);
-            Share.Queue(false);
             return AppEnv.Obj("id", rc["id"]);
         }
     }
@@ -219,7 +216,6 @@ internal static class Fangbuch
             if (s == null) { s = new Dictionary<string, object>(); s["id"] = NewId(); spots.Add(s); }
             foreach (string k in new string[] { "lake", "name", "groundbait", "pva", "tech", "dist", "depth", "notes" }) Put(s, a, k, false, lang);
             foreach (string k in new string[] { "fish", "bait", "bait2", "dip" }) Put(s, a, k, true, lang);
-            if (a.ContainsKey("share")) s["share"] = AppEnv.GetBool(a, "share");
             Lake l;
             int px, py;
             if (GameData.LakeById.TryGetValue(S(s, "lake"), out l) && l.HasBounds && int.TryParse(AppEnv.GetString(a, "x"), out px) && int.TryParse(AppEnv.GetString(a, "y"), out py))
@@ -228,7 +224,6 @@ internal static class Fangbuch
                 s["ny"] = (py-l.YNorth) / (l.YSouth-l.YNorth);
             }
             UserStore.Set("spots", spots);
-            Share.Queue(false);
             return AppEnv.Obj("id", s["id"]);
         }
     }
