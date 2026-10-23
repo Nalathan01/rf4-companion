@@ -99,7 +99,24 @@ internal static class Fangbuch
                 "catches", catches.Count(c => S(c, "spotId") == id)));
         }
 
-        return AppEnv.Obj("catches", outCatches, "stats", stats, "spots", outSpots,
+        List<object> outRecipes = new List<object>();
+        foreach (Dictionary<string, object> rc in List("recipes"))
+        {
+            List<string> lakes = new List<string>();
+            object lv;
+            if (rc.TryGetValue("lakes", out lv) && lv != null)
+            {
+                IEnumerable le = lv is string ? new object[] { lv } : lv as IEnumerable;
+                if (le != null) foreach (object o in le) { string n = (o ?? "").ToString().Trim(); if (n.Length == 0) continue; string id = GameData.LakeById.ContainsKey(n) ? n : GameData.LakeIdByName(n); lakes.Add(id.Length > 0 ? LakeName(id, lang) : n); }
+            }
+            outRecipes.Add(AppEnv.Obj("id", S(rc, "id"), "name", S(rc, "name"), "type", S(rc, "type"),
+                "base", Tr(S(rc, "base"), lang), "attractant", Tr(S(rc, "attractant"), lang),
+                "additives", AppEnv.GetList(rc, "additives").Cast<object>().Select(o => Tr((o ?? "").ToString().Trim(), lang)).Where(x => x.Length > 0).ToArray(),
+                "lakes", lakes.ToArray(), "notes", S(rc, "notes") == "Tracker" ? "" : S(rc, "notes"),
+                "uses", catches.Count(c => S(c, "pva") == S(rc, "name") && S(rc, "name").Length > 0)));
+        }
+
+        return AppEnv.Obj("catches", outCatches, "stats", stats, "spots", outSpots, "recipes", outRecipes,
             "days", catches.Select(c => S(c, "date")).Distinct().Count());
     }
 
@@ -158,6 +175,34 @@ internal static class Fangbuch
             UserStore.Set(key, l);
             return AppEnv.Obj("removed", before-l.Count);
         }
+    }
+
+    public static object SaveRecipe(Dictionary<string, object> a, string lang)
+    {
+        lock (gate)
+        {
+            List<Dictionary<string, object>> recipes = List("recipes");
+            string id = AppEnv.GetString(a, "id");
+            Dictionary<string, object> rc = recipes.FirstOrDefault(x => S(x, "id") == id && id.Length > 0);
+            if (rc == null) { rc = new Dictionary<string, object>(); rc["id"] = NewId(); rc["fish"] = new object[0]; recipes.Add(rc); }
+            Put(rc, a, "name", false, lang);
+            Put(rc, a, "type", false, lang);
+            Put(rc, a, "base", true, lang);
+            Put(rc, a, "attractant", true, lang);
+            if (a.ContainsKey("notes") && !(S(rc, "notes") == "Tracker" && AppEnv.GetString(a, "notes").Length == 0)) Put(rc, a, "notes", false, lang);
+            rc["additives"] = AppEnv.GetList(a, "additives").Cast<object>().Select(o => GameData.Untranslate((o ?? "").ToString(), lang)).Where(x => x.Length > 0).ToArray();
+            string lake = AppEnv.GetString(a, "lake");
+            Lake l;
+            rc["lakes"] = GameData.LakeById.TryGetValue(lake, out l) ? new object[] { l.Name("en") } : new object[0];
+            if (S(rc, "name").Length == 0) throw new AppError("nameMissing", null);
+            UserStore.Set("recipes", recipes);
+            return AppEnv.Obj("id", rc["id"]);
+        }
+    }
+
+    public static object ItemNames(string lang)
+    {
+        return GameData.ItemRows().Select(r => GameData.Translate(r[0], lang)).Distinct().OrderBy(x => x).ToArray();
     }
 
     public static object SaveSpot(Dictionary<string, object> a, string lang)

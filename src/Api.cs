@@ -107,6 +107,9 @@ internal sealed class Api
             case "/api/catch/delete": return Fangbuch.Delete("catches", AppEnv.GetList(args, "ids"));
             case "/api/myspot/save": return Fangbuch.SaveSpot(args ?? new Dictionary<string, object>(), Lang);
             case "/api/myspot/delete": return Fangbuch.Delete("spots", AppEnv.GetList(args, "ids"));
+            case "/api/recipe/save": return Fangbuch.SaveRecipe(args ?? new Dictionary<string, object>(), Lang);
+            case "/api/recipe/delete": return Fangbuch.Delete("recipes", AppEnv.GetList(args, "ids"));
+            case "/api/itemnames": return Fangbuch.ItemNames(Lang);
             case "/api/spot": return SpotDetail(q["key"] ?? "");
             case "/api/devocr":
                 {

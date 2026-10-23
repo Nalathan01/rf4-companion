@@ -271,6 +271,8 @@ dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px;
         <div id="logStats"></div>
         <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logMySpots">Meine Spots</div><button class="btn small" id="addSpot" data-t="logAddSpot">Spot anlegen</button></div>
         <div class="mini-cards" id="logSpots" style="margin-top:8px"></div>
+        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logRecipes">Meine Rezepte</div><button class="btn small" id="addRecipe" data-t="logAddRecipe">Rezept anlegen</button></div>
+        <div class="mini-cards" id="logRecipes" style="margin-top:8px"></div>
       </div>
     </div>
   </section>
@@ -278,7 +280,7 @@ dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px;
 <div class="status" id="status"></div>
 <div class="lightbox" id="lightbox"><img id="lbImg"></div>
 <dialog id="dlg"><h3 id="dlgTitle"></h3><div class="form" id="dlgForm"></div><div class="dlg-err" id="dlgErr"></div><div class="dlg-acts"><button class="btn danger" id="dlgDel" data-t="delete">Löschen</button><button class="btn" id="dlgCancel" data-t="cancel">Abbrechen</button><button class="btn primary" id="dlgSave" data-t="save">Speichern</button></div></dialog>
-<datalist id="dlFish"></datalist><datalist id="dlBait"></datalist><datalist id="dlDip"></datalist><datalist id="dlPva"></datalist><datalist id="dlRig"></datalist>
+<datalist id="dlFish"></datalist><datalist id="dlBait"></datalist><datalist id="dlDip"></datalist><datalist id="dlPva"></datalist><datalist id="dlRig"></datalist><datalist id="dlItem"></datalist>
 <script>
 const TOKEN = new URLSearchParams(location.search).get("t");
 let OCRV = -1;
@@ -469,7 +471,7 @@ $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS 
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
-$("lang").onchange = async () => { INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
+$("lang").onchange = async () => { ITEMS = null; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
 let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
 function findStatic() {
@@ -590,6 +592,28 @@ function renderLog() {
     L.stats.map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
   $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
   $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotDialog(LOG.spots.find(s => s.id === m.dataset.id)));
+  const RT = { pva: "PVA", groundbait: T("groundbaitMix", "Futtermischung") };
+  $("logRecipes").innerHTML = L.recipes.length ? L.recipes.map(r => `<div class="mini" data-id="${esc(r.id)}"><div class="top">${esc(r.name)}<span>${esc(RT[r.type] || r.type)}</span></div><div class="b">${esc([r.base, ...r.additives].filter(Boolean).join(", "))}</div><div class="b" style="color:var(--muted)">${r.attractant ? esc(T("attractant", "Lockstoff")) + ": " + esc(r.attractant) : ""}${r.lakes.length ? (r.attractant ? " · " : "") + esc(r.lakes.join(", ")) : ""}${r.uses ? " · " + esc(T("catchesN", "{0} Fänge").replace("{0}", r.uses)) : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoRecipes", "Noch keine Rezepte."))}</div>`;
+  $("logRecipes").querySelectorAll(".mini").forEach(m => m.onclick = () => recipeDialog(LOG.recipes.find(r => r.id === m.dataset.id)));
+}
+let ITEMS = null;
+async function recipeDialog(rc) {
+  if (!ITEMS) { ITEMS = await api("/api/itemnames"); $("dlItem").innerHTML = ITEMS.map(x => `<option value="${esc(x)}">`).join(""); }
+  const v = rc || { type: "pva", additives: [], lakes: [] };
+  const lakeId = (INIT.lakes.find(l => v.lakes.includes(l.name)) || {}).id || "";
+  const add = [0, 1, 2, 3].map(i => field("rAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.additives[i] || "", 'list="dlItem"')).join("");
+  openDlg(rc ? T("logEditRecipe", "Rezept bearbeiten") : T("logAddRecipe", "Rezept anlegen"),
+    `${field("rName", T("name", "Name"), v.name, "", true)}
+     <label>${esc(T("type", "Art"))}<select id="rType"><option value="pva" ${v.type === "pva" ? "selected" : ""}>PVA</option><option value="groundbait" ${v.type === "groundbait" ? "selected" : ""}>${esc(T("groundbaitMix", "Futtermischung"))}</option></select></label>
+     <label>${esc(T("lake", "Gewässer"))}<select id="rLake"><option value=""></option>${lakeOptions(lakeId)}</select></label>
+     ${field("rBase", T("base", "Grundfutter"), v.base, 'list="dlItem"')}
+     ${field("rAttr", T("attractant", "Lockstoff"), v.attractant, 'list="dlItem"')}
+     ${add}
+     ${field("rNotes", T("notes", "Notiz"), v.notes, "", true)}`,
+    async () => {
+      await api("/api/recipe/save", { id: rc ? rc.id : "", name: $("rName").value, type: $("rType").value, lake: $("rLake").value, base: $("rBase").value, attractant: $("rAttr").value, additives: [0, 1, 2, 3].map(i => $("rAdd" + i).value), notes: $("rNotes").value });
+    },
+    rc ? async () => { await api("/api/recipe/delete", { ids: [rc.id] }); } : null);
 }
 async function fillLists(lake) {
   const l = await api("/api/loglists?lake=" + encodeURIComponent(lake || ""));
@@ -651,10 +675,11 @@ async function spotDialog(s) {
   $("sLake").onchange = () => fillLists($("sLake").value);
 }
 $("dlgCancel").onclick = () => $("dlg").close();
-$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message; } };
+$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message; } };
 $("addCatch").onclick = () => catchDialog(null);
 $("addSpot").onclick = () => spotDialog(null);
+$("addRecipe").onclick = () => recipeDialog(null);
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
 let FQT = 0;
