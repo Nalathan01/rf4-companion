@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -19,6 +20,12 @@ internal static class Records
     private static Dictionary<string, List<RecordHit>> index = new Dictionary<string, List<RecordHit>>(StringComparer.Ordinal);
     private static string signature = "";
     private static List<RecordHit> all = new List<RecordHit>();
+    private static HashSet<string> prev = new HashSet<string>(StringComparer.Ordinal);
+
+    public static bool SeenLastWeek(string fish, string lake, string baitKey)
+    {
+        lock (gate) return prev.Contains(fish + "|" + lake + "|" + baitKey);
+    }
     private static volatile bool loading;
     public static int Version;
     public static volatile bool Loaded;
@@ -75,6 +82,8 @@ internal static class Records
                 catch (Exception ex) { AppEnv.Log("Rekorde", files[i].Name + ": " + ex.Message); }
             });
             List<RecordHit> flat = new List<RecordHit>();
+            HashSet<string> pv = new HashSet<string>(StringComparer.Ordinal);
+            string prevWeek = files.Count > 1 ? Regex.Match(files[1].Name, @"\d{4}-\d{2}-\d{2}").Value : "";
             foreach (Dictionary<string, object> d in docs)
             {
                 if (d == null) continue;
@@ -98,14 +107,15 @@ internal static class Records
                     DateTime day;
                     if (!DateTime.TryParseExact(h.Date.Trim(), Fmts, CultureInfo.InvariantCulture, DateTimeStyles.None, out day)) continue;
                     h.Day = day;
+                    if (week == prevWeek && h.Fish.Length > 0 && h.Bait.Length > 0) pv.Add(h.Fish + "|" + (h.Lake.Length > 0 ? h.Lake : "") + "|" + Finder.BaitKey(h.Bait));
                     if (day < cutoff || h.Fish.Length == 0 || h.Lake.Length == 0 || h.Grams <= 0 || h.Bait.Length == 0) continue;
                     Add(idx, h);
                     flat.Add(h);
                     rows.Add(new object[] { h.Fish, h.Lake, h.Grams, h.Bait, h.Table, h.Region, h.Date, day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), h.Week, h.Seen == DateTime.MinValue ? "" : h.Seen.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) });
                 }
             }
-            lock (gate) { index = idx; all = flat; signature = sig; Version++; }
-            try { AppEnv.WriteJsonFile(CachePath, AppEnv.Obj("v", 2, "sig", sig, "items", rows)); } catch (Exception ex) { AppEnv.Log("Rekorde", "Zwischenspeicher: " + ex.Message); }
+            lock (gate) { index = idx; all = flat; prev = pv; signature = sig; Version++; }
+            try { AppEnv.WriteJsonFile(CachePath, AppEnv.Obj("v", 3, "sig", sig, "items", rows, "prev", pv.ToArray())); } catch (Exception ex) { AppEnv.Log("Rekorde", "Zwischenspeicher: " + ex.Message); }
             AppEnv.Log("Rekorde", "Geladen: " + files.Count + " Wochen, " + idx.Count + " Einträge");
         }
         finally { loading = false; Loaded = true; }
@@ -133,7 +143,9 @@ internal static class Records
         try { d = AppEnv.ReadJsonFile(CachePath) as Dictionary<string, object>; }
         catch (Exception) { return null; }
         string sig = AppEnv.GetString(d, "sig");
-        if (d == null || sig.Length == 0 || AppEnv.GetDouble(d, "v", 0) != 2) return null;
+        if (d == null || sig.Length == 0 || AppEnv.GetDouble(d, "v", 0) != 3) return null;
+        HashSet<string> pv = new HashSet<string>(StringComparer.Ordinal);
+        foreach (object o in AppEnv.GetList(d, "prev")) if (o != null) pv.Add(o.ToString());
         Dictionary<string, List<RecordHit>> idx = new Dictionary<string, List<RecordHit>>(StringComparer.Ordinal);
         List<RecordHit> flat = new List<RecordHit>();
         foreach (object o in AppEnv.GetList(d, "items"))
@@ -152,7 +164,7 @@ internal static class Records
             Add(idx, h);
             flat.Add(h);
         }
-        lock (gate) { index = idx; all = flat; signature = sig; Version++; }
+        lock (gate) { index = idx; all = flat; prev = pv; signature = sig; Version++; }
         AppEnv.Log("Rekorde", "Aus Zwischenspeicher: " + idx.Count + " Einträge");
         return sig;
     }

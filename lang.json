@@ -467,7 +467,8 @@
   "trkRodsCleared": "Ruten geleert. Jetzt jede Rute einmal mit F12 erfassen.",
   "trkAccepted": "{0} Fänge ins Fangbuch übernommen.",
   "seaBank": "{0}er Bank",
-  "seaMark": "{0}er"
+  "seaMark": "{0}er",
+  "resetNewHint": "Diese Kombination stand letzte Woche bei diesem Fisch hier noch nicht in den Rekorden."
  },
  "en": {
   "langName": "English",
@@ -937,7 +938,8 @@
   "trkRodsCleared": "Rods cleared. Now capture each rod once with F12.",
   "trkAccepted": "{0} catches added to the catch log.",
   "seaBank": "{0} m bank",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "This combination was not in the records for this fish here last week."
  },
  "ru": {
   "langName": "Русский",
@@ -1404,7 +1406,8 @@
   "bootRecords": "Загрузка рекордов",
   "bootFinish": "Почти готово",
   "seaBank": "Банка {0} м",
-  "seaMark": "{0} м"
+  "seaMark": "{0} м",
+  "resetNewHint": "На прошлой неделе этой комбинации в рекордах этой рыбы здесь не было."
  },
  "fr": {
   "langName": "Français",
@@ -1871,7 +1874,8 @@
   "bootRecords": "Chargement des records",
   "bootFinish": "Presque fini",
   "seaBank": "Banc des {0} m",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Cette combinaison n'apparaissait pas dans les records de ce poisson ici la semaine dernière."
  },
  "es": {
   "langName": "Español",
@@ -2338,7 +2342,8 @@
   "bootRecords": "Cargando listas de récords",
   "bootFinish": "Casi listo",
   "seaBank": "Banco de {0} m",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Esta combinación no aparecía en los récords de este pez aquí la semana pasada."
  },
  "it": {
   "langName": "Italiano",
@@ -2805,7 +2810,8 @@
   "bootRecords": "Caricamento record",
   "bootFinish": "Quasi fatto",
   "seaBank": "Banco dei {0} m",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Questa combinazione non era nei record di questo pesce qui la settimana scorsa."
  },
  "pl": {
   "langName": "Polski",
@@ -3272,7 +3278,8 @@
   "bootRecords": "Wczytywanie rekordów",
   "bootFinish": "Prawie gotowe",
   "seaBank": "Ławica {0} m",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Tej kombinacji nie było w zeszłym tygodniu w rekordach tej ryby tutaj."
  },
  "pt": {
   "langName": "Português (BR)",
@@ -3739,7 +3746,8 @@
   "bootRecords": "Carregando recordes",
   "bootFinish": "Quase pronto",
   "seaBank": "Banco de {0} m",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Esta combinação não estava nos recordes deste peixe aqui na semana passada."
  },
  "nl": {
   "langName": "Nederlands",
@@ -4206,7 +4214,8 @@
   "bootRecords": "Recordlijsten laden",
   "bootFinish": "Bijna klaar",
   "seaBank": "{0} m-bank",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Deze combinatie stond vorige week nog niet in de records voor deze vis hier."
  },
  "tr": {
   "langName": "Türkçe",
@@ -4673,7 +4682,8 @@
   "bootRecords": "Rekor listeleri yükleniyor",
   "bootFinish": "Neredeyse bitti",
   "seaBank": "{0} m sığlığı",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Bu kombinasyon geçen hafta burada bu balığın rekorlarında yoktu."
  },
  "ro": {
   "langName": "Română",
@@ -5140,7 +5150,8 @@
   "bootRecords": "Se încarcă recordurile",
   "bootFinish": "Aproape gata",
   "seaBank": "Bancul de {0} m",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Această combinație nu era în recordurile acestui pește aici săptămâna trecută."
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -5607,7 +5618,8 @@
   "bootRecords": "Memuat daftar rekor",
   "bootFinish": "Hampir selesai",
   "seaBank": "Gosong {0} m",
-  "seaMark": "{0} m"
+  "seaMark": "{0} m",
+  "resetNewHint": "Kombinasi ini belum ada di rekor ikan ini di sini minggu lalu."
  },
  "ja": {
   "langName": "日本語",
@@ -6074,7 +6086,8 @@
   "bootRecords": "記録リストを読み込み中",
   "bootFinish": "もうすぐ完了",
   "seaBank": "{0}mバンク",
-  "seaMark": "{0}m"
+  "seaMark": "{0}m",
+  "resetNewHint": "先週、この場所のこの魚の記録にこの組み合わせはありませんでした。"
  },
  "ko": {
   "langName": "한국어",
@@ -6541,7 +6554,8 @@
   "bootRecords": "기록표 불러오는 중",
   "bootFinish": "거의 완료",
   "seaBank": "{0}m 뱅크",
-  "seaMark": "{0}m"
+  "seaMark": "{0}m",
+  "resetNewHint": "지난주 이곳 이 어종 기록에는 없던 조합입니다."
  },
  "zh": {
   "langName": "简体中文",
@@ -7008,7 +7022,8 @@
   "bootRecords": "正在加载纪录榜",
   "bootFinish": "即将完成",
   "seaBank": "{0}米浅滩",
-  "seaMark": "{0}米"
+  "seaMark": "{0}米",
+  "resetNewHint": "上周此处该鱼的纪录中还没有这个组合。"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -7475,6 +7490,7 @@
   "bootRecords": "正在載入紀錄榜",
   "bootFinish": "即將完成",
   "seaBank": "{0}公尺淺灘",
-  "seaMark": "{0}公尺"
+  "seaMark": "{0}公尺",
+  "resetNewHint": "上週此處該魚的紀錄中還沒有這個組合。"
  }
 }

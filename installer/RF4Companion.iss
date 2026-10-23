@@ -68,6 +68,14 @@ korean.DelData=RF4 Companion 데이터 (스팟, 조과, 설정, 다운로드한 
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [InstallDelete]
+Type: files; Name: "{app}\RF4Companion.ps1"
+Type: files; Name: "{app}\lang.json"
+Type: files; Name: "{app}\app.ico"
+Type: files; Name: "{app}\version.txt"
+Type: files; Name: "{app}\RF4 Companion.exe.config"
+Type: files; Name: "{app}\RF4Comp.dll"
+Type: filesandordirs; Name: "{app}\data"
+Type: filesandordirs; Name: "{app}\Libs"
 Type: files; Name: "{app}\Uninstall.ps1"
 Type: files; Name: "{app}\Uninstall.exe"
 Type: files; Name: "{app}\Uninstall.exe.config"
@@ -81,6 +89,11 @@ Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdir
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; AppUserModelID: "Nalathan.RF4Companion"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExe}"; WorkingDir: "{app}"; AppUserModelID: "Nalathan.RF4Companion"; Tasks: desktopicon
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{localappdata}\RF4Companion"
+Type: files; Name: "{app}\RF4 Companion.exe.old"
+Type: files; Name: "{app}\RF4 Companion.exe.new"
 
 [Run]
 Filename: "{app}\{#MyAppExe}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent

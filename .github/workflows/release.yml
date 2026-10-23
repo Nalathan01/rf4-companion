@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Check version
+        shell: pwsh
+        run: |
+          $v = (Get-Content version.txt -Raw).Trim()
+          if ("v$v" -ne "${{ github.ref_name }}") { throw "version.txt ($v) does not match tag ${{ github.ref_name }}" }
+      - name: Build
+        shell: pwsh
+        run: ./Build-Release.ps1
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = (Get-Content version.txt -Raw).Trim()
+          gh release create "${{ github.ref_name }}" "dist/RF4Companion-Setup-$v.exe" "dist/RF4.Companion.exe" --draft --title "RF4 Companion $v" --notes "RF4 Companion $v"

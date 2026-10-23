@@ -200,6 +200,7 @@ internal static class Finder
             "n", kv.Value.N, "n48", kv.Value.N48, "lastH", Hours(now, kv.Value.Last))).ToArray();
         res["baits"] = baits.OrderByDescending(kv => kv.Value.N48).ThenByDescending(kv => kv.Value.N).Take(20).Select(kv => (object)AppEnv.Obj(
             "name", BaitLabel(kv.Key, lang), "n", kv.Value.N, "n48", kv.Value.N48, "lastH", Hours(now, kv.Value.Last),
+            "isNew", !kv.Value.Fish.Any(f => Records.SeenLastWeek(f, lake, kv.Key)),
             "firstH", reset == DateTime.MinValue ? -1 : Math.Round(Math.Max(0, kv.Value.First.Subtract(reset).TotalHours), 0),
             "fish", kv.Value.Fish.Select(f => GameData.Translate(f, lang)).OrderBy(f => f).ToArray())).ToArray();
         res["prevBaits"] = prevBaits;
