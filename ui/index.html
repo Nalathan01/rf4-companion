@@ -132,6 +132,35 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .placeholder h2 { color: var(--ink); font-family: var(--font-display); }
 .status { position: fixed; right: 16px; bottom: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 12.5px; color: var(--ink-2); display: none; }
 .status.show { display: block; }
+.find-split { grid-template-columns: minmax(340px, 0.75fr) minmax(520px, 1.6fr); }
+.search { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; outline: none; }
+.search:focus { border-color: var(--accent); }
+.banner { display: none; background: rgba(224,128,58,0.12); border: 1px solid rgba(224,128,58,0.45); border-radius: 12px; padding: 10px 13px; margin-bottom: 12px; font-size: 13px; color: var(--ink); }
+.banner.show { display: block; }
+.fish-list { display: flex; flex-direction: column; gap: 2px; }
+.fish-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 11px; border-radius: 9px; cursor: pointer; color: var(--ink-2); }
+.fish-row:hover { background: var(--surface); color: var(--ink); }
+.fish-row.sel { background: var(--accent-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--accent); }
+.fish-row .n { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.hdr { color: var(--muted); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin: 18px 2px 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.chip:hover { color: var(--ink); border-color: var(--surface-3); }
+.chip.on { background: var(--accent-soft); border-color: rgba(79,168,201,0.6); color: var(--ink); }
+.chip .n { color: var(--muted); margin-left: 6px; font-size: 12px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); color: var(--ink-2); vertical-align: top; }
+.tbl td:first-child { color: var(--ink); }
+.tbl td.num, .tbl th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl td small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.note { color: var(--ink-2); font-size: 13px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; padding: 10px 13px; margin-top: 10px; }
+.mini-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.mini { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; padding: 10px 12px; cursor: pointer; }
+.mini:hover { border-color: rgba(79,168,201,0.6); }
+.mini .top { display: flex; justify-content: space-between; gap: 8px; font-weight: 650; }
+.mini .top span { color: var(--muted); font-weight: 500; font-size: 12px; }
+.mini .b { color: var(--ink-2); font-size: 12.5px; margin-top: 4px; }
 .boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
 .boot.hide { opacity: 0; pointer-events: none; }
 .boot-box { width: min(420px, 86vw); text-align: center; }
@@ -166,7 +195,24 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   </div>
 </header>
 <main>
-  <section class="view" id="view-find"><div class="placeholder"><h2 data-t="navFind">Fisch finden</h2><p>…</p></div></section>
+  <section class="view" id="view-find">
+    <div class="split find-split">
+      <div class="col">
+        <div class="title-row"><h2 data-t="navFind">Fisch finden</h2></div>
+        <p class="sub" id="findSub"></p>
+        <div class="banner" id="resetBanner"></div>
+        <input class="search" id="findQ" type="search" autocomplete="off">
+        <div class="filters">
+          <div class="seg" id="winSeg"><button data-w="week" class="on"></button><button data-w="reset24"></button><button data-w="48h"></button></div>
+          <select id="regionSel" style="min-width:120px"></select>
+          <select id="tableSel" style="min-width:150px"></select>
+        </div>
+        <div id="baitHits"></div>
+        <div class="fish-list" id="fishList"></div>
+      </div>
+      <div class="col" id="findDetail"></div>
+    </div>
+  </section>
   <section class="view active" id="view-active">
     <div class="split">
       <div class="col">
@@ -233,7 +279,9 @@ async function boot() {
   $("lang").innerHTML = INIT.langs.map(l => `<option value="${l}" ${l === INIT.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("");
   fillLakes();
   applyStrings();
+  findStatic();
   await loadActive();
+  loadFind();
   $("boot").classList.add("hide");
   setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);
@@ -373,17 +421,96 @@ $("lightbox").onclick = () => $("lightbox").classList.remove("show");
   window.addEventListener("mousemove", e => { if (!drag) return; if (Math.hypot(e.clientX-drag.x, e.clientY-drag.y) > 4) drag.moved = true; if (!drag.moved) return; const side = Math.min(cv.clientWidth, cv.clientHeight) * VIEW.zoom; VIEW.cx = drag.cx-(e.clientX-drag.x) / side; VIEW.cy = drag.cy-(e.clientY-drag.y) / side; drawMap(); });
   window.addEventListener("resize", drawMap);
 })();
-document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => {
-  document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x === b));
-  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + b.dataset.view));
-  if (b.dataset.view === "active") drawMap();
-});
+document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => showView(b.dataset.view));
 $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS = +b.dataset.h; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadActive(); });
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
-$("lang").onchange = async () => { INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); loadActive(); };
+$("lang").onchange = async () => { INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
+let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
+function findStatic() {
+  const w = $("winSeg").querySelectorAll("button");
+  w[0].textContent = T("prefWinAll", "Ganze Woche");
+  w[1].textContent = T("prefWinHours", "Erste {0} Std. nach Reset").replace("{0}", 24);
+  w[2].textContent = T("tgtLast48", "Letzte 48 Std.");
+  $("findQ").placeholder = T("findSearch", "Fisch oder Köder suchen");
+}
+async function loadFind() {
+  const seq = ++FSEQ;
+  const qs = Object.keys(FIND).map(k => k + "=" + encodeURIComponent(FIND[k])).join("&");
+  let d;
+  try { d = await api("/api/find?" + qs); } catch (e) { return; }
+  if (seq !== FSEQ) return;
+  FDATA = d;
+  renderFindFilters();
+  renderFishList();
+  renderFindDetail();
+}
+function renderFindFilters() {
+  const d = FDATA;
+  $("regionSel").innerHTML = `<option value="">${esc(T("findAllRegions", "Alle Regionen"))}</option>` + d.regions.map(r => `<option value="${esc(r)}" ${r === FIND.region ? "selected" : ""}>${esc(r)}</option>`).join("");
+  $("tableSel").innerHTML = `<option value="">${esc(T("prefTableAll", "Alle Tabellen"))}</option>` + d.tables.map(t => `<option value="${esc(t.key)}" ${t.key === FIND.table ? "selected" : ""}>${esc(t.name)}</option>`).join("");
+  const wk = d.week ? new Date(d.week + "T12:00:00").toLocaleDateString(INIT.lang, { day: "2-digit", month: "2-digit" }) : "";
+  $("findSub").textContent = T("findSub", "{0} Rekorde in der Auswahl, Woche ab {1}").replace("{0}", d.total.toLocaleString(INIT.lang)).replace("{1}", wk);
+  const rb = $("resetBanner"), r = d.reset;
+  rb.classList.toggle("show", !!r.window);
+  if (r.window) rb.textContent = r.at && r.hoursSince >= 0 && r.hoursSince < 30
+    ? T("findResetBanner", "Wochenreset vor {0}: Die neuen Rekorde laufen gerade ein. „Erste 24 Std. nach Reset“ zeigt die neue Phase am klarsten.").replace("{0}", ago(r.hoursSince).replace(/^vor /, ""))
+    : T("resetNotYet", "Der Wochenreset ist noch nicht erfasst.");
+}
+function renderFishList() {
+  const d = FDATA, q = FIND.q.toLowerCase();
+  const list = d.fishList.filter(f => !q || f.name.toLowerCase().includes(q) || f.key.toLowerCase().includes(q));
+  $("fishList").innerHTML = (d.search && d.search.length ? `<div class="hdr">${esc(T("findFishHdr", "Fische"))}</div>` : "") +
+    (list.length ? list.map(f => `<div class="fish-row ${f.key === FIND.fish ? "sel" : ""}" data-k="${esc(f.key)}"><span>${esc(f.name)}</span><span class="n">${f.n.toLocaleString(INIT.lang)}</span></div>`).join("") : `<div class="empty">${esc(T("findNoFish", "Kein Fisch gefunden."))}</div>`);
+  $("fishList").querySelectorAll(".fish-row").forEach(r => r.onclick = () => { FIND.fish = r.dataset.k; FIND.lake = ""; loadFind(); });
+  const s = d.search || [];
+  $("baitHits").innerHTML = s.length ? `<div class="hdr">${esc(T("prefBaitSearch", "Köder suchen"))}</div><table class="tbl"><tr><th>${esc(T("bait", "Köder"))}</th><th class="num">${esc(T("records", "Rekorde"))}</th><th class="num">48 h</th></tr>` +
+    s.slice(0, 12).map(b => `<tr><td>${esc(b.name)}<small>${esc(b.fish.slice(0, 8).join(", "))}${b.fish.length > 8 ? " …" : ""}</small></td><td class="num">${b.n}</td><td class="num">${b.n48}</td></tr>`).join("") + `</table>` : "";
+}
+function renderFindDetail() {
+  const d = FDATA, el = $("findDetail");
+  if (!d.fish) { el.innerHTML = `<div class="placeholder" style="margin-top:18vh"><h2>${esc(T("navFind", "Fisch finden"))}</h2><p>${esc(T("findPick", "Links einen Fisch wählen. Dann siehst du, wo er diese Woche gefangen wurde, mit welchen Ködern und welche Spots gerade gemeldet sind."))}</p></div>`; return; }
+  const top = d.baits.length ? d.baits[0].name : "";
+  let notes = [];
+  if (d.n === 0) {
+    notes.push(T("tgtNoRecords", "Diese Woche noch kein Rekord: Der passende Köder ist noch nicht gefunden."));
+    if (d.prevBaits.length) notes.push(T("tgtPrevCandidates", "Kandidaten aus der Vorwoche: {0}").replace("{0}", d.prevBaits.map(b => b.name).join(", ")));
+  } else if (d.n48 === 0) notes.push(T("tgtNoRecent", "Seit 2 Tagen kein neuer Rekord."));
+  if (d.isKoi && d.fish !== "grp:koi") notes.push(T("tgtTryKoiGroup", "Tipp: „Alle Koi“ wählen und die Köder der anderen Koi als Kandidaten testen."));
+  const lakes = d.lakes.length ? `<div class="chips">${d.lakes.map(l => `<button class="chip ${l.id === d.lake ? "on" : ""}" data-l="${esc(l.id)}">${esc(l.name)}<span class="n">${l.n}</span></button>`).join("")}</div>` : "";
+  const baits = d.baits.length ? `<table class="tbl"><tr><th>${esc(T("bait", "Köder"))}</th><th class="num">${esc(T("records", "Rekorde"))}</th><th class="num">48 h</th><th class="num">${esc(T("prefFirstSeen", "Zuerst gesehen"))}</th><th class="num">${esc(T("tgtLastSeen", "Zuletzt gesehen"))}</th></tr>` +
+    d.baits.map(b => `<tr><td>${esc(b.name)}${d.fish === "grp:koi" || b.fish.length > 1 ? `<small>${esc(b.fish.join(", "))}</small>` : ""}</td><td class="num">${b.n}</td><td class="num">${b.n48}</td><td class="num">${b.firstH >= 0 ? esc(T("prefHoursAfter", "nach {0} Std.").replace("{0}", b.firstH)) : ""}</td><td class="num">${b.lastH >= 0 ? esc(ago(b.lastH)) : ""}</td></tr>`).join("") + `</table>` : `<div class="empty">${esc(T("findNoBaits", "Keine Rekorde an diesem Gewässer in der Auswahl."))}</div>`;
+  const spots = d.spots.length ? `<div class="mini-cards">${d.spots.map(s => `<div class="mini" data-k="${esc(s.key)}"><div class="top">${esc(s.name)}<span>${esc(ago(s.hoursAgo))}</span></div><div class="b">${esc(s.baits.join(", ") || T("catchesN", "{0} Fänge").replace("{0}", s.catches))}</div></div>`).join("")}</div>` : `<div class="empty" style="padding:14px">${esc(T("findNoSpots", "In den letzten 3 Tagen keine Spotmeldung mit Köder für diesen Fisch hier."))}</div>`;
+  const recs = d.records.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("weight", "Gewicht"))}</th><th>${esc(T("bait", "Köder"))}</th><th>${esc(T("date", "Datum"))}</th><th>${esc(T("resetTable", "Tabelle"))}</th></tr>` +
+    d.records.slice(0, 30).map(r => `<tr><td>${esc(r.fish)}</td><td class="num">${esc(r.weight)}</td><td>${esc(r.bait)}</td><td>${esc(r.date)}</td><td>${esc(r.table)}${r.region ? " · " + esc(r.region) : ""}</td></tr>`).join("") + `</table>` : "";
+  el.innerHTML = `<div class="title-row"><h2>${esc(d.fishName)}</h2></div>
+    <p class="sub">${d.n ? esc(T("tgtWeekRecords", "Diese Woche {0} Rekorde, davon {1} in den letzten 48 Stunden. Meistgenutzt: {2}").replace("{0}", d.n).replace("{1}", d.n48).replace("{2}", top)) : ""}</p>
+    ${lakes}
+    ${notes.map(n => `<div class="note">${esc(n)}</div>`).join("")}
+    <div class="hdr">${esc(T("tgtBaits", "Köder aus den Rekorden"))} · ${esc(d.lakeName)}</div>${baits}
+    <div class="hdr">${esc(T("findActiveSpots", "Gemeldete Spots, letzte 3 Tage"))} · ${esc(d.lakeName)}</div>${spots}
+    ${recs ? `<div class="hdr">${esc(T("findTopRecords", "Größte Rekorde"))} · ${esc(d.lakeName)}</div>${recs}` : ""}`;
+  el.querySelectorAll(".chip[data-l]").forEach(c => c.onclick = () => { FIND.lake = c.dataset.l; loadFind(); });
+  el.querySelectorAll(".mini[data-k]").forEach(c => c.onclick = () => goSpot(d.lake, c.dataset.k));
+}
+function showView(v) {
+  document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.view === v));
+  document.querySelectorAll(".view").forEach(x => x.classList.toggle("active", x.id === "view-" + v));
+  if (v === "active") drawMap();
+}
+function goSpot(lake, key) {
+  showView("active");
+  LAKE = lake; $("lakeSel").value = lake;
+  HOURS = 72; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", +x.dataset.h === 72));
+  SEL = key; loadActive();
+}
+let FQT = 0;
+$("findQ").oninput = () => { FIND.q = $("findQ").value.trim(); if (FDATA) renderFishList(); clearTimeout(FQT); FQT = setTimeout(loadFind, 300); };
+$("winSeg").querySelectorAll("button").forEach(b => b.onclick = () => { FIND.win = b.dataset.w; $("winSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadFind(); });
+$("regionSel").onchange = () => { FIND.region = $("regionSel").value; loadFind(); };
+$("tableSel").onchange = () => { FIND.table = $("tableSel").value; loadFind(); };
 boot();
 </script>
 </body>
