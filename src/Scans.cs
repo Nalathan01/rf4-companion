@@ -61,6 +61,8 @@ internal static class Scans
 
     public static double Degrees(string key)
     {
+        Dictionary<string, object> p = Entry(posts, key);
+        if (p != null && p.ContainsKey("deg") && AppEnv.GetDouble(p, "deg", -1) >= 0) return AppEnv.GetDouble(p, "deg", -1);
         Dictionary<string, object> e = Entry(data, key);
         return e == null ? -1 : AppEnv.GetDouble(e, "deg", -1);
     }
@@ -190,10 +192,34 @@ internal static class Scans
                 key = queue.Dequeue();
             }
             Fetch(key);
+            Direction(key);
             if (++n % 20 == 0) Save();
             Thread.Sleep(250);
         }
         Save();
+    }
+
+    private static void Direction(string key)
+    {
+        Dictionary<string, object> p;
+        lock (gate) p = Entry(posts, key);
+        if (p == null || p.ContainsKey("deg") || AppEnv.GetDouble(Entry(data, key), "deg", -1) >= 0) return;
+        string[] imgs = List(p);
+        double deg = -1;
+        string kind = "";
+        for (int i = 0; i < imgs.Length && i < 6; i++)
+        {
+            DirResult r;
+            try { r = DirDetect.Detect(ImageBytes(imgs[i])); }
+            catch (Exception) { continue; }
+            if (r.Deg >= 0 && (deg < 0 || (r.MapShot && kind == "minimap"))) { deg = r.Deg; kind = r.Kind; }
+        }
+        lock (gate)
+        {
+            p["deg"] = Math.Round(deg, 1);
+            p["dk"] = kind;
+            dirty = true;
+        }
     }
 
     public static void Save()
