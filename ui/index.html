@@ -200,6 +200,22 @@ dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px;
 .dlg-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
 .dlg-acts .danger { margin-right: auto; color: #e88; }
 .dlg-err { color: #e88; font-size: 12.5px; margin-top: 10px; min-height: 1em; }
+.menu { position: fixed; top: 58px; right: 18px; z-index: 40; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 6px; display: none; min-width: 220px; box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
+.menu.show { display: block; }
+.menu button { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 9px 12px; border-radius: 8px; cursor: pointer; color: var(--ink-2); font-weight: 600; }
+.menu button:hover { background: var(--surface-3); color: var(--ink); }
+dialog.sheet { width: min(1100px, 94vw); height: min(820px, 90vh); padding: 0; display: none; flex-direction: column; }
+dialog.sheet[open] { display: flex; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+.sheet-head h3 { margin: 0; }
+#sheetBody { flex: 1; min-height: 0; overflow: auto; padding: 16px 18px; display: flex; flex-direction: column; }
+#lkBody { flex: 1; min-height: 0; }
+.lk-split { display: grid; grid-template-columns: 250px 1fr; gap: 18px; height: 100%; min-height: 0; }
+.lk-list { overflow-y: auto; }
+.site { display: block; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px; padding: 11px 14px; margin-bottom: 8px; cursor: pointer; color: var(--ink); }
+.site:hover { border-color: rgba(79,168,201,0.6); }
+.site small { display: block; color: var(--muted); margin-top: 2px; }
+.star { color: var(--warm); }
 .boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
 .boot.hide { opacity: 0; pointer-events: none; }
 .boot-box { width: min(420px, 86vw); text-align: center; }
@@ -299,6 +315,13 @@ dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px;
 <div class="status" id="status"></div>
 <div class="lightbox" id="lightbox"><img id="lbImg"></div>
 <dialog id="dlg"><h3 id="dlgTitle"></h3><div class="form" id="dlgForm"></div><div class="dlg-err" id="dlgErr"></div><div class="dlg-acts"><button class="btn danger" id="dlgDel" data-t="delete">Löschen</button><button class="btn" id="dlgCancel" data-t="cancel">Abbrechen</button><button class="btn primary" id="dlgSave" data-t="save">Speichern</button></div></dialog>
+<div class="menu" id="menu">
+  <button data-m="lookup" data-t="tabInfo">Nachschlagen</button>
+  <button data-m="web" data-t="tabWeb">Webseiten</button>
+  <button data-m="settings" data-t="settings">Einstellungen</button>
+  <button data-m="about" data-t="about">Über und Updates</button>
+</div>
+<dialog id="sheet" class="sheet"><div class="sheet-head"><h3 id="sheetTitle"></h3><button class="icon-btn" id="sheetClose">✕</button></div><div id="sheetBody"></div></dialog>
 <datalist id="dlFish"></datalist><datalist id="dlBait"></datalist><datalist id="dlDip"></datalist><datalist id="dlPva"></datalist><datalist id="dlRig"></datalist><datalist id="dlItem"></datalist>
 <script>
 const TOKEN = new URLSearchParams(location.search).get("t");
@@ -529,7 +552,7 @@ $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActiv
 $("allChk").onchange = () => loadActive();
 $("ownChk").onchange = () => drawMap();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
-$("lang").onchange = async () => { ITEMS = null; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
+$("lang").onchange = async () => { ITEMS = null; LOOKUP = null; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
 let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
 function findStatic() {
@@ -730,7 +753,7 @@ function field(id, label, val, extra, wide) { return `<label class="${wide ? "wi
 function spotOptions(lake, sel) { return `<option value=""></option>` + LOG.spots.filter(s => s.lake === lake).map(s => `<option value="${s.id}" ${s.id === sel ? "selected" : ""}>${esc(s.name || s.x + ":" + s.y)}</option>`).join(""); }
 let DLG = null;
 function openDlg(title, html, onSave, onDel) {
-  $("dlgTitle").textContent = title; $("dlgForm").innerHTML = html; $("dlgErr").textContent = "";
+  $("dlgTitle").textContent = title; $("dlgForm").innerHTML = html; $("dlgErr").textContent = ""; $("dlgSave").style.display = "";
   $("dlgDel").style.display = onDel ? "" : "none";
   DLG = { onSave, onDel };
   $("dlg").showModal();
@@ -785,17 +808,92 @@ $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich l�
 $("addCatch").onclick = () => catchDialog(null);
 $("addSpot").onclick = () => spotDialog(null);
 $("addRecipe").onclick = () => recipeDialog(null);
-$("gear").onclick = async () => {
-  const d = TRK || await api("/api/tracker/status");
-  openDlg(T("settings", "Einstellungen"),
-    `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
-     ${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}
-     <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
-     <p class="sub" style="grid-column:1/3;margin:0">${esc(T("trkLangHint", "Die Sprache, in der RF4 läuft. Fehlt sie, unter Windows-Einstellungen, Zeit und Sprache, die Sprache mit Texterkennung hinzufügen."))}</p>`,
-    async () => { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); },
-    null);
-  DLG.keep = true;
+$("gear").onclick = e => { e.stopPropagation(); $("menu").classList.toggle("show"); };
+document.addEventListener("click", e => { if (!e.target.closest("#menu")) $("menu").classList.remove("show"); });
+$("menu").querySelectorAll("button").forEach(b => b.onclick = () => { $("menu").classList.remove("show"); MENU[b.dataset.m](); });
+$("sheetClose").onclick = () => $("sheet").close();
+function openSheet(title, html) { $("sheetTitle").textContent = title; $("sheetBody").innerHTML = html; $("sheet").showModal(); }
+const SITES = [
+  ["rf4it", "RF4 IT", "siteRf4it", "Karte mit aktiven Spots und Entfernungsmesser", ""],
+  ["trophyspot", "TrophySpot.de", "siteTrophyspot", "Deutsche Spot-Datenbank", "https://trophyspot.de/"],
+  ["rf4spots", "RF4-Spots.de", "siteRf4spots", "Deutsche Seite, aktive Spots", "https://www.rf4-spots.de/index.php/rf4-spots/alle-aktiven-spots"],
+  ["rf4stat", "RF4-STAT", "siteRf4stat", "Aktive Beißstellen und Statistik", "https://rf4-stat.com/active-spots/"],
+  ["rf4records", "RF4 Records", "siteRf4records", "Rekordsuche, beste Köder pro Fisch", "https://rf4records.com/records"],
+  ["rf4db", "RF4DB", "siteRf4db", "Datenbank und Heatmap", "https://rf4db.com/en"],
+  ["rf4hub", "RF4HUB", "siteRf4hub", "Beißstellen, Rekorde, Guides", "https://en.rf4h.ru/"],
+  ["rf4intel", "RF4Intel", "siteRf4intel", "Spots, Rekorde und Karten", "https://rf4intel.com/"],
+  ["official", "rf4game.com", "officialRecords", "Offizielle Wochenrekorde", "https://rf4game.com/records/weekly/"]
+];
+function rf4itUrl(id) {
+  const m = { norwegian_sea: "northsea", elk_lake: "american_pond" };
+  return id ? "https://rf4it.sandoramix.dev/maps/" + (m[id] || id.replace(/_/g, "")) : "https://rf4it.sandoramix.dev/";
+}
+let LOOKUP = null;
+const STAR = f => f.ownMark === 2 ? ' <span class="star">★★</span>' : f.ownMark === 1 ? ' <span class="star">★</span>' : "";
+const MENU = {
+  web() {
+    openSheet(T("tabWeb", "Webseiten"), `<p class="sub">${esc(T("webHint", "Öffnet die Seite im Browser. Für RF4 IT vorher das Gewässer wählen."))}</p>
+      <div class="filters"><select id="webLake"><option value="">${esc(T("allLakes", "Alle Gewässer"))}</option>${INIT.lakes.map(l => `<option value="${l.id}" ${l.id === (LAKE || FIND.lake) ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select></div>
+      ${SITES.map(x => `<button class="site" data-k="${x[0]}">${esc(x[1])}<small>${esc(T(x[2], x[3]))}</small></button>`).join("")}`);
+    $("sheetBody").querySelectorAll(".site").forEach(b => b.onclick = () => {
+      const x = SITES.find(y => y[0] === b.dataset.k);
+      const url = x[0] === "rf4it" ? rf4itUrl($("webLake").value) : x[0] === "rf4stat" && INIT.lang === "de" ? "https://de.rf4-stat.com/active-spots/" : x[4];
+      api("/api/open", { url });
+    });
+  },
+  async lookup() {
+    openSheet(T("tabInfo", "Nachschlagen"), `<div><div class="seg" id="lkSeg" style="margin-bottom:14px"><button data-v="lakes" class="on">${esc(T("tabLakes", "Gewässer"))}</button><button data-v="trophies">${esc(T("tabTrophies", "Trophäen"))}</button></div></div><div id="lkBody"></div>`);
+    if (!LOOKUP) LOOKUP = await api("/api/lookup");
+    const show = v => { $("lkSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); v === "lakes" ? lkLakes() : lkTrophies(); };
+    $("lkSeg").querySelectorAll("button").forEach(b => b.onclick = () => show(b.dataset.v));
+    show("lakes");
+  },
+  async settings() {
+    const d = TRK || await api("/api/tracker/status");
+    const ocr = await api("/api/ocrlangs");
+    openDlg(T("settings", "Einstellungen"),
+      `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
+       ${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}
+       <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+       <div style="grid-column:1/3"><div class="hdr">${esc(T("ocrPacks", "Texterkennung (Sprachpakete)"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("ocrPacksHint", "Für Bilder aus Telegram und für den Tracker braucht Windows die Texterkennung der jeweiligen Sprache. Installieren fragt nach Administratorrechten und lädt das Paket von Microsoft."))}</p>
+       <table class="tbl">${ocr.map(o => `<tr><td>${esc(o.name)}</td><td class="num">${o.installed ? esc(T("installed", "installiert")) : `<button class="btn small" data-ocr="${o.tag}">${esc(T("install", "Installieren"))}</button>`}</td></tr>`).join("")}</table></div>`,
+      async () => { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); },
+      null);
+    DLG.keep = true;
+    $("dlgForm").querySelectorAll("[data-ocr]").forEach(b => b.onclick = async () => { try { await api("/api/ocrinstall", { tag: b.dataset.ocr }); b.textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); b.disabled = true; } catch (e) { $("dlgErr").textContent = e.message.startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } });
+  },
+  async about() {
+    const a = await api("/api/about", { check: true });
+    openDlg(T("about", "Über und Updates"),
+      `<div style="grid-column:1/3"><p style="margin:0 0 6px"><b>RF4 Companion ${esc(a.version)}</b></p>
+       <p class="sub" style="margin:0 0 10px">${esc(a.update ? T("updateAvailable", "Version {0} ist verfügbar").replace("{0}", a.update) : T("upToDate", "Du hast die neueste Version."))}</p>
+       ${a.update ? `<button class="btn primary" id="abUpd">${esc(T("updateNow", "Aktualisieren"))}</button>` : ""}
+       <div class="ev-src" style="margin-top:14px"><button class="src" data-url="https://github.com/Nalathan01/rf4-companion">GitHub ↗</button><button class="src" data-url="https://github.com/Nalathan01/rf4-companion/issues">${esc(T("reportBug", "Fehler melden"))} ↗</button></div>
+       <p class="sub" style="margin:14px 0 0">${esc(T("dataDir", "Datenordner"))}: ${esc(a.dataDir)}</p></div>`, async () => {}, null);
+    DLG.keep = true;
+    $("dlgSave").style.display = "none";
+    $("dlgForm").querySelectorAll("[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
+    if ($("abUpd")) $("abUpd").onclick = () => $("updBtn").onclick();
+  }
 };
+function lkLakes(sel) {
+  const L = LOOKUP.lakes, cur = L.find(l => l.id === sel) || L.find(l => l.id === (LAKE || FIND.lake)) || L[0];
+  $("lkBody").innerHTML = `<div class="lk-split"><div class="lk-list">${L.map(l => `<div class="fish-row ${l.id === cur.id ? "sel" : ""}" data-l="${l.id}"><span>${esc(l.name)}</span></div>`).join("")}</div>
+    <div style="overflow-y:auto"><h2 style="margin:0 0 8px;font-family:var(--font-display)">${esc(cur.name)}</h2><p class="sub" style="color:var(--ink-2);font-size:13.5px;line-height:1.5">${esc(cur.desc)}</p>
+    <div class="hdr">${esc(T("fishHere", "Fische hier"))} (${cur.fish.length})</div>
+    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num">${esc(T("ownBest", "Dein bester"))}</th></tr>
+    ${cur.fish.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num">${esc(f.own)}${STAR(f)}</td></tr>`).join("")}</table></div></div>`;
+  $("lkBody").querySelectorAll("[data-l]").forEach(r => r.onclick = () => lkLakes(r.dataset.l));
+}
+function lkTrophies(q) {
+  q = q || "";
+  const list = LOOKUP.trophies.filter(f => !q || f.name.toLowerCase().includes(q.toLowerCase()));
+  $("lkBody").innerHTML = `<input class="search" id="lkQ" type="search" value="${esc(q)}" placeholder="${esc(T("fishSearch", "Fisch suchen"))}">
+    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num">${esc(T("ownBest", "Dein bester"))}</th><th>${esc(T("tabLakes", "Gewässer"))}</th></tr>
+    ${list.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num">${esc(f.own)}${STAR(f)}</td><td><small style="margin:0">${esc(f.lakes.join(", "))}</small></td></tr>`).join("")}</table>`;
+  const inp = $("lkQ"); inp.focus(); inp.setSelectionRange(q.length, q.length);
+  inp.oninput = () => lkTrophies(inp.value);
+}
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
 let FQT = 0;
