@@ -4,64 +4,71 @@
 
 **Find the right spot and the right bait in Russian Fishing 4.**
 
-RF4 Companion is a free Windows tool that runs next to the game. It combines the official weekly records, community spot reports and your own catches, and tells you in plain words where and with what to fish right now.
+RF4 Companion is a free Windows tool that runs next to the game. It combines the official weekly records, community spot reports and your own catches, and shows in plain words where and with what to fish right now.
 
-**Download:** [nalathan.itch.io/rf4-companion](https://nalathan.itch.io/rf4-companion)
+**Download:** [nalathan.itch.io/rf4-companion](https://nalathan.itch.io/rf4-companion) or the [latest release](https://github.com/Nalathan01/rf4-companion/releases/latest)
 
-## Features
+## Three areas
 
-* **Target fish:** pick a fish or "All koi" and get the most promising spots and baits. Spots are weighted by the age of their reports, because koi and other special fish usually stay at a spot for only two or three days. Every spot links to the original community post.
-* **Preferences:** a fish by flavour table built from the weekly records of all regions, filterable by the first 6, 12, 24 or 48 hours after the weekly reset.
-* **Weekly records:** the official weekly tables (records, light, bottom light, ultralight, sea) for all regions, updated automatically.
-* **Map:** all waterbodies with your own spots (can be hidden), community spots filtered by fish and period, a ruler and coordinate search. Double click a fish anywhere in the app to see it on the map.
-* **Cast direction and spot photos:** the cast direction is read from the screenshots in community posts (the green marker on the game map and the minimap) and drawn as an arrow. Every community spot shows the best photo of the spot, and the images of Telegram posts appear right in the app.
-* **Post details:** bait, dip, groundbait, clip, depth and water temperature are read from the Russian text of Telegram posts and translated into your language with the game's own item names.
-* **Reset phase:** all weekly records from the weekly reset until 3:00, with filters for fish, waterbody and region, the same catch from several regions and tables merged into one row, and a switch that shows only baits and bait combinations that are new compared to last week.
-* **Sea fishing:** spots on the Norwegian Sea get their own fields for the 11 sea rigs, main bait, extra hook, up to 3 teasers, attractors, fishing depth and banks. The tracker reads sea rigs from your setup screenshots.
-* **Plausibility check:** community positions are checked against the map. Broken coordinates are hidden, confirmed digit swaps are corrected, and spots on the water are marked as "boat or typo".
-* **Catch log with screenshot tracker:** press F12 in the game as usual. The app reads setup, catch screen, keepnet, fish market, map and recipe screenshots and suggests catches with fish, weight, bait, dip, PVA, position, water temperature and cast direction.
-* **Reference:** waterbodies, trophy weights and your own groundbait and PVA recipes.
+**Find fish.** Pick a fish or "All koi" and see where it was caught this week, with which baits and which spots are being reported right now. Waters are ranked by the last 48 hours, baits come straight from the weekly records of all regions, and bait combinations that were not in last week's records are marked as new. Filter by region, table and the first 24 hours after the weekly reset. A banner on Sunday evening tells you when the reset phase starts. The search box also finds baits and lists the fish caught on them.
+
+**Active spots.** Every spot reported in the last 6 hours to 7 days, on the game map, sorted by how fresh it is. Only reports that name a real bait count: from the post text, from the setup screenshot in the post (read with Windows text recognition in all game languages) or from a matching entry in the official records. Each catch shows clip, depth, cast direction, water temperature, the original post text, the images and a link to the source, including the Discord server name and an invite. Reports on the Norwegian Sea are grouped by the depth marks of the map (34 m bank, 170 m and so on). Your own spots appear on the map as well.
+
+**My catch log.** Your catches grouped by day and spot, statistics per fish, your own spots and your groundbait and PVA recipes. Add and edit everything by hand, or let the tracker do it.
+
+## Catch tracker
+
+Press F12 in the game as usual. The tracker reads the screenshots:
+
+* **Rods:** one screenshot of the rod view per rod captures bait, dip, PVA, rig and leader length. Rods with the same baits are told apart by their leader length. Click a rod to read it again, to replace it with the next rod screenshot, or to delete it.
+* **Spot:** waterbody, position and water temperature from the HUD and the map.
+* **Catches:** from the catch screen, the catch details, the keepnet and the fish market, including the catch time from the keepnet cards. Impossible weights are dropped, catches already in your log are skipped.
+* **Count per rod:** AltGr+1, AltGr+2 and AltGr+3 count a bite on rod 1, 2 or 3, AltGr+0 takes the last one back. These shortcuts are only active while the tracker is switched on.
+
+Pending catches are assigned to a rod by their bait or by your count and go into your catch log with one click.
+
+## More
+
+* **Reference:** waterbodies with description and fish, trophy and rare trophy weights and your own best catch per fish.
+* **Websites:** quick links to other RF4 tools, including RF4 IT for the selected waterbody.
+* **Text recognition packs:** install the Windows text recognition for further languages right from the settings.
 * **16 languages**, the same as the game.
+* **Updates itself:** new versions are downloaded from GitHub and checked by their SHA-256 hash before they replace the program.
 
-![Target fish](docs/screenshots/1_target_fish.png)
-![Preferences](docs/screenshots/2_preferences.png)
-![Map with community spots](docs/screenshots/3_map_community.png)
-![Catch log and tracker](docs/screenshots/4_catch_log_tracker.png)
-![Weekly records](docs/screenshots/5_weekly_records.png)
+![Active spots](docs/screenshots/1_active_spots.png)
+![Find fish](docs/screenshots/2_find_fish.png)
+![Catch log and tracker](docs/screenshots/3_catch_log.png)
 
 ## Requirements
 
-* Windows 10 or 11
-* Microsoft Edge WebView2 Runtime (present on almost every Windows PC)
-* For the screenshot tracker: the Windows OCR language of your game language
+* Windows 10 or 11 with Microsoft Edge (installed on every current Windows)
+* For the tracker and for setup screenshots in posts: the Windows text recognition of the language in question (can be installed from the settings)
 
 ## Installation
 
-1. Download `RF4Companion-Setup-<version>.exe` from [itch.io](https://nalathan.itch.io/rf4-companion).
-2. Run it and follow the steps.
-3. Uninstall any time via the Windows settings.
+1. Download `RF4Companion-Setup-<version>.exe` and run it.
+2. Uninstall any time via the Windows settings.
 
-To run it from this repository instead: `powershell -STA -ExecutionPolicy Bypass -File RF4Companion.ps1`. `Build-Release.ps1` builds the installer into `dist\` (needs Inno Setup 6).
+Updating from version 1.x: run the new setup. It replaces the old version in the same folder. Catches, spots, recipes and settings are kept.
 
 ## Privacy
 
-Everything you enter stays on your PC in `%APPDATA%\RF4Companion`. No account, no tracking, no telemetry. The tracker only reads the RF4 screenshot folder. The app downloads public data only: the anonymised weekly records archive ([rf4-companion-data](https://github.com/Nalathan01/rf4-companion-data)) public community reports and the images of public Telegram posts.
+Everything you enter stays on your PC in `%APPDATA%\RF4Companion`. No account, no tracking, no telemetry. The tracker only reads the RF4 screenshot folder. The app downloads public data only: the anonymised weekly records archive ([rf4-companion-data](https://github.com/Nalathan01/rf4-companion-data)), public community reports, the images and text of public Telegram posts, public Discord server names and the release information on GitHub.
+
+## Bug reports
+
+Please report bugs only via [GitHub issues](https://github.com/Nalathan01/rf4-companion/issues). Comments on other download sites cannot be read or answered.
+
+## Building
+
+`build.ps1` compiles the program with the C# compiler that comes with Windows into a single exe. `Build-Release.ps1` additionally builds the setup and needs Inno Setup 6. Pushing a tag like `v2.0.0` builds both on GitHub and creates a draft release.
 
 ## Data sources and credits
 
 * Weekly records: official record tables on rf4game.com, archived without player names.
 * Community spots: [rf4intel.com](https://rf4intel.com), public reports from Telegram, Discord and VK.
 * Maps, fish and item names: Russian Fishing 4 by Fishsoft.
-* Libraries: [MahApps.Metro](https://github.com/MahApps/MahApps.Metro) and [ControlzEx](https://github.com/ControlzEx/ControlzEx) (MIT), [Microsoft.Xaml.Behaviors.Wpf](https://github.com/microsoft/XamlBehaviorsWpf) (MIT), [Microsoft Edge WebView2](https://developer.microsoft.com/microsoft-edge/webview2/).
 
 ## Disclaimer
 
 RF4 Companion is an unofficial fan tool. It is not affiliated with, endorsed by or connected to Fishsoft or Russian Fishing 4. All game names, maps and images belong to their respective owners. If you are a rights holder and want something removed, please open an issue.
-
----
-
-## Deutsch
-
-RF4 Companion ist ein kostenloses Windows-Tool, das neben Russian Fishing 4 läuft. Es verbindet die offiziellen Wochenrekorde, Community-Spots und deine eigenen Fänge und sagt dir in Klartext, wo und womit es sich gerade lohnt: Zielfisch mit Spots und Ködern, Vorlieben nach Aroma, Wochenrekorde aller Regionen, Karte mit Spots, Wurfrichtung und Spotbildern und ein Fangbuch, das deine F12-Screenshots automatisch ausliest.
-
-Download und Installation über [itch.io](https://nalathan.itch.io/rf4-companion): `RF4Companion-Setup-<Version>.exe` herunterladen und starten. Alle Daten bleiben auf deinem PC. Inoffizielles Fan-Tool ohne Verbindung zu Fishsoft.

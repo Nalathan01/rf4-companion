@@ -21,7 +21,7 @@ internal static class Lookup
                 string f = AppEnv.GetString(c, "fish");
                 int w = (int)AppEnv.GetDouble(c, "weight", 0);
                 int b;
-                if (f.Length > 0 && w > 0 && (!best.TryGetValue(f, out b) || w > b)) best[f] = w;
+                if (f.Length > 0 && w > 0 && GameData.Plausible(f, w) && (!best.TryGetValue(f, out b) || w > b)) best[f] = w;
             }
         return best;
     }

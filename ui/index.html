@@ -370,6 +370,8 @@ async function boot() {
   loadFind();
   loadLog();
   trk("status");
+  const hv = location.hash.slice(1).split("=");
+  if (hv[0] === "find" || hv[0] === "log") { showView(hv[0]); if (hv[0] === "find" && hv[1]) { FIND.fish = decodeURIComponent(hv[1]); loadFind(); } }
   $("boot").classList.add("hide");
   setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);

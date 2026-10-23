@@ -29,7 +29,7 @@ internal static class Fangbuch
 
     private static string Tr(string v, string lang)
     {
-        return v.Length == 0 ? "" : GameData.Translate(v, lang);
+        return v.Length == 0 ? "" : GameData.Translate(GameData.ToKey(v), lang);
     }
 
     private static string LakeName(string id, string lang)
@@ -81,7 +81,7 @@ internal static class Fangbuch
         foreach (IGrouping<string, Dictionary<string, object>> g in catches.GroupBy(c => S(c, "fish")).OrderByDescending(g => g.Count()))
         {
             if (g.Key.Length == 0) continue;
-            double max = g.Max(c => AppEnv.GetDouble(c, "weight", 0));
+            double max = g.Select(c => AppEnv.GetDouble(c, "weight", 0)).Where(w => GameData.Plausible(g.Key, w)).DefaultIfEmpty(0).Max();
             string top = g.GroupBy(c => BaitCombo(c, lang)).Where(b => b.Key.Length > 0).OrderByDescending(b => b.Count()).Select(b => b.Key).FirstOrDefault() ?? "";
             stats.Add(AppEnv.Obj("fish", Tr(g.Key, lang), "n", g.Count(), "max", max > 0 ? GameData.FormatWeight(max, lang) : "", "bait", top));
         }
