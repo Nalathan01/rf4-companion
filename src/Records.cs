@@ -8,9 +8,9 @@ using System.Threading;
 
 internal sealed class RecordHit
 {
-    public string Fish, Lake, Bait, Table, Region, Date;
+    public string Fish, Lake, Bait, Table, Region, Date, Week;
     public int Grams;
-    public DateTime Day;
+    public DateTime Day, Seen;
 }
 
 internal static class Records
@@ -18,6 +18,7 @@ internal static class Records
     private static readonly object gate = new object();
     private static Dictionary<string, List<RecordHit>> index = new Dictionary<string, List<RecordHit>>(StringComparer.Ordinal);
     private static string signature = "";
+    private static List<RecordHit> all = new List<RecordHit>();
     private static volatile bool loading;
     public static int Version;
     public static volatile bool Loaded;
@@ -73,9 +74,11 @@ internal static class Records
                 try { docs[i] = AppEnv.ReadGzJsonFile(files[i].FullName) as Dictionary<string, object>; }
                 catch (Exception ex) { AppEnv.Log("Rekorde", files[i].Name + ": " + ex.Message); }
             });
+            List<RecordHit> flat = new List<RecordHit>();
             foreach (Dictionary<string, object> d in docs)
             {
                 if (d == null) continue;
+                string week = AppEnv.GetString(d, "week");
                 foreach (object o in AppEnv.GetList(d, "items"))
                 {
                     IDictionary it = o as IDictionary;
@@ -89,16 +92,20 @@ internal static class Records
                     h.Table = AppEnv.GetString(it, "t");
                     h.Region = AppEnv.GetString(it, "r");
                     h.Date = AppEnv.GetString(it, "d");
+                    h.Week = week;
+                    DateTime seen;
+                    if (DateTime.TryParse(AppEnv.GetString(it, "fs"), CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out seen)) h.Seen = seen;
                     DateTime day;
                     if (!DateTime.TryParseExact(h.Date.Trim(), Fmts, CultureInfo.InvariantCulture, DateTimeStyles.None, out day)) continue;
                     h.Day = day;
                     if (day < cutoff || h.Fish.Length == 0 || h.Lake.Length == 0 || h.Grams <= 0 || h.Bait.Length == 0) continue;
                     Add(idx, h);
-                    rows.Add(new object[] { h.Fish, h.Lake, h.Grams, h.Bait, h.Table, h.Region, h.Date, day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) });
+                    flat.Add(h);
+                    rows.Add(new object[] { h.Fish, h.Lake, h.Grams, h.Bait, h.Table, h.Region, h.Date, day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), h.Week, h.Seen == DateTime.MinValue ? "" : h.Seen.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture) });
                 }
             }
-            lock (gate) { index = idx; signature = sig; Version++; }
-            try { AppEnv.WriteJsonFile(CachePath, AppEnv.Obj("sig", sig, "items", rows)); } catch (Exception ex) { AppEnv.Log("Rekorde", "Zwischenspeicher: " + ex.Message); }
+            lock (gate) { index = idx; all = flat; signature = sig; Version++; }
+            try { AppEnv.WriteJsonFile(CachePath, AppEnv.Obj("v", 2, "sig", sig, "items", rows)); } catch (Exception ex) { AppEnv.Log("Rekorde", "Zwischenspeicher: " + ex.Message); }
             AppEnv.Log("Rekorde", "Geladen: " + files.Count + " Wochen, " + idx.Count + " Einträge");
         }
         finally { loading = false; Loaded = true; }
@@ -126,23 +133,55 @@ internal static class Records
         try { d = AppEnv.ReadJsonFile(CachePath) as Dictionary<string, object>; }
         catch (Exception) { return null; }
         string sig = AppEnv.GetString(d, "sig");
-        if (d == null || sig.Length == 0) return null;
+        if (d == null || sig.Length == 0 || AppEnv.GetDouble(d, "v", 0) != 2) return null;
         Dictionary<string, List<RecordHit>> idx = new Dictionary<string, List<RecordHit>>(StringComparer.Ordinal);
+        List<RecordHit> flat = new List<RecordHit>();
         foreach (object o in AppEnv.GetList(d, "items"))
         {
             IList a = o as IList;
-            if (a == null || a.Count < 8) continue;
+            if (a == null || a.Count < 10) continue;
             RecordHit h = new RecordHit();
             h.Fish = a[0] + ""; h.Lake = a[1] + ""; h.Grams = Convert.ToInt32(a[2], CultureInfo.InvariantCulture);
             h.Bait = a[3] + ""; h.Table = a[4] + ""; h.Region = a[5] + ""; h.Date = a[6] + "";
             DateTime day;
             if (!DateTime.TryParseExact(a[7] + "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day)) continue;
             h.Day = day;
+            h.Week = a[8] + "";
+            DateTime seen;
+            if (DateTime.TryParse(a[9] + "", CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out seen)) h.Seen = seen;
             Add(idx, h);
+            flat.Add(h);
         }
-        lock (gate) { index = idx; signature = sig; Version++; }
+        lock (gate) { index = idx; all = flat; signature = sig; Version++; }
         AppEnv.Log("Rekorde", "Aus Zwischenspeicher: " + idx.Count + " Einträge");
         return sig;
+    }
+
+    public static List<RecordHit> All()
+    {
+        lock (gate) return all;
+    }
+
+    public static string CurrentWeek()
+    {
+        string w = "";
+        foreach (RecordHit h in All()) if (string.CompareOrdinal(h.Week, w) > 0) w = h.Week;
+        return w;
+    }
+
+    public static DateTime ResetUtc(string week)
+    {
+        DateTime wd;
+        if (!DateTime.TryParseExact(week, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out wd)) return DateTime.MinValue;
+        DateTime bound = wd.AddHours(18.5), min = DateTime.MaxValue;
+        foreach (RecordHit h in All()) if (h.Week == week && h.Seen >= bound && h.Seen < min) min = h.Seen;
+        return min == DateTime.MaxValue ? DateTime.MinValue : min;
+    }
+
+    public static bool InResetWindow(DateTime utc)
+    {
+        if (utc.DayOfWeek == DayOfWeek.Sunday && utc.TimeOfDay >= TimeSpan.FromHours(18.5)) return true;
+        return utc.DayOfWeek == DayOfWeek.Monday && utc.TimeOfDay <= TimeSpan.FromMinutes(75);
     }
 
     private static string Key(string fish, string lake, int grams)

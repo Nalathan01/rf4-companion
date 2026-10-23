@@ -89,7 +89,7 @@ internal sealed class Api
         Dictionary<string, object> args = body.Length > 0 ? AppEnv.Json.DeserializeObject(body) as Dictionary<string, object> : null;
         if (path == "/api/ping")
         {
-            return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct,"syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
+            return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
                 "update", Updater.Available, "spot", server.TakePendingSpot());
         }
         WaitReady();
@@ -100,6 +100,7 @@ internal sealed class Api
                 UserStore.Set("lang", AppEnv.GetString(args, "lang"));
                 return Init();
             case "/api/active": return Active(q);
+            case "/api/find": return Finder.Find(q, Lang, GameData.Strings(Lang));
             case "/api/spot": return SpotDetail(q["key"] ?? "");
             case "/api/devocr":
                 {
@@ -152,7 +153,7 @@ internal sealed class Api
 
     private static readonly Dictionary<string, string[]> baitMemo = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
-    private static string[] ReportBaits(Report r)
+    internal static string[] ReportBaits(Report r)
     {
         lock (baitMemo)
         {
