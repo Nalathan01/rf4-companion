@@ -359,12 +359,21 @@ internal static class Community
         foreach (string p in posts) ImageOcr.Request(p);
     }
 
+    public static bool Plausible(Report r)
+    {
+        if (r.Posted > DateTime.UtcNow.AddHours(1)) return false;
+        Lake l;
+        if (!GameData.LakeById.TryGetValue(r.Lake, out l)) return false;
+        if (!l.HasBounds) return true;
+        return r.X >= l.XMin-1 && r.X <= l.XMax + 1 && r.Y >= Math.Min(l.YSouth, l.YNorth)-1 && r.Y <= Math.Max(l.YSouth, l.YNorth) + 1;
+    }
+
     private static List<Spot> BuildSpots(List<Report> all)
     {
         Dictionary<string, List<Report>> byLake = new Dictionary<string, List<Report>>(StringComparer.OrdinalIgnoreCase);
         foreach (Report r in all)
         {
-            if (r.X < 0 || r.Y < 0 || r.Lake.Length == 0 || r.Posted == DateTime.MinValue) continue;
+            if (r.X < 0 || r.Y < 0 || r.Lake.Length == 0 || r.Posted == DateTime.MinValue || !Plausible(r)) continue;
             List<Report> l;
             if (!byLake.TryGetValue(r.Lake, out l)) { l = new List<Report>(); byLake[r.Lake] = l; }
             l.Add(r);
