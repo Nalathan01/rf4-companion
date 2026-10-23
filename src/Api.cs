@@ -40,6 +40,8 @@ internal sealed class Api
                 Step("bootData", 20);
                 UserStore.Load();
                 Tracker.Start();
+                Cloud.LoadState();
+                ThreadPool.QueueUserWorkItem(delegate { Cloud.Sync(false); });
                 Scans.Load();
                 Community.Load();
                 ThreadPool.QueueUserWorkItem(delegate { try { Records.Refresh(); } catch (Exception ex) { AppEnv.Log("Rekorde", ex.Message); Records.Loaded = true; } });
@@ -69,6 +71,7 @@ internal sealed class Api
         if (stopping) return;
         DateTime sy = Community.Synced;
         if (!Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
+        Cloud.Sync(false);
         Records.Refresh();
         Community.QueuePosts(72);
         if (ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
