@@ -178,6 +178,46 @@ internal static class Fangbuch
         }
     }
 
+    public static bool HasCatch(string fish, int grams, string date)
+    {
+        return List("catches").Any(c => S(c, "fish") == fish && (int)AppEnv.GetDouble(c, "weight", -1) == grams && S(c, "date") == date);
+    }
+
+    public static void AddCatches(List<Dictionary<string, object>> items)
+    {
+        lock (gate)
+        {
+            List<Dictionary<string, object>> catches = List("catches");
+            foreach (Dictionary<string, object> c in items) { c["id"] = NewId(); catches.Add(c); }
+            UserStore.Set("catches", catches);
+        }
+    }
+
+    public static string AddRecipeFromTracker(Dictionary<string, object> rc, string lakeId)
+    {
+        lock (gate)
+        {
+            List<Dictionary<string, object>> recipes = List("recipes");
+            Func<Dictionary<string, object>, string> sig = x => S(x, "type") + "|" + S(x, "base") + "|" + string.Join("+", AppEnv.GetList(x, "additives").Cast<object>().Select(o => (o ?? "").ToString()).ToArray()) + "|" + S(x, "attractant");
+            string name = S(rc, "name"), mine = sig(rc);
+            bool taken = false;
+            foreach (Dictionary<string, object> x in recipes)
+            {
+                string xn = S(x, "name");
+                if (xn != name && !xn.StartsWith(name + " (")) continue;
+                if (xn == name) taken = true;
+                if (sig(x) == mine) return GameData.Ui(UserStore.Lang, "trackerRecipeExists", "Rezept schon vorhanden, nichts geändert") + ": " + xn;
+            }
+            if (taken) name = name + " (" + DateTime.Now.ToString("dd.MM. HH:mm") + ")";
+            Lake l;
+            recipes.Add(AppEnv.Obj("id", NewId(), "name", name, "type", S(rc, "type"), "fish", new object[0],
+                "lakes", GameData.LakeById.TryGetValue(lakeId ?? "", out l) ? new object[] { l.Name("en") } : new object[0],
+                "base", S(rc, "base"), "additives", AppEnv.GetList(rc, "additives"), "attractant", S(rc, "attractant"), "notes", "Tracker"));
+            UserStore.Set("recipes", recipes);
+            return GameData.Ui(UserStore.Lang, "trackerRecipe", "Neues Rezept angelegt") + ": " + name;
+        }
+    }
+
     public static object SaveRecipe(Dictionary<string, object> a, string lang)
     {
         lock (gate)

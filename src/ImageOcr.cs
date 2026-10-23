@@ -164,7 +164,7 @@ internal static class ImageOcr
         return ReadSetup(b, Available("ru"), LatinLang(), out baits, out used);
     }
 
-    private static T W<T>(IAsyncOperation<T> op)
+    internal static T W<T>(IAsyncOperation<T> op)
     {
         while (op.Status == AsyncStatus.Started) Thread.Sleep(3);
         if (op.Status != AsyncStatus.Completed) throw new InvalidOperationException("OCR " + op.Status);

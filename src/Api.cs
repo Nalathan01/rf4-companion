@@ -39,6 +39,7 @@ internal sealed class Api
                 GameData.Load();
                 Step("bootData", 20);
                 UserStore.Load();
+                Tracker.Start();
                 Scans.Load();
                 Community.Load();
                 ThreadPool.QueueUserWorkItem(delegate { try { Records.Refresh(); } catch (Exception ex) { AppEnv.Log("Rekorde", ex.Message); Records.Loaded = true; } });
@@ -90,9 +91,10 @@ internal sealed class Api
         if (path == "/api/ping")
         {
             return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
-                "update", Updater.Available, "spot", server.TakePendingSpot());
+                "update", Updater.Available, "tracker", Tracker.Version, "spot", server.TakePendingSpot());
         }
         WaitReady();
+        if (path.StartsWith("/api/tracker/", StringComparison.Ordinal)) return Tracker.Command(path.Substring(13), args ?? new Dictionary<string, object>());
         switch (path)
         {
             case "/api/init": return Init();
@@ -110,6 +112,17 @@ internal sealed class Api
             case "/api/recipe/save": return Fangbuch.SaveRecipe(args ?? new Dictionary<string, object>(), Lang);
             case "/api/recipe/delete": return Fangbuch.Delete("recipes", AppEnv.GetList(args, "ids"));
             case "/api/itemnames": return Fangbuch.ItemNames(Lang);
+            case "/api/devlines":
+                {
+                    if (AppEnv.DevRoot == null) throw new AppError("unknown", path);
+                    return TrackerOcr.Read(q["file"], q["lang"] ?? "de-DE", System.Drawing.RectangleF.Empty, 1, false).Lines();
+                }
+            case "/api/devtrack":
+                {
+                    if (AppEnv.DevRoot == null) throw new AppError("unknown", path);
+                    Tracker.Process(q["file"], null);
+                    return Tracker.Command("status", new Dictionary<string, object>());
+                }
             case "/api/spot": return SpotDetail(q["key"] ?? "");
             case "/api/devocr":
                 {

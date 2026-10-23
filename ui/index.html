@@ -161,6 +161,23 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .mini .top { display: flex; justify-content: space-between; gap: 8px; font-weight: 650; }
 .mini .top span { color: var(--muted); font-weight: 500; font-size: 12px; }
 .mini .b { color: var(--ink-2); font-size: 12.5px; margin-top: 4px; }
+.trk { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 13px 15px; margin-bottom: 16px; }
+.trk-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.trk-head b { font-size: 15px; margin-right: 4px; }
+.trk-msg { color: var(--ink-2); font-size: 12.5px; flex: 1; min-width: 200px; }
+.trk-msg small { color: var(--muted); margin-right: 6px; }
+.trk-info { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--ink-2); font-size: 12.5px; margin-top: 9px; align-items: center; }
+.trk-info b { color: var(--muted); font-weight: 600; }
+.trk-info input { width: 64px; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 2px 7px; color: var(--ink); }
+.switch { position: relative; width: 38px; height: 21px; flex: none; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch span { position: absolute; inset: 0; background: var(--surface-3); border-radius: 999px; cursor: pointer; transition: background .15s; }
+.switch span::after { content: ""; position: absolute; left: 3px; top: 3px; width: 15px; height: 15px; border-radius: 50%; background: var(--ink-2); transition: transform .15s; }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::after { transform: translateX(17px); background: #fff; }
+.tbl tr.repl td { background: var(--accent-soft); }
+.tbl select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 2px 6px; min-width: 0; font-size: 12.5px; }
+.pend-wrap { max-height: 260px; overflow-y: auto; }
 .log-split { grid-template-columns: minmax(480px, 1.5fr) minmax(380px, 1fr); }
 .grp { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 15px; }
 .grp-head { display: flex; justify-content: space-between; gap: 10px; cursor: pointer; align-items: baseline; }
@@ -261,6 +278,7 @@ dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px;
       <div class="col">
         <div class="title-row"><h2 data-t="navLog">Mein Fangbuch</h2><button class="btn small primary" id="addCatch" data-t="logAdd">Fang eintragen</button></div>
         <p class="sub" id="logSub"></p>
+        <div class="trk" id="trk"></div>
         <div class="filters">
           <input class="search" id="logQ" type="search" autocomplete="off" style="flex:1;margin:0;min-width:200px">
           <select id="logLake"></select>
@@ -328,6 +346,7 @@ async function boot() {
   await loadActive();
   loadFind();
   loadLog();
+  trk("status");
   $("boot").classList.add("hide");
   setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);
@@ -345,6 +364,7 @@ async function ping() {
     DATAV = p.data;
     if (OCRV !== -1 && p.ocr !== OCRV) { DETAIL_KEY = null; loadActive(); }
     OCRV = p.ocr;
+    if (p.tracker !== TRKV) { TRKV = p.tracker; trk("status"); }
     if (p.spot) openSpotKey(p.spot);
   } catch (e) {}
 }
@@ -589,7 +609,51 @@ function goSpot(lake, key) {
   HOURS = 72; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", +x.dataset.h === 72));
   SEL = key; loadActive();
 }
-let LOG = null, LOGQ = "", LOGLAKE = "", OPEN = new Set();
+let LOG = null, LOGQ = "", LOGLAKE = "", OPEN = new Set(), TRK = null, TRKV = -1;
+async function trk(cmd, body) {
+  try { TRK = await api("/api/tracker/" + cmd, body || {}); } catch (e) { alert(e.message.startsWith("trkNoShot") ? T("trkNoShot", "Der Screenshot dieser Rute ist nicht mehr da.") : e.message); return; }
+  renderTracker();
+}
+function renderTracker() {
+  const d = TRK, el = $("trk");
+  if (!d) { el.innerHTML = ""; return; }
+  const s = d.session;
+  const head = `<div class="trk-head"><b>Tracker</b><label class="switch" title="${esc(T("trackerActive", "Fang-Tracker aktiv (F12 im Spiel)"))}"><input type="checkbox" id="trkOn" ${d.on ? "checked" : ""}><span></span></label>
+    <div class="trk-msg">${d.busy ? esc(T("trkReading", "Lese") + " " + d.busy) : d.msg ? `<small>${esc(d.msgAt)}</small>${esc(d.msg)}` : esc(!d.on ? T("trackerHint", "Tracker aus. Einschalten, dann im Spiel F12 drücken.") : !d.dirOk ? T("trackerNoFolder", "RF4-Screenshot-Ordner nicht gefunden:") + " " + d.dir : T("trkWaiting", "Wartet auf Screenshots (F12 im Spiel)."))}</div>
+    ${d.on ? `<button class="btn small" id="trkNewSpot" title="${esc(T("trkNewSpotTip", "Neue Session an einem neuen Spot, die Ruten werden übernommen"))}">${esc(T("newSpot", "Neuer Spot"))}</button><button class="btn small" id="trkNewSess">${esc(T("trkNewSessionBtn", "Neue Session"))}</button>` : ""}</div>`;
+  if (!d.on && !d.pending.length) { el.innerHTML = head; bindTracker(); return; }
+  const info = s ? `<div class="trk-info"><span><b>${esc(T("lake", "Gewässer"))}</b> <select id="trkLake" style="min-width:0"><option value=""></option>${lakeOptions(s.lake)}</select></span>
+    <span><b>Spot</b> ${s.x != null ? esc(s.x + ":" + s.y) : esc(T("trkNoPos", "HUD mit F12 erfassen"))}</span>
+    <span><b>Clip</b> <input id="trkClip" value="${esc(s.clip)}" placeholder="m"></span>
+    ${s.temp ? `<span><b>${esc(T("temperature", "Wassertemperatur"))}</b> ${esc(s.temp)}</span>` : ""}
+    <span><b>${esc(T("trkSince", "Session seit"))}</b> ${esc(s.start)}</span></div>` : "";
+  const rods = d.rods.length ? `<div class="hdr" style="margin-top:12px">${esc(T("trkRods", "Ruten"))} · ${esc(T("trkHitsHint", "AltGr+1/2/3 zählt einen Fang je Rute, AltGr+0 nimmt ihn zurück"))}</div>
+    <table class="tbl"><tr><th>#</th><th>${esc(T("bait", "Köder"))}</th><th>Dip / PVA</th><th>${esc(T("leader", "Vorfach"))}</th><th class="num">${esc(T("trkHits", "Gezählt"))}</th><th></th></tr>` +
+    d.rods.map(r => `<tr class="${r.replace ? "repl" : ""}"><td>${r.n}</td><td>${esc(r.baits || "?")}<small>${esc(r.rig)} · ${esc(r.time)}</small></td><td>${esc([r.dip, r.pva].filter(Boolean).join(" · "))}</td><td>${esc(r.leader)}</td><td class="num">${r.hits || ""}</td>
+      <td class="num" style="white-space:nowrap">${r.hasShot ? `<button class="act" data-rr="${r.id}" title="${esc(T("trkReread", "Neu auswerten"))}">↻</button>` : ""}<button class="act" data-rp="${r.id}" title="${esc(r.replace ? T("trkReplaceOff", "Ersetzen abbrechen") : T("trkReplace", "Nächster Ruten-Screenshot ersetzt diese Rute"))}">⇄</button><button class="act" data-rd="${r.id}" title="${esc(T("delete", "Löschen"))}">✕</button></td></tr>`).join("") + `</table>` : (d.on ? `<p class="sub" style="margin:10px 0 0">${esc(T("trkNoRods", "Noch keine Rute erfasst. Im Spiel die Rutenansicht öffnen und F12 drücken, für jede Rute einmal."))}</p>` : "");
+  const rodOpts = sel => `<option value=""></option>` + d.rods.map(r => `<option value="${r.id}" ${r.id === sel ? "selected" : ""}>${esc(T("trkRodN", "Rute {0}").replace("{0}", r.n))}</option>`).join("");
+  const pend = d.pending.length ? `<div class="title-row" style="margin-top:14px"><div class="hdr" style="margin:0">${esc(T("trkPending", "Offene Fänge"))} (${d.pending.length})</div><div><button class="btn small" id="trkDropAll">${esc(T("trkDiscardAll", "Alle verwerfen"))}</button> <button class="btn small primary" id="trkTakeAll">${esc(T("trkAcceptAll", "Alle übernehmen"))}</button></div></div>
+    <div class="pend-wrap"><table class="tbl">` + d.pending.map(p => `<tr><td>${esc(p.fish)}<small>${esc(p.time)}${p.other ? " · " + esc(T("trkOtherSession", "frühere Session")) : ""}</small></td><td class="num">${esc(p.weight)}</td><td>${p.baits ? esc(p.baits) : `<select data-pr="${p.id}">${rodOpts(p.rod)}</select>`}</td>
+      <td class="num" style="white-space:nowrap"><button class="act" data-pa="${p.id}" title="${esc(T("trkAccept", "Ins Fangbuch übernehmen"))}">✓</button><button class="act" data-pd="${p.id}" title="${esc(T("trkDiscard", "Verwerfen"))}">✕</button></td></tr>`).join("") + `</table></div>` : "";
+  el.innerHTML = head + info + rods + pend;
+  bindTracker();
+}
+function bindTracker() {
+  const on = (id, f) => { const e = $(id); if (e) e.onclick = f; };
+  $("trkOn").onchange = () => trk("on", { on: $("trkOn").checked });
+  on("trkNewSpot", () => trk("newspot"));
+  on("trkNewSess", () => trk("newsession"));
+  if ($("trkLake")) $("trkLake").onchange = () => trk("session", { lake: $("trkLake").value });
+  if ($("trkClip")) $("trkClip").onchange = () => trk("session", { clip: $("trkClip").value });
+  $("trk").querySelectorAll("[data-rr]").forEach(b => b.onclick = () => trk("rod/reread", { id: b.dataset.rr }));
+  $("trk").querySelectorAll("[data-rp]").forEach(b => b.onclick = () => trk("rod/replace", { id: b.dataset.rp }));
+  $("trk").querySelectorAll("[data-rd]").forEach(b => b.onclick = () => { if (confirm(T("trkDeleteRod", "Diese Rute löschen?"))) trk("rod/delete", { id: b.dataset.rd }); });
+  $("trk").querySelectorAll("[data-pr]").forEach(b => b.onchange = () => trk("pending/rod", { id: b.dataset.pr, rod: b.value }));
+  $("trk").querySelectorAll("[data-pa]").forEach(b => b.onclick = async () => { await trk("pending/accept", { ids: [b.dataset.pa] }); loadLog(); });
+  $("trk").querySelectorAll("[data-pd]").forEach(b => b.onclick = () => trk("pending/discard", { ids: [b.dataset.pd] }));
+  on("trkTakeAll", async () => { await trk("pending/accept", { ids: TRK.pending.map(p => p.id) }); loadLog(); });
+  on("trkDropAll", () => { if (confirm(T("trkDiscardAllQ", "Alle offenen Fänge verwerfen?"))) trk("pending/discard", { ids: TRK.pending.map(p => p.id) }); });
+}
 async function loadLog() {
   try { LOG = await api("/api/log"); } catch (e) { return; }
   renderLog();
@@ -714,11 +778,22 @@ async function spotDialog(s) {
   $("sLake").onchange = () => fillLists($("sLake").value);
 }
 $("dlgCancel").onclick = () => $("dlg").close();
-$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
+$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (DLG.keep) return; await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message; } };
 $("addCatch").onclick = () => catchDialog(null);
 $("addSpot").onclick = () => spotDialog(null);
 $("addRecipe").onclick = () => recipeDialog(null);
+$("gear").onclick = async () => {
+  const d = TRK || await api("/api/tracker/status");
+  openDlg(T("settings", "Einstellungen"),
+    `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
+     ${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}
+     <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+     <p class="sub" style="grid-column:1/3;margin:0">${esc(T("trkLangHint", "Die Sprache, in der RF4 läuft. Fehlt sie, unter Windows-Einstellungen, Zeit und Sprache, die Sprache mit Texterkennung hinzufügen."))}</p>`,
+    async () => { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); },
+    null);
+  DLG.keep = true;
+};
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
 let FQT = 0;
