@@ -101,6 +101,12 @@ internal sealed class Api
                 return Init();
             case "/api/active": return Active(q);
             case "/api/find": return Finder.Find(q, Lang, GameData.Strings(Lang));
+            case "/api/log": return Fangbuch.Log(Lang);
+            case "/api/loglists": return Fangbuch.Lists(q["lake"] ?? "", Lang);
+            case "/api/catch/save": return Fangbuch.SaveCatch(args ?? new Dictionary<string, object>(), Lang);
+            case "/api/catch/delete": return Fangbuch.Delete("catches", AppEnv.GetList(args, "ids"));
+            case "/api/myspot/save": return Fangbuch.SaveSpot(args ?? new Dictionary<string, object>(), Lang);
+            case "/api/myspot/delete": return Fangbuch.Delete("spots", AppEnv.GetList(args, "ids"));
             case "/api/spot": return SpotDetail(q["key"] ?? "");
             case "/api/devocr":
                 {

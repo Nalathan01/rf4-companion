@@ -161,6 +161,28 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .mini .top { display: flex; justify-content: space-between; gap: 8px; font-weight: 650; }
 .mini .top span { color: var(--muted); font-weight: 500; font-size: 12px; }
 .mini .b { color: var(--ink-2); font-size: 12.5px; margin-top: 4px; }
+.log-split { grid-template-columns: minmax(480px, 1.5fr) minmax(380px, 1fr); }
+.grp { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 15px; }
+.grp-head { display: flex; justify-content: space-between; gap: 10px; cursor: pointer; align-items: baseline; }
+.grp-head b { font-size: 14.5px; }
+.grp-head b small { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 12.5px; }
+.grp-head span { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.grp .line { margin-top: 6px; }
+.grp .rows { display: none; margin-top: 10px; }
+.grp.open .rows { display: block; }
+.act { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0 4px; font-size: 14px; }
+.act:hover { color: var(--ink); }
+dialog { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; width: min(640px, 92vw); }
+dialog::backdrop { background: rgba(0,0,0,0.6); }
+dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px; }
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.form label.wide { grid-column: 1 / 3; }
+.form input, .form select { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; min-width: 0; color: var(--ink); font-size: 13.5px; }
+.form input:focus, .form select:focus { outline: none; border-color: var(--accent); }
+.dlg-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.dlg-acts .danger { margin-right: auto; color: #e88; }
+.dlg-err { color: #e88; font-size: 12.5px; margin-top: 10px; min-height: 1em; }
 .boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
 .boot.hide { opacity: 0; pointer-events: none; }
 .boot-box { width: min(420px, 86vw); text-align: center; }
@@ -233,10 +255,30 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       </div>
     </div>
   </section>
-  <section class="view" id="view-log"><div class="placeholder"><h2 data-t="navLog">Mein Fangbuch</h2><p>…</p></div></section>
+  <section class="view" id="view-log">
+    <div class="split log-split">
+      <div class="col">
+        <div class="title-row"><h2 data-t="navLog">Mein Fangbuch</h2><button class="btn small primary" id="addCatch" data-t="logAdd">Fang eintragen</button></div>
+        <p class="sub" id="logSub"></p>
+        <div class="filters">
+          <input class="search" id="logQ" type="search" autocomplete="off" style="flex:1;margin:0;min-width:200px">
+          <select id="logLake"></select>
+        </div>
+        <div class="cards" id="logGroups"></div>
+      </div>
+      <div class="col">
+        <div class="hdr" style="margin-top:6px" data-t="logStats">Statistik</div>
+        <div id="logStats"></div>
+        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logMySpots">Meine Spots</div><button class="btn small" id="addSpot" data-t="logAddSpot">Spot anlegen</button></div>
+        <div class="mini-cards" id="logSpots" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </section>
 </main>
 <div class="status" id="status"></div>
 <div class="lightbox" id="lightbox"><img id="lbImg"></div>
+<dialog id="dlg"><h3 id="dlgTitle"></h3><div class="form" id="dlgForm"></div><div class="dlg-err" id="dlgErr"></div><div class="dlg-acts"><button class="btn danger" id="dlgDel" data-t="delete">Löschen</button><button class="btn" id="dlgCancel" data-t="cancel">Abbrechen</button><button class="btn primary" id="dlgSave" data-t="save">Speichern</button></div></dialog>
+<datalist id="dlFish"></datalist><datalist id="dlBait"></datalist><datalist id="dlDip"></datalist><datalist id="dlPva"></datalist><datalist id="dlRig"></datalist>
 <script>
 const TOKEN = new URLSearchParams(location.search).get("t");
 let OCRV = -1;
@@ -282,6 +324,7 @@ async function boot() {
   findStatic();
   await loadActive();
   loadFind();
+  loadLog();
   $("boot").classList.add("hide");
   setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);
@@ -426,7 +469,7 @@ $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS 
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
-$("lang").onchange = async () => { INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); };
+$("lang").onchange = async () => { INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
 let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
 function findStatic() {
@@ -506,6 +549,114 @@ function goSpot(lake, key) {
   HOURS = 72; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", +x.dataset.h === 72));
   SEL = key; loadActive();
 }
+let LOG = null, LOGQ = "", LOGLAKE = "", OPEN = new Set();
+async function loadLog() {
+  try { LOG = await api("/api/log"); } catch (e) { return; }
+  renderLog();
+}
+function fmtDate(d) { const t = new Date(d + "T12:00:00"); return isNaN(t) ? d : t.toLocaleDateString(INIT.lang, { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }); }
+function renderLog() {
+  const L = LOG;
+  $("logSub").textContent = T("logSub", "{0} Fänge an {1} Angeltagen").replace("{0}", L.catches.length).replace("{1}", L.days);
+  $("logQ").placeholder = T("logSearch", "Fisch, Köder oder Spot suchen");
+  const lakes = [...new Set(L.catches.map(c => c.lake))];
+  $("logLake").innerHTML = `<option value="">${esc(T("allLakes", "Alle Gewässer"))}</option>` + lakes.map(id => `<option value="${esc(id)}" ${id === LOGLAKE ? "selected" : ""}>${esc((L.catches.find(c => c.lake === id) || {}).lakeName || id)}</option>`).join("");
+  const q = LOGQ.toLowerCase();
+  const list = L.catches.filter(c => (!LOGLAKE || c.lake === LOGLAKE) && (!q || [c.fish, c.baits, c.dip, c.pva, c.spotName, c.lakeName, c.notes].join(" ").toLowerCase().includes(q)));
+  const groups = new Map();
+  for (const c of list) {
+    const pos = c.x && c.y ? c.x + ":" + c.y : "";
+    const k = c.date + "|" + c.lake + "|" + (c.spotId || pos);
+    if (!groups.has(k)) groups.set(k, { key: k, date: c.date, lakeName: c.lakeName, spot: c.spotName, pos, items: [] });
+    groups.get(k).items.push(c);
+  }
+  const byCount = (a, b) => b[1]-a[1];
+  const gl = [...groups.values()].sort((a, b) => b.date.localeCompare(a.date));
+  $("logGroups").innerHTML = gl.length ? gl.map(g => {
+    const fc = {}; g.items.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
+    const bc = {}; g.items.forEach(c => { if (c.baits) bc[c.baits] = (bc[c.baits] || 0) + 1; });
+    const fish = Object.entries(fc).sort(byCount).map(([f, n]) => `<span class="tag">${n > 1 ? n + "× " : ""}${esc(f)}</span>`).join("");
+    const baits = Object.entries(bc).sort(byCount).slice(0, 3).map(([b]) => `<span class="tag b">${esc(b)}</span>`).join("");
+    const where = [g.spot, g.pos].filter(Boolean).join(" ");
+    return `<div class="grp ${OPEN.has(g.key) ? "open" : ""}" data-k="${esc(g.key)}">
+      <div class="grp-head"><b>${esc(fmtDate(g.date))}<small>${esc(g.lakeName)}${where ? " · " + esc(where) : ""}</small></b><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", g.items.length))}</span></div>
+      <div class="line">${fish}${baits}</div>
+      <div class="rows"><table class="tbl">${g.items.map(c => `<tr><td>${esc(c.fish)}</td><td class="num">${esc(c.weight)}</td><td>${esc(c.baits)}${c.dip ? `<small>${esc(c.dip)}</small>` : ""}</td><td class="num"><button class="act" data-edit="${esc(c.id)}" title="${esc(T("edit", "Bearbeiten"))}">✎</button></td></tr>`).join("")}</table></div>
+    </div>`;
+  }).join("") : `<div class="empty">${esc(L.catches.length ? T("logNoMatch", "Nichts gefunden.") : T("logEmpty", "Noch keine Fänge. Mit „Fang eintragen“ legst du den ersten an."))}</div>`;
+  $("logGroups").querySelectorAll(".grp-head").forEach(h => h.onclick = () => { const g = h.parentElement, k = g.dataset.k; OPEN.has(k) ? OPEN.delete(k) : OPEN.add(k); g.classList.toggle("open"); });
+  $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
+  $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th>${esc(T("mostBait", "Meistgenutzter Köder"))}</th></tr>` +
+    L.stats.map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
+  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
+  $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotDialog(LOG.spots.find(s => s.id === m.dataset.id)));
+}
+async function fillLists(lake) {
+  const l = await api("/api/loglists?lake=" + encodeURIComponent(lake || ""));
+  const opt = a => a.map(x => `<option value="${esc(x)}">`).join("");
+  $("dlFish").innerHTML = opt(l.fish); $("dlBait").innerHTML = opt(l.baits); $("dlDip").innerHTML = opt(l.dips); $("dlPva").innerHTML = opt(l.pva); $("dlRig").innerHTML = opt(l.rigs);
+}
+function lakeOptions(sel) { return INIT.lakes.map(l => `<option value="${l.id}" ${l.id === sel ? "selected" : ""}>${esc(l.name)}</option>`).join(""); }
+function field(id, label, val, extra, wide) { return `<label class="${wide ? "wide" : ""}">${esc(label)}<input id="${id}" value="${esc(val == null ? "" : val)}" ${extra || ""}></label>`; }
+function spotOptions(lake, sel) { return `<option value=""></option>` + LOG.spots.filter(s => s.lake === lake).map(s => `<option value="${s.id}" ${s.id === sel ? "selected" : ""}>${esc(s.name || s.x + ":" + s.y)}</option>`).join(""); }
+let DLG = null;
+function openDlg(title, html, onSave, onDel) {
+  $("dlgTitle").textContent = title; $("dlgForm").innerHTML = html; $("dlgErr").textContent = "";
+  $("dlgDel").style.display = onDel ? "" : "none";
+  DLG = { onSave, onDel };
+  $("dlg").showModal();
+}
+async function catchDialog(c) {
+  const last = c || LOG.catches.slice().sort((a, b) => b.date.localeCompare(a.date))[0] || {};
+  const lake = c ? c.lake : (LOGLAKE || last.lake || "");
+  await fillLists(lake);
+  const kg = c && c.grams ? (c.grams / 1000).toLocaleString(INIT.lang, { maximumFractionDigits: 3, useGrouping: false }) : "";
+  openDlg(c ? T("logEditCatch", "Fang bearbeiten") : T("logAdd", "Fang eintragen"),
+    `<label>${esc(T("date", "Datum"))}<input id="fDate" type="date" value="${esc(c ? c.date : new Date().toISOString().slice(0, 10))}"></label>
+     <label>${esc(T("lake", "Gewässer"))}<select id="fLake">${lakeOptions(lake)}</select></label>
+     ${field("fFish", T("fish", "Fisch"), c ? c.fish : "", 'list="dlFish"')}
+     ${field("fWeight", T("weightKg", "Gewicht (kg)"), kg, 'inputmode="decimal"')}
+     ${field("fBait", T("bait", "Köder"), last.bait, 'list="dlBait"')}
+     ${field("fBait2", T("bait2", "Köder 2"), last.bait2, 'list="dlBait"')}
+     ${field("fDip", "Dip", last.dip, 'list="dlDip"')}
+     ${field("fPva", "PVA", last.pva, 'list="dlPva"')}
+     ${field("fRig", T("rigL", "Montage"), last.rig, 'list="dlRig"')}
+     <label>${esc(T("logSpot", "Eigener Spot"))}<select id="fSpot">${spotOptions(lake, last.spotId)}</select></label>
+     ${field("fX", "X", last.x, 'inputmode="numeric"')}${field("fY", "Y", last.y, 'inputmode="numeric"')}
+     ${field("fClip", "Clip (m)", c ? c.clip : "", 'inputmode="decimal"')}${field("fDepth", T("depth", "Tiefe"), c ? c.depth : "")}
+     ${field("fNotes", T("notes", "Notiz"), c ? c.notes : "", "", true)}`,
+    async () => {
+      await api("/api/catch/save", { id: c ? c.id : "", date: $("fDate").value, lake: $("fLake").value, fish: $("fFish").value, weight: $("fWeight").value, bait: $("fBait").value, bait2: $("fBait2").value, dip: $("fDip").value, pva: $("fPva").value, rig: $("fRig").value, spotId: $("fSpot").value, x: $("fX").value, y: $("fY").value, clip: $("fClip").value, depth: $("fDepth").value, notes: $("fNotes").value });
+    },
+    c ? async () => { await api("/api/catch/delete", { ids: [c.id] }); } : null);
+  $("fLake").onchange = async () => { await fillLists($("fLake").value); $("fSpot").innerHTML = spotOptions($("fLake").value, ""); };
+  $("fSpot").onchange = () => { const s = LOG.spots.find(x => x.id === $("fSpot").value); if (s && s.x) { $("fX").value = s.x; $("fY").value = s.y; } };
+}
+async function spotDialog(s) {
+  const v = s || { lake: LOGLAKE || (LOG.catches[0] || {}).lake || "" };
+  await fillLists(v.lake);
+  openDlg(s ? T("logEditSpot", "Spot bearbeiten") : T("logAddSpot", "Spot anlegen"),
+    `${field("sName", T("name", "Name"), v.name, "", true)}
+     <label>${esc(T("lake", "Gewässer"))}<select id="sLake">${lakeOptions(v.lake)}</select></label>
+     ${field("sFish", T("fish", "Fisch"), v.fish, 'list="dlFish"')}
+     ${field("sX", "X", v.x, 'inputmode="numeric"')}${field("sY", "Y", v.y, 'inputmode="numeric"')}
+     ${field("sBait", T("bait", "Köder"), v.bait, 'list="dlBait"')}${field("sBait2", T("bait2", "Köder 2"), v.bait2, 'list="dlBait"')}
+     ${field("sDip", "Dip", v.dip, 'list="dlDip"')}${field("sPva", "PVA", v.pva, 'list="dlPva"')}
+     ${field("sDist", T("distance", "Abstand"), v.dist)}${field("sDepth", T("depth", "Tiefe"), v.depth)}
+     ${field("sNotes", T("notes", "Notiz"), v.notes, "", true)}`,
+    async () => {
+      await api("/api/myspot/save", { id: s ? s.id : "", name: $("sName").value, lake: $("sLake").value, fish: $("sFish").value, x: $("sX").value, y: $("sY").value, bait: $("sBait").value, bait2: $("sBait2").value, dip: $("sDip").value, pva: $("sPva").value, dist: $("sDist").value, depth: $("sDepth").value, notes: $("sNotes").value });
+    },
+    s ? async () => { await api("/api/myspot/delete", { ids: [s.id] }); } : null);
+  $("sLake").onchange = () => fillLists($("sLake").value);
+}
+$("dlgCancel").onclick = () => $("dlg").close();
+$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message; } };
+$("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message; } };
+$("addCatch").onclick = () => catchDialog(null);
+$("addSpot").onclick = () => spotDialog(null);
+$("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
+$("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
 let FQT = 0;
 $("findQ").oninput = () => { FIND.q = $("findQ").value.trim(); if (FDATA) renderFishList(); clearTimeout(FQT); FQT = setTimeout(loadFind, 300); };
 $("winSeg").querySelectorAll("button").forEach(b => b.onclick = () => { FIND.win = b.dataset.w; $("winSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadFind(); });

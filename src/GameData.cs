@@ -53,6 +53,38 @@ internal static class GameData
         }
         return baitSet.Contains(en);
     }
+
+    public static IEnumerable<string> BaitKeys()
+    {
+        IsBait("x");
+        return baitSet;
+    }
+
+    private static readonly Dictionary<string, Dictionary<string, string>> reverse = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+
+    public static string Untranslate(string name, string lang)
+    {
+        name = (name ?? "").Trim();
+        if (name.Length == 0 || Names.ContainsKey(name) || HasItem(name)) return name;
+        Dictionary<string, string> m;
+        lock (reverse)
+        {
+            if (!reverse.TryGetValue(lang, out m))
+            {
+                m = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (KeyValuePair<string, Dictionary<string, object>> kv in Names)
+                {
+                    object v;
+                    if (kv.Value.TryGetValue(lang, out v) && v != null && v.ToString().Length > 0 && !m.ContainsKey(v.ToString())) m[v.ToString()] = kv.Key;
+                }
+                int idx = Array.IndexOf(ItemLangs(), lang);
+                if (idx > 0) foreach (string[] r in ItemRows()) if (idx < r.Length && r[idx].Length > 0 && !m.ContainsKey(r[idx])) m[r[idx]] = r[0];
+                reverse[lang] = m;
+            }
+        }
+        string k;
+        return m.TryGetValue(name, out k) ? k : name;
+    }
     private static List<string[]> itemList;
     public static Dictionary<string, object> Lang;
     private static Dictionary<string, string[]> itemRows;
