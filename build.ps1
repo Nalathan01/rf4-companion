@@ -49,7 +49,7 @@ foreach ($m in Get-ChildItem (Join-Path $PSScriptRoot "data\maps") -Filter *.jpg
 
 $references = @(
     "System.dll", "System.Core.dll", "System.Web.Extensions.dll", "System.Windows.Forms.dll", "System.Drawing.dll", "System.Security.dll",
-    "System.Net.Http.dll", "System.IO.Compression.dll", (Join-Path $fw "System.Runtime.dll"), (Join-Path $fw "System.Runtime.InteropServices.WindowsRuntime.dll")
+    "System.Net.Http.dll", "System.IO.Compression.dll", (Join-Path $fw "System.Runtime.dll"), (Join-Path $fw "System.Runtime.InteropServices.WindowsRuntime.dll"), (Join-Path $fw "System.Runtime.WindowsRuntime.dll")
 )
 $wm = Join-Path $env:WINDIR "System32\WinMetadata"
 foreach ($w in @("Windows.Foundation", "Windows.Graphics", "Windows.Media", "Windows.Storage", "Windows.Globalization")) { $references += (Join-Path $wm "$w.winmd") }
