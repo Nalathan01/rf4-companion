@@ -440,7 +440,7 @@ function ownDetail(o) {
   const st = LOG.catches.filter(c => c.spotId === o.id);
   const fc = {}; st.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
   const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], ["PVA", o.pva], ["Clip", o.dist], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
-  $("detail").innerHTML = `<div class="d-head"><h3>${esc(o.lakeName)} · ${esc(o.name || o.x + ":" + o.y)}</h3><span class="d-sum">${esc(T("ownSpot", "Eigener Spot"))}${o.share ? " · " + esc(T("sharedCol", "Geteilt")) : ""}</span></div>
+  $("detail").innerHTML = `<div class="d-head"><h3>${esc(o.lakeName)} · ${esc(o.name || o.x + ":" + o.y)}</h3><span class="d-sum">${esc(T("ownSpot", "Eigener Spot"))}</span></div>
     <div class="ev">${rows.map(x => `<div class="ev-det"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}
       ${st.length ? `<div class="line" style="margin-top:8px">${Object.entries(fc).sort((a, b) => b[1]-a[1]).map(([f, n]) => `<span class="tag">${n}× ${esc(f)}</span>`).join("")}</div>` : ""}
       <div class="ev-src" style="margin-top:10px"><button class="src" id="ownCopy">${esc(T("copyForChat", "Für Chat kopieren"))}</button><button class="src" id="ownEdit">${esc(T("edit", "Bearbeiten"))}</button></div>
@@ -628,7 +628,7 @@ function renderLog() {
   $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
   $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th>${esc(T("mostBait", "Meistgenutzter Köder"))}</th></tr>` +
     L.stats.map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
-  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}${s.share ? " · " + esc(T("sharedCol", "Geteilt")) : ""}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
+  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
   $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotDialog(LOG.spots.find(s => s.id === m.dataset.id)));
   $("logSpots").querySelectorAll("[data-map]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = LOG.spots.find(s => s.id === b.dataset.map); showView("active"); $("ownChk").checked = true; LAKE = o.lake; $("lakeSel").value = o.lake; SEL = "own:" + o.id; loadActive(); });
   const RT = { pva: "PVA", groundbait: T("groundbaitMix", "Futtermischung") };
@@ -706,32 +706,19 @@ async function spotDialog(s) {
      ${field("sBait", T("bait", "Köder"), v.bait, 'list="dlBait"')}${field("sBait2", T("bait2", "Köder 2"), v.bait2, 'list="dlBait"')}
      ${field("sDip", "Dip", v.dip, 'list="dlDip"')}${field("sPva", "PVA", v.pva, 'list="dlPva"')}
      ${field("sDist", T("distance", "Abstand"), v.dist)}${field("sDepth", T("depth", "Tiefe"), v.depth)}
-     ${field("sNotes", T("notes", "Notiz"), v.notes, "", true)}
-     <label class="wide" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink-2);font-size:13px"><input type="checkbox" id="sShare" ${v.share ? "checked" : ""}> ${esc(T("shareSpot", "Für alle teilen"))}</label>`,
+     ${field("sNotes", T("notes", "Notiz"), v.notes, "", true)}`,
     async () => {
-      await api("/api/myspot/save", { id: s ? s.id : "", share: $("sShare").checked, name: $("sName").value, lake: $("sLake").value, fish: $("sFish").value, x: $("sX").value, y: $("sY").value, bait: $("sBait").value, bait2: $("sBait2").value, dip: $("sDip").value, pva: $("sPva").value, dist: $("sDist").value, depth: $("sDepth").value, notes: $("sNotes").value });
+      await api("/api/myspot/save", { id: s ? s.id : "", name: $("sName").value, lake: $("sLake").value, fish: $("sFish").value, x: $("sX").value, y: $("sY").value, bait: $("sBait").value, bait2: $("sBait2").value, dip: $("sDip").value, pva: $("sPva").value, dist: $("sDist").value, depth: $("sDepth").value, notes: $("sNotes").value });
     },
     s ? async () => { await api("/api/myspot/delete", { ids: [s.id] }); } : null);
   $("sLake").onchange = () => fillLists($("sLake").value);
 }
 $("dlgCancel").onclick = () => $("dlg").close();
-$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (!DLG.keep) { await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
+$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message; } };
 $("addCatch").onclick = () => catchDialog(null);
 $("addSpot").onclick = () => spotDialog(null);
 $("addRecipe").onclick = () => recipeDialog(null);
-$("gear").onclick = async () => {
-  const st = await api("/api/share/status");
-  const state = !st.hasToken ? T("shareNoToken", "{0} Spots zum Teilen markiert, Teilen noch nicht eingerichtet").replace("{0}", st.count)
-    : st.error ? T("shareFailed", "Teilen fehlgeschlagen: {0}").replace("{0}", st.error)
-    : T("shareOk", "{0} Spots geteilt, zuletzt {1}").replace("{0}", st.count).replace("{1}", st.last ? new Date(st.last).toLocaleString(INIT.lang, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "?");
-  openDlg(T("settings", "Einstellungen"),
-    `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">${esc(T("shareSetup", "Teilen einrichten"))}</div><p class="sub" style="margin:0 0 8px">${esc(state)}</p><p class="sub" style="margin:0">${esc(T("sharePrompt", "GitHub-Token mit Schreibrecht für das Repo rf4-companion-data einfügen. Er wird verschlüsselt nur auf diesem PC gespeichert."))}${st.hasToken ? " " + esc(T("shareKeep", "Ein Token ist schon gespeichert. Feld leer lassen und OK drücken, um nur neu hochzuladen.")) : ""}</p></div>
-     ${field("gToken", "Token", "", 'type="password" autocomplete="off"', true)}`,
-    async () => { const t = $("gToken").value.trim(); await api(t ? "/api/share/token" : "/api/share/now", t ? { token: t } : {}); },
-    null);
-  DLG.keep = true;
-};
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
 let FQT = 0;
