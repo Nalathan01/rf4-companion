@@ -246,6 +246,7 @@ dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px;
           </div>
           <select id="lakeSel"></select>
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
+          <label class="chk"><input type="checkbox" id="ownChk" checked> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
         </div>
         <div class="cards" id="cards"></div>
       </div>
@@ -351,7 +352,7 @@ async function loadActive() {
   const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : ""));
   ACTIVE = r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
-  if (!SEL || !ACTIVE.find(s => s.key === SEL)) SEL = ACTIVE.length ? ACTIVE[0].key : null;
+  if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
   renderCards();
   drawMap();
   DETAIL_KEY = null;
@@ -379,8 +380,10 @@ function markAt(x, y) {
   return best;
 }
 function lakeById(id) { return INIT.lakes.find(l => l.id === id); }
+function ownSel() { return SEL && SEL.startsWith("own:") && LOG ? LOG.spots.find(s => "own:" + s.id === SEL) : null; }
 function drawMap() {
-  const sel = ACTIVE.find(s => s.key === SEL);
+  const own = ownSel();
+  const sel = own ? { lake: own.lake, name: own.name || own.x + ":" + own.y } : ACTIVE.find(s => s.key === SEL);
   const lakeId = sel ? sel.lake : (LAKE || null);
   const cv = $("map"), box = $("mapbox");
   const w = box.clientWidth, h = box.clientHeight, dpr = window.devicePixelRatio || 1;
@@ -406,18 +409,52 @@ function drawMap() {
     const col = s.hoursAgo < 6 ? "#e0803a" : (s.hoursAgo < 24 ? "#d8b24a" : "#8a8d88");
     g.beginPath(); g.arc(x, y, isSel ? 9 : 6, 0, Math.PI * 2);
     g.fillStyle = col; g.fill(); g.lineWidth = isSel ? 3 : 2; g.strokeStyle = isSel ? "#ffffff" : "rgba(17,19,21,0.85)"; g.stroke();
-    if (isSel || VIEW.zoom > 1.6) {
-      g.font = "600 12px Segoe UI"; const t = s.name; const tw = g.measureText(t).width;
-      g.fillStyle = "rgba(17,19,21,0.82)"; g.fillRect(x + 11, y-9, tw + 10, 18);
-      g.fillStyle = "#f0efec"; g.fillText(t, x + 16, y + 4);
-    }
+    if (isSel || VIEW.zoom > 1.6) mapLabel(g, x, y, s.name);
   }
+  if ($("ownChk").checked && LOG) for (const o of LOG.spots) {
+    if (o.lake !== lake.id || o.nx < 0 || o.ny < 0) continue;
+    const key = "own:" + o.id, x = ox + o.nx * side, y = oy + o.ny * side, isSel = key === SEL, r = isSel ? 9 : 7;
+    MARKS.push({ key, x, y });
+    g.beginPath(); g.moveTo(x, y-r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x-r, y); g.closePath();
+    g.fillStyle = "#4fa8c9"; g.fill(); g.lineWidth = isSel ? 3 : 2; g.strokeStyle = isSel ? "#ffffff" : "rgba(17,19,21,0.85)"; g.stroke();
+    if (isSel || VIEW.zoom > 1.6 || o.name) mapLabel(g, x, y, o.name || o.x + ":" + o.y);
+  }
+}
+function mapLabel(g, x, y, t) {
+  g.font = "600 12px Segoe UI"; const tw = g.measureText(t).width;
+  g.fillStyle = "rgba(17,19,21,0.82)"; g.fillRect(x + 11, y-9, tw + 10, 18);
+  g.fillStyle = "#f0efec"; g.fillText(t, x + 16, y + 4);
+}
+function shareText(o) {
+  const parts = [o.lakeName + (o.x ? " " + o.x + ":" + o.y : "")];
+  if (o.fish) parts.push(T("fish", "Fisch") + ": " + o.fish);
+  const b = [o.bait, o.bait2].filter(Boolean).join(" + ");
+  if (b) parts.push(T("bait", "Köder") + ": " + b);
+  if (o.dip) parts.push("Dip: " + o.dip);
+  if (o.pva) { const rc = LOG.recipes.find(r => r.name === o.pva); parts.push("PVA: " + (rc ? [rc.base, ...rc.additives, rc.attractant].filter(Boolean).join(", ") : o.pva)); }
+  if (o.dist) parts.push("Clip: " + o.dist);
+  if (o.depth) parts.push(T("depth", "Tiefe") + ": " + o.depth);
+  return parts.join(" | ");
+}
+function ownDetail(o) {
+  const st = LOG.catches.filter(c => c.spotId === o.id);
+  const fc = {}; st.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
+  const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], ["PVA", o.pva], ["Clip", o.dist], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
+  $("detail").innerHTML = `<div class="d-head"><h3>${esc(o.lakeName)} · ${esc(o.name || o.x + ":" + o.y)}</h3><span class="d-sum">${esc(T("ownSpot", "Eigener Spot"))}${o.share ? " · " + esc(T("sharedCol", "Geteilt")) : ""}</span></div>
+    <div class="ev">${rows.map(x => `<div class="ev-det"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}
+      ${st.length ? `<div class="line" style="margin-top:8px">${Object.entries(fc).sort((a, b) => b[1]-a[1]).map(([f, n]) => `<span class="tag">${n}× ${esc(f)}</span>`).join("")}</div>` : ""}
+      <div class="ev-src" style="margin-top:10px"><button class="src" id="ownCopy">${esc(T("copyForChat", "Für Chat kopieren"))}</button><button class="src" id="ownEdit">${esc(T("edit", "Bearbeiten"))}</button></div>
+    </div>`;
+  $("ownCopy").onclick = async () => { try { await navigator.clipboard.writeText(shareText(o)); $("ownCopy").textContent = T("copied", "Kopiert"); } catch (e) {} };
+  $("ownEdit").onclick = () => spotDialog(o);
 }
 function openSpotKey(k) { SEL = k; renderCards(); drawMap(); loadDetail(); }
 let DETAIL_KEY = null;
 async function loadDetail() {
   const key = SEL;
   if (!key) { $("detail").innerHTML = ""; return; }
+  const own = ownSel();
+  if (own) { DETAIL_KEY = key; ownDetail(own); return; }
   if (DETAIL_KEY === key) return;
   DETAIL_KEY = key;
   let d;
@@ -470,6 +507,7 @@ document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => showView(b.
 $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS = +b.dataset.h; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadActive(); });
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
+$("ownChk").onchange = () => drawMap();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 $("lang").onchange = async () => { ITEMS = null; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
@@ -590,8 +628,9 @@ function renderLog() {
   $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
   $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th>${esc(T("mostBait", "Meistgenutzter Köder"))}</th></tr>` +
     L.stats.map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
-  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
+  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}${s.share ? " · " + esc(T("sharedCol", "Geteilt")) : ""}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
   $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotDialog(LOG.spots.find(s => s.id === m.dataset.id)));
+  $("logSpots").querySelectorAll("[data-map]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = LOG.spots.find(s => s.id === b.dataset.map); showView("active"); $("ownChk").checked = true; LAKE = o.lake; $("lakeSel").value = o.lake; SEL = "own:" + o.id; loadActive(); });
   const RT = { pva: "PVA", groundbait: T("groundbaitMix", "Futtermischung") };
   $("logRecipes").innerHTML = L.recipes.length ? L.recipes.map(r => `<div class="mini" data-id="${esc(r.id)}"><div class="top">${esc(r.name)}<span>${esc(RT[r.type] || r.type)}</span></div><div class="b">${esc([r.base, ...r.additives].filter(Boolean).join(", "))}</div><div class="b" style="color:var(--muted)">${r.attractant ? esc(T("attractant", "Lockstoff")) + ": " + esc(r.attractant) : ""}${r.lakes.length ? (r.attractant ? " · " : "") + esc(r.lakes.join(", ")) : ""}${r.uses ? " · " + esc(T("catchesN", "{0} Fänge").replace("{0}", r.uses)) : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoRecipes", "Noch keine Rezepte."))}</div>`;
   $("logRecipes").querySelectorAll(".mini").forEach(m => m.onclick = () => recipeDialog(LOG.recipes.find(r => r.id === m.dataset.id)));
@@ -667,19 +706,32 @@ async function spotDialog(s) {
      ${field("sBait", T("bait", "Köder"), v.bait, 'list="dlBait"')}${field("sBait2", T("bait2", "Köder 2"), v.bait2, 'list="dlBait"')}
      ${field("sDip", "Dip", v.dip, 'list="dlDip"')}${field("sPva", "PVA", v.pva, 'list="dlPva"')}
      ${field("sDist", T("distance", "Abstand"), v.dist)}${field("sDepth", T("depth", "Tiefe"), v.depth)}
-     ${field("sNotes", T("notes", "Notiz"), v.notes, "", true)}`,
+     ${field("sNotes", T("notes", "Notiz"), v.notes, "", true)}
+     <label class="wide" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink-2);font-size:13px"><input type="checkbox" id="sShare" ${v.share ? "checked" : ""}> ${esc(T("shareSpot", "Für alle teilen"))}</label>`,
     async () => {
-      await api("/api/myspot/save", { id: s ? s.id : "", name: $("sName").value, lake: $("sLake").value, fish: $("sFish").value, x: $("sX").value, y: $("sY").value, bait: $("sBait").value, bait2: $("sBait2").value, dip: $("sDip").value, pva: $("sPva").value, dist: $("sDist").value, depth: $("sDepth").value, notes: $("sNotes").value });
+      await api("/api/myspot/save", { id: s ? s.id : "", share: $("sShare").checked, name: $("sName").value, lake: $("sLake").value, fish: $("sFish").value, x: $("sX").value, y: $("sY").value, bait: $("sBait").value, bait2: $("sBait2").value, dip: $("sDip").value, pva: $("sPva").value, dist: $("sDist").value, depth: $("sDepth").value, notes: $("sNotes").value });
     },
     s ? async () => { await api("/api/myspot/delete", { ids: [s.id] }); } : null);
   $("sLake").onchange = () => fillLists($("sLake").value);
 }
 $("dlgCancel").onclick = () => $("dlg").close();
-$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
+$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (!DLG.keep) { await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message; } };
 $("addCatch").onclick = () => catchDialog(null);
 $("addSpot").onclick = () => spotDialog(null);
 $("addRecipe").onclick = () => recipeDialog(null);
+$("gear").onclick = async () => {
+  const st = await api("/api/share/status");
+  const state = !st.hasToken ? T("shareNoToken", "{0} Spots zum Teilen markiert, Teilen noch nicht eingerichtet").replace("{0}", st.count)
+    : st.error ? T("shareFailed", "Teilen fehlgeschlagen: {0}").replace("{0}", st.error)
+    : T("shareOk", "{0} Spots geteilt, zuletzt {1}").replace("{0}", st.count).replace("{1}", st.last ? new Date(st.last).toLocaleString(INIT.lang, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "?");
+  openDlg(T("settings", "Einstellungen"),
+    `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">${esc(T("shareSetup", "Teilen einrichten"))}</div><p class="sub" style="margin:0 0 8px">${esc(state)}</p><p class="sub" style="margin:0">${esc(T("sharePrompt", "GitHub-Token mit Schreibrecht für das Repo rf4-companion-data einfügen. Er wird verschlüsselt nur auf diesem PC gespeichert."))}${st.hasToken ? " " + esc(T("shareKeep", "Ein Token ist schon gespeichert. Feld leer lassen und OK drücken, um nur neu hochzuladen.")) : ""}</p></div>
+     ${field("gToken", "Token", "", 'type="password" autocomplete="off"', true)}`,
+    async () => { const t = $("gToken").value.trim(); await api(t ? "/api/share/token" : "/api/share/now", t ? { token: t } : {}); },
+    null);
+  DLG.keep = true;
+};
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
 let FQT = 0;

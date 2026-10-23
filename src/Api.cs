@@ -41,6 +41,7 @@ internal sealed class Api
                 UserStore.Load();
                 Scans.Load();
                 Community.Load();
+                ThreadPool.QueueUserWorkItem(delegate { try { Share.Fetch(true); } catch (Exception ex) { AppEnv.Log("Teilen", ex.Message); } });
                 ThreadPool.QueueUserWorkItem(delegate { try { Records.Refresh(); } catch (Exception ex) { AppEnv.Log("Rekorde", ex.Message); Records.Loaded = true; } });
                 ready = true;
                 Step("bootSpots", 40);
@@ -70,6 +71,7 @@ internal sealed class Api
         if (!Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Records.Refresh();
         Community.QueuePosts(72);
+        try { Share.Fetch(false); } catch (Exception ex) { AppEnv.Log("Teilen", ex.Message); }
         if (ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
     }
 
@@ -110,6 +112,13 @@ internal sealed class Api
             case "/api/recipe/save": return Fangbuch.SaveRecipe(args ?? new Dictionary<string, object>(), Lang);
             case "/api/recipe/delete": return Fangbuch.Delete("recipes", AppEnv.GetList(args, "ids"));
             case "/api/itemnames": return Fangbuch.ItemNames(Lang);
+            case "/api/share/status": return Share.Status();
+            case "/api/share/token":
+                Share.SetToken(AppEnv.GetString(args, "token"));
+                return Share.Status();
+            case "/api/share/now":
+                Share.Queue(true);
+                return Share.Status();
             case "/api/spot": return SpotDetail(q["key"] ?? "");
             case "/api/devocr":
                 {
