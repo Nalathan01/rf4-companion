@@ -111,6 +111,7 @@ internal static class Finder
         HashSet<string> tables = new HashSet<string>(all.Where(h => h.Week == week).Select(h => h.Table));
         Dictionary<string, object> res = AppEnv.Obj(
             "week", week, "total", cur.Count, "fishList", fishList,
+            "cloud", AppEnv.Obj("last", Cloud.Last == DateTime.MinValue ? "" : Cloud.Last.ToString("o", CultureInfo.InvariantCulture), "error", Cloud.Error, "loaded", Records.Loaded),
             "regions", regions.Where(r => r.Length > 0).OrderBy(r => r).ToArray(),
             "tables", tables.Where(t => t.Length > 0).OrderBy(t => t).Select(t => (object)AppEnv.Obj("key", t, "name", GameData.Ui(lang, "table_" + t, t))).ToArray(),
             "reset", AppEnv.Obj("window", resetWindow, "at", reset == DateTime.MinValue ? "" : reset.ToString("o", CultureInfo.InvariantCulture), "hoursSince", Hours(now, reset)));

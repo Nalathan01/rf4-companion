@@ -555,7 +555,9 @@ function renderFindFilters() {
   $("regionSel").innerHTML = `<option value="">${esc(T("findAllRegions", "Alle Regionen"))}</option>` + d.regions.map(r => `<option value="${esc(r)}" ${r === FIND.region ? "selected" : ""}>${esc(r)}</option>`).join("");
   $("tableSel").innerHTML = `<option value="">${esc(T("prefTableAll", "Alle Tabellen"))}</option>` + d.tables.map(t => `<option value="${esc(t.key)}" ${t.key === FIND.table ? "selected" : ""}>${esc(t.name)}</option>`).join("");
   const wk = d.week ? new Date(d.week + "T12:00:00").toLocaleDateString(INIT.lang, { day: "2-digit", month: "2-digit" }) : "";
-  $("findSub").textContent = T("findSub", "{0} Rekorde in der Auswahl, Woche ab {1}").replace("{0}", d.total.toLocaleString(INIT.lang)).replace("{1}", wk);
+  $("findSub").textContent = !d.total && !d.cloud.last ? T("findLoading", "Die Rekordlisten werden gerade aus der Cloud geladen, das dauert beim ersten Start etwa eine halbe Minute.")
+    : T("findSub", "{0} Rekorde in der Auswahl, Woche ab {1}").replace("{0}", d.total.toLocaleString(INIT.lang)).replace("{1}", wk) + (d.cloud.error ? " · " + T("cloudFailed", "Cloud nicht erreichbar: {0}").replace("{0}", d.cloud.error) : "");
+  if (!d.total && !d.cloud.last) setTimeout(loadFind, 5000);
   const rb = $("resetBanner"), r = d.reset;
   rb.classList.toggle("show", !!r.window);
   if (r.window) rb.textContent = r.at && r.hoursSince >= 0 && r.hoursSince < 30
