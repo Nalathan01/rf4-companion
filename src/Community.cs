@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -283,13 +284,30 @@ internal static class Community
         return r;
     }
 
+    public static void SetShared(List<Dictionary<string, object>> raws)
+    {
+        lock (gate)
+        {
+            reports.RemoveAll(r => r.Id.StartsWith("cp-", StringComparison.Ordinal));
+            foreach (string k in byId.Keys.Where(k => k.StartsWith("cp-", StringComparison.Ordinal)).ToList()) byId.Remove(k);
+            foreach (Dictionary<string, object> raw in raws)
+            {
+                Report r = Wrap(raw);
+                if (r == null) continue;
+                byId[r.Id] = r;
+                reports.Add(r);
+            }
+            spots = null; spotsAll = null; Version++;
+        }
+    }
+
     private static void Save()
     {
         List<object> raws = new List<object>();
         string sy;
         lock (gate)
         {
-            foreach (Report r in reports) raws.Add(r.Raw);
+            foreach (Report r in reports) if (!r.Id.StartsWith("cp-", StringComparison.Ordinal)) raws.Add(r.Raw);
             sy = synced > DateTime.MinValue ? synced.ToString("o", CultureInfo.InvariantCulture) : "";
         }
         AppEnv.WriteJsonFile(AppEnv.DataPath("community.json"), AppEnv.Obj("v", 2, "synced", sy, "source", "https://rf4intel.com", "reports", raws));
