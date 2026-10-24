@@ -370,6 +370,7 @@ async function boot() {
   loadFind();
   loadLog();
   trk("status");
+  loadExtensions();
   const hv = location.hash.slice(1).split("=");
   if (hv[0] === "find" || hv[0] === "log") { showView(hv[0]); if (hv[0] === "find" && hv[1]) { FIND.fish = decodeURIComponent(hv[1]); loadFind(); } }
   $("boot").classList.add("hide");
@@ -625,6 +626,24 @@ function renderFindDetail() {
   el.querySelectorAll(".chip[data-l]").forEach(c => c.onclick = () => { FIND.lake = c.dataset.l; loadFind(); });
   el.querySelectorAll(".mini[data-k]").forEach(c => c.onclick = () => goSpot(d.lake, c.dataset.k));
 }
+window.RF4 = {
+  api, T, esc,
+  addView(id, label, html, onShow) {
+    const b = document.createElement("button"); b.className = "nav-btn"; b.dataset.view = id; b.textContent = label;
+    b.onclick = () => { showView(id); if (onShow) onShow(); };
+    document.querySelector("nav").appendChild(b);
+    const s = document.createElement("section"); s.className = "view"; s.id = "view-" + id; s.innerHTML = html;
+    document.querySelector("main").appendChild(s);
+    return s;
+  },
+  newSpot(v) { showView("log"); spotDialog(v); },
+  lakes: () => INIT.lakes
+};
+async function loadExtensions() {
+  let list = [];
+  try { list = await api("/api/extensions"); } catch (e) { return; }
+  for (const f of list) { const s = document.createElement("script"); s.src = "/ext/" + encodeURIComponent(f) + "?t=" + TOKEN; document.body.appendChild(s); }
+}
 function showView(v) {
   document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.view === v));
   document.querySelectorAll(".view").forEach(x => x.classList.toggle("active", x.id === "view-" + v));
@@ -646,7 +665,7 @@ function renderTracker() {
   if (!d) { el.innerHTML = ""; return; }
   const s = d.session;
   const head = `<div class="trk-head"><b>Tracker</b><label class="switch" title="${esc(T("trackerActive", "Fang-Tracker aktiv (F12 im Spiel)"))}"><input type="checkbox" id="trkOn" ${d.on ? "checked" : ""}><span></span></label>
-    <div class="trk-msg">${d.busy ? esc(T("trkReading", "Lese") + " " + d.busy) : d.msg ? `<small>${esc(d.msgAt)}</small>${esc(d.msg)}` : esc(!d.on ? T("trackerHint", "Tracker aus. Einschalten, dann im Spiel F12 drücken.") : !d.dirOk ? T("trackerNoFolder", "RF4-Screenshot-Ordner nicht gefunden:") + " " + d.dir : T("trkWaiting", "Wartet auf Screenshots (F12 im Spiel)."))}</div>
+    <div class="trk-msg">${d.paused ? esc(d.paused) : d.busy ? esc(T("trkReading", "Lese") + " " + d.busy) : d.msg ? `<small>${esc(d.msgAt)}</small>${esc(d.msg)}` : esc(!d.on ? T("trackerHint", "Tracker aus. Einschalten, dann im Spiel F12 drücken.") : !d.dirOk ? T("trackerNoFolder", "RF4-Screenshot-Ordner nicht gefunden:") + " " + d.dir : T("trkWaiting", "Wartet auf Screenshots (F12 im Spiel)."))}</div>
     ${d.on ? `<button class="btn small" id="trkNewSpot" title="${esc(T("trkNewSpotTip", "Neue Session an einem neuen Spot, die Ruten werden übernommen"))}">${esc(T("newSpot", "Neuer Spot"))}</button><button class="btn small" id="trkNewSess">${esc(T("trkNewSessionBtn", "Neue Session"))}</button>` : ""}</div>`;
   if (!d.on && !d.pending.length) { el.innerHTML = head; bindTracker(); return; }
   const info = s ? `<div class="trk-info"><span><b>${esc(T("lake", "Gewässer"))}</b> <select id="trkLake" style="min-width:0"><option value=""></option>${lakeOptions(s.lake)}</select></span>
@@ -788,6 +807,7 @@ async function catchDialog(c) {
 }
 async function spotDialog(s) {
   const v = s || { lake: LOGLAKE || (LOG.catches[0] || {}).lake || "" };
+  if (s && !s.id) s = null;
   await fillLists(v.lake);
   openDlg(s ? T("logEditSpot", "Spot bearbeiten") : T("logAddSpot", "Spot anlegen"),
     `${field("sName", T("name", "Name"), v.name, "", true)}
