@@ -51,18 +51,6 @@ internal static class Updater
             if (File.Exists(old)) File.Delete(old);
         }
         catch (Exception) { }
-        try
-        {
-            using (Microsoft.Win32.RegistryKey k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\{6E0C2D4A-8B7F-4C51-9A3E-2F1D7B5C9E40}_is1", true))
-            {
-                if (k != null && (k.GetValue("DisplayVersion") ?? "").ToString() != CurrentText)
-                {
-                    k.SetValue("DisplayVersion", CurrentText);
-                    k.SetValue("DisplayName", "RF4 Companion");
-                }
-            }
-        }
-        catch (Exception) { }
     }
 
     public static void CheckInBackground()

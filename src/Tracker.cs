@@ -459,6 +459,7 @@ internal static class Tracker
         }
     }
 
+#if PRIVATE || FANGBUCH
     private static void HotkeyLoop()
     {
         try
@@ -501,6 +502,10 @@ internal static class Tracker
             base.WndProc(ref m);
         }
     }
+
+#else
+    private static void HotkeyLoop() { }
+#endif
 
     public static void SkipBacklog()
     {
