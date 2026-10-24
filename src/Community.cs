@@ -284,6 +284,26 @@ internal static class Community
         return r;
     }
 
+    public static int AddDirect(List<Dictionary<string, object>> raws)
+    {
+        int added = 0;
+        lock (gate)
+        {
+            foreach (Dictionary<string, object> raw in raws)
+            {
+                if (byId.ContainsKey(AppEnv.GetString(raw, "id"))) continue;
+                Report r = Wrap(raw);
+                if (r == null) continue;
+                byId[r.Id] = r;
+                reports.Add(r);
+                added++;
+            }
+            if (added > 0) { spots = null; spotsAll = null; Version++; }
+        }
+        if (added > 0) Save();
+        return added;
+    }
+
     private static void Save()
     {
         List<object> raws = new List<object>();

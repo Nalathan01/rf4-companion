@@ -73,6 +73,7 @@ internal sealed class Api
         DateTime sy = Community.Synced;
         if (!Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Cloud.Sync(false);
+        TgDirect.Sync(false);
         Records.Refresh();
         Community.QueuePosts(72);
         if (ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
