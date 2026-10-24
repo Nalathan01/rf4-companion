@@ -43,7 +43,7 @@ internal static class TgDirect
         {
             string html = Http.GetString("https://t.me/s/" + ch + (before > 0 ? "?before=" + before.ToString(CultureInfo.InvariantCulture) : ""), 20000);
             long minId = long.MaxValue;
-            bool old = false;
+            bool old = false, known = false;
             foreach (Match m in Block.Matches(html))
             {
                 long id = long.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
@@ -57,9 +57,11 @@ internal static class TgDirect
                 if (!td.Success) continue;
                 string text = WebUtility.HtmlDecode(Regex.Replace(Regex.Replace(td.Groups[1].Value, @"<br\s*/?>", "\n"), "<[^>]+>", "")).Trim();
                 Dictionary<string, object> r = Parse(m.Groups[1].Value, id, when.UtcDateTime, text);
-                if (r != null) outL.Add(r);
+                if (r == null) continue;
+                if (Community.Has((string)r["id"])) known = true;
+                outL.Add(r);
             }
-            if (old || minId == long.MaxValue || minId <= 1 || (page > 0 && Community.Has("tgd:" + ch + "/" + minId.ToString(CultureInfo.InvariantCulture)))) break;
+            if (old || known || minId == long.MaxValue || minId <= 1) break;
             before = minId;
             System.Threading.Thread.Sleep(1000);
         }
