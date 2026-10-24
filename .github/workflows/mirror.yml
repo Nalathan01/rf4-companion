@@ -1,0 +1,63 @@
+name: Mirror
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: mirror-data
+          key: mirror-${{ github.run_id }}
+          restore-keys: mirror-
+      - name: Text recognition languages
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          foreach ($l in "ru-RU", "pl-PL", "de-DE") { Add-WindowsCapability -Online -Name "Language.OCR~~~$l~0.0.1.0" | Out-Null }
+      - name: Build
+        shell: pwsh
+        run: ./build.ps1 -OutFile "$env:RUNNER_TEMP\app\RF4 Companion.exe"
+      - name: Export
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path mirror-data, "$env:RUNNER_TEMP\out" | Out-Null
+          $p = Start-Process -FilePath "$env:RUNNER_TEMP\app\RF4 Companion.exe" -ArgumentList "-Export", "`"$env:RUNNER_TEMP\out\spots.json.gz`"", "-DataDir", "`"$PWD\mirror-data`"" -Wait -PassThru
+          Get-Content mirror-data\app.log -Tail 15
+          if ($p.ExitCode -ne 0) { exit 1 }
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: mirror-data
+          key: mirror-${{ github.run_id }}
+      - name: Publish
+        shell: pwsh
+        env:
+          KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+        run: |
+          $k = Join-Path $env:RUNNER_TEMP "deploy_key"
+          [IO.File]::WriteAllText($k, $env:KEY.Replace("`r", "") + "`n")
+          $env:GIT_SSH_COMMAND = "ssh -i `"$k`" -o StrictHostKeyChecking=accept-new"
+          $pub = Join-Path $env:RUNNER_TEMP "pub"
+          git init -q $pub
+          Copy-Item "$env:RUNNER_TEMP\out\spots.json.gz" $pub
+          Set-Location $pub
+          git config user.name "rf4-mirror"
+          git config user.email "rf4-mirror@users.noreply.github.com"
+          git checkout -q --orphan mirror
+          git add spots.json.gz
+          git commit -q -m "Spiegel $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mmZ')"
+          git push -q --force git@github.com:Nalathan01/rf4-companion-data.git mirror
