@@ -67,6 +67,9 @@ internal static class Updater
 
     public static void CheckInBackground()
     {
+#if PRIVATE
+        return;
+#endif
         Task.Factory.StartNew(() =>
         {
             try { Check(); }

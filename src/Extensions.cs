@@ -6,10 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+#if PRIVATE
 public static class Ext
 {
     internal static readonly Dictionary<string, Func<Dictionary<string, object>, object>> Routes = new Dictionary<string, Func<Dictionary<string, object>, object>>(StringComparer.OrdinalIgnoreCase);
-    internal static volatile string PauseReason = "";
 
     public static string DataDir { get { return AppEnv.DataDir; } }
     public static string Lang { get { return UserStore.Lang; } }
@@ -19,9 +19,9 @@ public static class Ext
     public static void PauseTracker(string reason)
     {
         reason = reason ?? "";
-        if (reason == PauseReason) return;
-        bool resumed = PauseReason.Length > 0 && reason.Length == 0;
-        PauseReason = reason;
+        if (reason == Tracker.PauseReason) return;
+        bool resumed = Tracker.PauseReason.Length > 0 && reason.Length == 0;
+        Tracker.PauseReason = reason;
         if (resumed) Tracker.SkipBacklog();
         Tracker.Version++;
     }
@@ -100,3 +100,12 @@ internal static class Extensions
         return h(args ?? new Dictionary<string, object>());
     }
 }
+#else
+internal static class Extensions
+{
+    public static string Dir { get { return AppEnv.DataPath("extensions"); } }
+    public static readonly List<string> Scripts = new List<string>();
+    public static void Load() { }
+    public static object Call(string name, Dictionary<string, object> args) { throw new AppError("unknown", name); }
+}
+#endif
