@@ -417,6 +417,9 @@ internal static class Tracker
         if (weight != null && Fangbuch.HasCatch(fish, weight.Value, time.ToString("yyyy-MM-dd"))) return false;
         pending.Add(AppEnv.Obj("id", Guid.NewGuid().ToString("N").Substring(0, 8), "time", time.ToString("o", CultureInfo.InvariantCulture), "fish", fish, "weight", weight,
             "session", s["id"], "rod", FindRod(s, baits, time), "baits", baits != null ? baits.ToArray() : new string[0], "src", src, "path", path));
+#if PRIVATE
+        Ext.RaiseCatch(fish, weight, time, src);
+#endif
         Say(T("trackerCatch", "Fang erkannt") + ": " + GameData.Translate(fish, UserStore.Lang) + (weight != null ? " " + GameData.FormatWeight(weight.Value, UserStore.Lang) : ""));
         return true;
     }
@@ -505,6 +508,9 @@ internal static class Tracker
             int n = L(s, "rods").Count;
             if (rod > n) { System.Media.SystemSounds.Hand.Play(); Say(string.Format(T("trkHitNoRod", "Rute {0} ist in dieser Session nicht erfasst."), rod)); return; }
             L(s, "hits").Add(AppEnv.Obj("t", Now(), "rod", rod));
+#if PRIVATE
+            Ext.RaiseHit(rod, DateTime.Now);
+#endif
             Save();
             System.Media.SystemSounds.Asterisk.Play();
             Say(string.Format(T("trkHit", "Fang auf Rute {0} gezählt, {1} auf dieser Rute."), rod, L(s, "hits").Count(h => System.Convert.ToInt32(h["rod"]) == rod)));
