@@ -52,7 +52,9 @@ internal sealed class Api
                 cloud.Start();
                 ThreadPool.QueueUserWorkItem(delegate { try { Records.Refresh(); } catch (Exception ex) { AppEnv.Log("Rekorde", ex.Message); Records.Loaded = true; } });
                 ready = true;
-                if (Community.Count == 0 || DateTime.UtcNow.Subtract(Community.Synced).TotalMinutes >= 30)
+                Step("bootSync", 15);
+                bool mirrored = Mirror.Fetch(true);
+                if (!mirrored && (Community.Count == 0 || DateTime.UtcNow.Subtract(Community.Synced).TotalMinutes >= 30))
                 {
                     Step("bootSync", 15);
                     Thread sync = new Thread(() => Community.Sync(false));
@@ -68,7 +70,7 @@ internal sealed class Api
                     TgDirect.Sync(true);
                 }
                 Step("bootPosts", 40);
-                Community.QueuePosts(168);
+                if (!mirrored) Community.QueuePosts(168);
                 int total = Math.Max(1, Scans.Pending);
                 DateTime until = DateTime.UtcNow.AddMinutes(6);
                 while (Scans.Pending > 0 && DateTime.UtcNow < until)
@@ -102,12 +104,13 @@ internal sealed class Api
     {
         if (stopping) return;
         DateTime sy = Community.Synced;
-        if (!Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
+        bool mirrored = Mirror.Fetch(false);
+        if (!mirrored && !Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Cloud.Sync(false);
-        TgDirect.Sync(false);
+        if (!mirrored) TgDirect.Sync(false);
         Records.Refresh();
-        Community.QueuePosts(72);
-        if (ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
+        if (!mirrored) Community.QueuePosts(72);
+        if (!mirrored && ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
     }
 
     private void WaitReady()
@@ -219,6 +222,11 @@ internal sealed class Api
 
     private static readonly Dictionary<string, string[]> baitMemo = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
+    internal static void ClearBaitMemo()
+    {
+        lock (baitMemo) baitMemo.Clear();
+    }
+
     internal static string[] ReportBaits(Report r)
     {
         lock (baitMemo)
@@ -303,6 +311,7 @@ internal sealed class Api
         List<object> events = new List<object>();
         List<Dictionary<string, object>> evObjs = new List<Dictionary<string, object>>();
         List<SpotEvent> evList = new List<SpotEvent>();
+        int fetched = 0;
         Dictionary<string, int> dirs = new Dictionary<string, int>();
         foreach (SpotEvent e in s.Events.OrderByDescending(x => x.Last).Take(60))
         {
@@ -313,7 +322,7 @@ internal sealed class Api
             double weight = 0;
             Dictionary<string, string> detail = new Dictionary<string, string>();
             string clip = "", depth = "", method = "", postText = "", temp = "";
-            bool fromImage = false;
+            bool fromImage = false, mixedRaw = false;
             RecordHit rec = null;
             foreach (Report r in e.Reports)
             {
@@ -328,7 +337,17 @@ internal sealed class Api
                 {
                     if (imgPost.Length == 0) imgPost = pk;
                     if (deg < 0) deg = Scans.Degrees(pk);
+                    if (postText.Length == 0 && !Scans.Known(pk) && fetched < 8) { Scans.Fetch(pk); fetched++; }
                     if (postText.Length == 0) postText = Scans.Text(pk);
+                }
+                if (deg < 0) deg = AppEnv.GetDouble(r.Raw, "mdeg", -1);
+                if (temp.Length == 0 && r.S("ptemp").Length > 0) temp = GameData.Ui(lang, "temp_" + r.S("ptemp"), r.S("ptemp"));
+                if (AppEnv.GetBool(r.Raw, "mimg")) fromImage = true;
+                if (AppEnv.GetBool(r.Raw, "mixed")) mixedRaw = true;
+                if (rec == null && r.Raw.ContainsKey("mrec"))
+                {
+                    Dictionary<string, object> mr = r.Raw["mrec"] as Dictionary<string, object>;
+                    if (mr != null) { rec = new RecordHit(); rec.Table = AppEnv.GetString(mr, "t"); rec.Region = AppEnv.GetString(mr, "r"); rec.Date = AppEnv.GetString(mr, "d"); rec.Bait = AppEnv.GetString(mr, "b"); }
                 }
                 double w = AppEnv.GetDouble(r.Raw, "weight", 0);
                 if (w > weight) weight = w;
@@ -384,7 +403,7 @@ internal sealed class Api
                     if (weight <= 0) weight = rec.Grams / 1000.0;
                 }
             }
-            bool mixed = PostText.Mixed(postText);
+            bool mixed = mixedRaw || PostText.Mixed(postText);
             List<string> fish = new List<string>();
             foreach (Report r in e.Reports) foreach (string f in r.Fish) { string n = GameData.Translate(f, lang); if (!fish.Contains(n)) fish.Add(n); }
             string dir = deg >= 0 ? Scans.Dir16(deg, lang) : "";

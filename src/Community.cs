@@ -284,6 +284,40 @@ internal static class Community
         return r;
     }
 
+    public static List<Report> All()
+    {
+        lock (gate) return new List<Report>(reports);
+    }
+
+    public static void SaveNow() { Save(); }
+
+    public static int ApplyMirror(List<Dictionary<string, object>> raws, DateTime generated)
+    {
+        int n = 0;
+        lock (gate)
+        {
+            foreach (Dictionary<string, object> raw in raws)
+            {
+                Report r = Wrap(raw);
+                if (r == null) continue;
+                Report old;
+                if (byId.TryGetValue(r.Id, out old))
+                {
+                    if (AppEnv.Json.Serialize(old.Raw) == AppEnv.Json.Serialize(raw)) continue;
+                    int i = reports.IndexOf(old);
+                    if (i >= 0) reports[i] = r;
+                }
+                else reports.Add(r);
+                byId[r.Id] = r;
+                n++;
+            }
+            if (generated > synced) synced = generated;
+            if (n > 0) { spots = null; spotsAll = null; Version++; }
+        }
+        if (n > 0) { Api.ClearBaitMemo(); Save(); }
+        return n;
+    }
+
     public static bool Has(string id)
     {
         lock (gate) return byId.ContainsKey(id);
@@ -324,6 +358,7 @@ internal static class Community
 
     public static bool HasSetup(Report r)
     {
+        if (r.Raw.ContainsKey("ms")) return AppEnv.GetBool(r.Raw, "ms");
         foreach (string k in new string[] { "baitDetail", "lure" }) if (PostText.HasKnownItem(r.S(k))) return true;
         string pk = Scans.PostKey(r.Url);
         if (pk.Length > 0)

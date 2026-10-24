@@ -79,6 +79,11 @@ internal static class ImageOcr
         }
     }
 
+    public static int Pending
+    {
+        get { lock (gate) return queue.Count + (worker != null ? 1 : 0); }
+    }
+
     public static void Request(string post)
     {
         if (string.IsNullOrEmpty(post)) return;
