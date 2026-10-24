@@ -40,6 +40,30 @@ public static class Ext
         return d;
     }
 
+    public static event Action<string, int?, DateTime, string> Catch;
+    public static event Action<int, DateTime> Hit;
+
+    internal static void RaiseCatch(string fish, int? grams, DateTime time, string src)
+    {
+        Action<string, int?, DateTime, string> h = Catch;
+        if (h == null) return;
+        try { h(fish, grams, time, src); } catch (Exception ex) { Log("Catch: " + ex.Message); }
+    }
+
+    internal static void RaiseHit(int rod, DateTime time)
+    {
+        Action<int, DateTime> h = Hit;
+        if (h == null) return;
+        try { h(rod, time); } catch (Exception ex) { Log("Hit: " + ex.Message); }
+    }
+
+    public static int TrophyLevel(string fish, int grams)
+    {
+        int[] t;
+        if (!GameData.Trophies.TryGetValue(fish ?? "", out t) || grams <= 0) return 0;
+        return t[1] > 0 && grams >= t[1] ? 2 : (t[0] > 0 && grams >= t[0] ? 1 : 0);
+    }
+
     public static string ResolveItem(string text) { return PostText.ResolveAny(text); }
     public static bool IsDip(string key) { return GameData.DipKeys.Contains(key); }
     public static string Translate(string key) { return GameData.Translate(GameData.ToKey(key), UserStore.Lang); }
