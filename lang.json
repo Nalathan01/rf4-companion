@@ -456,7 +456,9 @@
   "trkAccepted": "{0} Fänge ins Fangbuch übernommen.",
   "seaBank": "{0}er Bank",
   "seaMark": "{0}er",
-  "resetNewHint": "Diese Kombination stand letzte Woche bei diesem Fisch hier noch nicht in den Rekorden."
+  "resetNewHint": "Diese Kombination stand letzte Woche bei diesem Fisch hier noch nicht in den Rekorden.",
+  "bootSync": "Neue Meldungen werden abgeglichen",
+  "bootPosts": "Beiträge und Bilder werden gelesen"
  },
  "en": {
   "langName": "English",
@@ -915,7 +917,9 @@
   "trkAccepted": "{0} catches added to the catch log.",
   "seaBank": "{0} m bank",
   "seaMark": "{0} m",
-  "resetNewHint": "This combination was not in the records for this fish here last week."
+  "resetNewHint": "This combination was not in the records for this fish here last week.",
+  "bootSync": "Fetching new reports",
+  "bootPosts": "Reading posts and images"
  },
  "ru": {
   "langName": "Русский",
@@ -1371,7 +1375,9 @@
   "bootFinish": "Почти готово",
   "seaBank": "Банка {0} м",
   "seaMark": "{0} м",
-  "resetNewHint": "На прошлой неделе этой комбинации в рекордах этой рыбы здесь не было."
+  "resetNewHint": "На прошлой неделе этой комбинации в рекордах этой рыбы здесь не было.",
+  "bootSync": "Загрузка новых отчётов",
+  "bootPosts": "Чтение постов и картинок"
  },
  "fr": {
   "langName": "Français",
@@ -1827,7 +1833,9 @@
   "bootFinish": "Presque fini",
   "seaBank": "Banc des {0} m",
   "seaMark": "{0} m",
-  "resetNewHint": "Cette combinaison n'apparaissait pas dans les records de ce poisson ici la semaine dernière."
+  "resetNewHint": "Cette combinaison n'apparaissait pas dans les records de ce poisson ici la semaine dernière.",
+  "bootSync": "Récupération des nouveaux signalements",
+  "bootPosts": "Lecture des posts et images"
  },
  "es": {
   "langName": "Español",
@@ -2283,7 +2291,9 @@
   "bootFinish": "Casi listo",
   "seaBank": "Banco de {0} m",
   "seaMark": "{0} m",
-  "resetNewHint": "Esta combinación no aparecía en los récords de este pez aquí la semana pasada."
+  "resetNewHint": "Esta combinación no aparecía en los récords de este pez aquí la semana pasada.",
+  "bootSync": "Obteniendo reportes nuevos",
+  "bootPosts": "Leyendo publicaciones e imágenes"
  },
  "it": {
   "langName": "Italiano",
@@ -2739,7 +2749,9 @@
   "bootFinish": "Quasi fatto",
   "seaBank": "Banco dei {0} m",
   "seaMark": "{0} m",
-  "resetNewHint": "Questa combinazione non era nei record di questo pesce qui la settimana scorsa."
+  "resetNewHint": "Questa combinazione non era nei record di questo pesce qui la settimana scorsa.",
+  "bootSync": "Recupero nuove segnalazioni",
+  "bootPosts": "Lettura di post e immagini"
  },
  "pl": {
   "langName": "Polski",
@@ -3195,7 +3207,9 @@
   "bootFinish": "Prawie gotowe",
   "seaBank": "Ławica {0} m",
   "seaMark": "{0} m",
-  "resetNewHint": "Tej kombinacji nie było w zeszłym tygodniu w rekordach tej ryby tutaj."
+  "resetNewHint": "Tej kombinacji nie było w zeszłym tygodniu w rekordach tej ryby tutaj.",
+  "bootSync": "Pobieranie nowych zgłoszeń",
+  "bootPosts": "Czytanie postów i obrazów"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -3651,7 +3665,9 @@
   "bootFinish": "Quase pronto",
   "seaBank": "Banco de {0} m",
   "seaMark": "{0} m",
-  "resetNewHint": "Esta combinação não estava nos recordes deste peixe aqui na semana passada."
+  "resetNewHint": "Esta combinação não estava nos recordes deste peixe aqui na semana passada.",
+  "bootSync": "Buscando relatos novos",
+  "bootPosts": "Lendo posts e imagens"
  },
  "nl": {
   "langName": "Nederlands",
@@ -4107,7 +4123,9 @@
   "bootFinish": "Bijna klaar",
   "seaBank": "{0} m-bank",
   "seaMark": "{0} m",
-  "resetNewHint": "Deze combinatie stond vorige week nog niet in de records voor deze vis hier."
+  "resetNewHint": "Deze combinatie stond vorige week nog niet in de records voor deze vis hier.",
+  "bootSync": "Nieuwe meldingen ophalen",
+  "bootPosts": "Berichten en afbeeldingen lezen"
  },
  "tr": {
   "langName": "Türkçe",
@@ -4563,7 +4581,9 @@
   "bootFinish": "Neredeyse bitti",
   "seaBank": "{0} m sığlığı",
   "seaMark": "{0} m",
-  "resetNewHint": "Bu kombinasyon geçen hafta burada bu balığın rekorlarında yoktu."
+  "resetNewHint": "Bu kombinasyon geçen hafta burada bu balığın rekorlarında yoktu.",
+  "bootSync": "Yeni bildirimler alınıyor",
+  "bootPosts": "Gönderiler ve görseller okunuyor"
  },
  "ro": {
   "langName": "Română",
@@ -5019,7 +5039,9 @@
   "bootFinish": "Aproape gata",
   "seaBank": "Bancul de {0} m",
   "seaMark": "{0} m",
-  "resetNewHint": "Această combinație nu era în recordurile acestui pește aici săptămâna trecută."
+  "resetNewHint": "Această combinație nu era în recordurile acestui pește aici săptămâna trecută.",
+  "bootSync": "Se preiau raportările noi",
+  "bootPosts": "Se citesc postările și imaginile"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -5475,7 +5497,9 @@
   "bootFinish": "Hampir selesai",
   "seaBank": "Gosong {0} m",
   "seaMark": "{0} m",
-  "resetNewHint": "Kombinasi ini belum ada di rekor ikan ini di sini minggu lalu."
+  "resetNewHint": "Kombinasi ini belum ada di rekor ikan ini di sini minggu lalu.",
+  "bootSync": "Mengambil laporan baru",
+  "bootPosts": "Membaca postingan dan gambar"
  },
  "ja": {
   "langName": "日本語",
@@ -5931,7 +5955,9 @@
   "bootFinish": "もうすぐ完了",
   "seaBank": "{0}mバンク",
   "seaMark": "{0}m",
-  "resetNewHint": "先週、この場所のこの魚の記録にこの組み合わせはありませんでした。"
+  "resetNewHint": "先週、この場所のこの魚の記録にこの組み合わせはありませんでした。",
+  "bootSync": "新しい報告を取得中",
+  "bootPosts": "投稿と画像を読み取り中"
  },
  "ko": {
   "langName": "한국어",
@@ -6387,7 +6413,9 @@
   "bootFinish": "거의 완료",
   "seaBank": "{0}m 뱅크",
   "seaMark": "{0}m",
-  "resetNewHint": "지난주 이곳 이 어종 기록에는 없던 조합입니다."
+  "resetNewHint": "지난주 이곳 이 어종 기록에는 없던 조합입니다.",
+  "bootSync": "새 제보 가져오는 중",
+  "bootPosts": "게시물과 이미지 읽는 중"
  },
  "zh": {
   "langName": "简体中文",
@@ -6843,7 +6871,9 @@
   "bootFinish": "即将完成",
   "seaBank": "{0}米浅滩",
   "seaMark": "{0}米",
-  "resetNewHint": "上周此处该鱼的纪录中还没有这个组合。"
+  "resetNewHint": "上周此处该鱼的纪录中还没有这个组合。",
+  "bootSync": "正在获取新报告",
+  "bootPosts": "正在读取帖子和图片"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -7299,6 +7329,8 @@
   "bootFinish": "即將完成",
   "seaBank": "{0}公尺淺灘",
   "seaMark": "{0}公尺",
-  "resetNewHint": "上週此處該魚的紀錄中還沒有這個組合。"
+  "resetNewHint": "上週此處該魚的紀錄中還沒有這個組合。",
+  "bootSync": "正在取得新回報",
+  "bootPosts": "正在讀取貼文和圖片"
  }
 }

@@ -349,14 +349,14 @@ function applyStrings() {
   document.documentElement.lang = INIT.lang;
 }
 async function boot() {
-  const BOOT = { bootGame: "Spieldaten werden geladen", bootData: "Meldungen werden geladen", bootSpots: "Spots werden ausgewertet", bootRecords: "Rekordlisten werden geladen", bootFinish: "Fast fertig" };
-  const until = Date.now() + 90000;
+  const BOOT = { bootGame: "Spieldaten werden geladen", bootData: "Meldungen werden geladen", bootSync: "Neue Meldungen werden abgeglichen", bootPosts: "Beiträge und Bilder werden gelesen", bootSpots: "Spots werden ausgewertet", bootRecords: "Rekordlisten werden geladen", bootFinish: "Fast fertig" };
+  const until = Date.now() + 600000;
   while (Date.now() < until) {
     try {
       const p = await api("/api/ping");
       if (p.ready && !INIT) { INIT = await api("/api/init"); S = INIT.strings; }
       $("bootBar").style.width = (p.started ? 100 : p.stepPct || 0) + "%";
-      if (p.step) $("bootStep").textContent = T(p.step, BOOT[p.step] || "");
+      if (p.step) $("bootStep").textContent = T(p.step, BOOT[p.step] || "") + (p.stepInfo ? " · " + p.stepInfo : "");
       if (p.started) break;
     } catch (e) {}
     await new Promise(r => setTimeout(r, 200));
