@@ -97,6 +97,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .mapbox { position: relative; flex: 1; min-height: 0; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; }
 .mapbox canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
 .mapbox .maplabel { position: absolute; left: 12px; top: 10px; background: rgba(17,19,21,0.78); border-radius: 8px; padding: 4px 10px; font-weight: 650; font-size: 13px; }
+.mapbox .maptool { position: absolute; right: 12px; top: 10px; background: rgba(17,19,21,0.78); }
+.mapbox .maptool.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .mapbox .maphint { position: absolute; left: 12px; bottom: 10px; background: rgba(17,19,21,0.78); border-radius: 8px; padding: 3px 9px; font-size: 12px; color: var(--muted); }
 
 .detail { flex: 1; min-height: 0; overflow-y: auto; margin-top: 14px; }
@@ -284,7 +286,7 @@ dialog.sheet[open] { display: flex; }
         <div class="cards" id="cards"></div>
       </div>
       <div class="col map-col">
-        <div class="mapbox" id="mapbox"><canvas id="map"></canvas><div class="maplabel" id="mapLabel"></div><div class="maphint" id="mapHint"></div></div>
+        <div class="mapbox" id="mapbox"><canvas id="map"></canvas><div class="maplabel" id="mapLabel"></div><button class="btn small maptool" id="rulerBtn" data-t="ruler">Entfernung messen</button><div class="maphint" id="mapHint"></div></div>
         <div class="detail" id="detail"></div>
       </div>
     </div>
@@ -437,7 +439,7 @@ function drawMap() {
   const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
   const lake = lakeId ? lakeById(lakeId) : null;
   $("mapLabel").textContent = lake ? lake.name + (sel ? " · " + sel.name : "") : "";
-  $("mapHint").textContent = lake ? "" : T("mapPickSpot", "Spot links anklicken");
+  $("mapHint").textContent = lake ? (RULER.on ? T("rulerHint", "Klick: Startpunkt, zweiter Klick: Endpunkt, Esc: löschen") : "") : T("mapPickSpot", "Spot links anklicken");
   if (!lake || !lake.map) return;
   if (VIEW.lake !== lake.id) { VIEW = { lake: lake.id, zoom: 1, cx: 0.5, cy: 0.5 }; }
   let img = IMG[lake.map];
@@ -447,11 +449,12 @@ function drawMap() {
   const ox = w / 2-VIEW.cx * side, oy = h / 2-VIEW.cy * side;
   g.imageSmoothingQuality = "high";
   g.drawImage(img, ox, oy, side, side);
+  GEO = { ox, oy, side, lake };
   MARKS = [];
   for (const s of ACTIVE) {
     if (s.lake !== lake.id) continue;
     const x = ox + s.nx * side, y = oy + s.ny * side, isSel = s.key === SEL;
-    MARKS.push({ key: s.key, x, y });
+    MARKS.push({ key: s.key, x, y, nx: s.nx, ny: s.ny });
     const col = s.hoursAgo < 6 ? "#e0803a" : (s.hoursAgo < 24 ? "#d8b24a" : "#8a8d88");
     g.beginPath(); g.arc(x, y, isSel ? 9 : 6, 0, Math.PI * 2);
     g.fillStyle = col; g.fill(); g.lineWidth = isSel ? 3 : 2; g.strokeStyle = isSel ? "#ffffff" : "rgba(17,19,21,0.85)"; g.stroke();
@@ -460,11 +463,49 @@ function drawMap() {
   if ($("ownChk").checked && LOG) for (const o of LOG.spots) {
     if (o.lake !== lake.id || o.nx < 0 || o.ny < 0) continue;
     const key = "own:" + o.id, x = ox + o.nx * side, y = oy + o.ny * side, isSel = key === SEL, r = isSel ? 9 : 7;
-    MARKS.push({ key, x, y });
+    MARKS.push({ key, x, y, nx: o.nx, ny: o.ny });
     g.beginPath(); g.moveTo(x, y-r); g.lineTo(x + r, y); g.lineTo(x, y + r); g.lineTo(x-r, y); g.closePath();
     g.fillStyle = "#4fa8c9"; g.fill(); g.lineWidth = isSel ? 3 : 2; g.strokeStyle = isSel ? "#ffffff" : "rgba(17,19,21,0.85)"; g.stroke();
     if (isSel || VIEW.zoom > 1.6 || o.name) mapLabel(g, x, y, o.name || o.x + ":" + o.y);
   }
+  drawRuler(g);
+}
+let GEO = null, RULER = { on: false, a: null, b: null, live: null };
+function rulerMeters(a, b) {
+  const bd = GEO.lake.b;
+  const gx = p => bd[0] + p.nx * (bd[1]-bd[0]), gy = p => bd[3]-p.ny * (bd[3]-bd[2]);
+  return Math.hypot(gx(b)-gx(a), gy(b)-gy(a)) * 5;
+}
+function drawRuler(g) {
+  if (!RULER.on || !RULER.a || !GEO || RULER.lake !== GEO.lake.id) return;
+  const a = RULER.a, b = RULER.b || RULER.live || a;
+  const P = p => [GEO.ox + p.nx * GEO.side, GEO.oy + p.ny * GEO.side];
+  const [x1, y1] = P(a), [x2, y2] = P(b);
+  g.save();
+  g.strokeStyle = "#ffd54f"; g.lineWidth = 3; g.setLineDash(RULER.b ? [] : [8, 5]);
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); g.setLineDash([]);
+  for (const [x, y] of [[x1, y1], [x2, y2]]) { g.beginPath(); g.arc(x, y, 5, 0, Math.PI * 2); g.fillStyle = "#ffd54f"; g.fill(); g.lineWidth = 1.5; g.strokeStyle = "#111315"; g.stroke(); }
+  if (b !== a) {
+    const t = Math.round(rulerMeters(a, b)).toLocaleString(INIT.lang) + " m";
+    g.font = "700 14px Segoe UI"; const tw = g.measureText(t).width;
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    g.fillStyle = "rgba(12,16,20,0.9)"; g.strokeStyle = "#ffd54f"; g.lineWidth = 1.5;
+    g.beginPath(); g.roundRect(mx-tw / 2-8, my-13, tw + 16, 26, 6); g.fill(); g.stroke();
+    g.fillStyle = "#ffd54f"; g.fillText(t, mx-tw / 2, my + 5);
+  }
+  g.restore();
+}
+function rulerPoint(cx, cy) {
+  const m = markAt(cx, cy);
+  if (m && m.nx != null) return { nx: m.nx, ny: m.ny };
+  return { nx: (cx-GEO.ox) / GEO.side, ny: (cy-GEO.oy) / GEO.side };
+}
+function setRuler(on) {
+  RULER = { on, a: null, b: null, live: null };
+  $("rulerBtn").classList.toggle("on", on);
+  $("mapHint").textContent = on ? T("rulerHint", "Klick: Startpunkt, zweiter Klick: Endpunkt, Esc: löschen") : "";
+  $("map").style.cursor = on ? "crosshair" : "grab";
+  drawMap();
 }
 function mapLabel(g, x, y, t) {
   g.font = "600 12px Segoe UI"; const tw = g.measureText(t).width;
@@ -527,13 +568,33 @@ $("lightbox").onclick = () => $("lightbox").classList.remove("show");
   window.addEventListener("mouseup", e => {
     const d = drag; drag = null; cv.style.cursor = "grab";
     if (!d || d.moved || e.target !== cv) return;
-    const r = cv.getBoundingClientRect(), m = markAt(e.clientX-r.left, e.clientY-r.top);
+    const r = cv.getBoundingClientRect();
+    if (RULER.on && GEO) {
+      const pt = rulerPoint(e.clientX-r.left, e.clientY-r.top);
+      if (!RULER.a || RULER.b || RULER.lake !== GEO.lake.id) { RULER.a = pt; RULER.b = null; RULER.live = null; RULER.lake = GEO.lake.id; }
+      else RULER.b = pt;
+      drawMap();
+      return;
+    }
+    const m = markAt(e.clientX-r.left, e.clientY-r.top);
     if (!m) return;
     SEL = m.key; renderCards(); drawMap(); loadDetail();
     const card = document.querySelector('.card[data-key="' + CSS.escape(m.key) + '"]');
     if (card) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
-  cv.addEventListener("mousemove", e => { if (drag) return; const r = cv.getBoundingClientRect(); cv.style.cursor = markAt(e.clientX-r.left, e.clientY-r.top) ? "pointer" : "grab"; });
+  cv.addEventListener("mousemove", e => {
+    if (drag && drag.moved) return;
+    const r = cv.getBoundingClientRect();
+    if (RULER.on) {
+      cv.style.cursor = "crosshair";
+      if (RULER.a && !RULER.b && GEO) { RULER.live = rulerPoint(e.clientX-r.left, e.clientY-r.top); drawMap(); }
+      return;
+    }
+    if (drag) return;
+    cv.style.cursor = markAt(e.clientX-r.left, e.clientY-r.top) ? "pointer" : "grab";
+  });
+  $("rulerBtn").onclick = () => setRuler(!RULER.on);
+  window.addEventListener("keydown", e => { if (e.key === "Escape" && RULER.on && RULER.a) { RULER.a = RULER.b = RULER.live = null; drawMap(); } });
   window.addEventListener("mousemove", e => { if (!drag) return; if (Math.hypot(e.clientX-drag.x, e.clientY-drag.y) > 4) drag.moved = true; if (!drag.moved) return; const side = Math.min(cv.clientWidth, cv.clientHeight) * VIEW.zoom; VIEW.cx = drag.cx-(e.clientX-drag.x) / side; VIEW.cy = drag.cy-(e.clientY-drag.y) / side; drawMap(); });
   window.addEventListener("resize", drawMap);
 })();
