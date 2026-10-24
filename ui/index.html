@@ -471,17 +471,6 @@ function mapLabel(g, x, y, t) {
   g.fillStyle = "rgba(17,19,21,0.82)"; g.fillRect(x + 11, y-9, tw + 10, 18);
   g.fillStyle = "#f0efec"; g.fillText(t, x + 16, y + 4);
 }
-function shareText(o) {
-  const parts = [o.lakeName + (o.x ? " " + o.x + ":" + o.y : "")];
-  if (o.fish) parts.push(T("fish", "Fisch") + ": " + o.fish);
-  const b = [o.bait, o.bait2].filter(Boolean).join(" + ");
-  if (b) parts.push(T("bait", "Köder") + ": " + b);
-  if (o.dip) parts.push("Dip: " + o.dip);
-  if (o.pva) { const rc = LOG.recipes.find(r => r.name === o.pva); parts.push("PVA: " + (rc ? [rc.base, ...rc.additives, rc.attractant].filter(Boolean).join(", ") : o.pva)); }
-  if (o.dist) parts.push("Clip: " + o.dist);
-  if (o.depth) parts.push(T("depth", "Tiefe") + ": " + o.depth);
-  return parts.join(" | ");
-}
 function ownDetail(o) {
   const st = LOG.catches.filter(c => c.spotId === o.id);
   const fc = {}; st.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
@@ -489,9 +478,8 @@ function ownDetail(o) {
   $("detail").innerHTML = `<div class="d-head"><h3>${esc(o.lakeName)} · ${esc(o.name || o.x + ":" + o.y)}</h3><span class="d-sum">${esc(T("ownSpot", "Eigener Spot"))}</span></div>
     <div class="ev">${rows.map(x => `<div class="ev-det"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}
       ${st.length ? `<div class="line" style="margin-top:8px">${Object.entries(fc).sort((a, b) => b[1]-a[1]).map(([f, n]) => `<span class="tag">${n}× ${esc(f)}</span>`).join("")}</div>` : ""}
-      <div class="ev-src" style="margin-top:10px"><button class="src" id="ownCopy">${esc(T("copyForChat", "Für Chat kopieren"))}</button><button class="src" id="ownEdit">${esc(T("edit", "Bearbeiten"))}</button></div>
+      <div class="ev-src" style="margin-top:10px"><button class="src" id="ownEdit">${esc(T("edit", "Bearbeiten"))}</button></div>
     </div>`;
-  $("ownCopy").onclick = async () => { try { await navigator.clipboard.writeText(shareText(o)); $("ownCopy").textContent = T("copied", "Kopiert"); } catch (e) {} };
   $("ownEdit").onclick = () => spotDialog(o);
 }
 function openSpotKey(k) { SEL = k; renderCards(); drawMap(); loadDetail(); }
