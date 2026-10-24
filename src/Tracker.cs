@@ -37,7 +37,7 @@ internal static class Tracker
 
     public static bool On
     {
-        get { object v = UserStore.Get("trackerOn"); return v is bool && (bool)v; }
+        get { object v = UserStore.Get("trackerOn"); return v is bool && (bool)v && Ext.PauseReason.Length == 0; }
     }
 
     private static string Now() { return DateTime.Now.ToString("o", CultureInfo.InvariantCulture); }
@@ -491,6 +491,11 @@ internal static class Tracker
         }
     }
 
+    public static void SkipBacklog()
+    {
+        lock (gate) { Load(); st["since"] = Now(); Save(); }
+    }
+
     public static void Hit(int rod)
     {
         lock (gate)
@@ -622,7 +627,7 @@ internal static class Tracker
         Lake lk = null;
         if (s != null) GameData.LakeById.TryGetValue(S(s, "lake"), out lk);
         return AppEnv.Obj(
-            "on", On, "dir", Dir, "dirOk", Directory.Exists(Dir), "lang", LangTag, "langs", TrackerOcr.Languages(), "busy", busyFile,
+            "on", On || Ext.PauseReason.Length > 0, "paused", Ext.PauseReason, "dir", Dir, "dirOk", Directory.Exists(Dir), "lang", LangTag, "langs", TrackerOcr.Languages(), "busy", busyFile,
             "msg", msg, "msgAt", msgAt == DateTime.MinValue ? "" : msgAt.ToString("HH:mm:ss"),
             "session", s == null ? null : AppEnv.Obj("id", S(s, "id"), "start", Time(s["start"]).ToString("dd.MM. HH:mm"), "lake", S(s, "lake"), "lakeName", lk != null ? lk.Name(lang) : "",
                 "x", s["x"], "y", s["y"], "clip", S(s, "clip"), "temp", S(s, "temp").Length > 0 ? T("temp_" + S(s, "temp"), S(s, "temp")) : "", "keepnet", L(s, "keepnet").Count, "hits", L(s, "hits").Count),

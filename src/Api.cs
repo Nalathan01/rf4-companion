@@ -39,6 +39,7 @@ internal sealed class Api
                 GameData.Load();
                 Step("bootData", 20);
                 UserStore.Load();
+                Extensions.Load();
                 Tracker.Start();
                 Cloud.LoadState();
                 ThreadPool.QueueUserWorkItem(delegate { Cloud.Sync(false); });
@@ -97,6 +98,8 @@ internal sealed class Api
                 "update", Updater.Available, "tracker", Tracker.Version, "spot", server.TakePendingSpot());
         }
         WaitReady();
+        if (path.StartsWith("/api/ext/", StringComparison.Ordinal)) return Extensions.Call(path.Substring(9), args);
+        if (path == "/api/extensions") return Extensions.Scripts.ToArray();
         if (path.StartsWith("/api/tracker/", StringComparison.Ordinal)) return Tracker.Command(path.Substring(13), args ?? new Dictionary<string, object>());
         switch (path)
         {

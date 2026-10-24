@@ -108,15 +108,20 @@ internal sealed class AppServer
         return p;
     }
 
-    private void OpenWindow(string url)
+    internal static string EdgePath()
     {
-        string edge = null;
         foreach (string root in new string[] { Environment.GetEnvironmentVariable("ProgramFiles(x86)"), Environment.GetEnvironmentVariable("ProgramFiles") })
         {
             if (string.IsNullOrEmpty(root)) continue;
             string candidate = Path.Combine(root, @"Microsoft\Edge\Application\msedge.exe");
-            if (File.Exists(candidate)) { edge = candidate; break; }
+            if (File.Exists(candidate)) return candidate;
         }
+        return null;
+    }
+
+    private void OpenWindow(string url)
+    {
+        string edge = EdgePath();
         if (edge != null)
         {
             string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"RF4Companion\edge");
@@ -169,6 +174,13 @@ internal sealed class AppServer
                 string iname = path == "/img/tg" ? "tg" + (req.QueryString["i"] ?? "0") + "|" + (req.QueryString["p"] ?? "") : path.Substring(5);
                 if (api.Image(iname, out b, out type)) Send(ctx, 200, b, type, true);
                 else Send(ctx, 404, new byte[0], "text/plain", false);
+                return;
+            }
+            if (path.StartsWith("/ext/") && path.EndsWith(".js"))
+            {
+                string f = Path.Combine(Extensions.Dir, Path.GetFileName(path.Substring(5)));
+                if (!Extensions.Scripts.Contains(Path.GetFileName(f)) || !File.Exists(f)) { Send(ctx, 404, new byte[0], "text/plain", false); return; }
+                Send(ctx, 200, File.ReadAllBytes(f), "text/javascript; charset=utf-8", false);
                 return;
             }
             string body = "";
