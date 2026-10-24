@@ -28,21 +28,12 @@ using System.Reflection;
 [assembly: AssemblyFileVersion("$Version")]
 "@ | Set-Content -Path $assemblyInfo -Encoding UTF8
 
-function Add-GzResource([string]$src, [string]$name) {
-    $dst = Join-Path $buildDir ($name.Replace("/", "_") + ".gz")
-    $in = [System.IO.File]::OpenRead($src)
-    $out = [System.IO.File]::Create($dst)
-    $gz = New-Object System.IO.Compression.GZipStream($out, [System.IO.Compression.CompressionLevel]::Optimal)
-    $in.CopyTo($gz)
-    $gz.Dispose(); $out.Dispose(); $in.Dispose()
-    "/resource:$dst,$name.gz"
-}
 
 $resources = @()
 $resources += "/resource:$(Join-Path $PSScriptRoot 'ui\index.html'),ui/index.html"
-$resources += Add-GzResource (Join-Path $PSScriptRoot "lang.json") "data/lang.json"
+$resources += "/resource:$(Join-Path $PSScriptRoot 'lang.json'),data/lang.json"
 foreach ($f in @("gamedata.json", "itemnames.json", "itemcats.json", "dips.json", "marine_rigs.json", "sea_marks.json")) {
-    $resources += Add-GzResource (Join-Path $PSScriptRoot "data\$f") "data/$f"
+    $resources += "/resource:$(Join-Path $PSScriptRoot "data\$f"),data/$f"
 }
 foreach ($m in Get-ChildItem (Join-Path $PSScriptRoot "data\maps") -Filter *.jpg) {
     $resources += "/resource:$($m.FullName),maps/$($m.Name)"

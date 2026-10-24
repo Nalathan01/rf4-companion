@@ -64,6 +64,7 @@ internal static class Lookup
             "installed", t.StartsWith("zh") ? haveFull.Any(h => h.StartsWith(t == "zh-TW" ? "zh-Hant" : "zh-Hans", StringComparison.OrdinalIgnoreCase)) : have.Contains(t.Split('-')[0].ToLowerInvariant()))).ToArray();
     }
 
+#if PRIVATE || FANGBUCH
     public static object InstallOcr(string tag)
     {
         if (!OcrTags.Contains(tag) || !Regex.IsMatch(tag, "^[a-z]{2}-[A-Z]{2}$")) throw new AppError("unknown", tag);
@@ -75,4 +76,7 @@ internal static class Lookup
         catch (System.ComponentModel.Win32Exception) { throw new AppError("ocrCancelled", null); }
         return AppEnv.Obj("ok", true);
     }
+#else
+    public static object InstallOcr(string tag) { throw new AppError("unknown", tag); }
+#endif
 }
