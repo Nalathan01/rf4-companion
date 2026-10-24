@@ -183,6 +183,11 @@ internal static class Fangbuch
         return List("catches").Any(c => S(c, "fish") == fish && (int)AppEnv.GetDouble(c, "weight", -1) == grams && S(c, "date") == date);
     }
 
+    public static List<Dictionary<string, object>> SessionCatches(string session)
+    {
+        return List("catches").Where(c => S(c, "session") == session && session.Length > 0).ToList();
+    }
+
     public static void AddCatches(List<Dictionary<string, object>> items)
     {
         lock (gate)
