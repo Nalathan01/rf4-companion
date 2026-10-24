@@ -16,6 +16,7 @@ internal static class Program
             string dev = null;
             string openSpot = null;
             string dataDir = null;
+            string export = null;
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -25,10 +26,12 @@ internal static class Program
                 else if (a.Equals("-Dev", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) dev = args[++i];
                 else if (a.Equals("-OpenSpot", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) openSpot = args[++i];
                 else if (a.Equals("-DataDir", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) dataDir = args[++i];
+                else if (a.Equals("-Export", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) export = args[++i];
             }
             ServicePointManager.DefaultConnectionLimit = 16;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             AppEnv.Init(dev, dataDir);
+            if (export != null) return Mirror.Export(export) > 0 ? 0 : 2;
             new AppServer().Run(port, noBrowser, urlFile, openSpot);
             return 0;
         }

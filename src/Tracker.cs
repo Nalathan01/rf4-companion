@@ -114,7 +114,7 @@ internal static class Tracker
         Dictionary<string, object> s = AppEnv.Obj("id", Guid.NewGuid().ToString("N").Substring(0, 8), "start", Now(), "end", Now(),
             "lake", prev != null ? S(prev, "lake") : "", "x", keepSpot && prev != null ? prev["x"] : null, "y", keepSpot && prev != null ? prev["y"] : null,
             "clip", keepSpot && prev != null ? S(prev, "clip") : "", "temp", "", "keepnet", new List<Dictionary<string, object>>(), "keepnetTime", "", "hits", new List<Dictionary<string, object>>());
-        s["rods"] = prev != null ? L(prev, "rods").Select(r => new Dictionary<string, object>(r)).ToList() : new List<Dictionary<string, object>>();
+        s["rods"] = prev != null ? L(prev, "rods").Select(r => { Dictionary<string, object> c = new Dictionary<string, object>(r); c["inh"] = true; return c; }).ToList() : new List<Dictionary<string, object>>();
         L(st, "sessions").Add(s);
         List<Dictionary<string, object>> ss = L(st, "sessions");
         if (ss.Count > 40) ss.RemoveRange(0, ss.Count-40);
@@ -265,11 +265,19 @@ internal static class Tracker
                 return;
             }
         }
+        int[] hp = TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.925f, 0.87f, 0.055f, 0.075f), 4, false).Lines(), LakeObj());
+        if (hp != null)
+        {
+            string ht = TrackerParse.MatchTemp(Ocr(path, tag, new RectangleF(0.9f, 0.1f, 0.1f, 0.022f), 4, true).Lines());
+            if (ht.Length > 0) lock (gate) { Cur(true)["temp"] = ht; Save(); }
+            SetPos(hp[0], hp[1]);
+            return;
+        }
         if (!isHud && lines.Length < 60)
         {
             OcrBox cand = r0.Boxes.FirstOrDefault(b => Regex.IsMatch(b.Text.Trim(), @"^\d{1,3}(\s*[:;.]\s*|\s+)\d{1,3}$") && b.H < 30);
             int grid = lines.Count(l => Regex.IsMatch(l.Trim(), "^([A-J]|10|[1-9])$"));
-            if (cand == null && lines.Length < 25) cand = r0.Boxes.FirstOrDefault(b => Regex.IsMatch(b.Text.Trim(), @"^\d{1,3}(\s*[:;.]\s*\d{1,3})?$") && b.H < 30);
+            if (cand == null && grid >= 6) cand = r0.Boxes.FirstOrDefault(b => Regex.IsMatch(b.Text.Trim(), @"^\d{1,3}(\s*[:;.]\s*\d{1,3})?$") && b.H < 30);
             if (cand != null || grid >= 6)
             {
                 if (RuAvailable()) LakeFromMap(path);
@@ -278,16 +286,15 @@ internal static class Tracker
                     double f = r0.F;
                     RectangleF rect = new RectangleF((float)((cand.X-cand.H * 3.3) / f), (float)((cand.Y-cand.H) / f), (float)((cand.W + cand.H * 4.2) / f), (float)(cand.H * 2.3 / f));
                     int[] pos = TrackerParse.FindPos(Ocr(path, tag, rect, 4, false).Lines(), LakeObj());
-                    if (pos != null) SetPos(pos[0], pos[1]);
+                    if (pos != null) { SetPos(pos[0], pos[1]); return; }
                 }
+                Say(T("trackerUnknown", "Screenshot ohne Fang oder Setup"));
                 return;
             }
         }
         string temp = TrackerParse.MatchTemp(Ocr(path, tag, new RectangleF(0.9f, 0.1f, 0.1f, 0.022f), 4, true).Lines());
         if (temp.Length > 0) lock (gate) { Cur(true)["temp"] = temp; Save(); }
-        int[] p = TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.925f, 0.87f, 0.055f, 0.075f), 4, false).Lines(), LakeObj());
-        if (p != null) SetPos(p[0], p[1]);
-        else if (temp.Length > 0) Say(T("temperature", "Wassertemperatur") + ": " + T("temp_" + temp, temp));
+        if (temp.Length > 0) Say(T("temperature", "Wassertemperatur") + ": " + T("temp_" + temp, temp));
         else Say(T("trackerUnknown", "Screenshot ohne Fang oder Setup"));
     }
 
@@ -361,10 +368,10 @@ internal static class Tracker
                 {
                     Dictionary<string, object> x = rods[i];
                     string xs = S(x, "rig") + "|" + string.Join("+", Strs(x["baits"]).ToArray()) + "|" + S(x, "dip") + "|" + S(x, "leaderCm");
-                    bool inherited = Time(x["time"]) < sStart;
+                    bool inherited = AppEnv.GetBool(x, "inh");
                     bool sameLen = len.Length > 0 && S(x, "leaderCm") == len;
                     bool sameBaits = string.Join("+", Strs(x["baits"]).ToArray()) == string.Join("+", o.Baits.ToArray());
-                    if (xs == sig || (sameLen && (inherited || sameBaits))) { idx = i; break; }
+                    if (inherited && (xs == sig || sameLen || sameBaits)) { idx = i; break; }
                 }
             }
             if (idx >= 0) { nr["id"] = rods[idx]["id"]; rods[idx] = nr; } else rods.Add(nr);
