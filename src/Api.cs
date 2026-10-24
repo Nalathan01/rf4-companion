@@ -42,7 +42,7 @@ internal sealed class Api
                 Step("bootData", 10);
                 UserStore.Load();
                 Extensions.Load();
-                Tracker.Start();
+                if (Features.Log) Tracker.Start();
                 Cloud.LoadState();
                 Scans.Load();
                 Community.Load();
@@ -434,7 +434,7 @@ internal sealed class Api
             lakes.Add(AppEnv.Obj("id", l.Id, "name", l.Name(lang), "map", l.HasBounds && l.MapKey.Length > 0 ? "/maps/" + l.MapKey + ".jpg" : "",
                 "b", new double[] { l.XMin, l.XMax, l.YSouth, l.YNorth }));
         }
-        return AppEnv.Obj("version", Updater.CurrentText, "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
+        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
             "reports", Community.Count);
     }
 

@@ -218,6 +218,7 @@ dialog.sheet[open] { display: flex; }
 .site:hover { border-color: rgba(79,168,201,0.6); }
 .site small { display: block; color: var(--muted); margin-top: 2px; }
 .star { color: var(--warm); }
+.nolog .logonly { display: none !important; }
 .boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
 .boot.hide { opacity: 0; pointer-events: none; }
 .boot-box { width: min(420px, 86vw); text-align: center; }
@@ -243,7 +244,7 @@ dialog.sheet[open] { display: flex; }
   <nav>
     <button class="nav-btn" data-view="find" data-t="navFind">Fisch finden</button>
     <button class="nav-btn active" data-view="active" data-t="navActive">Aktive Spots</button>
-    <button class="nav-btn" data-view="log" data-t="navLog">Mein Fangbuch</button>
+    <button class="nav-btn logonly" data-view="log" data-t="navLog">Mein Fangbuch</button>
   </nav>
   <div class="head-acts">
     <div class="upd" id="upd"><span id="updText"></span><button class="btn small primary" id="updBtn" data-t="updateNow">Aktualisieren</button></div>
@@ -281,7 +282,7 @@ dialog.sheet[open] { display: flex; }
           </div>
           <select id="lakeSel"></select>
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
-          <label class="chk"><input type="checkbox" id="ownChk" checked> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
+          <label class="chk logonly"><input type="checkbox" id="ownChk" checked> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
         </div>
         <div class="cards" id="cards"></div>
       </div>
@@ -370,6 +371,7 @@ async function boot() {
   findStatic();
   await loadActive();
   loadFind();
+  document.documentElement.classList.toggle("nolog", !INIT.features.log);
   loadLog();
   trk("status");
   loadExtensions();
@@ -706,6 +708,7 @@ function goSpot(lake, key) {
 }
 let LOG = null, LOGQ = "", LOGLAKE = "", OPEN = new Set(), TRK = null, TRKV = -1;
 async function trk(cmd, body) {
+  if (!INIT.features.log) return;
   try { TRK = await api("/api/tracker/" + cmd, body || {}); } catch (e) { alert(e.message.startsWith("trkNoShot") ? T("trkNoShot", "Der Screenshot dieser Rute ist nicht mehr da.") : e.message); return; }
   renderTracker();
 }
@@ -761,6 +764,7 @@ function bindTracker() {
   on("trkDropAll", () => { if (confirm(T("trkDiscardAllQ", "Alle offenen Fänge verwerfen?"))) trk("pending/discard", { ids: TRK.pending.map(p => p.id) }); });
 }
 async function loadLog() {
+  if (!INIT.features.log) return;
   try { LOG = await api("/api/log"); } catch (e) { return; }
   renderLog();
 }
@@ -934,9 +938,9 @@ const MENU = {
     const d = TRK || await api("/api/tracker/status");
     const ocr = await api("/api/ocrlangs");
     openDlg(T("settings", "Einstellungen"),
-      `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
-       ${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}
-       <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+      `<div class="logonly" style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
+       <div class="logonly" style="grid-column:1/3">${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}</div>
+       <label class="wide logonly">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
        <div style="grid-column:1/3"><div class="hdr">${esc(T("ocrPacks", "Texterkennung (Sprachpakete)"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("ocrPacksHint", "Für Bilder aus Telegram und für den Tracker braucht Windows die Texterkennung der jeweiligen Sprache. Installieren fragt nach Administratorrechten und lädt das Paket von Microsoft."))}</p>
        <table class="tbl">${ocr.map(o => `<tr><td>${esc(o.name)}</td><td class="num">${o.installed ? esc(T("installed", "installiert")) : `<button class="btn small" data-ocr="${o.tag}">${esc(T("install", "Installieren"))}</button>`}</td></tr>`).join("")}</table></div>`,
       async () => { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); },
@@ -963,16 +967,16 @@ function lkLakes(sel) {
   $("lkBody").innerHTML = `<div class="lk-split"><div class="lk-list">${L.map(l => `<div class="fish-row ${l.id === cur.id ? "sel" : ""}" data-l="${l.id}"><span>${esc(l.name)}</span></div>`).join("")}</div>
     <div style="overflow-y:auto"><h2 style="margin:0 0 8px;font-family:var(--font-display)">${esc(cur.name)}</h2><p class="sub" style="color:var(--ink-2);font-size:13.5px;line-height:1.5">${esc(cur.desc)}</p>
     <div class="hdr">${esc(T("fishHere", "Fische hier"))} (${cur.fish.length})</div>
-    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num">${esc(T("ownBest", "Dein bester"))}</th></tr>
-    ${cur.fish.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num">${esc(f.own)}${STAR(f)}</td></tr>`).join("")}</table></div></div>`;
+    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num logonly">${esc(T("ownBest", "Dein bester"))}</th></tr>
+    ${cur.fish.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num logonly">${esc(f.own)}${STAR(f)}</td></tr>`).join("")}</table></div></div>`;
   $("lkBody").querySelectorAll("[data-l]").forEach(r => r.onclick = () => lkLakes(r.dataset.l));
 }
 function lkTrophies(q) {
   q = q || "";
   const list = LOOKUP.trophies.filter(f => !q || f.name.toLowerCase().includes(q.toLowerCase()));
   $("lkBody").innerHTML = `<input class="search" id="lkQ" type="search" value="${esc(q)}" placeholder="${esc(T("fishSearch", "Fisch suchen"))}">
-    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num">${esc(T("ownBest", "Dein bester"))}</th><th>${esc(T("tabLakes", "Gewässer"))}</th></tr>
-    ${list.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num">${esc(f.own)}${STAR(f)}</td><td><small style="margin:0">${esc(f.lakes.join(", "))}</small></td></tr>`).join("")}</table>`;
+    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num logonly">${esc(T("ownBest", "Dein bester"))}</th><th>${esc(T("tabLakes", "Gewässer"))}</th></tr>
+    ${list.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num logonly">${esc(f.own)}${STAR(f)}</td><td><small style="margin:0">${esc(f.lakes.join(", "))}</small></td></tr>`).join("")}</table>`;
   const inp = $("lkQ"); inp.focus(); inp.setSelectionRange(q.length, q.length);
   inp.oninput = () => lkTrophies(inp.value);
 }
