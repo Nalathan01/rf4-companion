@@ -1,14 +1,16 @@
+param([switch]$Private)
+
 $ErrorActionPreference = "Stop"
 
 $root = $PSScriptRoot
 $version = (Get-Content -LiteralPath (Join-Path $root "version.txt") -Raw).Trim()
-$dist = Join-Path $root "dist"
+$dist = Join-Path $root $(if ($Private) { "dist\private" } else { "dist" })
 $stage = Join-Path $env:TEMP ("RF4Companion_build_" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 New-Item -ItemType Directory -Path $dist -Force | Out-Null
 
 $exe = Join-Path $stage "RF4 Companion.exe"
-& (Join-Path $root "build.ps1") -OutFile $exe -Version "$version.0"
+& (Join-Path $root "build.ps1") -OutFile $exe -Version "$version.0" -Private:$Private
 if (-not (Test-Path -LiteralPath $exe)) { throw "Build failed" }
 
 $iscc = @((Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 6\ISCC.exe"), (Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"), (Join-Path $env:ProgramFiles "Inno Setup 6\ISCC.exe")) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1

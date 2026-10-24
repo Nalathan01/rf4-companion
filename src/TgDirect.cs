@@ -59,7 +59,7 @@ internal static class TgDirect
                 Dictionary<string, object> r = Parse(m.Groups[1].Value, id, when.UtcDateTime, text);
                 if (r != null) outL.Add(r);
             }
-            if (old || minId == long.MaxValue || minId <= 1) break;
+            if (old || minId == long.MaxValue || minId <= 1 || (page > 0 && Community.Has("tgd:" + ch + "/" + minId.ToString(CultureInfo.InvariantCulture)))) break;
             before = minId;
             System.Threading.Thread.Sleep(1000);
         }

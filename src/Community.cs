@@ -284,6 +284,11 @@ internal static class Community
         return r;
     }
 
+    public static bool Has(string id)
+    {
+        lock (gate) return byId.ContainsKey(id);
+    }
+
     public static int AddDirect(List<Dictionary<string, object>> raws)
     {
         int added = 0;
