@@ -715,7 +715,7 @@ function renderTracker() {
   const s = d.session;
   const head = `<div class="trk-head"><b>Tracker</b><label class="switch" title="${esc(T("trackerActive", "Fang-Tracker aktiv (F12 im Spiel)"))}"><input type="checkbox" id="trkOn" ${d.on ? "checked" : ""}><span></span></label>
     <div class="trk-msg">${d.paused ? esc(d.paused) : d.busy ? esc(T("trkReading", "Lese") + " " + d.busy) : d.msg ? `<small>${esc(d.msgAt)}</small>${esc(d.msg)}` : esc(!d.on ? T("trackerHint", "Tracker aus. Einschalten, dann im Spiel F12 drücken.") : !d.dirOk ? T("trackerNoFolder", "RF4-Screenshot-Ordner nicht gefunden:") + " " + d.dir : T("trkWaiting", "Wartet auf Screenshots (F12 im Spiel)."))}</div>
-    ${d.on ? `<button class="btn small" id="trkNewSpot" title="${esc(T("trkNewSpotTip", "Neue Session an einem neuen Spot, die Ruten werden übernommen"))}">${esc(T("newSpot", "Neuer Spot"))}</button><button class="btn small" id="trkNewSess">${esc(T("trkNewSessionBtn", "Neue Session"))}</button>` : ""}</div>`;
+    ${d.session ? `<button class="btn small primary" id="trkEval">${esc(T("trkEvaluate", "Auswerten"))}</button><button class="btn small" id="trkDelSess">${esc(T("delete", "Löschen"))}</button>` : ""}</div>`;
   if (!d.on && !d.pending.length) { el.innerHTML = head; bindTracker(); return; }
   const info = s ? `<div class="trk-info"><span><b>${esc(T("lake", "Gewässer"))}</b> <select id="trkLake" style="min-width:0"><option value=""></option>${lakeOptions(s.lake)}</select></span>
     <span><b>Spot</b> ${s.x != null ? esc(s.x + ":" + s.y) : esc(T("trkNoPos", "HUD mit F12 erfassen"))}</span>
@@ -733,11 +733,22 @@ function renderTracker() {
   el.innerHTML = head + info + rods + pend;
   bindTracker();
 }
+async function evalSession() {
+  const e = (await api("/api/tracker/evaluate", {})).eval;
+  openSheet(T("trkEvalTitle", "Auswertung der Session"), `
+    <p class="sub" style="font-size:14px;color:var(--ink-2)">${esc([e.lakeName, e.spot, e.clip ? "Clip " + e.clip + " m" : "", e.temp, e.start + " " + T("trkTo", "bis") + " " + e.end, e.minutes + " min"].filter(Boolean).join(" · "))}</p>
+    <div class="hdr">${esc(T("trkEvalFish", "Fische"))} · ${e.total}${e.fromKeepnet ? "" : " · " + esc(T("trkEvalNoKeepnet", "ohne Setzkescher-Screenshot, nur erkannte Fänge"))}</div>
+    ${e.species.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th></tr>${e.species.map(s => `<tr><td>${esc(s.name)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td class="num">${s.trophy || ""}</td><td class="num">${s.rare || ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("trkEvalNone", "Noch keine Fische. Am Ende der Session den Setzkescher mit F12 erfassen."))}</div>`}
+    <div class="hdr">${esc(T("trkRods", "Ruten"))}</div>
+    ${e.rods.length ? `<table class="tbl"><tr><th>#</th><th>${esc(T("bait", "Köder"))}</th><th>${esc(T("leader", "Vorfach"))}</th><th class="num">${esc(T("trkHits", "Gezählt"))}</th><th class="num">${esc(T("trkMatched", "Zugeordnet"))}</th><th>${esc(T("trkEvalSpecies", "Arten"))}</th><th class="num">Ø</th><th class="num">${esc(T("biggest", "Größter"))}</th></tr>${e.rods.map(r => `<tr><td>${r.n}</td><td>${esc(r.baits)}<small>${esc([r.dip, r.pva].filter(Boolean).join(" · "))}</small></td><td>${esc(r.leader)}</td><td class="num">${r.hits || ""}</td><td class="num">${r.matched || ""}</td><td>${esc(r.species)}</td><td class="num">${esc(r.avg)}</td><td class="num">${esc(r.best)}</td></tr>`).join("")}</table><p class="sub" style="margin-top:6px">${esc(T("trkEvalHitHint", "Gezählt per AltGr, zugeordnet über die Fangzeit auf den Setzkescher-Karten (bis 2,5 min Abstand)."))}</p>` : `<div class="empty">${esc(T("trkNoRods", "Noch keine Rute erfasst."))}</div>`}
+    ${e.limits.length ? `<div class="hdr">${esc(T("trkEvalLimits", "Wochentabelle Grund Light, Platz 5"))}</div><table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trkEvalYourBest", "Dein bester"))}</th><th class="num">DE</th><th class="num">GL</th></tr>${e.limits.map(l => `<tr><td>${esc(l.fish)}</td><td class="num">${esc(l.best)}</td><td class="num">${esc(l.de || "?")} ${l.de ? (l.deOk ? "✓" : "<small>" + esc(T("trkEvalMissing", "fehlen {0}").replace("{0}", l.deMiss)) + "</small>") : ""}</td><td class="num">${esc(l.gl || "?")} ${l.gl ? (l.glOk ? "✓" : "<small>" + esc(T("trkEvalMissing", "fehlen {0}").replace("{0}", l.glMiss)) + "</small>") : ""}</td></tr>`).join("")}</table>` : ""}
+    ${e.records.length ? `<div class="hdr">${esc(T("trkEvalRecords", "Offizielle Rekorde dieser Woche hier, für deine Fische"))}</div><table class="tbl"><tr><th>${esc(T("bait", "Köder"))}</th><th class="num">${esc(T("records", "Rekorde"))}</th><th>${esc(T("trkEvalSpecies", "Arten"))}</th><th>${esc(T("trkRods", "Ruten"))}</th></tr>${e.records.map(r => `<tr><td>${esc(r.bait)}</td><td class="num">${r.n}</td><td>${esc(r.fish)}</td><td>${r.rods.length ? esc(T("trkEvalOnRod", "passt zu Rute {0}").replace("{0}", r.rods.join(", "))) : ""}</td></tr>`).join("")}</table>` : ""}`);
+}
 function bindTracker() {
   const on = (id, f) => { const e = $(id); if (e) e.onclick = f; };
   $("trkOn").onchange = () => trk("on", { on: $("trkOn").checked });
-  on("trkNewSpot", () => trk("newspot"));
-  on("trkNewSess", () => trk("newsession"));
+  on("trkEval", evalSession);
+  on("trkDelSess", () => { if (confirm(T("trkDeleteSession", "Diese Session mit ihren Ruten und offenen Fängen löschen?"))) trk("session/delete"); });
   if ($("trkLake")) $("trkLake").onchange = () => trk("session", { lake: $("trkLake").value });
   if ($("trkClip")) $("trkClip").onchange = () => trk("session", { clip: $("trkClip").value });
   $("trk").querySelectorAll("[data-rr]").forEach(b => b.onclick = () => trk("rod/reread", { id: b.dataset.rr }));

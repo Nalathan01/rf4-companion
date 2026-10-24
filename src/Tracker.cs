@@ -561,6 +561,17 @@ internal static class Tracker
                 case "newspot": NewSession(s, false); Save(); Say(T("newSpotStarted", "Neuer Spot, neue Session gestartet. Die Ruten sind übernommen.")); break;
                 case "newsession": NewSession(s, true); Save(); Say(T("trkNewSession", "Neue Session am selben Spot mit denselben Ruten.")); break;
                 case "clearrods": L(s, "rods").Clear(); Save(); Say(T("trkRodsCleared", "Ruten geleert. Jetzt jede Rute einmal mit F12 erfassen.")); break;
+                case "session/delete":
+                    {
+                        string sid = S(s, "id");
+                        L(st, "sessions").RemoveAll(q => S(q, "id") == sid);
+                        L(st, "pending").RemoveAll(p => S(p, "session") == sid);
+                        st.Remove("cur");
+                        Save();
+                        Say(T("trkSessionDeleted", "Session gelöscht."));
+                        return Status(null);
+                    }
+                case "evaluate": return Evaluate(s);
                 case "rod/delete": L(s, "rods").RemoveAll(r => S(r, "id") == id); Save(); break;
                 case "rod/replace": if (S(st, "replace") == id) st.Remove("replace"); else st["replace"] = id; Save(); break;
                 case "rod/reread":
@@ -603,7 +614,7 @@ internal static class Tracker
                             outC.Add(AppEnv.Obj("date", Time(p["time"]).ToString("yyyy-MM-dd"), "lake", S(ses, "lake"), "fish", S(p, "fish"), "weight", p["weight"],
                                 "bait", baits.Count > 0 ? baits[0] : "", "bait2", baits.Count > 1 ? baits[1] : "", "dip", rod != null ? S(rod, "dip") : "", "pva", rod != null ? S(rod, "pva") : "",
                                 "rig", rod != null ? S(rod, "rig") : "", "x", ses["x"], "y", ses["y"], "clip", S(ses, "clip"), "depth", "", "spotId", "", "notes", "Tracker",
-                                "temp", S(ses, "temp"), "tech", rod != null ? S(rod, "tech") : ""));
+                                "temp", S(ses, "temp"), "tech", rod != null ? S(rod, "tech") : "", "session", S(ses, "id"), "time", S(p, "time"), "rod", S(p, "rod")));
                         }
                         Fangbuch.AddCatches(outC);
                         L(st, "pending").RemoveAll(p => ids.Contains(S(p, "id")));
@@ -614,6 +625,82 @@ internal static class Tracker
             }
             return Status(s);
         }
+    }
+
+    private static object Evaluate(Dictionary<string, object> s)
+    {
+        string lang = UserStore.Lang;
+        Func<double, string> W = g => GameData.FormatWeight(g, lang);
+        Func<IEnumerable<string>, string> tr = b => string.Join(" + ", b.Select(x => GameData.Translate(GameData.ToKey(x), lang)).ToArray());
+        DateTime start = Time(s["start"]), end = Time(s["end"]);
+        string sid = S(s, "id");
+        List<Dictionary<string, object>> kn = L(s, "keepnet");
+        List<Dictionary<string, object>> accepted = Fangbuch.SessionCatches(sid);
+        List<Dictionary<string, object>> pend = L(st, "pending").Where(p => S(p, "session") == sid).ToList();
+        List<object[]> fishList = new List<object[]>();
+        if (kn.Count > 0) foreach (Dictionary<string, object> k in kn) fishList.Add(new object[] { S(k, "fish"), k["weight"] == null ? 0 : System.Convert.ToInt32(k["weight"]), S(k, "t") });
+        else foreach (Dictionary<string, object> c in accepted.Concat(pend)) fishList.Add(new object[] { S(c, "fish"), c["weight"] == null ? 0 : System.Convert.ToInt32(c["weight"]), S(c, "time") });
+        List<object> species = fishList.GroupBy(f => (string)f[0]).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj(
+            "name", GameData.Translate(g.Key, lang), "n", g.Count(), "max", W(g.Max(f => (int)f[1])),
+            "trophy", g.Count(f => TrophyLevel(g.Key, (int)f[1]) == 1), "rare", g.Count(f => TrophyLevel(g.Key, (int)f[1]) == 2))).ToList();
+        List<Dictionary<string, object>> rods = L(s, "rods");
+        List<object[]> timed = fishList.Where(f => ((string)f[2]).Length > 0).Select(f => new object[] { f[0], f[1], Time(f[2]), false }).OrderBy(f => (DateTime)f[2]).ToList();
+        Dictionary<int, List<object[]>> byRod = new Dictionary<int, List<object[]>>();
+        foreach (Dictionary<string, object> h in L(s, "hits").OrderBy(h => Time(h["t"])))
+        {
+            int rod = System.Convert.ToInt32(h["rod"]);
+            DateTime ht = Time(h["t"]);
+            object[] best = null;
+            double bd = 999;
+            foreach (object[] f in timed) { if ((bool)f[3]) continue; double d = Math.Abs(((DateTime)f[2]).Subtract(ht).TotalMinutes); if (d < bd) { bd = d; best = f; } }
+            if (!byRod.ContainsKey(rod)) byRod[rod] = new List<object[]>();
+            if (best != null && bd <= 2.5) { best[3] = true; byRod[rod].Add(best); } else byRod[rod].Add(null);
+        }
+        List<object> rodRows = new List<object>();
+        for (int i = 0; i < rods.Count; i++)
+        {
+            Dictionary<string, object> r = rods[i];
+            List<object[]> hs = byRod.ContainsKey(i + 1) ? byRod[i + 1] : new List<object[]>();
+            List<object[]> m = hs.Where(x => x != null).ToList();
+            List<Dictionary<string, object>> mine = accepted.Concat(pend).Where(c => S(c, "rod") == S(r, "id")).ToList();
+            rodRows.Add(AppEnv.Obj("n", i + 1, "baits", tr(Strs(r["baits"])), "leader", S(r, "leaderCm").Length > 0 ? S(r, "leaderCm") + " cm" : "", "dip", GameData.Translate(GameData.ToKey(S(r, "dip")), lang), "pva", S(r, "pva"),
+                "hits", hs.Count, "matched", m.Count, "best", m.Count > 0 ? W(m.Max(x => (int)x[1])) : "", "avg", m.Count > 0 ? W(m.Average(x => (int)x[1])) : "",
+                "species", string.Join(", ", m.GroupBy(x => (string)x[0]).OrderByDescending(g => g.Count()).Select(g => GameData.Translate(g.Key, lang) + " " + g.Count()).ToArray()),
+                "assigned", mine.Count));
+        }
+        string week = Records.CurrentWeek();
+        List<RecordHit> recs = Records.All().Where(h => h.Week == week).ToList();
+        List<object> limits = new List<object>();
+        foreach (IGrouping<string, object[]> g in fishList.GroupBy(f => (string)f[0]).OrderByDescending(g => g.Max(f => (int)f[1])).Take(6))
+        {
+            int best = g.Max(f => (int)f[1]);
+            Func<string, int> fifth = reg => recs.Where(h => h.Fish == g.Key && h.Table == "b" && h.Region == reg).Select(h => h.Grams).Distinct().OrderByDescending(x => x).Skip(4).FirstOrDefault();
+            int de = fifth("DE"), gl = fifth("GL");
+            limits.Add(AppEnv.Obj("fish", GameData.Translate(g.Key, lang), "best", W(best), "de", de > 0 ? W(de) : "", "gl", gl > 0 ? W(gl) : "",
+                "deOk", de == 0 || best >= de, "glOk", gl == 0 || best >= gl, "deMiss", de > best ? W(de-best) : "", "glMiss", gl > best ? W(gl-best) : ""));
+        }
+        HashSet<string> fishSet = new HashSet<string>(fishList.Select(f => (string)f[0]));
+        List<object> top = recs.Where(h => h.Lake == S(s, "lake") && fishSet.Contains(h.Fish)).GroupBy(h => Finder.BaitKey(h.Bait)).OrderByDescending(g => g.Count()).Take(5).Select(g =>
+        {
+            List<string> parts = g.Key.Split(';').Select(x => Key(x.Trim())).Where(x => x.Length > 0).ToList();
+            List<int> on = new List<int>();
+            for (int i = 0; i < rods.Count; i++) { List<string> rk = Strs(rods[i]["baits"]).Select(x => Key(GameData.ToKey(x))).ToList(); if (parts.All(p => rk.Any(x => x.Contains(p) || p.Contains(x)))) on.Add(i + 1); }
+            return (object)AppEnv.Obj("bait", Finder.BaitLabel(g.Key, lang), "n", g.Count(), "fish", string.Join(", ", g.GroupBy(h => h.Fish).OrderByDescending(x => x.Count()).Take(3).Select(x => GameData.Translate(x.Key, lang)).ToArray()), "rods", on.ToArray());
+        }).ToList();
+        Lake lk;
+        GameData.LakeById.TryGetValue(S(s, "lake"), out lk);
+        return AppEnv.Obj("eval", AppEnv.Obj(
+            "lakeName", lk != null ? lk.Name(lang) : "", "spot", s["x"] != null ? S(s, "x") + ":" + S(s, "y") : "", "clip", S(s, "clip"),
+            "temp", S(s, "temp").Length > 0 ? T("temp_" + S(s, "temp"), S(s, "temp")) : "",
+            "start", start.ToString("dd.MM. HH:mm"), "end", end.ToString("HH:mm"), "minutes", (int)Math.Max(0, end.Subtract(start).TotalMinutes),
+            "fromKeepnet", kn.Count > 0, "total", fishList.Count, "species", species, "rods", rodRows, "limits", limits, "records", top));
+    }
+
+    private static int TrophyLevel(string fish, int grams)
+    {
+        int[] t;
+        if (!GameData.Trophies.TryGetValue(fish ?? "", out t) || grams <= 0) return 0;
+        return t[1] > 0 && grams >= t[1] ? 2 : (t[0] > 0 && grams >= t[0] ? 1 : 0);
     }
 
     private static object Status(Dictionary<string, object> s)
