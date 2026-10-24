@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 internal sealed class Api
@@ -15,6 +16,7 @@ internal sealed class Api
     private volatile bool started;
     private volatile string step = "bootGame";
     private volatile int stepPct;
+    private volatile string stepInfo = "";
     private readonly System.Diagnostics.Stopwatch startClock = System.Diagnostics.Stopwatch.StartNew();
 
     private void Step(string key, int pct)
@@ -37,21 +39,50 @@ internal sealed class Api
             {
                 Step("bootGame", 5);
                 GameData.Load();
-                Step("bootData", 20);
+                Step("bootData", 10);
                 UserStore.Load();
                 Extensions.Load();
                 Tracker.Start();
                 Cloud.LoadState();
-                ThreadPool.QueueUserWorkItem(delegate { Cloud.Sync(false); });
                 Scans.Load();
                 Community.Load();
+                bool freshArchive = !System.IO.Directory.Exists(Records.ArchiveDir) || System.IO.Directory.GetFiles(Records.ArchiveDir, "week_*.json.gz").Length == 0;
+                Thread cloud = new Thread(() => { Cloud.Sync(freshArchive); if (freshArchive) { Records.Loaded = false; Records.Refresh(); } });
+                cloud.IsBackground = true;
+                cloud.Start();
                 ThreadPool.QueueUserWorkItem(delegate { try { Records.Refresh(); } catch (Exception ex) { AppEnv.Log("Rekorde", ex.Message); Records.Loaded = true; } });
                 ready = true;
-                Step("bootSpots", 40);
-                try { Active(new NameValueCollection { { "hours", "168" } }); } catch (Exception ex) { AppEnv.Log("Start", "Vorrechnen: " + ex.Message); }
-                Step("bootRecords", 65);
+                if (Community.Count == 0 || DateTime.UtcNow.Subtract(Community.Synced).TotalMinutes >= 30)
+                {
+                    Step("bootSync", 15);
+                    Thread sync = new Thread(() => Community.Sync(false));
+                    sync.IsBackground = true;
+                    sync.Start();
+                    while (sync.IsAlive)
+                    {
+                        Match sm = Regex.Match(Community.SyncState ?? "", @"(\d+)/(\d+)");
+                        if (sm.Success) { int a = int.Parse(sm.Groups[1].Value), b = Math.Max(1, int.Parse(sm.Groups[2].Value)); stepPct = 15 + 25 * Math.Min(a, b) / b; stepInfo = a + " / " + b; }
+                        Thread.Sleep(200);
+                    }
+                    stepInfo = "";
+                    TgDirect.Sync(true);
+                }
+                Step("bootPosts", 40);
+                Community.QueuePosts(168);
+                int total = Math.Max(1, Scans.Pending);
+                DateTime until = DateTime.UtcNow.AddMinutes(6);
+                while (Scans.Pending > 0 && DateTime.UtcNow < until)
+                {
+                    int done = total-Scans.Pending;
+                    stepPct = 40 + 35 * Math.Max(0, done) / total;
+                    stepInfo = Math.Max(0, done) + " / " + total;
+                    Thread.Sleep(250);
+                }
+                stepInfo = "";
+                Step("bootRecords", 75);
+                if (freshArchive) cloud.Join(TimeSpan.FromMinutes(3));
                 for (int i = 0; i < 1200 && !Records.Loaded; i++) Thread.Sleep(50);
-                Step("bootFinish", 90);
+                Step("bootSpots", 90);
                 try { Active(new NameValueCollection { { "hours", "168" } }); } catch (Exception ex) { AppEnv.Log("Start", "Vorrechnen: " + ex.Message); }
                 Step("", 100);
                 timer = new Timer(delegate { Tick(); }, null, 2000, 600000);
@@ -95,7 +126,7 @@ internal sealed class Api
         Dictionary<string, object> args = body.Length > 0 ? AppEnv.Json.DeserializeObject(body) as Dictionary<string, object> : null;
         if (path == "/api/ping")
         {
-            return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
+            return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct, "stepInfo", stepInfo, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
                 "update", Updater.Available, "tracker", Tracker.Version, "spot", server.TakePendingSpot());
         }
         WaitReady();

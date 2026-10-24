@@ -18,7 +18,13 @@ internal static class Scans
     private static readonly Regex TextDiv = new Regex(@"<div class=""tgme_widget_message_text[^""]*""[^>]*>(.*?)</div>", RegexOptions.Singleline);
     private static readonly Queue<string> queue = new Queue<string>();
     private static readonly HashSet<string> queued = new HashSet<string>(StringComparer.Ordinal);
-    private static Thread worker;
+    private static int workers;
+    private static int inFlight;
+
+    public static int Pending
+    {
+        get { lock (gate) return queue.Count + inFlight; }
+    }
     private static bool dirty;
     public static int Version;
 
@@ -171,11 +177,12 @@ internal static class Scans
         {
             if (!queued.Add(key)) return;
             queue.Enqueue(key);
-            if (worker == null || !worker.IsAlive)
+            if (workers < 4)
             {
-                worker = new Thread(Work);
-                worker.IsBackground = true;
-                worker.Start();
+                workers++;
+                Thread t = new Thread(Work);
+                t.IsBackground = true;
+                t.Start();
             }
         }
     }
@@ -188,11 +195,16 @@ internal static class Scans
             string key;
             lock (gate)
             {
-                if (queue.Count == 0) { worker = null; break; }
+                if (queue.Count == 0) { workers--; break; }
                 key = queue.Dequeue();
+                inFlight++;
             }
-            Fetch(key);
-            Direction(key);
+            try
+            {
+                Fetch(key);
+                Direction(key);
+            }
+            finally { lock (gate) inFlight--; }
             if (++n % 20 == 0) Save();
             Thread.Sleep(250);
         }

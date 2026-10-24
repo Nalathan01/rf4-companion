@@ -178,13 +178,13 @@ internal static class Community
         try
         {
             DateTime started = DateTime.UtcNow;
-            int maxAge = 336;
+            int maxAge = 192;
             DateTime sy = Synced;
             if (full) maxAge = 0;
             else if (sy > DateTime.MinValue && Count > 0)
             {
                 int hours = (int)Math.Ceiling(DateTime.UtcNow.Subtract(sy).TotalHours) + 48;
-                if (hours < 336) maxAge = hours;
+                if (hours < 192) maxAge = hours;
             }
             string[] lakes = full ? Waterbodies : new string[] { null };
             for (int li = 0; li < lakes.Length; li++)
