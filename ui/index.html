@@ -125,6 +125,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .orig summary:hover { color: var(--ink-2); }
 .orig div { white-space: pre-wrap; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; margin-top: 5px; color: var(--ink-2); }
 .orig small { display: block; color: var(--muted); margin-top: 4px; }
+.cc { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .thumbs img { height: 74px; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; background: var(--surface-2); }
 .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; place-items: center; z-index: 50; cursor: zoom-out; }
@@ -242,8 +243,8 @@ dialog.sheet[open] { display: flex; }
     <div><h1>RF4 Companion</h1><p id="ver"></p></div>
   </div>
   <nav>
-    <button class="nav-btn" data-view="find" data-t="navFind">Fisch finden</button>
     <button class="nav-btn active" data-view="active" data-t="navActive">Aktive Spots</button>
+    <button class="nav-btn" data-view="find" data-t="navFind">Aktuelle Köder</button>
     <button class="nav-btn logonly" data-view="log" data-t="navLog">Mein Fangbuch</button>
   </nav>
   <div class="head-acts">
@@ -256,7 +257,7 @@ dialog.sheet[open] { display: flex; }
   <section class="view" id="view-find">
     <div class="split find-split">
       <div class="col">
-        <div class="title-row"><h2 data-t="navFind">Fisch finden</h2></div>
+        <div class="title-row"><h2 data-t="navFind">Aktuelle Köder</h2></div>
         <p class="sub" id="findSub"></p>
         <div class="banner" id="resetBanner"></div>
         <input class="search" id="findQ" type="search" autocomplete="off">
@@ -408,6 +409,7 @@ async function loadActive() {
   DETAIL_KEY = null;
   loadDetail();
 }
+function CC(cc) { return cc && cc.length ? ` <span class="cc">${esc(cc.join("/"))}</span>` : ""; }
 function heat(s) { return s.hoursAgo < 6 ? "hot" : (s.hoursAgo < 24 ? "warm" : ""); }
 function renderCards() {
   if (!ACTIVE.length) { $("cards").innerHTML = `<div class="empty">${esc(T("activeEmpty", "Keine Meldungen in diesem Zeitraum."))}</div>`; return; }
@@ -416,7 +418,7 @@ function renderCards() {
       <div class="dot ${heat(s)}"></div>
       <div class="where">${esc(s.lakeName)}<small>${esc(s.name)}</small></div>
       <div class="ago">${esc(ago(s.hoursAgo))}</div>
-      <div class="line">${s.fish.map(f => `<span class="tag">${esc(f.name)}</span>`).join("")}${s.baits.map(b => `<span class="tag b">${esc(b.name)}</span>`).join("")}</div>
+      <div class="line">${s.fish.map(f => `<span class="tag">${esc(f.name)}${CC(f.cc)}</span>`).join("")}${s.baits.map(b => `<span class="tag b">${esc(b.name)}</span>`).join("")}</div>
       <div class="meta"><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}</span><span>${esc(s.sources.join(", "))}</span>${s.clip ? `<span>Clip ${esc(s.clip)} m</span>` : ""}</div>
     </div>`).join("");
   document.querySelectorAll(".card").forEach(c => c.onclick = () => { SEL = c.dataset.key; renderCards(); drawMap(); loadDetail(); });
@@ -542,15 +544,19 @@ async function loadDetail() {
   $("detail").innerHTML = `<div class="d-head"><h3>${esc(d.lakeName)} · ${esc(d.name)}</h3><span class="d-sum">${esc(sum)}${dirs ? " · " + esc(dirs) : ""}</span></div>` +
     d.events.map((e, i) => `
     <div class="ev">
-      <div class="ev-top"><div class="ev-fish">${esc(e.fish.join(", ") || (e.mixed ? T("mixedFish", "Verschiedene Fische") : T("unknownFish", "Fisch unbekannt")))}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
+      <div class="ev-top"><div class="ev-fish">${e.fish.map((n, i) => esc(n) + CC(e.fishCc && e.fishCc[i])).join(", ") || esc((e.mixed ? T("mixedFish", "Verschiedene Fische") : T("unknownFish", "Fisch unbekannt")))}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
       ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
       <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
-      ${e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="ru" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
-      ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : ""}
+      ${e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="${esc(e.postLang || "ru")}" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
+      ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : e.imgs && e.imgs.length ? `<div class="thumbs web">${e.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}
     </div>`).join("");
   document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
-  document.querySelectorAll("#detail .thumbs").forEach(th => {
+  document.querySelectorAll("#detail .thumbs.web img").forEach(im => {
+    im.onerror = () => im.remove();
+    im.onclick = () => { $("lbImg").src = im.src; $("lightbox").classList.add("show"); };
+  });
+  document.querySelectorAll("#detail .thumbs:not(.web)").forEach(th => {
     const n = +th.dataset.n, cnt = n > 0 ? Math.min(n, 4) : 2;
     for (let i = 0; i < cnt; i++) {
       const im = document.createElement("img"); im.loading = "lazy";
@@ -561,7 +567,7 @@ async function loadDetail() {
     }
   });
 }
-const DET = { baitDetail: "baitExact", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed" };
+const DET = { baitDetail: "baitExact", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed", baitRaw: "baitOrig" };
 $("lightbox").onclick = () => $("lightbox").classList.remove("show");
 (function mapInput() {
   const cv = $("map"); let drag = null;
@@ -606,7 +612,7 @@ $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActiv
 $("allChk").onchange = () => loadActive();
 $("ownChk").onchange = () => drawMap();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
-$("lang").onchange = async () => { ITEMS = null; LOOKUP = null; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
+$("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
 let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
 function findStatic() {
@@ -653,7 +659,7 @@ function renderFishList() {
 }
 function renderFindDetail() {
   const d = FDATA, el = $("findDetail");
-  if (!d.fish) { el.innerHTML = `<div class="placeholder" style="margin-top:18vh"><h2>${esc(T("navFind", "Fisch finden"))}</h2><p>${esc(T("findPick", "Links einen Fisch wählen. Dann siehst du, wo er diese Woche gefangen wurde, mit welchen Ködern und welche Spots gerade gemeldet sind."))}</p></div>`; return; }
+  if (!d.fish) { el.innerHTML = `<div class="placeholder" style="margin-top:18vh"><h2>${esc(T("navFind", "Aktuelle Köder"))}</h2><p>${esc(T("findPick", "Links einen Fisch wählen. Dann siehst du, wo er diese Woche gefangen wurde, mit welchen Ködern und welche Spots gerade gemeldet sind."))}</p></div>`; return; }
   const top = d.baits.length ? d.baits[0].name : "";
   let notes = [];
   if (d.n === 0) {
@@ -908,6 +914,7 @@ const SITES = [
   ["rf4db", "RF4DB", "siteRf4db", "Datenbank und Heatmap", "https://rf4db.com/en"],
   ["rf4hub", "RF4HUB", "siteRf4hub", "Beißstellen, Rekorde, Guides", "https://en.rf4h.ru/"],
   ["rf4intel", "RF4Intel", "siteRf4intel", "Spots, Rekorde und Karten", "https://rf4intel.com/"],
+  ["rf4fish", "rf4.fish", "siteRf4fish", "Rekorde, Spots aus China, Ausrüstungsdaten", "https://rf4.fish/"],
   ["official", "rf4game.com", "officialRecords", "Offizielle Wochenrekorde", "https://rf4game.com/records/weekly/"]
 ];
 function rf4itUrl(id) {
@@ -928,9 +935,9 @@ const MENU = {
     });
   },
   async lookup() {
-    openSheet(T("tabInfo", "Nachschlagen"), `<div><div class="seg" id="lkSeg" style="margin-bottom:14px"><button data-v="lakes" class="on">${esc(T("tabLakes", "Gewässer"))}</button><button data-v="trophies">${esc(T("tabTrophies", "Trophäen"))}</button></div></div><div id="lkBody"></div>`);
-    if (!LOOKUP) LOOKUP = await api("/api/lookup");
-    const show = v => { $("lkSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); v === "lakes" ? lkLakes() : lkTrophies(); };
+    openSheet(T("tabInfo", "Nachschlagen"), `<div><div class="seg" id="lkSeg" style="margin-bottom:14px"><button data-v="lakes" class="on">${esc(T("tabLakes", "Gewässer"))}</button><button data-v="trophies">${esc(T("tabTrophies", "Trophäen"))}</button>${ITEM_KINDS.map(k => `<button data-v="${k[0]}">${esc(T(k[1], k[2]))}</button>`).join("")}</div></div><div id="lkBody"></div>`);
+    if (!LOOKUP || !LOOKUP.extra) LOOKUP = await api("/api/lookup");
+    const show = v => { $("lkSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); v === "lakes" ? lkLakes() : v === "trophies" ? lkTrophies() : lkItems(v); };
     $("lkSeg").querySelectorAll("button").forEach(b => b.onclick = () => show(b.dataset.v));
     show("lakes");
   },
@@ -974,11 +981,44 @@ function lkLakes(sel) {
 function lkTrophies(q) {
   q = q || "";
   const list = LOOKUP.trophies.filter(f => !q || f.name.toLowerCase().includes(q.toLowerCase()));
+  const ex = LOOKUP.extra;
   $("lkBody").innerHTML = `<input class="search" id="lkQ" type="search" value="${esc(q)}" placeholder="${esc(T("fishSearch", "Fisch suchen"))}">
-    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num logonly">${esc(T("ownBest", "Dein bester"))}</th><th>${esc(T("tabLakes", "Gewässer"))}</th></tr>
-    ${list.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num logonly">${esc(f.own)}${STAR(f)}</td><td><small style="margin:0">${esc(f.lakes.join(", "))}</small></td></tr>`).join("")}</table>`;
+    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th>${ex ? `<th>${esc(T("rarity", "Seltenheit"))}</th><th class="num">${esc(T("cardValue", "Kartenwert"))}</th><th>${esc(T("stars", "Sterne"))}</th>` : ""}<th class="num logonly">${esc(T("ownBest", "Dein bester"))}</th><th>${esc(T("tabLakes", "Gewässer"))}</th></tr>
+    ${list.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td>${ex ? `<td>${esc(f.rarity)}</td><td class="num">${f.card ? esc(f.card.toLocaleString(INIT.lang)) : ""}</td><td class="star">${"★".repeat(f.stars || 0)}</td>` : ""}<td class="num logonly">${esc(f.own)}${STAR(f)}</td><td><small style="margin:0">${esc(f.lakes.join(", "))}</small></td></tr>`).join("")}</table>
+    ${ex ? lkCredit() : ""}`;
+  lkCreditBind();
   const inp = $("lkQ"); inp.focus(); inp.setSelectionRange(q.length, q.length);
   inp.oninput = () => lkTrophies(inp.value);
+}
+const ITEM_KINDS = [["rods", "tabRods", "Ruten"], ["reels", "tabReels", "Rollen"], ["lines", "tabLines", "Schnüre"], ["lures", "tabLures", "Kunstköder"]];
+const ITEM_TEXT = new Set(["itName", "itType", "itBrand", "itAction", "itPower", "itBonus", "itHooks"]);
+const ITEMS_CACHE = {};
+function lkCredit() { return `<p class="sub" style="margin:12px 0 0">${esc(T("srcRf4fish", "Daten von rf4.fish (ItsBlunty)"))} <button class="src" data-url="https://rf4.fish/">rf4.fish ↗</button></p>`; }
+function lkCreditBind() { $("lkBody").querySelectorAll(".src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url })); }
+async function lkItems(kind, q) {
+  q = q || "";
+  let d = ITEMS_CACHE[kind];
+  if (!d) {
+    $("lkBody").innerHTML = `<div class="empty">${esc(T("itemsLoading", "Daten werden geladen …"))}</div>`;
+    try { d = await api("/api/items?kind=" + kind); } catch (e) { $("lkBody").innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+    if (!d.rows.length) {
+      $("lkBody").innerHTML = `<div class="empty">${esc(d.error ? T("itemsFailed", "rf4.fish ist gerade nicht erreichbar: {0}").replace("{0}", d.error) : T("itemsLoading", "Daten werden geladen …"))}</div>`;
+      if (!d.error) setTimeout(() => { const on = $("lkSeg") && $("lkSeg").querySelector("button.on"); if (on && on.dataset.v === kind) lkItems(kind); }, 3000);
+      return;
+    }
+    ITEMS_CACHE[kind] = d;
+  }
+  const lq = q.toLowerCase();
+  const list = d.rows.filter(r => !lq || r.some(v => String(v).toLowerCase().includes(lq)));
+  const shown = list.slice(0, 300);
+  $("lkBody").innerHTML = `<input class="search" id="lkQ" type="search" value="${esc(q)}" placeholder="${esc(T("itemSearch", "Name, Marke oder Typ suchen"))}">
+    <p class="sub" style="margin:0 0 8px">${esc(T("itemsCount", "{0} Einträge").replace("{0}", list.length.toLocaleString(INIT.lang)))}${list.length > shown.length ? " · " + esc(T("itemsFirst", "die ersten {0} werden angezeigt").replace("{0}", shown.length)) : ""}</p>
+    <table class="tbl"><tr>${d.cols.map(c => `<th class="${ITEM_TEXT.has(c) ? "" : "num"}">${esc(T(c, c))}</th>`).join("")}</tr>
+    ${shown.map(r => `<tr>${r.map((v, i) => `<td class="${ITEM_TEXT.has(d.cols[i]) ? "" : "num"}">${d.cols[i] === "itBonus" ? `<small style="margin:0">${esc(v)}</small>` : esc(v)}</td>`).join("")}</tr>`).join("")}</table>
+    ${lkCredit()}`;
+  lkCreditBind();
+  const inp = $("lkQ"); inp.focus(); inp.setSelectionRange(q.length, q.length);
+  inp.oninput = () => lkItems(kind, inp.value);
 }
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };

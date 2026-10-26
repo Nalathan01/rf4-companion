@@ -68,6 +68,7 @@ internal sealed class Api
                     }
                     stepInfo = "";
                     TgDirect.Sync(true);
+                    Rf4Fish.SyncSpots(true);
                 }
                 Step("bootPosts", 40);
                 if (!mirrored) Community.QueuePosts(168);
@@ -108,6 +109,7 @@ internal sealed class Api
         if (!mirrored && !Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Cloud.Sync(false);
         if (!mirrored) TgDirect.Sync(false);
+        if (!mirrored) Rf4Fish.SyncSpots(false);
         Records.Refresh();
         if (!mirrored) Community.QueuePosts(72);
         if (!mirrored && ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
@@ -187,6 +189,7 @@ internal sealed class Api
                 ThreadPool.QueueUserWorkItem(delegate { Community.Sync(AppEnv.GetBool(args, "full")); });
                 return AppEnv.Obj("ok", true);
             case "/api/lookup": return Lookup.Data(Lang);
+            case "/api/items": return Rf4Fish.Items(q["kind"] ?? "", Lang);
             case "/api/ocrlangs": return Lookup.OcrLangs();
             case "/api/ocrinstall": return Lookup.InstallOcr(AppEnv.GetString(args, "tag"));
             case "/api/about":
@@ -269,6 +272,7 @@ internal sealed class Api
     }
 
     private static readonly string[] DetailKeys = { "baitDetail", "lure", "rig", "dip", "groundbait", "dryMix", "pva", "reelSpeed" };
+    private static readonly string[] PlainKeys = { "baitRaw" };
 
     private static string CleanDetail(string t)
     {
@@ -321,7 +325,8 @@ internal sealed class Api
             double deg = -1;
             double weight = 0;
             Dictionary<string, string> detail = new Dictionary<string, string>();
-            string clip = "", depth = "", method = "", postText = "", temp = "";
+            string clip = "", depth = "", method = "", postText = "", temp = "", postLang = "ru";
+            List<object> webImgs = new List<object>();
             bool fromImage = false, mixedRaw = false;
             RecordHit rec = null;
             foreach (Report r in e.Reports)
@@ -360,6 +365,9 @@ internal sealed class Api
                     string v = dk == "reelSpeed" ? r.S(dk) : PostText.CleanItems(CleanDetail(r.S(dk)), lang);
                     if (v.Length > 0) detail[dk] = v;
                 }
+                foreach (string dk in PlainKeys) if (!detail.ContainsKey(dk) && r.S(dk).Length > 0) detail[dk] = r.S(dk);
+                if (postText.Length == 0 && r.S("text").Length > 0) { postText = r.S("text"); postLang = r.S("textLang"); }
+                foreach (object u in AppEnv.GetList(r.Raw, "imgs")) if (u != null && webImgs.Count < 6 && !webImgs.Contains(u.ToString())) webImgs.Add(u.ToString());
             }
             if (postText.Length > 0)
             {
@@ -403,17 +411,19 @@ internal sealed class Api
                     if (weight <= 0) weight = rec.Grams / 1000.0;
                 }
             }
+            if (detail.ContainsKey("baitDetail")) detail.Remove("baitRaw");
             bool mixed = mixedRaw || PostText.Mixed(postText);
             List<string> fish = new List<string>();
-            foreach (Report r in e.Reports) foreach (string f in r.Fish) { string n = GameData.Translate(f, lang); if (!fish.Contains(n)) fish.Add(n); }
+            Dictionary<string, HashSet<string>> evCc = new Dictionary<string, HashSet<string>>();
+            foreach (Report r in e.Reports) foreach (string f in r.Fish) { string n = GameData.Translate(f, lang); if (!fish.Contains(n)) fish.Add(n); AddCc(evCc, n, r.Country); }
             string dir = deg >= 0 ? Scans.Dir16(deg, lang) : "";
             if (dir.Length > 0) { int n; dirs.TryGetValue(dir, out n); dirs[dir] = n + 1; }
             int imgCount = 0;
             if (imgPost.Length > 0) { string[] im = Scans.Images(imgPost); imgCount = im == null ? -1 : im.Length; }
             Dictionary<string, object> eo = AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
-                "fish", fish.ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
+                "fish", fish.ToArray(), "fishCc", fish.Select(n => (object)Cc(evCc, n)).ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "imgPost", imgPost, "imgCount", imgCount, "reports", e.Reports.Count, "postText", StripFooter(postText), "temp", temp, "fromImage", fromImage, "mixed", mixed,
+                "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "postText", StripFooter(postText), "postLang", postLang, "temp", temp, "fromImage", fromImage, "mixed", mixed,
                 "record", rec == null ? null : AppEnv.Obj("table", GameData.Ui(lang, "table_" + rec.Table, rec.Table), "region", rec.Region, "date", rec.Date));
             events.Add(eo);
             evObjs.Add(eo);
@@ -460,6 +470,7 @@ internal sealed class Api
             List<Report> rr = recent.SelectMany(e => e.Reports).ToList();
             if (fishFilter.Length > 0 && !rr.Any(r => r.Fish.Contains(fishFilter))) continue;
             Dictionary<string, int> fish = new Dictionary<string, int>();
+            Dictionary<string, HashSet<string>> fishCc = new Dictionary<string, HashSet<string>>();
             Dictionary<string, int> baits = new Dictionary<string, int>();
             Dictionary<string, int> clips = new Dictionary<string, int>();
             HashSet<string> sources = new HashSet<string>();
@@ -470,7 +481,7 @@ internal sealed class Api
                 HashSet<string> eb = new HashSet<string>();
                 foreach (Report r in e.Reports)
                 {
-                    foreach (string f in r.Fish) ef.Add(f);
+                    foreach (string f in r.Fish) { ef.Add(f); AddCc(fishCc, f, r.Country); }
                     foreach (string b in ReportBaits(r)) eb.Add(b);
                     string c = r.S("clip");
                     if (c.Length == 0)
@@ -495,11 +506,11 @@ internal sealed class Api
                 "sea", s.Mark != null, "x", s.X, "y", s.Y, "nx", norm[0], "ny", norm[1],
                 "last", s.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(s.Last).TotalHours, 1),
                 "catches", recent.Count, "reports", rr.Count, "score", Math.Round(score, 3),
-                "fish", Top(fish, 4, lang), "baits", Top(baits, 3, lang),
+                "fish", Top(fish, 4, lang, fishCc), "baits", Top(baits, 3, lang, null),
                 "clip", clips.Count > 0 ? clips.OrderByDescending(kv => kv.Value).First().Key : "",
                 "sources", sourceLabels.Distinct().ToArray(), "sourceCount", sources.Count));
         }
-        rows.Sort((a, b) => ((double)((Dictionary<string, object>)b)["score"]).CompareTo((double)((Dictionary<string, object>)a)["score"]));
+        rows.Sort((a, b) => ((double)((Dictionary<string, object>)a)["hoursAgo"]).CompareTo((double)((Dictionary<string, object>)b)["hoursAgo"]));
         return AppEnv.Obj("hours", hours, "spots", rows, "syncing", Community.Syncing, "synced", Community.Synced == DateTime.MinValue ? "" : Community.Synced.ToString("o", CultureInfo.InvariantCulture));
     }
 
@@ -510,9 +521,23 @@ internal sealed class Api
         return dc != null ? "Discord · " + dc[0] : "Discord";
     }
 
-    private static object[] Top(Dictionary<string, int> d, int n, string lang)
+    private static object[] Top(Dictionary<string, int> d, int n, string lang, Dictionary<string, HashSet<string>> cc)
     {
-        return d.OrderByDescending(kv => kv.Value).Take(n).Select(kv => (object)AppEnv.Obj("key", kv.Key, "name", GameData.Translate(kv.Key, lang), "n", kv.Value)).ToArray();
+        return d.OrderByDescending(kv => kv.Value).Take(n).Select(kv => (object)AppEnv.Obj("key", kv.Key, "name", GameData.Translate(kv.Key, lang), "n", kv.Value, "cc", cc == null ? new string[0] : Cc(cc, kv.Key))).ToArray();
+    }
+
+    private static void AddCc(Dictionary<string, HashSet<string>> m, string fish, string cc)
+    {
+        if (cc.Length == 0) return;
+        HashSet<string> s;
+        if (!m.TryGetValue(fish, out s)) { s = new HashSet<string>(); m[fish] = s; }
+        s.Add(cc);
+    }
+
+    private static string[] Cc(Dictionary<string, HashSet<string>> m, string fish)
+    {
+        HashSet<string> s;
+        return m.TryGetValue(fish, out s) ? s.OrderBy(x => x, StringComparer.Ordinal).ToArray() : new string[0];
     }
 }
 

@@ -29,15 +29,19 @@ internal static class Lookup
     public static object Data(string lang)
     {
         Dictionary<string, int> own = OwnBest();
+        Dictionary<string, object[]> extra = Rf4Fish.TrophyInfo();
         Func<string, object> fish = f =>
         {
             int[] t;
             GameData.Trophies.TryGetValue(f, out t);
             int ob;
             own.TryGetValue(f, out ob);
+            object[] x;
+            extra.TryGetValue(f, out x);
             return AppEnv.Obj("key", f, "name", GameData.Translate(f, lang),
                 "trophy", t != null && t[0] > 0 ? GameData.FormatWeight(t[0], lang) : "", "rare", t != null && t[1] > 0 ? GameData.FormatWeight(t[1], lang) : "",
-                "own", ob > 0 ? GameData.FormatWeight(ob, lang) : "", "ownMark", t == null || ob <= 0 ? 0 : (t[1] > 0 && ob >= t[1] ? 2 : (t[0] > 0 && ob >= t[0] ? 1 : 0)));
+                "own", ob > 0 ? GameData.FormatWeight(ob, lang) : "", "ownMark", t == null || ob <= 0 ? 0 : (t[1] > 0 && ob >= t[1] ? 2 : (t[0] > 0 && ob >= t[0] ? 1 : 0)),
+                "rarity", x != null ? Rarity((string)x[0], lang) : "", "card", x != null && (int)x[1] > 0 ? x[1] : null, "stars", x != null ? x[2] : 0);
         };
         List<object> lakes = new List<object>();
         foreach (Lake l in GameData.Lakes)
@@ -53,7 +57,18 @@ internal static class Lookup
             o["lakes"] = GameData.Lakes.Where(l => l.Fish.Contains(f)).Select(l => l.Name(lang)).ToArray();
             return (object)o;
         }).ToList();
-        return AppEnv.Obj("lakes", lakes, "trophies", trophies);
+        return AppEnv.Obj("lakes", lakes, "trophies", trophies, "extra", extra.Count > 0);
+    }
+
+    private static string Rarity(string r, string lang)
+    {
+        switch (r.ToLowerInvariant())
+        {
+            case "not rare": return GameData.Ui(lang, "rarityCommon", r);
+            case "rare": return GameData.Ui(lang, "rarityRare", r);
+            case "rarest species": return GameData.Ui(lang, "rarityRarest", r);
+        }
+        return r;
     }
 
     public static object OcrLangs()
