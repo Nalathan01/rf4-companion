@@ -64,6 +64,7 @@ internal static class Mirror
         Records.Refresh();
         Community.Sync(false);
         TgDirect.Sync(true);
+        Rf4Fish.SyncSpots(true);
         Community.QueuePosts(192);
         Wait(() => Scans.Pending, 15);
         Scans.Save();

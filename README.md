@@ -53,6 +53,7 @@ Please report bugs only via [GitHub issues](https://github.com/Nalathan01/rf4-co
 
 * Weekly records: official record tables on rf4game.com, archived without player names.
 * Community spots: [rf4intel.com](https://rf4intel.com), public reports from Telegram, Discord and VK.
+* Spots from the Chinese WeChat community, telescopic records, trophy rarity and gear tables (rods, reels, lines, lures): [rf4.fish](https://rf4.fish) by ItsBlunty. Every spot links back to its rf4.fish page.
 * Maps, fish and item names: Russian Fishing 4 by Fishsoft.
 
 ## Disclaimer

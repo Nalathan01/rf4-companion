@@ -113,7 +113,7 @@ internal static class Finder
             "week", week, "total", cur.Count, "fishList", fishList,
             "cloud", AppEnv.Obj("last", Cloud.Last == DateTime.MinValue ? "" : Cloud.Last.ToString("o", CultureInfo.InvariantCulture), "error", Cloud.Error, "loaded", Records.Loaded),
             "regions", regions.Where(r => r.Length > 0).OrderBy(r => r).ToArray(),
-            "tables", tables.Where(t => t.Length > 0).OrderBy(t => "nlbum".IndexOf(t) < 0 ? 9 : "nlbum".IndexOf(t)).Select(t => (object)AppEnv.Obj("key", t, "name", GameData.Ui(lang, "table_" + t, t))).ToArray(),
+            "tables", tables.Where(t => t.Length > 0).OrderBy(t => "nlbumt".IndexOf(t) < 0 ? 9 : "nlbumt".IndexOf(t)).Select(t => (object)AppEnv.Obj("key", t, "name", GameData.Ui(lang, "table_" + t, t))).ToArray(),
             "reset", AppEnv.Obj("window", resetWindow, "at", reset == DateTime.MinValue ? "" : reset.ToString("o", CultureInfo.InvariantCulture), "hoursSince", Hours(now, reset)));
 
         if (search.Length >= 2)

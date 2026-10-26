@@ -15,6 +15,17 @@ internal static class DiscordInfo
         { "611104383337365504", new string[] { "Russian Fishing 4 FR", "https://discord.com/servers/russian-fishing-4-fr-611104383337365504" } }
     };
 
+    private static readonly Dictionary<string, string> Countries = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        { "486847731575554061", "DE" }, { "406518430368399371", "EN" }, { "611104383337365504", "FR" }
+    };
+
+    public static string Country(string guild)
+    {
+        string c;
+        return Countries.TryGetValue(guild, out c) ? c : "";
+    }
+
     private static void Ensure()
     {
         if (cache != null) return;
