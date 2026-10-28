@@ -100,10 +100,47 @@ internal static class Rf4Fish
         r["text"] = text;
         r["textLang"] = "zh";
         r["imgs"] = imgs.ToArray();
+        r["cfg"] = iu != null ? AppEnv.GetList(iu, "config").Cast<object>().Where(u => u != null && u.ToString().StartsWith("https://", StringComparison.Ordinal)).Select(u => (object)u.ToString()).ToArray() : new object[0];
         r["type"] = "spot";
         r["src"] = "wechat";
         r["ms"] = baits.Length > 0 || baitRaw.Length > 0 || config;
         return r;
+    }
+
+    private static Dictionary<string, object> setupCache;
+
+    public static string[] SetupBaits(Report r)
+    {
+        if (setupCache == null)
+        {
+            try { setupCache = AppEnv.ReadJsonFile(AppEnv.DataPath("wx_setup.json")) as Dictionary<string, object>; } catch (Exception) { }
+            if (setupCache == null) setupCache = new Dictionary<string, object>();
+        }
+        object hit;
+        if (setupCache.TryGetValue(r.Id, out hit)) return ((IList)hit).Cast<object>().Select(o => o.ToString()).ToArray();
+        IList urls = AppEnv.GetList(r.Raw, "cfg");
+        if (urls.Count == 0) urls = AppEnv.GetList(r.Raw, "imgs");
+        List<string> found = new List<string>();
+        foreach (object u in urls.Cast<object>().Take(3))
+        {
+            try
+            {
+                List<string> b;
+                if (ImageOcr.ReadSetupZh(Http.GetBytes(u.ToString(), 30000), out b)) { found = b; break; }
+            }
+            catch (Exception ex) { AppEnv.Log("rf4.fish", "Setup-Bild: " + ex.Message); return new string[0]; }
+        }
+        setupCache[r.Id] = found.ToArray();
+        return found.ToArray();
+    }
+
+    public static void SaveSetupCache()
+    {
+        if (setupCache == null) return;
+        DateTime cutoff = DateTime.UtcNow.AddDays(-9);
+        HashSet<string> keep = new HashSet<string>(Community.All().Where(x => x.Posted >= cutoff).Select(x => x.Id), StringComparer.Ordinal);
+        foreach (string k in setupCache.Keys.Where(k => !keep.Contains(k)).ToList()) setupCache.Remove(k);
+        AppEnv.WriteJsonFile(AppEnv.DataPath("wx_setup.json"), setupCache);
     }
 
     private static string[] Baits(string raw)

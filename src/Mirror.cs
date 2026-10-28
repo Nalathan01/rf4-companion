@@ -107,8 +107,14 @@ internal static class Mirror
             if (rec != null) raw["mrec"] = AppEnv.Obj("t", rec.Table, "r", rec.Region, "d", rec.Date, "b", rec.Bait);
             raw["mixed"] = PostText.Mixed(text);
             raw["ms"] = Community.HasSetup(r);
+            if (r.Id.StartsWith("wx:", StringComparison.Ordinal) && baits.Length == 0 && ImageOcr.ZhLang().Length > 0)
+            {
+                string[] wb = Rf4Fish.SetupBaits(r);
+                if (wb.Length > 0) { raw["baitDetail"] = string.Join(" + ", wb); raw["mimg"] = true; raw["ms"] = true; }
+            }
             outL.Add(raw);
         }
+        Rf4Fish.SaveSetupCache();
         string json = AppEnv.Json.Serialize(AppEnv.Obj("v", 1, "generated", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture), "reports", outL));
         string dir = Path.GetDirectoryName(Path.GetFullPath(path));
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
