@@ -13,7 +13,7 @@ internal static class Fuzzy
         return sb.ToString();
     }
 
-    private static int Lev(string a, string b)
+    internal static int Lev(string a, string b)
     {
         int[] prev = new int[b.Length + 1];
         int[] cur = new int[b.Length + 1];

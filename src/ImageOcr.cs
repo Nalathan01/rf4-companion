@@ -227,6 +227,65 @@ internal static class ImageOcr
         return m;
     }
 
+    private static readonly Regex ZhHeader = new Regex(@"^(安装|安裝)");
+    private static readonly Regex ZhChar = new Regex(@"[一-鿿]");
+    private static readonly Regex ZhLabel = new Regex(@"^(参数|数量|质量|有效期|类型|基础料|诱饵添加剂|香料|情况|可以使用|类别|手工制作|形式|大小|材料|长度|强度|损耗)");
+    private static string[] zhNorm, zhEn;
+
+    public static string ZhLang()
+    {
+        foreach (string l in new string[] { "zh-Hans-CN", "zh-Hans", "zh-CN" }) if (Available(l)) return l;
+        return "";
+    }
+
+    private static void ZhCandidates()
+    {
+        if (zhNorm != null) return;
+        List<string> n = new List<string>(), e = new List<string>();
+        foreach (string k in GameData.BaitKeys())
+            foreach (string lg in new string[] { "zh", "zh-TW" })
+            {
+                string t = GameData.Translate(k, lg);
+                if (t == k || !ZhChar.IsMatch(t)) continue;
+                n.Add(Fuzzy.Norm(t));
+                e.Add(k);
+            }
+        zhEn = e.ToArray();
+        zhNorm = n.ToArray();
+    }
+
+    public static bool ReadSetupZh(byte[] b, out List<string> baits)
+    {
+        baits = new List<string>();
+        string lang = ZhLang();
+        if (lang.Length == 0) return false;
+        string[] lines = Recognize(b, lang, 2, 0);
+        int start = Array.FindIndex(lines, l => ZhHeader.IsMatch(Fuzzy.Norm(l)));
+        if (start < 0) return false;
+        ZhCandidates();
+        for (int i = start + 1; i < lines.Length && baits.Count < 4; i++)
+        {
+            string l = lines[i].Replace(" ", "");
+            if (l.IndexOf(':') >= 0 || l.IndexOf('：') >= 0) continue;
+            Match m = ZhChar.Match(l);
+            if (!m.Success) continue;
+            string name = Fuzzy.Norm(l.Substring(m.Index));
+            if (name.Length < 2 || ZhLabel.IsMatch(name)) continue;
+            int best = -1, bestD = int.MaxValue;
+            bool tie = false;
+            for (int j = 0; j < zhNorm.Length; j++)
+            {
+                int d = Fuzzy.Lev(name, zhNorm[j]);
+                if (d < bestD) { bestD = d; best = j; tie = false; }
+                else if (d == bestD && zhEn[j] != zhEn[best]) tie = true;
+            }
+            if (best < 0 || tie) continue;
+            if (1.0-(double)bestD / Math.Max(name.Length, zhNorm[best].Length) < 0.75) continue;
+            if (!baits.Contains(zhEn[best])) baits.Add(zhEn[best]);
+        }
+        return baits.Count > 0;
+    }
+
     public static bool ParseSetup(string[] lines, out List<string> baits)
     {
         baits = new List<string>();
