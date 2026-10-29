@@ -69,7 +69,6 @@ internal sealed class Api
                     stepInfo = "";
                     TgDirect.Sync(true);
                 }
-                Rf4Fish.SyncSpots(true);
                 Step("bootPosts", 40);
                 if (!mirrored) Community.QueuePosts(168);
                 int total = Math.Max(1, Scans.Pending);
@@ -109,7 +108,6 @@ internal sealed class Api
         if (!mirrored && !Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Cloud.Sync(false);
         if (!mirrored) TgDirect.Sync(false);
-        Rf4Fish.SyncSpots(false);
         Records.Refresh();
         if (!mirrored) Community.QueuePosts(72);
         if (!mirrored && ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);

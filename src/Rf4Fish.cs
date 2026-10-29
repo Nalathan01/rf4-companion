@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -10,6 +12,7 @@ using System.Threading;
 internal static class Rf4Fish
 {
     public const string Site = "https://rf4.fish";
+    private const string MirrorInfo = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/rf4fish_info.json.gz";
     private static readonly Dictionary<string, string> LakeAlias = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "Old Burg", "old_burg_lake" }, { "Kouri Lake", "kuori_lake" } };
     private static readonly Regex Coord = new Regex(@"^\s*(\d{1,3})\s*[:：]\s*(\d{1,3})\s*$");
     private static readonly Regex BaitSplit = new Regex(@"[+＋,，、/;；\s\d.]+");
@@ -193,6 +196,26 @@ internal static class Rf4Fish
 
     private static void RefreshInfo()
     {
+        string json;
+        using (MemoryStream ms = new MemoryStream(Http.GetBytes(MirrorInfo + "?t=" + DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture), 60000)))
+        using (GZipStream z = new GZipStream(ms, CompressionMode.Decompress))
+        using (StreamReader sr = new StreamReader(z, Encoding.UTF8)) json = sr.ReadToEnd();
+        Dictionary<string, object> d = AppEnv.Json.DeserializeObject(json) as Dictionary<string, object>;
+        if (d == null) throw new InvalidOperationException("Spiegel ohne Nachschlagedaten");
+        AppEnv.WriteJsonFile(InfoPath, d);
+        lock (infoGate) info = d;
+    }
+
+    public static void ExportInfo(string path)
+    {
+        Dictionary<string, object> d = FetchInfo();
+        byte[] b = Encoding.UTF8.GetBytes(AppEnv.Json.Serialize(d));
+        using (FileStream fs = File.Create(path))
+        using (GZipStream z = new GZipStream(fs, CompressionLevel.Optimal)) z.Write(b, 0, b.Length);
+    }
+
+    private static Dictionary<string, object> FetchInfo()
+    {
         List<object> trophies = new List<object>();
         foreach (object o in (AppEnv.Json.DeserializeObject(Http.GetString(Site + "/api/trophy-weights", 60000)) as IList) ?? new ArrayList())
         {
@@ -216,9 +239,8 @@ internal static class Rf4Fish
         List<object> reels = Reels(Http.GetString(Site + "/data/reels.csv", 60000));
         Dictionary<string, object> d = AppEnv.Obj("fetched", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture), "source", Site,
             "trophies", trophies, "rods", rods, "lines", lines, "lures", lures, "reels", reels);
-        AppEnv.WriteJsonFile(InfoPath, d);
-        lock (infoGate) info = d;
         AppEnv.Log("rf4.fish", "Nachschlagedaten: " + trophies.Count + " Fische, " + rods.Count + " Ruten, " + reels.Count + " Rollen, " + lines.Count + " Schnüre, " + lures.Count + " Kunstköder");
+        return d;
     }
 
     private static string Range(string a, string b)

@@ -125,6 +125,8 @@ internal static class Mirror
             z.Write(b, 0, b.Length);
         }
         Community.SaveNow();
+        try { Rf4Fish.ExportInfo(Path.Combine(dir, "rf4fish_info.json.gz")); }
+        catch (Exception ex) { AppEnv.Log("Spiegel", "Nachschlagedaten: " + ex.Message); }
         AppEnv.Log("Spiegel", "Export: " + outL.Count + " Meldungen");
         return outL.Count;
     }
