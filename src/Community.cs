@@ -320,6 +320,11 @@ internal static class Community
         return n;
     }
 
+    public static Report Get(string id)
+    {
+        lock (gate) { Report r; return byId.TryGetValue(id, out r) ? r : null; }
+    }
+
     public static bool Has(string id)
     {
         lock (gate) return byId.ContainsKey(id);

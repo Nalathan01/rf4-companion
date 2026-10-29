@@ -68,8 +68,8 @@ internal sealed class Api
                     }
                     stepInfo = "";
                     TgDirect.Sync(true);
-                    Rf4Fish.SyncSpots(true);
                 }
+                Rf4Fish.SyncSpots(true);
                 Step("bootPosts", 40);
                 if (!mirrored) Community.QueuePosts(168);
                 int total = Math.Max(1, Scans.Pending);
@@ -109,7 +109,7 @@ internal sealed class Api
         if (!mirrored && !Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Cloud.Sync(false);
         if (!mirrored) TgDirect.Sync(false);
-        if (!mirrored) Rf4Fish.SyncSpots(false);
+        Rf4Fish.SyncSpots(false);
         Records.Refresh();
         if (!mirrored) Community.QueuePosts(72);
         if (!mirrored && ImageOcr.AnyAvailable()) Community.QueueRecentOcr(72);
@@ -411,7 +411,7 @@ internal sealed class Api
                     if (weight <= 0) weight = rec.Grams / 1000.0;
                 }
             }
-            if (detail.ContainsKey("baitDetail")) detail.Remove("baitRaw");
+            if (detail.ContainsKey("baitDetail") || detail.ContainsKey("groundbait")) detail.Remove("baitRaw");
             bool mixed = mixedRaw || PostText.Mixed(postText);
             List<string> fish = new List<string>();
             Dictionary<string, HashSet<string>> evCc = new Dictionary<string, HashSet<string>>();
