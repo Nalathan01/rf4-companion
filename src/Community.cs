@@ -526,13 +526,22 @@ internal static class Http
         req.UserAgent = "RF4Companion/2.0";
         req.Timeout = timeout;
         req.ReadWriteTimeout = timeout;
-        string key = Environment.GetEnvironmentVariable("RF4_MIRROR_KEY");
-        if (!string.IsNullOrEmpty(key) && url.StartsWith(Rf4Fish.Site + "/", StringComparison.OrdinalIgnoreCase)) req.Headers["X-RF4-Mirror-Key"] = key;
         return req;
+    }
+
+    private static string Local(string url)
+    {
+        string dir = Environment.GetEnvironmentVariable("RF4_FISH_DIR");
+        if (string.IsNullOrEmpty(dir) || !url.StartsWith(Rf4Fish.Site + "/", StringComparison.OrdinalIgnoreCase)) return null;
+        string f = Path.Combine(dir, Regex.Replace(url.Substring(Rf4Fish.Site.Length), "[^A-Za-z0-9]+", "_").Trim('_'));
+        if (!File.Exists(f)) throw new WebException("rf4.fish-Datei fehlt: " + Path.GetFileName(f));
+        return f;
     }
 
     public static string GetString(string url, int timeout)
     {
+        string local = Local(url);
+        if (local != null) return File.ReadAllText(local, Encoding.UTF8);
         HttpWebRequest req = Create(url, timeout);
         req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
         using (WebResponse res = req.GetResponse())
@@ -544,6 +553,8 @@ internal static class Http
 
     public static byte[] GetBytes(string url, int timeout)
     {
+        string local = Local(url);
+        if (local != null) return File.ReadAllBytes(local);
         HttpWebRequest req = Create(url, timeout);
         using (WebResponse res = req.GetResponse())
         using (Stream s = res.GetResponseStream())

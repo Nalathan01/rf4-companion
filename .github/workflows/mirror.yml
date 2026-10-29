@@ -13,11 +13,30 @@ permissions:
   contents: read
 
 jobs:
+  rf4fish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch rf4.fish
+        env:
+          RF4_MIRROR_KEY: ${{ secrets.RF4_MIRROR_KEY }}
+        run: python3 tools/rf4fish_fetch.py rf4fish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rf4fish
+          path: rf4fish
+          retention-days: 1
   mirror:
+    needs: rf4fish
     runs-on: windows-latest
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rf4fish
+          path: ${{ runner.temp }}/rf4fish
       - uses: actions/cache/restore@v4
         with:
           path: mirror-data
@@ -34,7 +53,7 @@ jobs:
       - name: Export
         shell: pwsh
         env:
-          RF4_MIRROR_KEY: ${{ secrets.RF4_MIRROR_KEY }}
+          RF4_FISH_DIR: ${{ runner.temp }}/rf4fish
         run: |
           New-Item -ItemType Directory -Force -Path mirror-data, "$env:RUNNER_TEMP\out" | Out-Null
           $p = Start-Process -FilePath "$env:RUNNER_TEMP\app\RF4 Companion.exe" -ArgumentList "-Export", "`"$env:RUNNER_TEMP\out\spots.json.gz`"", "-DataDir", "`"$PWD\mirror-data`"" -Wait -PassThru
@@ -55,11 +74,11 @@ jobs:
           $env:GIT_SSH_COMMAND = "ssh -i `"$k`" -o StrictHostKeyChecking=accept-new"
           $pub = Join-Path $env:RUNNER_TEMP "pub"
           git init -q $pub
-          Copy-Item "$env:RUNNER_TEMP\out\spots.json.gz" $pub
+          Copy-Item "$env:RUNNER_TEMP\out\*.json.gz" $pub
           Set-Location $pub
           git config user.name "rf4-mirror"
           git config user.email "rf4-mirror@users.noreply.github.com"
           git checkout -q --orphan mirror
-          git add spots.json.gz
+          git add *.json.gz
           git commit -q -m "Spiegel $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mmZ')"
           git push -q --force git@github.com:Nalathan01/rf4-companion-data.git mirror
