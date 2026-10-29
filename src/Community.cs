@@ -520,12 +520,20 @@ internal static class Community
 
 internal static class Http
 {
-    public static string GetString(string url, int timeout)
+    private static HttpWebRequest Create(string url, int timeout)
     {
         HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
         req.UserAgent = "RF4Companion/2.0";
         req.Timeout = timeout;
         req.ReadWriteTimeout = timeout;
+        string key = Environment.GetEnvironmentVariable("RF4_MIRROR_KEY");
+        if (!string.IsNullOrEmpty(key) && url.StartsWith(Rf4Fish.Site + "/", StringComparison.OrdinalIgnoreCase)) req.Headers["X-RF4-Mirror-Key"] = key;
+        return req;
+    }
+
+    public static string GetString(string url, int timeout)
+    {
+        HttpWebRequest req = Create(url, timeout);
         req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
         using (WebResponse res = req.GetResponse())
         using (StreamReader r = new StreamReader(res.GetResponseStream(), Encoding.UTF8))
@@ -536,10 +544,7 @@ internal static class Http
 
     public static byte[] GetBytes(string url, int timeout)
     {
-        HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-        req.UserAgent = "RF4Companion/2.0";
-        req.Timeout = timeout;
-        req.ReadWriteTimeout = timeout;
+        HttpWebRequest req = Create(url, timeout);
         using (WebResponse res = req.GetResponse())
         using (Stream s = res.GetResponseStream())
         using (MemoryStream ms = new MemoryStream())

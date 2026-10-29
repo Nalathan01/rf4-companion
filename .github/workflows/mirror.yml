@@ -33,6 +33,8 @@ jobs:
         run: ./build.ps1 -OutFile "$env:RUNNER_TEMP\app\RF4 Companion.exe"
       - name: Export
         shell: pwsh
+        env:
+          RF4_MIRROR_KEY: ${{ secrets.RF4_MIRROR_KEY }}
         run: |
           New-Item -ItemType Directory -Force -Path mirror-data, "$env:RUNNER_TEMP\out" | Out-Null
           $p = Start-Process -FilePath "$env:RUNNER_TEMP\app\RF4 Companion.exe" -ArgumentList "-Export", "`"$env:RUNNER_TEMP\out\spots.json.gz`"", "-DataDir", "`"$PWD\mirror-data`"" -Wait -PassThru
