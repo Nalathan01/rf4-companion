@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Management;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -56,8 +57,8 @@ internal sealed class AppServer
                 if (window != null && window.HasExited)
                 {
                     bool handedOff = DateTime.Now.Subtract(windowStart).TotalSeconds < 15;
-                    window = null;
-                    if (!handedOff) { running = false; break; }
+                    window = FindAppWindow(prefix);
+                    if (window == null && !handedOff) { running = false; break; }
                 }
                 double idle = DateTime.Now.Subtract(lastPing).TotalSeconds;
                 if ((firstPingSeen && idle > 90) || (!firstPingSeen && idle > 180)) { running = false; break; }
@@ -134,6 +135,23 @@ internal sealed class AppServer
         {
             Process.Start(url);
         }
+    }
+
+    private static Process FindAppWindow(string appUrl)
+    {
+        try
+        {
+            using (ManagementObjectSearcher s = new ManagementObjectSearcher("SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name='msedge.exe'"))
+                foreach (ManagementObject o in s.Get())
+                {
+                    string cl = (o["CommandLine"] as string) ?? "";
+                    if (cl.IndexOf("--app=" + appUrl, StringComparison.OrdinalIgnoreCase) < 0 || cl.Contains("--type=")) continue;
+                    Process p = Process.GetProcessById(Convert.ToInt32(o["ProcessId"], CultureInfo.InvariantCulture));
+                    if (!p.HasExited) return p;
+                }
+        }
+        catch (Exception) { }
+        return null;
     }
 
     public string TakePendingSpot()

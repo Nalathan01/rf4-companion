@@ -40,14 +40,15 @@ internal static class Rf4Fish
                     if (posted < cutoff) { old = true; continue; }
                     Dictionary<string, object> r = Convert(p, posted);
                     if (r == null) continue;
-                    if (Community.Has((string)r["id"])) known = true;
-                    raws.Add(r);
+                    Report prev = Community.Get((string)r["id"]);
+                    if (prev != null) known = true;
+                    if (prev == null || !AppEnv.GetBool(prev.Raw, "mimg")) raws.Add(r);
                 }
                 if (old || known || list.Count < 100) break;
                 Thread.Sleep(1000);
             }
-            int added = Community.AddDirect(raws);
-            AppEnv.Log("rf4.fish", raws.Count + " WeChat-Meldungen gelesen, neu: " + added);
+            int added = Community.ApplyMirror(raws, DateTime.MinValue);
+            AppEnv.Log("rf4.fish", raws.Count + " WeChat-Meldungen gelesen, neu oder geändert: " + added);
         }
         catch (Exception ex) { AppEnv.Log("rf4.fish", ex.Message); }
         finally { running = false; }
@@ -78,7 +79,8 @@ internal static class Rf4Fish
         if (lake.Length == 0 || !GameData.LakeById.TryGetValue(lake, out l) || !l.HasBounds) return null;
         string fish = AppEnv.GetString(p, "fish_name_en").Trim();
         string baitRaw = AppEnv.GetString(p, "bait").Trim();
-        string[] baits = Baits(baitRaw);
+        List<string> feed;
+        string[] baits = Baits(baitRaw, out feed);
         List<object> imgs = new List<object>();
         Dictionary<string, object> iu = p.ContainsKey("image_urls") ? p["image_urls"] as Dictionary<string, object> : null;
         if (iu != null) foreach (string kind in ImageKinds) foreach (object u in AppEnv.GetList(iu, kind)) if (u != null && u.ToString().StartsWith("https://", StringComparison.Ordinal)) imgs.Add(u.ToString());
@@ -95,6 +97,7 @@ internal static class Rf4Fish
         r["fish"] = fish.Length > 0 ? new object[] { fish } : new object[0];
         r["bait"] = new object[0];
         r["baitDetail"] = string.Join(" + ", baits);
+        r["groundbait"] = string.Join(" + ", feed);
         r["baitRaw"] = baitRaw;
         r["clip"] = double.TryParse(AppEnv.GetString(p, "meter").Trim().Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out clip) && clip > 0 ? (object)clip : null;
         r["text"] = text;
@@ -143,16 +146,17 @@ internal static class Rf4Fish
         AppEnv.WriteJsonFile(AppEnv.DataPath("wx_setup.json"), setupCache);
     }
 
-    private static string[] Baits(string raw)
+    private static string[] Baits(string raw, out List<string> feed)
     {
         List<string> keys = new List<string>();
+        feed = new List<string>();
         foreach (string part in BaitSplit.Split(raw))
         {
             string t = part.Trim();
             if (t.Length < 2) continue;
             string k = GameData.Untranslate(t, "zh");
-            if (k == t || keys.Contains(k)) continue;
-            keys.Add(k);
+            if (k == t || keys.Contains(k) || feed.Contains(k)) continue;
+            if (GameData.IsBait(k) || GameData.DipKeys.Contains(k)) keys.Add(k); else feed.Add(k);
         }
         return keys.ToArray();
     }

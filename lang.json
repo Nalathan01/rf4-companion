@@ -515,7 +515,9 @@
   "itemsFirst": "die ersten {0} werden angezeigt",
   "itemSearch": "Name, Marke oder Typ suchen",
   "srcRf4fish": "Daten von rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Rekorde, Spots aus China, Ausrüstungsdaten"
+  "siteRf4fish": "Rekorde, Spots aus China, Ausrüstungsdaten",
+  "siteRf4trophies": "Trophäenfänge, Rekorde und Köderstatistik",
+  "siteFarmtrof": "Russische Community mit Beißstellen, Rekorden und Wissensdatenbank"
  },
  "en": {
   "langName": "English",
@@ -1033,7 +1035,9 @@
   "itemsFirst": "showing the first {0}",
   "itemSearch": "Search name, brand or type",
   "srcRf4fish": "Data from rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Records, spots from China, gear data"
+  "siteRf4fish": "Records, spots from China, gear data",
+  "siteRf4trophies": "Trophy catches, records and bait stats",
+  "siteFarmtrof": "Russian community with spots, records and knowledge base"
  },
  "ru": {
   "langName": "Русский",
@@ -1548,7 +1552,9 @@
   "itemsFirst": "показаны первые {0}",
   "itemSearch": "Поиск по названию, бренду или типу",
   "srcRf4fish": "Данные с rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Рекорды, точки из Китая, данные о снаряжении"
+  "siteRf4fish": "Рекорды, точки из Китая, данные о снаряжении",
+  "siteRf4trophies": "Трофейные уловы, рекорды и статистика наживок",
+  "siteFarmtrof": "Сообщество РР4: точки клева, рекорды, база знаний"
  },
  "fr": {
   "langName": "Français",
@@ -2063,7 +2069,9 @@
   "itemsFirst": "les {0} premiers sont affichés",
   "itemSearch": "Rechercher nom, marque ou type",
   "srcRf4fish": "Données de rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Records, spots de Chine, données matériel"
+  "siteRf4fish": "Records, spots de Chine, données matériel",
+  "siteRf4trophies": "Prises trophées, records et statistiques d’appâts",
+  "siteFarmtrof": "Communauté russe : spots, records et base de connaissances"
  },
  "es": {
   "langName": "Español",
@@ -2578,7 +2586,9 @@
   "itemsFirst": "se muestran los primeros {0}",
   "itemSearch": "Buscar nombre, marca o tipo",
   "srcRf4fish": "Datos de rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Récords, puntos de China, datos de equipo"
+  "siteRf4fish": "Récords, puntos de China, datos de equipo",
+  "siteRf4trophies": "Capturas trofeo, récords y estadísticas de cebos",
+  "siteFarmtrof": "Comunidad rusa con puntos, récords y base de conocimiento"
  },
  "it": {
   "langName": "Italiano",
@@ -3093,7 +3103,9 @@
   "itemsFirst": "vengono mostrati i primi {0}",
   "itemSearch": "Cerca nome, marca o tipo",
   "srcRf4fish": "Dati da rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Record, spot dalla Cina, dati attrezzatura"
+  "siteRf4fish": "Record, spot dalla Cina, dati attrezzatura",
+  "siteRf4trophies": "Catture trofeo, record e statistiche esche",
+  "siteFarmtrof": "Community russa con spot, record e guide"
  },
  "pl": {
   "langName": "Polski",
@@ -3608,7 +3620,9 @@
   "itemsFirst": "wyświetlono pierwsze {0}",
   "itemSearch": "Szukaj nazwy, marki lub typu",
   "srcRf4fish": "Dane z rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Rekordy, miejscówki z Chin, dane sprzętu"
+  "siteRf4fish": "Rekordy, miejscówki z Chin, dane sprzętu",
+  "siteRf4trophies": "Trofea, rekordy i statystyki przynęt",
+  "siteFarmtrof": "Rosyjska społeczność: miejscówki, rekordy, baza wiedzy"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4123,7 +4137,9 @@
   "itemsFirst": "mostrando os primeiros {0}",
   "itemSearch": "Pesquisar nome, marca ou tipo",
   "srcRf4fish": "Dados de rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Recordes, pontos da China, dados de equipamento"
+  "siteRf4fish": "Recordes, pontos da China, dados de equipamento",
+  "siteRf4trophies": "Capturas troféu, recordes e estatísticas de iscas",
+  "siteFarmtrof": "Comunidade russa com pontos, recordes e base de conhecimento"
  },
  "nl": {
   "langName": "Nederlands",
@@ -4638,7 +4654,9 @@
   "itemsFirst": "de eerste {0} worden getoond",
   "itemSearch": "Zoek naam, merk of type",
   "srcRf4fish": "Gegevens van rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Records, stekken uit China, uitrustingsgegevens"
+  "siteRf4fish": "Records, stekken uit China, uitrustingsgegevens",
+  "siteRf4trophies": "Trofeevangsten, records en aasstatistiek",
+  "siteFarmtrof": "Russische community met stekken, records en kennisbank"
  },
  "tr": {
   "langName": "Türkçe",
@@ -5153,7 +5171,9 @@
   "itemsFirst": "ilk {0} gösteriliyor",
   "itemSearch": "Ad, marka veya tür ara",
   "srcRf4fish": "Veriler rf4.fish (ItsBlunty) kaynaklı",
-  "siteRf4fish": "Rekorlar, Çin noktaları, ekipman verileri"
+  "siteRf4fish": "Rekorlar, Çin noktaları, ekipman verileri",
+  "siteRf4trophies": "Kupa avları, rekorlar ve yem istatistikleri",
+  "siteFarmtrof": "Rus topluluğu: noktalar, rekorlar ve bilgi bankası"
  },
  "ro": {
   "langName": "Română",
@@ -5668,7 +5688,9 @@
   "itemsFirst": "sunt afișate primele {0}",
   "itemSearch": "Caută nume, marcă sau tip",
   "srcRf4fish": "Date de la rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Recorduri, locuri din China, date echipament"
+  "siteRf4fish": "Recorduri, locuri din China, date echipament",
+  "siteRf4trophies": "Capturi trofeu, recorduri și statistici momeli",
+  "siteFarmtrof": "Comunitate rusă cu locuri, recorduri și bază de cunoștințe"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6183,7 +6205,9 @@
   "itemsFirst": "menampilkan {0} pertama",
   "itemSearch": "Cari nama, merek atau jenis",
   "srcRf4fish": "Data dari rf4.fish (ItsBlunty)",
-  "siteRf4fish": "Rekor, spot dari Tiongkok, data perlengkapan"
+  "siteRf4fish": "Rekor, spot dari Tiongkok, data perlengkapan",
+  "siteRf4trophies": "Tangkapan trofi, rekor dan statistik umpan",
+  "siteFarmtrof": "Komunitas Rusia dengan spot, rekor dan basis pengetahuan"
  },
  "ja": {
   "langName": "日本語",
@@ -6698,7 +6722,9 @@
   "itemsFirst": "最初の {0} 件を表示",
   "itemSearch": "名前・ブランド・タイプで検索",
   "srcRf4fish": "データ提供: rf4.fish (ItsBlunty)",
-  "siteRf4fish": "記録、中国のポイント、装備データ"
+  "siteRf4fish": "記録、中国のポイント、装備データ",
+  "siteRf4trophies": "トロフィー釣果、記録、エサ統計",
+  "siteFarmtrof": "ロシアのコミュニティ: ポイント、記録、ナレッジベース"
  },
  "ko": {
   "langName": "한국어",
@@ -7213,7 +7239,9 @@
   "itemsFirst": "처음 {0}개 표시",
   "itemSearch": "이름, 브랜드, 종류 검색",
   "srcRf4fish": "데이터 출처: rf4.fish (ItsBlunty)",
-  "siteRf4fish": "기록, 중국 포인트, 장비 데이터"
+  "siteRf4fish": "기록, 중국 포인트, 장비 데이터",
+  "siteRf4trophies": "트로피 조과, 기록, 미끼 통계",
+  "siteFarmtrof": "러시아 커뮤니티: 포인트, 기록, 지식 베이스"
  },
  "zh": {
   "langName": "简体中文",
@@ -7728,7 +7756,9 @@
   "itemsFirst": "显示前 {0} 条",
   "itemSearch": "搜索名称、品牌或类型",
   "srcRf4fish": "数据来自 rf4.fish（ItsBlunty）",
-  "siteRf4fish": "记录、国服钓点、装备数据"
+  "siteRf4fish": "记录、国服钓点、装备数据",
+  "siteRf4trophies": "奖杯渔获、记录和鱼饵统计",
+  "siteFarmtrof": "俄服社区：钓点、记录和知识库"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -8243,6 +8273,8 @@
   "itemsFirst": "顯示前 {0} 筆",
   "itemSearch": "搜尋名稱、品牌或類型",
   "srcRf4fish": "資料來自 rf4.fish（ItsBlunty）",
-  "siteRf4fish": "記錄、國服釣點、裝備資料"
+  "siteRf4fish": "記錄、國服釣點、裝備資料",
+  "siteRf4trophies": "獎盃漁獲、記錄和魚餌統計",
+  "siteFarmtrof": "俄服社群：釣點、記錄和知識庫"
  }
 }
