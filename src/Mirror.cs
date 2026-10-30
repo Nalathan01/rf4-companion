@@ -20,7 +20,7 @@ internal static class Mirror
 
     public static bool Fresh
     {
-        get { return Generated > DateTime.MinValue && DateTime.UtcNow.Subtract(Generated).TotalHours < 3; }
+        get { return Generated > DateTime.MinValue && DateTime.UtcNow.Subtract(Generated).TotalHours < 12; }
     }
 
     public static bool Fetch(bool force)
@@ -38,7 +38,7 @@ internal static class Mirror
             Dictionary<string, object> d = AppEnv.Json.DeserializeObject(json) as Dictionary<string, object>;
             DateTime gen;
             if (d == null || !DateTime.TryParse(AppEnv.GetString(d, "generated"), CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out gen)) return false;
-            if (DateTime.UtcNow.Subtract(gen).TotalHours >= 3) { AppEnv.Log("Spiegel", "veraltet: " + gen.ToString("o", CultureInfo.InvariantCulture)); return false; }
+            if (DateTime.UtcNow.Subtract(gen).TotalHours >= 12) { AppEnv.Log("Spiegel", "veraltet: " + gen.ToString("o", CultureInfo.InvariantCulture)); return false; }
             if (gen <= Generated) return true;
             List<Dictionary<string, object>> raws = AppEnv.GetList(d, "reports").Cast<object>().Select(o => o as Dictionary<string, object>).Where(o => o != null).ToList();
             int n = Community.ApplyMirror(raws, gen);
