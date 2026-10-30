@@ -82,3 +82,15 @@ jobs:
           git add *.json.gz
           git commit -q -m "Spiegel $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mmZ')"
           git push -q --force git@github.com:Nalathan01/rf4-companion-data.git mirror
+  next:
+    needs: mirror
+    if: success()
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      actions: write
+    steps:
+      - run: sleep 1500
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run mirror.yml -R ${{ github.repository }} --ref main
