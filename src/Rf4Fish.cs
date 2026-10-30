@@ -15,7 +15,7 @@ internal static class Rf4Fish
     private const string MirrorInfo = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/rf4fish_info.json.gz";
     private static readonly Dictionary<string, string> LakeAlias = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "Old Burg", "old_burg_lake" }, { "Kouri Lake", "kuori_lake" } };
     private static readonly Regex Coord = new Regex(@"^\s*(\d{1,3})\s*[:：]\s*(\d{1,3})\s*$");
-    private static readonly Regex BaitSplit = new Regex(@"[+＋,，、/;；\s\d.]+");
+    private static readonly Regex BaitSplit = new Regex(@"[+＋,，、/;；\s]+|(?<=\d)(?=[一-鿿])");
     private static readonly string[] ImageKinds = { "position", "config", "fish" };
     private static DateTime last = DateTime.MinValue;
     private static volatile bool running;
@@ -44,7 +44,7 @@ internal static class Rf4Fish
                     Dictionary<string, object> r = Convert(p, posted);
                     if (r == null) continue;
                     Report prev = Community.Get((string)r["id"]);
-                    if (prev != null) known = true;
+                    if (prev != null && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RF4_FISH_DIR"))) known = true;
                     if (prev == null || !AppEnv.GetBool(prev.Raw, "mimg")) raws.Add(r);
                 }
                 if (old || known || list.Count < 100) break;
@@ -157,8 +157,15 @@ internal static class Rf4Fish
         {
             string t = part.Trim();
             if (t.Length < 2) continue;
-            string k = GameData.Untranslate(t, "zh");
-            if (k == t || keys.Contains(k) || feed.Contains(k)) continue;
+            bool sized = Regex.IsMatch(t, @"\d");
+            string k = null;
+            foreach (string c in new string[] { t, Regex.Replace(t, @"(?<=[一-鿿])(?=\d)", " "), t.Replace(" ", "") })
+            {
+                string u = GameData.Untranslate(c, "zh");
+                if (u != c) { k = u; break; }
+            }
+            if (k == null || keys.Contains(k) || feed.Contains(k)) continue;
+            if (!sized && k.IndexOf("Flavor", StringComparison.OrdinalIgnoreCase) >= 0) continue;
             if (GameData.IsBait(k) || GameData.DipKeys.Contains(k)) keys.Add(k); else feed.Add(k);
         }
         return keys.ToArray();
