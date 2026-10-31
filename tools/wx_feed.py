@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 
@@ -14,9 +15,12 @@ from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
+VERSION = 2
 BUDGET = 600
 CJK = re.compile(r"[一-鿿]")
+HEAD = re.compile(r"^(安装|钓组)|修改")
 SKIP = re.compile(r"[:：+＋]")
+LABEL = re.compile(r"^(基.?料|诱.{1,2}添加剂|添加剂|增香剂|香料|(pop-?up)?香.{0,2}成饵)", re.I)
 CRUSHED = re.compile(r"[\(（]?碎的[\)）]?")
 
 
@@ -46,10 +50,14 @@ def candidates():
         if CJK.search(v.get("zh") or ""):
             feed.setdefault(norm(v["zh"]), k)
     baits = {}
-    for k in game["baits"]:
+    cats = json.load(open(os.path.join(ROOT, "data", "itemcats.json"), encoding="utf-8"))
+    keys = list(game["baits"]) + [x for c in ("spinlure", "pilker", "seasoft", "teaser", "seanatural") for x in cats.get(c, [])]
+    for k in keys:
         zh = (game["names"].get(k) or {}).get("zh") or ""
         if CJK.search(zh):
             baits.setdefault(norm(zh), k)
+        if len(norm(k)) >= 6:
+            baits.setdefault(norm(k), k)
     dips = json.load(open(os.path.join(ROOT, "data", "dips.json"), encoding="utf-8"))
     for k, v in dips.items():
         if CJK.search(v.get("zh") or ""):
@@ -62,14 +70,23 @@ def match_tail(line, names):
     if len(s) < 2:
         return None
     best = []
+    cj = "".join(CJK.findall(s))
     for k, en in names.items():
         if len(k) > len(s) + 2:
+            continue
+        if len(k) < 2:
+            if cj == k:
+                best.append((0, -1, k, en))
+            continue
+        if any(c not in cj for c in CJK.findall(k)):
             continue
         for cut in (0, 1, 2):
             t = s[:len(s)-cut] if cut else s
             if len(t) < len(k)-2:
                 break
             d = min(lev(t[-len(k):], k), lev(t, k))
+            if len(k) <= 4 and d > 0:
+                continue
             best.append((d, -len(k), k, en))
     if not best:
         return None
@@ -86,14 +103,16 @@ def match_tail(line, names):
 
 
 def ocr(img, psm):
-    img.save("/tmp/wx_ocr.png")
-    text = subprocess.run(["tesseract", "/tmp/wx_ocr.png", "-", "-l", "chi_sim+eng", "--psm", str(psm)], capture_output=True, text=True).stdout
+    path = os.path.join(tempfile.gettempdir(), "wx_ocr.png")
+    img.save(path)
+    text = subprocess.run([os.environ.get("TESSERACT", "tesseract"), path, "-", "-l", "chi_sim+eng", "--psm", str(psm)], capture_output=True, text=True, encoding="utf-8").stdout
     return [x.replace(" ", "") for x in text.splitlines() if x.strip()]
 
 
 def prepare(im):
     g = ImageOps.invert(ImageOps.grayscale(im))
-    return g.resize((g.width * 2, g.height * 2), Image.LANCZOS)
+    f = max(2.0, 2000.0 / g.width)
+    return g.resize((int(g.width * f), int(g.height * f)), Image.LANCZOS)
 
 
 def find_box(im):
@@ -122,7 +141,10 @@ def feed_from_lines(lines, names):
             continue
         if line.startswith("情况") or line.startswith("类别"):
             break
-        en = match_tail(CRUSHED.sub("", line), names)
+        rest = LABEL.sub("", CRUSHED.sub("", line))
+        if len(norm(rest)) < 2:
+            continue
+        en = match_tail(rest, names)
         if en and en not in feed:
             feed.append(en)
     return feed
@@ -132,10 +154,10 @@ def baits_from_lines(lines, names):
     baits = []
     inside = False
     for line in lines:
-        if line.startswith("安装"):
+        if HEAD.search(line):
             inside = True
             continue
-        if not inside or SKIP.search(line) or not CJK.search(line):
+        if not inside or SKIP.search(line) or len(norm(line)) < 2:
             continue
         en = match_tail(line, names)
         if en and en not in baits:
@@ -150,7 +172,7 @@ def read_image(data, feed_names, bait_names):
     if box:
         crop = ImageOps.invert(ImageOps.grayscale(im.crop(box[1:])))
         crop = crop.resize((crop.width * 3, crop.height * 3), Image.LANCZOS)
-        feed = feed_from_lines(ocr(crop, 6), feed_names)
+        feed = feed_from_lines(ocr(crop, 4), feed_names)
     if not feed:
         lines = ocr(prepare(im), 6)
         baits = baits_from_lines(lines, bait_names)
@@ -163,7 +185,7 @@ def main(src, cache_path, out_path):
     feed_names, bait_names = candidates()
     cache = {}
     if os.path.exists(cache_path):
-        cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict)}
+        cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict) and v.get("v") == VERSION}
     out = {}
     done = 0
     start = time.time()
@@ -179,7 +201,7 @@ def main(src, cache_path, out_path):
         if pid not in cache:
             if done >= MAX_NEW or time.time()-start > BUDGET:
                 continue
-            res = {"f": [], "b": []}
+            res = {"v": VERSION, "f": [], "b": []}
             ok = True
             for u in urls:
                 try:
