@@ -75,6 +75,13 @@ internal static class Mirror
         }
         DateTime since = DateTime.UtcNow.AddDays(-8);
         List<object> outL = new List<object>();
+        Dictionary<string, object> wxFeed = null;
+        try
+        {
+            string fd = Environment.GetEnvironmentVariable("RF4_FISH_DIR");
+            if (!string.IsNullOrEmpty(fd) && File.Exists(Path.Combine(fd, "wx_feed.json"))) wxFeed = AppEnv.ReadJsonFile(Path.Combine(fd, "wx_feed.json")) as Dictionary<string, object>;
+        }
+        catch (Exception ex) { AppEnv.Log("Spiegel", "Futter aus Bild: " + ex.Message); }
         foreach (Report r in Community.All().Where(x => x.Posted >= since && Community.Plausible(x)))
         {
             Dictionary<string, object> raw = new Dictionary<string, object>(r.Raw);
@@ -111,6 +118,12 @@ internal static class Mirror
             {
                 string[] wb = Rf4Fish.SetupBaits(r);
                 if (wb.Length > 0) { raw["baitDetail"] = string.Join(" + ", wb); raw["mimg"] = true; raw["ms"] = true; }
+            }
+            object wf;
+            if (wxFeed != null && r.Id.StartsWith("wx:", StringComparison.Ordinal) && AppEnv.GetString(raw, "groundbait").Length == 0 && wxFeed.TryGetValue(r.Id.Substring(3), out wf))
+            {
+                string[] parts = ((System.Collections.IList)wf).Cast<object>().Select(o => o.ToString()).ToArray();
+                if (parts.Length > 0) raw["groundbait"] = string.Join(" + ", parts);
             }
             outL.Add(raw);
         }

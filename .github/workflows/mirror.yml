@@ -18,10 +18,27 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: wxcache
+          key: wxfeed-${{ github.run_id }}
+          restore-keys: wxfeed-
       - name: Fetch rf4.fish
         env:
           RF4_MIRROR_KEY: ${{ secrets.RF4_MIRROR_KEY }}
         run: python3 tools/rf4fish_fetch.py rf4fish
+      - name: Groundbait from setup images
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-chi-sim > /dev/null
+          pip install -q pillow numpy
+          mkdir -p wxcache
+          python3 tools/wx_feed.py rf4fish wxcache/wx_feed_cache.json rf4fish/wx_feed.json
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: wxcache
+          key: wxfeed-${{ github.run_id }}
       - uses: actions/upload-artifact@v4
         with:
           name: rf4fish
