@@ -15,7 +15,7 @@ permissions:
 jobs:
   rf4fish:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache/restore@v4
@@ -29,9 +29,10 @@ jobs:
         run: python3 tools/rf4fish_fetch.py rf4fish
       - name: Groundbait from setup images
         continue-on-error: true
+        timeout-minutes: 12
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-chi-sim > /dev/null
-          pip install -q pillow numpy
+          pip install -q pillow numpy scipy
           mkdir -p wxcache
           python3 tools/wx_feed.py rf4fish wxcache/wx_feed_cache.json rf4fish/wx_feed.json
       - uses: actions/cache/save@v4

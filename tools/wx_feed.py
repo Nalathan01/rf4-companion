@@ -7,13 +7,14 @@ import subprocess
 import sys
 import time
 import urllib.request
-from collections import deque
 
 import numpy as np
 from PIL import Image, ImageOps
+from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC, CACHE, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
+MAX_NEW = 150
 LABEL = re.compile(r"^(基础料|诱.{1,2}添加剂|添加剂|增香剂|香料)")
 CJK = re.compile(r"[一-鿿]")
 
@@ -48,27 +49,16 @@ def candidates():
 
 def find_box(im):
     a = np.asarray(im).max(axis=2)[::4, ::4] < 28
-    h, w = a.shape
-    seen = np.zeros_like(a)
+    lab, _ = ndimage.label(a)
     best = None
-    for y in range(h):
-        for x in range(w):
-            if not a[y, x] or seen[y, x]:
-                continue
-            q = deque([(y, x)])
-            seen[y, x] = True
-            n, y0, y1, x0, x1 = 0, y, y, x, x
-            while q:
-                cy, cx = q.popleft()
-                n += 1
-                y0, y1, x0, x1 = min(y0, cy), max(y1, cy), min(x0, cx), max(x1, cx)
-                for ny, nx in ((cy-1, cx), (cy+1, cx), (cy, cx-1), (cy, cx+1)):
-                    if 0 <= ny < h and 0 <= nx < w and a[ny, nx] and not seen[ny, nx]:
-                        seen[ny, nx] = True
-                        q.append((ny, nx))
-            fill = n / ((x1-x0+1) * (y1-y0+1))
-            if fill > 0.55 and (x1-x0) > w / 12 and (y1-y0) > h / 8 and (best is None or n > best[0]):
-                best = (n, x0 * 4, y0 * 4, (x1+1) * 4, (y1+1) * 4)
+    for i, sl in enumerate(ndimage.find_objects(lab), 1):
+        if sl is None:
+            continue
+        ys, xs = sl
+        hh, ww = ys.stop-ys.start, xs.stop-xs.start
+        n = int((lab[sl] == i).sum())
+        if n / (hh * ww) > 0.55 and ww > a.shape[1] / 12 and hh > a.shape[0] / 8 and (best is None or n > best[0]):
+            best = (n, xs.start * 4, ys.start * 4, xs.stop * 4, ys.stop * 4)
     return best
 
 
@@ -119,6 +109,8 @@ def main():
             if not pid or not urls:
                 continue
             if pid not in cache:
+                if done >= MAX_NEW:
+                    continue
                 feed = []
                 for u in urls:
                     try:
@@ -136,7 +128,9 @@ def main():
                     continue
                 cache[pid] = feed
                 done += 1
-            if cache[pid]:
+                if done % 20 == 0:
+                    json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+            if cache.get(pid):
                 out[pid] = cache[pid]
     json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
