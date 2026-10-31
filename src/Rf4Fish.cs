@@ -14,8 +14,9 @@ internal static class Rf4Fish
     public const string Site = "https://rf4.fish";
     private const string MirrorInfo = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/rf4fish_info.json.gz";
     private static readonly Dictionary<string, string> LakeAlias = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "Old Burg", "old_burg_lake" }, { "Kouri Lake", "kuori_lake" } };
-    private static readonly Regex Coord = new Regex(@"^\s*(\d{1,3})\s*[:：]\s*(\d{1,3})\s*$");
+    private static readonly Regex Coord = new Regex(@"^\s*(\d{1,4})\s*[:：]\s*(\d{1,4})\s*$");
     private static readonly Regex BaitSplit = new Regex(@"[+＋,，、/;；\s]+|(?<=\d)(?=[一-鿿])");
+    private static readonly Regex PitRx = new Regex(@"(\d{2,3})\s*坑");
     private static readonly string[] ImageKinds = { "position", "config", "fish" };
     private static DateTime last = DateTime.MinValue;
     private static volatile bool running;
@@ -76,10 +77,23 @@ internal static class Rf4Fish
     {
         string post = AppEnv.GetString(p, "post_id");
         Match m = Coord.Match(AppEnv.GetString(p, "coordinate"));
-        if (post.Length == 0 || !m.Success) return null;
         string lake = LakeId(p);
         Lake l;
-        if (lake.Length == 0 || !GameData.LakeById.TryGetValue(lake, out l) || !l.HasBounds) return null;
+        if (post.Length == 0 || lake.Length == 0 || !GameData.LakeById.TryGetValue(lake, out l) || !l.HasBounds) return null;
+        string text = (AppEnv.GetString(p, "title").Trim() + "\n" + AppEnv.GetString(p, "content").Trim()).Trim();
+        int x = m.Success ? int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : -1;
+        int y = m.Success ? int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture) : -1;
+        int pit = -1;
+        if (SeaMarks.IsSea(lake))
+        {
+            Match pm = PitRx.Match(text);
+            if (m.Success && x == y) pit = x;
+            else if (!m.Success && pm.Success) pit = int.Parse(pm.Groups[1].Value, CultureInfo.InvariantCulture);
+            SeaMark sm = pit > 0 ? SeaMarks.Pit(pit) : null;
+            if (sm != null) { x = (int)Math.Round(sm.X); y = (int)Math.Round(sm.Y); }
+            else if (pit > 0) return null;
+        }
+        if (x < 0 || y < 0) return null;
         string fish = AppEnv.GetString(p, "fish_name_en").Trim();
         string baitRaw = AppEnv.GetString(p, "bait").Trim();
         List<string> feed;
@@ -88,13 +102,15 @@ internal static class Rf4Fish
         Dictionary<string, object> iu = p.ContainsKey("image_urls") ? p["image_urls"] as Dictionary<string, object> : null;
         if (iu != null) foreach (string kind in ImageKinds) foreach (object u in AppEnv.GetList(iu, kind)) if (u != null && u.ToString().StartsWith("https://", StringComparison.Ordinal)) imgs.Add(u.ToString());
         bool config = iu != null && AppEnv.GetList(iu, "config").Count > 0;
-        string text = (AppEnv.GetString(p, "title").Trim() + "\n" + AppEnv.GetString(p, "content").Trim()).Trim();
         double clip;
+        bool hasClip = double.TryParse(AppEnv.GetString(p, "meter").Trim().Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out clip) && clip > 0;
+        SeaMark near = SeaMarks.Nearest(lake, x, y);
+        if (SeaMarks.IsSea(lake) && (clip == pit || clip > 250 || (near != null && clip == near.Depth))) hasClip = false;
         Dictionary<string, object> r = new Dictionary<string, object>();
         r["id"] = "wx:" + post;
         r["lake"] = lake;
-        r["x"] = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
-        r["y"] = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+        r["x"] = x;
+        r["y"] = y;
         r["posted"] = posted.ToString("o", CultureInfo.InvariantCulture);
         r["url"] = Site + "/spots/" + Uri.EscapeDataString(post);
         r["fish"] = fish.Length > 0 ? new object[] { fish } : new object[0];
@@ -102,7 +118,7 @@ internal static class Rf4Fish
         r["baitDetail"] = string.Join(" + ", baits);
         r["groundbait"] = string.Join(" + ", feed);
         r["baitRaw"] = baitRaw;
-        r["clip"] = double.TryParse(AppEnv.GetString(p, "meter").Trim().Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out clip) && clip > 0 ? (object)clip : null;
+        r["clip"] = hasClip ? (object)clip : null;
         r["text"] = text;
         r["textLang"] = "zh";
         r["imgs"] = imgs.ToArray();

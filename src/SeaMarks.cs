@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
+using System.IO;
 
 internal sealed class SeaMark
 {
@@ -66,6 +68,69 @@ internal static class SeaMarks
             if (d < bd) { bd = d; best = m; }
         }
         return best;
+    }
+
+    public static bool IsSea(string lake)
+    {
+        return string.Equals(lake, SeaLake, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static SeaMark Pit(int depth)
+    {
+        Ensure();
+        SeaMark bank = null, any = null;
+        int banks = 0, all = 0;
+        foreach (SeaMark m in marks)
+        {
+            if (m.Depth != depth) continue;
+            all++; any = m;
+            if (m.Bank) { banks++; bank = m; }
+        }
+        if (banks == 1) return bank;
+        return all == 1 ? any : null;
+    }
+
+    public static bool OnLand(string lake, double x, double y)
+    {
+        if (!IsSea(lake)) return false;
+        Lake l;
+        if (!GameData.LakeById.TryGetValue(lake, out l) || !l.HasBounds) return false;
+        if (x > 575 && y > 870) return false;
+        EnsureLand();
+        if (land == null) return false;
+        int px = (int)((x-l.XMin) / (l.XMax-l.XMin) * LandSize);
+        int py = (int)((l.YNorth-y) / (l.YNorth-l.YSouth) * LandSize);
+        if (px < 0 || py < 0 || px >= LandSize || py >= LandSize) return false;
+        return land[py * LandSize + px];
+    }
+
+    private const int LandSize = 256;
+    private static bool[] land;
+    private static bool landTried;
+
+    private static void EnsureLand()
+    {
+        if (landTried) return;
+        landTried = true;
+        try
+        {
+            byte[] img = AppEnv.Resource("maps/" + SeaLake + ".jpg");
+            if (img == null) return;
+            using (MemoryStream ms = new MemoryStream(img))
+            using (Image src = Image.FromStream(ms))
+            using (Bitmap b = new Bitmap(src, LandSize, LandSize))
+            {
+                bool[] m = new bool[LandSize * LandSize];
+                for (int y = 0; y < LandSize; y++)
+                    for (int x = 0; x < LandSize; x++)
+                    {
+                        Color c = b.GetPixel(x, y);
+                        m[y * LandSize + x] = c.R-c.B > 15;
+                    }
+                land = m;
+            }
+        }
+        catch (Exception ex) { AppEnv.Log("Meer", "Landkarte: " + ex.Message); }
     }
 
     public static SeaMark Get(string key)
