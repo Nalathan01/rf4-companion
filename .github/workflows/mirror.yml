@@ -35,7 +35,7 @@ jobs:
           pip install -q pillow numpy scipy
           mkdir -p wxcache/tessdata
           for l in chi_sim eng; do [ -s wxcache/tessdata/$l.traineddata ] || curl -sSL -o wxcache/tessdata/$l.traineddata https://github.com/tesseract-ocr/tessdata/raw/4.1.0/$l.traineddata; done
-          TESSDATA_PREFIX=$PWD/wxcache/tessdata python3 tools/wx_feed.py rf4fish wxcache/wx_feed_cache.json rf4fish/wx_feed.json
+          OMP_THREAD_LIMIT=1 TESSDATA_PREFIX=$PWD/wxcache/tessdata python3 tools/wx_feed.py rf4fish wxcache/wx_feed_cache.json rf4fish/wx_feed.json
       - uses: actions/cache/save@v4
         if: always()
         with:
