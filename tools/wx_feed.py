@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from PIL import Image, ImageOps
@@ -16,7 +17,8 @@ from scipy import ndimage
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
 VERSION = 2
-BUDGET = 600
+WORKERS = 3
+BUDGET = 540
 CJK = re.compile(r"[一-鿿]")
 HEAD = re.compile(r"^(安装|钓组)|修改")
 SKIP = re.compile(r"[:：+＋]")
@@ -103,15 +105,19 @@ def match_tail(line, names):
 
 
 def ocr(img, psm):
-    path = os.path.join(tempfile.gettempdir(), "wx_ocr.png")
-    img.save(path)
-    text = subprocess.run([os.environ.get("TESSERACT", "tesseract"), path, "-", "-l", "chi_sim+eng", "--psm", str(psm)], capture_output=True, text=True, encoding="utf-8").stdout
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    try:
+        img.save(path)
+        text = subprocess.run([os.environ.get("TESSERACT", "tesseract"), path, "-", "-l", "chi_sim+eng", "--psm", str(psm)], capture_output=True, text=True, encoding="utf-8").stdout
+    finally:
+        os.remove(path)
     return [x.replace(" ", "") for x in text.splitlines() if x.strip()]
 
 
 def prepare(im):
     g = ImageOps.invert(ImageOps.grayscale(im))
-    f = max(2.0, 2000.0 / g.width)
+    f = min(3.0, 2000.0 / g.width)
     return g.resize((int(g.width * f), int(g.height * f)), Image.LANCZOS)
 
 
@@ -152,7 +158,7 @@ def feed_from_lines(lines, names):
 
 def baits_from_lines(lines, names):
     baits = []
-    inside = False
+    inside = not any(HEAD.search(x) for x in lines)
     for line in lines:
         if HEAD.search(line):
             inside = True
@@ -171,7 +177,8 @@ def read_image(data, feed_names, bait_names):
     box = find_box(im)
     if box:
         crop = ImageOps.invert(ImageOps.grayscale(im.crop(box[1:])))
-        crop = crop.resize((crop.width * 3, crop.height * 3), Image.LANCZOS)
+        f = min(3.0, 1800.0 / crop.width)
+        crop = crop.resize((int(crop.width * f), int(crop.height * f)), Image.LANCZOS)
         feed = feed_from_lines(ocr(crop, 4), feed_names)
     if not feed:
         lines = ocr(prepare(im), 6)
@@ -181,51 +188,64 @@ def read_image(data, feed_names, bait_names):
     return feed, baits
 
 
+def read_post(urls, feed_names, bait_names, start):
+    if time.time()-start > BUDGET:
+        return None
+    res = {"v": VERSION, "f": [], "b": []}
+    for u in urls:
+        data = None
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(u, headers={"User-Agent": "RF4CompanionMirror/1.0 (+https://github.com/Nalathan01/rf4-companion)"})
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    data = r.read()
+                break
+            except Exception as e:
+                print("Bild", u, e)
+                time.sleep(2 + attempt * 3)
+        if data is None:
+            return None
+        feed, baits = read_image(data, feed_names, bait_names)
+        res["f"] += [x for x in feed if x not in res["f"]]
+        res["b"] += [x for x in baits if x not in res["b"]]
+    return res
+
+
 def main(src, cache_path, out_path):
     feed_names, bait_names = candidates()
     cache = {}
     if os.path.exists(cache_path):
         cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict) and v.get("v") == VERSION}
-    out = {}
-    done = 0
     start = time.time()
     posts = []
     for f in glob.glob(os.path.join(src, "api_wechat_positions_*")):
         posts.extend(json.load(open(f, encoding="utf-8")).get("positions", []))
     posts.sort(key=lambda p: p.get("publish_date") or "", reverse=True)
+    todo = {}
     for p in posts:
         pid = p.get("post_id") or ""
         urls = ((p.get("image_urls") or {}).get("config") or [])[:3]
-        if not pid or not urls:
-            continue
-        if pid not in cache:
-            if done >= MAX_NEW or time.time()-start > BUDGET:
-                continue
-            res = {"v": VERSION, "f": [], "b": []}
-            ok = True
-            for u in urls:
-                try:
-                    req = urllib.request.Request(u, headers={"User-Agent": "RF4CompanionMirror/1.0 (+https://github.com/Nalathan01/rf4-companion)"})
-                    with urllib.request.urlopen(req, timeout=30) as r:
-                        feed, baits = read_image(r.read(), feed_names, bait_names)
-                except Exception as e:
-                    print("Bild", pid, e)
-                    ok = False
-                    break
-                res["f"] += [x for x in feed if x not in res["f"]]
-                res["b"] += [x for x in baits if x not in res["b"]]
-                time.sleep(0.3)
-            if not ok:
+        if pid and urls and pid not in cache and pid not in todo and len(todo) < MAX_NEW:
+            todo[pid] = urls
+    done = 0
+    with ThreadPoolExecutor(WORKERS) as ex:
+        jobs = {pid: ex.submit(read_post, urls, feed_names, bait_names, start) for pid, urls in todo.items()}
+        for pid, job in jobs.items():
+            res = job.result()
+            if res is None:
                 continue
             cache[pid] = res
             done += 1
             if done % 20 == 0:
                 json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False)
-        if cache[pid]["f"] or cache[pid]["b"]:
+    out = {}
+    for p in posts:
+        pid = p.get("post_id") or ""
+        if pid in cache and (cache[pid]["f"] or cache[pid]["b"]):
             out[pid] = cache[pid]
     json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(out, open(out_path, "w", encoding="utf-8"), ensure_ascii=False)
-    print("Aus Bild:", len(out), "Spots, Futter:", sum(1 for v in out.values() if v["f"]), "Köder:", sum(1 for v in out.values() if v["b"]), "neu gelesen:", done)
+    print("Aus Bild:", len(out), "Spots, Futter:", sum(1 for v in out.values() if v["f"]), "Köder:", sum(1 for v in out.values() if v["b"]), "neu gelesen:", done, "offen:", len(todo)-done)
 
 
 if __name__ == "__main__":
