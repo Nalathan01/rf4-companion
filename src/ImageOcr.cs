@@ -254,6 +254,17 @@ internal static class ImageOcr
         zhNorm = n.ToArray();
     }
 
+    private static readonly Dictionary<char, char> ZhVariants = new Dictionary<char, char> {
+        { '鮭', '鲑' }, { '魚', '鱼' }, { '鱒', '鳟' }, { '鯉', '鲤' }, { '鯽', '鲫' }, { '蝦', '虾' }, { '貽', '贻' },
+        { '麥', '麦' }, { '鰻', '鳗' }, { '鱸', '鲈' }, { '鯰', '鲶' }, { '蘭', '兰' }, { '漿', '浆' }, { '餌', '饵' }, { '劑', '剂' } };
+
+    private static string ZhFix(string s)
+    {
+        char[] a = s.ToCharArray();
+        for (int i = 0; i < a.Length; i++) { char c; if (ZhVariants.TryGetValue(a[i], out c)) a[i] = c; }
+        return new string(a);
+    }
+
     public static bool ReadSetupZh(byte[] b, out List<string> baits)
     {
         baits = new List<string>();
@@ -265,7 +276,7 @@ internal static class ImageOcr
         ZhCandidates();
         for (int i = start + 1; i < lines.Length && baits.Count < 4; i++)
         {
-            string l = lines[i].Replace(" ", "");
+            string l = ZhFix(lines[i].Replace(" ", ""));
             if (l.IndexOf(':') >= 0 || l.IndexOf('：') >= 0) continue;
             Match m = ZhChar.Match(l);
             if (!m.Success) continue;
