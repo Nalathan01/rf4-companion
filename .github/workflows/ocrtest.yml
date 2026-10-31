@@ -1,0 +1,27 @@
+name: ocrtest
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-chi-sim > /dev/null && pip install -q pillow numpy
+      - run: |
+          curl -s -A "RF4CompanionMirror/1.0" -o c.jpg "https://cdn.rf4.com.cn/public/position/13027875566394465.jpg"
+          cat > t.py <<'PY'
+          import numpy as np, subprocess
+          from PIL import Image, ImageOps
+          im = Image.open("c.jpg").convert("RGB"); a = np.asarray(im).max(axis=2)
+          dark = a < 28
+          rows = np.where(dark.mean(axis=1) > 0.15)[0]; cols = np.where(dark.mean(axis=0) > 0.15)[0]
+          print("size", im.size, "dark rows", rows.min() if len(rows) else None, rows.max() if len(rows) else None, "cols", cols.min() if len(cols) else None, cols.max() if len(cols) else None)
+          for name, img in (("full", im),):
+              for sc in (1, 2, 3):
+                  g = ImageOps.grayscale(img).resize((img.width*sc, img.height*sc), Image.LANCZOS)
+                  g.save("g.png")
+                  out = subprocess.run(["tesseract", "g.png", "-", "-l", "chi_sim", "--psm", "11"], capture_output=True, text=True).stdout
+                  print("== scale", sc); print(" | ".join(x.replace(" ", "") for x in out.splitlines() if x.strip()))
+          PY
+          python3 t.py
