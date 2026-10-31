@@ -106,36 +106,35 @@ def main():
     for f in glob.glob(os.path.join(SRC, "api_wechat_positions_*")):
         posts.extend(json.load(open(f, encoding="utf-8")).get("positions", []))
     posts.sort(key=lambda p: p.get("publish_date") or "", reverse=True)
-    if True:
-        for p in posts:
-            pid = p.get("post_id") or ""
-            urls = ((p.get("image_urls") or {}).get("config") or [])[:2]
-            if not pid or not urls:
+    for p in posts:
+        pid = p.get("post_id") or ""
+        urls = ((p.get("image_urls") or {}).get("config") or [])[:2]
+        if not pid or not urls:
+            continue
+        if pid not in cache:
+            if done >= MAX_NEW:
                 continue
-            if pid not in cache:
-                if done >= MAX_NEW:
-                    continue
-                feed = []
-                for u in urls:
-                    try:
-                        req = urllib.request.Request(u, headers={"User-Agent": "RF4CompanionMirror/1.0 (+https://github.com/Nalathan01/rf4-companion)"})
-                        with urllib.request.urlopen(req, timeout=30) as r:
-                            feed = feed_from_image(r.read(), names)
-                    except Exception as e:
-                        print("Bild", pid, e)
-                        feed = None
-                        break
-                    if feed:
-                        break
-                    time.sleep(0.3)
-                if feed is None:
-                    continue
-                cache[pid] = feed
-                done += 1
-                if done % 20 == 0:
-                    json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False)
-            if cache.get(pid):
-                out[pid] = cache[pid]
+            feed = []
+            for u in urls:
+                try:
+                    req = urllib.request.Request(u, headers={"User-Agent": "RF4CompanionMirror/1.0 (+https://github.com/Nalathan01/rf4-companion)"})
+                    with urllib.request.urlopen(req, timeout=30) as r:
+                        feed = feed_from_image(r.read(), names)
+                except Exception as e:
+                    print("Bild", pid, e)
+                    feed = None
+                    break
+                if feed:
+                    break
+                time.sleep(0.3)
+            if feed is None:
+                continue
+            cache[pid] = feed
+            done += 1
+            if done % 20 == 0:
+                json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+        if cache.get(pid):
+            out[pid] = cache[pid]
     json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
     print("Futter aus Bild:", len(out), "Spots, neu gelesen:", done)
