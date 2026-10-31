@@ -102,8 +102,12 @@ def main():
         cache = json.load(open(CACHE, encoding="utf-8"))
     out = {}
     done = 0
-    for f in sorted(glob.glob(os.path.join(SRC, "api_wechat_positions_*"))):
-        for p in json.load(open(f, encoding="utf-8")).get("positions", []):
+    posts = []
+    for f in glob.glob(os.path.join(SRC, "api_wechat_positions_*")):
+        posts.extend(json.load(open(f, encoding="utf-8")).get("positions", []))
+    posts.sort(key=lambda p: p.get("publish_date") or "", reverse=True)
+    if True:
+        for p in posts:
             pid = p.get("post_id") or ""
             urls = ((p.get("image_urls") or {}).get("config") or [])[:2]
             if not pid or not urls:
