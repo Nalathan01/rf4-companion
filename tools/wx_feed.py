@@ -16,7 +16,7 @@ from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
-VERSION = 2
+VERSION = 3
 WORKERS = 3
 BUDGET = 540
 CJK = re.compile(r"[一-鿿]")
@@ -163,7 +163,7 @@ def baits_from_lines(lines, names):
         if HEAD.search(line):
             inside = True
             continue
-        if not inside or SKIP.search(line) or len(norm(line)) < 2:
+        if not inside or SKIP.search(line) or LABEL.match(line) or len(norm(line)) < 2:
             continue
         en = match_tail(line, names)
         if en and en not in baits:
