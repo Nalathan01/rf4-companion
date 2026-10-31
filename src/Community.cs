@@ -432,6 +432,7 @@ internal static class Community
         Lake l;
         if (!GameData.LakeById.TryGetValue(r.Lake, out l)) return false;
         if (!l.HasBounds) return true;
+        if (SeaMarks.OnLand(r.Lake, r.X, r.Y)) return false;
         return r.X >= l.XMin-1 && r.X <= l.XMax + 1 && r.Y >= Math.Min(l.YSouth, l.YNorth)-1 && r.Y <= Math.Max(l.YSouth, l.YNorth) + 1;
     }
 
