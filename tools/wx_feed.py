@@ -13,14 +13,15 @@ from PIL import Image, ImageOps
 from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC, CACHE, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 MAX_NEW = 150
-LABEL = re.compile(r"^(基础料|诱.{1,2}添加剂|添加剂|增香剂|香料)")
+BUDGET = 600
 CJK = re.compile(r"[一-鿿]")
+SKIP = re.compile(r"[:：+＋]")
+CRUSHED = re.compile(r"[\(（]?碎的[\)）]?")
 
 
 def norm(s):
-    return "".join(c for c in s.lower() if c.isalnum())
+    return "".join(c for c in s.lower() if c.isalnum() and not "①" <= c <= "⓿")
 
 
 def lev(a, b):
@@ -36,15 +37,63 @@ def lev(a, b):
 def candidates():
     items = json.load(open(os.path.join(ROOT, "data", "itemnames.json"), encoding="utf-8"))
     zi = items["langs"].index("zh")
-    names = {}
+    feed = {}
     for r in items["rows"]:
         if zi < len(r) and CJK.search(r[zi] or ""):
-            names.setdefault(norm(r[zi]), r[0])
+            feed.setdefault(norm(r[zi]), r[0])
     game = json.load(open(os.path.join(ROOT, "data", "gamedata.json"), encoding="utf-8"))
     for k, v in game["names"].items():
         if CJK.search(v.get("zh") or ""):
-            names.setdefault(norm(v["zh"]), k)
-    return names
+            feed.setdefault(norm(v["zh"]), k)
+    baits = {}
+    for k in game["baits"]:
+        zh = (game["names"].get(k) or {}).get("zh") or ""
+        if CJK.search(zh):
+            baits.setdefault(norm(zh), k)
+    dips = json.load(open(os.path.join(ROOT, "data", "dips.json"), encoding="utf-8"))
+    for k, v in dips.items():
+        if CJK.search(v.get("zh") or ""):
+            baits.setdefault(norm(v["zh"]), k)
+    return feed, baits
+
+
+def match_tail(line, names):
+    s = norm(line)
+    if len(s) < 2:
+        return None
+    best = []
+    for k, en in names.items():
+        if len(k) > len(s) + 2:
+            continue
+        for cut in (0, 1, 2):
+            t = s[:len(s)-cut] if cut else s
+            if len(t) < len(k)-2:
+                break
+            d = min(lev(t[-len(k):], k), lev(t, k))
+            best.append((d, -len(k), k, en))
+    if not best:
+        return None
+    best.sort()
+    d, nl, k, en = best[0]
+    if d > max(1, len(k) // 5):
+        return None
+    for o in best[1:]:
+        if o[0] != d or o[1] != nl:
+            break
+        if o[3] != en:
+            return None
+    return en
+
+
+def ocr(img, psm):
+    img.save("/tmp/wx_ocr.png")
+    text = subprocess.run(["tesseract", "/tmp/wx_ocr.png", "-", "-l", "chi_sim+eng", "--psm", str(psm)], capture_output=True, text=True).stdout
+    return [x.replace(" ", "") for x in text.splitlines() if x.strip()]
+
+
+def prepare(im):
+    g = ImageOps.invert(ImageOps.grayscale(im))
+    return g.resize((g.width * 2, g.height * 2), Image.LANCZOS)
 
 
 def find_box(im):
@@ -62,82 +111,100 @@ def find_box(im):
     return best
 
 
-def feed_from_image(data, names):
-    im = Image.open(io.BytesIO(data)).convert("RGB")
-    box = find_box(im)
-    if not box:
-        return []
-    crop = ImageOps.invert(ImageOps.grayscale(im.crop(box[1:])))
-    crop = crop.resize((crop.width * 3, crop.height * 3), Image.LANCZOS)
-    crop.save("/tmp/wx_feed.png")
-    text = subprocess.run(["tesseract", "/tmp/wx_feed.png", "-", "-l", "chi_sim", "--psm", "6"], capture_output=True, text=True).stdout
-    lines = [x.replace(" ", "") for x in text.splitlines()]
-    if not any(LABEL.match(x) for x in lines):
-        return []
-    keys = list(names.keys())
+def feed_from_lines(lines, names):
     feed = []
+    inside = False
     for line in lines:
-        if not LABEL.match(line):
+        if line.startswith("类型"):
+            inside = True
             continue
-        name = norm(LABEL.sub("", line))
-        if len(name) < 2:
+        if not inside:
             continue
-        scored = sorted((lev(name, k), k) for k in keys if abs(len(k)-len(name)) <= 2)
-        if not scored:
-            continue
-        d, k = scored[0]
-        if d > max(1, len(name) // 5):
-            continue
-        if len(scored) > 1 and scored[1][0] == d and names[scored[1][1]] != names[k]:
-            continue
-        if names[k] not in feed:
-            feed.append(names[k])
+        if line.startswith("情况") or line.startswith("类别"):
+            break
+        en = match_tail(CRUSHED.sub("", line), names)
+        if en and en not in feed:
+            feed.append(en)
     return feed
 
 
-def main():
-    names = candidates()
+def baits_from_lines(lines, names):
+    baits = []
+    inside = False
+    for line in lines:
+        if line.startswith("安装"):
+            inside = True
+            continue
+        if not inside or SKIP.search(line) or not CJK.search(line):
+            continue
+        en = match_tail(line, names)
+        if en and en not in baits:
+            baits.append(en)
+    return baits
+
+
+def read_image(data, feed_names, bait_names):
+    im = Image.open(io.BytesIO(data)).convert("RGB")
+    feed, baits = [], []
+    box = find_box(im)
+    if box:
+        crop = ImageOps.invert(ImageOps.grayscale(im.crop(box[1:])))
+        crop = crop.resize((crop.width * 3, crop.height * 3), Image.LANCZOS)
+        feed = feed_from_lines(ocr(crop, 6), feed_names)
+    if not feed:
+        lines = ocr(prepare(im), 6)
+        baits = baits_from_lines(lines, bait_names)
+        if not baits:
+            feed = feed_from_lines(lines, feed_names)
+    return feed, baits
+
+
+def main(src, cache_path, out_path):
+    feed_names, bait_names = candidates()
     cache = {}
-    if os.path.exists(CACHE):
-        cache = json.load(open(CACHE, encoding="utf-8"))
+    if os.path.exists(cache_path):
+        cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict)}
     out = {}
     done = 0
+    start = time.time()
     posts = []
-    for f in glob.glob(os.path.join(SRC, "api_wechat_positions_*")):
+    for f in glob.glob(os.path.join(src, "api_wechat_positions_*")):
         posts.extend(json.load(open(f, encoding="utf-8")).get("positions", []))
     posts.sort(key=lambda p: p.get("publish_date") or "", reverse=True)
     for p in posts:
         pid = p.get("post_id") or ""
-        urls = ((p.get("image_urls") or {}).get("config") or [])[:2]
+        urls = ((p.get("image_urls") or {}).get("config") or [])[:3]
         if not pid or not urls:
             continue
         if pid not in cache:
-            if done >= MAX_NEW:
+            if done >= MAX_NEW or time.time()-start > BUDGET:
                 continue
-            feed = []
+            res = {"f": [], "b": []}
+            ok = True
             for u in urls:
                 try:
                     req = urllib.request.Request(u, headers={"User-Agent": "RF4CompanionMirror/1.0 (+https://github.com/Nalathan01/rf4-companion)"})
                     with urllib.request.urlopen(req, timeout=30) as r:
-                        feed = feed_from_image(r.read(), names)
+                        feed, baits = read_image(r.read(), feed_names, bait_names)
                 except Exception as e:
                     print("Bild", pid, e)
-                    feed = None
+                    ok = False
                     break
-                if feed:
-                    break
+                res["f"] += [x for x in feed if x not in res["f"]]
+                res["b"] += [x for x in baits if x not in res["b"]]
                 time.sleep(0.3)
-            if feed is None:
+            if not ok:
                 continue
-            cache[pid] = feed
+            cache[pid] = res
             done += 1
             if done % 20 == 0:
-                json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False)
-        if cache.get(pid):
+                json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False)
+        if cache[pid]["f"] or cache[pid]["b"]:
             out[pid] = cache[pid]
-    json.dump(cache, open(CACHE, "w", encoding="utf-8"), ensure_ascii=False)
-    json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
-    print("Futter aus Bild:", len(out), "Spots, neu gelesen:", done)
+    json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False)
+    json.dump(out, open(out_path, "w", encoding="utf-8"), ensure_ascii=False)
+    print("Aus Bild:", len(out), "Spots, Futter:", sum(1 for v in out.values() if v["f"]), "Köder:", sum(1 for v in out.values() if v["b"]), "neu gelesen:", done)
 
 
-main()
+if __name__ == "__main__":
+    main(*sys.argv[1:4])

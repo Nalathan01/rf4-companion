@@ -114,17 +114,18 @@ internal static class Mirror
             if (rec != null) raw["mrec"] = AppEnv.Obj("t", rec.Table, "r", rec.Region, "d", rec.Date, "b", rec.Bait);
             raw["mixed"] = PostText.Mixed(text);
             raw["ms"] = Community.HasSetup(r);
-            if (r.Id.StartsWith("wx:", StringComparison.Ordinal) && baits.Length == 0 && ImageOcr.ZhLang().Length > 0)
+            object wf = null;
+            if (wxFeed != null && r.Id.StartsWith("wx:", StringComparison.Ordinal)) wxFeed.TryGetValue(r.Id.Substring(3), out wf);
+            Dictionary<string, object> wd = wf as Dictionary<string, object>;
+            string[] imgFeed = (wd != null ? AppEnv.GetList(wd, "f") : wf as System.Collections.IList ?? new object[0]).Cast<object>().Select(o => o.ToString()).ToArray();
+            string[] imgBaits = wd != null ? AppEnv.GetList(wd, "b").Cast<object>().Select(o => o.ToString()).ToArray() : new string[0];
+            if (imgBaits.Length > 0) { raw["baitDetail"] = string.Join(" + ", imgBaits); raw["mimg"] = true; raw["ms"] = true; }
+            else if (r.Id.StartsWith("wx:", StringComparison.Ordinal) && baits.Length == 0 && ImageOcr.ZhLang().Length > 0)
             {
                 string[] wb = Rf4Fish.SetupBaits(r);
                 if (wb.Length > 0) { raw["baitDetail"] = string.Join(" + ", wb); raw["mimg"] = true; raw["ms"] = true; }
             }
-            object wf;
-            if (wxFeed != null && r.Id.StartsWith("wx:", StringComparison.Ordinal) && AppEnv.GetString(raw, "groundbait").Length == 0 && wxFeed.TryGetValue(r.Id.Substring(3), out wf))
-            {
-                string[] parts = ((System.Collections.IList)wf).Cast<object>().Select(o => o.ToString()).ToArray();
-                if (parts.Length > 0) raw["groundbait"] = string.Join(" + ", parts);
-            }
+            if (imgFeed.Length > 0) raw["groundbait"] = string.Join(" + ", imgFeed);
             outL.Add(raw);
         }
         Rf4Fish.SaveSetupCache();

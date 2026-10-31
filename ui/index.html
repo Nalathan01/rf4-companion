@@ -546,7 +546,7 @@ async function loadDetail() {
     <div class="ev">
       <div class="ev-top"><div class="ev-fish">${e.fish.map((n, i) => esc(n) + CC(e.fishCc && e.fishCc[i])).join(", ") || esc((e.mixed ? T("mixedFish", "Verschiedene Fische") : T("unknownFish", "Fisch unbekannt")))}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
-      ${Object.keys(e.detail).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
+      ${Object.keys(e.detail).sort((x, y) => detOrder(x)-detOrder(y)).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
       <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
       ${e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="${esc(e.postLang || "ru")}" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : e.imgs && e.imgs.length ? `<div class="thumbs web">${e.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}
@@ -567,7 +567,8 @@ async function loadDetail() {
     }
   });
 }
-const DET = { baitDetail: "baitExact", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed", baitRaw: "baitOrig" };
+const detOrder = k => { const i = Object.keys(DET).indexOf(k); return i < 0 ? 99 : i; };
+const DET = { baitDetail: "bait", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed", baitRaw: "baitOrig" };
 $("lightbox").onclick = () => $("lightbox").classList.remove("show");
 (function mapInput() {
   const cv = $("map"); let drag = null;
