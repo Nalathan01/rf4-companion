@@ -219,7 +219,7 @@ dialog.sheet[open] { display: flex; }
 .site:hover { border-color: rgba(79,168,201,0.6); }
 .site small { display: block; color: var(--muted); margin-top: 2px; }
 .star { color: var(--warm); }
-.nolog .logonly { display: none !important; }
+.nolog .logonly, .notrk .trkonly { display: none !important; }
 .boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
 .boot.hide { opacity: 0; pointer-events: none; }
 .boot-box { width: min(420px, 86vw); text-align: center; }
@@ -298,7 +298,7 @@ dialog.sheet[open] { display: flex; }
       <div class="col">
         <div class="title-row"><h2 data-t="navLog">Mein Fangbuch</h2><button class="btn small primary" id="addCatch" data-t="logAdd">Fang eintragen</button></div>
         <p class="sub" id="logSub"></p>
-        <div class="trk" id="trk"></div>
+        <div class="trk trkonly" id="trk"></div>
         <div class="filters">
           <input class="search" id="logQ" type="search" autocomplete="off" style="flex:1;margin:0;min-width:200px">
           <select id="logLake"></select>
@@ -322,7 +322,7 @@ dialog.sheet[open] { display: flex; }
 <div class="menu" id="menu">
   <button data-m="lookup" data-t="tabInfo">Nachschlagen</button>
   <button data-m="web" data-t="tabWeb">Webseiten</button>
-  <button class="logonly" data-m="settings" data-t="settings">Einstellungen</button>
+  <button class="logonly trkonly" data-m="settings" data-t="settings">Einstellungen</button>
   <button data-m="about" data-t="about">Über und Updates</button>
 </div>
 <dialog id="sheet" class="sheet"><div class="sheet-head"><h3 id="sheetTitle"></h3><button class="icon-btn" id="sheetClose">✕</button></div><div id="sheetBody"></div></dialog>
@@ -373,6 +373,7 @@ async function boot() {
   await loadActive();
   loadFind();
   document.documentElement.classList.toggle("nolog", !INIT.features.log);
+  document.documentElement.classList.toggle("notrk", !INIT.features.tracker);
   loadLog();
   trk("status");
   loadExtensions();
@@ -715,7 +716,7 @@ function goSpot(lake, key) {
 }
 let LOG = null, LOGQ = "", LOGLAKE = "", OPEN = new Set(), TRK = null, TRKV = -1;
 async function trk(cmd, body) {
-  if (!INIT.features.log) return;
+  if (!INIT.features.tracker) return;
   try { TRK = await api("/api/tracker/" + cmd, body || {}); } catch (e) { alert(e.message.startsWith("trkNoShot") ? T("trkNoShot", "Der Screenshot dieser Rute ist nicht mehr da.") : e.message); return; }
   renderTracker();
 }

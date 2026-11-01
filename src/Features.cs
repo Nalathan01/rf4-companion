@@ -5,4 +5,9 @@ internal static class Features
 #else
     public static readonly bool Log = false;
 #endif
+#if PRIVATE
+    public static readonly bool Tracker = true;
+#else
+    public static readonly bool Tracker = false;
+#endif
 }

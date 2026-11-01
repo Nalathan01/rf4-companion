@@ -459,7 +459,7 @@ internal static class Tracker
         }
     }
 
-#if PRIVATE || FANGBUCH
+#if PRIVATE
     private static void HotkeyLoop()
     {
         try

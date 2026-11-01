@@ -42,7 +42,7 @@ internal sealed class Api
                 Step("bootData", 10);
                 UserStore.Load();
                 Extensions.Load();
-                if (Features.Log) Tracker.Start();
+                if (Features.Tracker) Tracker.Start();
                 Cloud.LoadState();
                 Scans.Load();
                 Community.Load();
@@ -135,7 +135,7 @@ internal sealed class Api
         WaitReady();
         if (path.StartsWith("/api/ext/", StringComparison.Ordinal)) return Extensions.Call(path.Substring(9), args);
         if (path == "/api/extensions") return Extensions.Scripts.ToArray();
-        if (path.StartsWith("/api/tracker/", StringComparison.Ordinal)) return Tracker.Command(path.Substring(13), args ?? new Dictionary<string, object>());
+        if (path.StartsWith("/api/tracker/", StringComparison.Ordinal) && Features.Tracker) return Tracker.Command(path.Substring(13), args ?? new Dictionary<string, object>());
         switch (path)
         {
             case "/api/init": return Init();
@@ -442,7 +442,7 @@ internal sealed class Api
             lakes.Add(AppEnv.Obj("id", l.Id, "name", l.Name(lang), "map", l.HasBounds && l.MapKey.Length > 0 ? "/maps/" + l.MapKey + ".jpg" : "",
                 "b", new double[] { l.XMin, l.XMax, l.YSouth, l.YNorth }));
         }
-        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
+        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
             "reports", Community.Count);
     }
 
