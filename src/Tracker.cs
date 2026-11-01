@@ -357,13 +357,29 @@ internal static class Tracker
         if (x > 0 && y > 0) cand = cand.Where(l => l.HasBounds && x >= Math.Min(l.XMin, l.XMax) && x <= Math.Max(l.XMin, l.XMax) && y >= Math.Min(l.YNorth, l.YSouth) && y <= Math.Max(l.YNorth, l.YSouth));
         string[] lakes = lake.Length > 0 ? new string[] { lake } : fk.Count > 0 || x > 0 ? cand.Select(l => l.Id).ToArray() : new string[0];
         Func<string, string> tr = k => string.IsNullOrEmpty(k) ? "" : GameData.Translate(k, lang);
+        TrackLists tl = TrackerParse.Lists(code);
+        Func<string, string> item = k => { if (string.IsNullOrEmpty(k)) return ""; NameHit h = TrackerParse.Match(k, tl.Items, 0.75); return tr(h != null ? h.En : k); };
         Dictionary<string, object> rc = null;
         if (r.Recipe != null)
-            rc = AppEnv.Obj("name", S(r.Recipe, "name"), "type", S(r.Recipe, "type"), "base", tr(S(r.Recipe, "base")), "attractant", tr(S(r.Recipe, "attractant")),
-                "additives", AppEnv.GetList(r.Recipe, "additives").Cast<object>().Select(o => tr((o ?? "").ToString())).Where(v => v.Length > 0).ToArray());
+            rc = AppEnv.Obj("name", S(r.Recipe, "name"), "type", S(r.Recipe, "type"), "base", item(S(r.Recipe, "base")), "attractant", item(S(r.Recipe, "attractant")),
+                "additives", AppEnv.GetList(r.Recipe, "additives").Cast<object>().Select(o => item((o ?? "").ToString())).Where(v => v.Length > 0).ToArray());
+        double money = 0;
+        Match mm = Regex.Match(string.Join("\n", lines), @"(Im\s*Wert\s*von|Worth|Total value|На\s*сумму|Стоимость|Wartość)[\s\S]{0,40}?(\d{1,3}(?:[., \u00a0]\d{3})*[.,]\d{2})(?!\d)", RegexOptions.IgnoreCase);
+        if (mm.Success) money = Money(mm.Groups[2].Value);
         return AppEnv.Obj("kind", r.Kind, "fish", fish.GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj("name", tr(g.Key), "n", g.Count())).ToArray(),
             "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", lake, "lakes", lakes,
-            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud, "minutes", minutes);
+            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud, "minutes", minutes, "money", money);
+    }
+
+    private static double Money(string s)
+    {
+        s = Regex.Replace(s, @"\s", "");
+        int c = s.LastIndexOf(','), d = s.LastIndexOf('.');
+        int dec = Math.Max(c, d);
+        if (dec >= 0 && s.Length-dec-1 == 2) s = Regex.Replace(s.Substring(0, dec), "[.,]", "") + "." + s.Substring(dec + 1);
+        else s = Regex.Replace(s, "[.,]", "");
+        double v;
+        return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v) ? v : 0;
     }
 
     private static string Lake()

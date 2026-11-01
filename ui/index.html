@@ -985,7 +985,7 @@ function wizSteps() {
       check: () => v.feedType && !v.pva && (v.rBase || v.rAdd.some(Boolean)) ? T("wizNeedRecipe", "Bitte dem Futter einen Namen geben, damit es als Rezept gespeichert wird.") : "",
       bind: () => { $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => $("wAdd" + i).value = r.additives[i] || ""); }; } },
     { t: T("wizDone", "Abschluss"), hint: T("wizDoneHint", "Name und Kommentar, dann alles prüfen und speichern."),
-      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", v.notes || wizNote())}<div class="wiz-sum">${wizSummary()}</div>`,
+      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", !v.notes || (WIZ.stats && v.notes.startsWith(T("fishTime", "Angelzeit") + ":")) ? wizNote() || v.notes : v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
       read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; },
       check: () => "", bind: () => bindNotes("wNotes") }
   ];
@@ -1021,9 +1021,10 @@ function wizApply(kind, a) {
   WIZ.ana[kind] = a;
   if (a.fish.length) {
     const top = a.fish.slice(0, 3), total = a.fish.reduce((n, f) => n + f.n, 0);
-    if (!v.fish || v.fishAuto) { v.fish = top.map(f => f.name).join(", "); v.fishAuto = true; }
+    if (!v.fish || v.fishAuto !== false) { v.fish = top.map(f => f.name).join(", "); v.fishAuto = true; }
     got.push(top.map(f => (f.n > 1 ? f.n + "× " : "") + f.name).join(", ") + (a.fish.length > 3 ? " · " + T("fishTotal", "{0} Fische gesamt").replace("{0}", total) : ""));
-    if (a.minutes) { WIZ.stats = { minutes: a.minutes, count: total }; got.push(T("fishTime", "Angelzeit") + " " + fmtMinutes(a.minutes)); }
+    if (a.minutes) { WIZ.stats = { minutes: a.minutes, count: total, money: a.money || 0 }; got.push(T("fishTime", "Angelzeit") + " " + fmtMinutes(a.minutes)); }
+    if (a.money) got.push(T("revenue", "Erlös") + " " + a.money.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   }
   if (a.x && a.y) { if (!v.x) { v.x = a.x; v.y = a.y; } got.push(a.x + ":" + a.y); }
   if (a.lakes && a.lakes.length) WIZ.lakes = WIZ.lakes ? WIZ.lakes.filter(id => a.lakes.includes(id)) : a.lakes.slice();
@@ -1084,7 +1085,8 @@ function wizNote() {
   const st = WIZ.stats;
   if (!st) return "";
   const parts = [T("fishTime", "Angelzeit") + ": " + fmtMinutes(st.minutes), T("fishTotal", "{0} Fische gesamt").replace("{0}", st.count)];
-  if (st.money) parts.push(T("revenue", "Erlös") + ": " + st.money.toLocaleString(INIT.lang) + " · " + Math.round(st.money * 60 / Math.max(1, st.minutes)).toLocaleString(INIT.lang) + " " + T("perHour", "pro Stunde"));
+  const fmt = n => n.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (st.money) parts.push(T("revenue", "Erlös") + ": " + fmt(st.money) + " · " + fmt(st.money * 60 / Math.max(1, st.minutes)) + " " + T("perHour", "pro Stunde"));
   return parts.join(" · ");
 }
 function wizSummary() {
