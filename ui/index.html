@@ -199,7 +199,16 @@ dialog h3 { margin: 0 0 14px; font-family: var(--font-display); font-size: 19px;
 .form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
 .form label.wide { grid-column: 1 / 3; }
 .form input, .form select { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; min-width: 0; color: var(--ink); font-size: 13.5px; }
-.form input:focus, .form select:focus { outline: none; border-color: var(--accent); }
+.form input:focus, .form select:focus, .form textarea:focus { outline: none; border-color: var(--accent); }
+.form textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; color: var(--ink); font: inherit; font-size: 13.5px; resize: vertical; min-height: 64px; }
+.fbimgs { grid-column: 1 / 3; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.fbimg { position: relative; aspect-ratio: 4 / 3; background: var(--bg); border: 1px dashed var(--line); border-radius: 9px; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 20px; }
+.fbimg:hover { border-color: var(--accent); }
+.fbimg img { width: 100%; height: 100%; object-fit: cover; }
+.fbimg small { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); color: var(--ink); font-size: 10.5px; text-align: center; padding: 1px 2px; }
+.fbimg .x { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); border: 0; border-radius: 6px; color: var(--ink); cursor: pointer; font-size: 11px; padding: 1px 5px; }
+.fbimg.busy { opacity: 0.5; }
+.cnt { font-size: 11px; color: var(--muted); text-align: right; }
 .dlg-acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
 .dlg-acts .danger { margin-right: auto; color: #e88; }
 .dlg-err { color: #e88; font-size: 12.5px; margin-top: 10px; min-height: 1em; }
@@ -520,7 +529,7 @@ function mapLabel(g, x, y, t) {
 function ownDetail(o) {
   const st = LOG.catches.filter(c => c.spotId === o.id);
   const fc = {}; st.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
-  const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], ["PVA", o.pva], ["Clip", o.dist], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
+  const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], [(Object.fromEntries(feedTypes())[feedType(o)] || T("feed", "Futter")), o.pva], [T("technique", "Angelart"), o.tech ? T("tech_" + o.tech, o.tech) : ""], ["Clip", o.dist], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
   $("detail").innerHTML = `<div class="d-head"><h3>${esc(o.lakeName)} · ${esc(o.name || o.x + ":" + o.y)}</h3><span class="d-sum">${esc(T("ownSpot", "Eigener Spot"))}</span></div>
     <div class="ev">${rows.map(x => `<div class="ev-det"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}
       ${st.length ? `<div class="line" style="margin-top:8px">${Object.entries(fc).sort((a, b) => b[1]-a[1]).map(([f, n]) => `<span class="tag">${n}× ${esc(f)}</span>`).join("")}</div>` : ""}
@@ -803,7 +812,7 @@ function renderLog() {
     return `<div class="grp ${OPEN.has(g.key) ? "open" : ""}" data-k="${esc(g.key)}">
       <div class="grp-head"><b>${esc(fmtDate(g.date))}<small>${esc(g.lakeName)}${where ? " · " + esc(where) : ""}</small></b><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", g.items.length))}</span></div>
       <div class="line">${fish}${baits}</div>
-      <div class="rows"><table class="tbl">${g.items.map(c => `<tr><td>${esc(c.fish)}</td><td class="num">${esc(c.weight)}</td><td>${esc(c.baits)}${c.dip ? `<small>${esc(c.dip)}</small>` : ""}</td><td class="num"><button class="act" data-edit="${esc(c.id)}" title="${esc(T("edit", "Bearbeiten"))}">✎</button></td></tr>`).join("")}</table></div>
+      <div class="rows"><table class="tbl">${g.items.map(c => `<tr><td>${esc(c.fish)}</td><td class="num">${esc(c.weight)}</td><td>${esc(c.baits)}${c.dip ? `<small>${esc(c.dip)}</small>` : ""}</td><td class="num">${Object.keys(c.images || {}).length ? `<span title="${esc(T("images", "Bilder"))}">📷 ${Object.keys(c.images).length}</span> ` : ""}<button class="act" data-edit="${esc(c.id)}" title="${esc(T("edit", "Bearbeiten"))}">✎</button></td></tr>`).join("")}</table></div>
     </div>`;
   }).join("") : `<div class="empty">${esc(L.catches.length ? T("logNoMatch", "Nichts gefunden.") : T("logEmpty", "Noch keine Fänge. Mit „Fang eintragen“ legst du den ersten an."))}</div>`;
   $("logGroups").querySelectorAll(".grp-head").forEach(h => h.onclick = () => { const g = h.parentElement, k = g.dataset.k; OPEN.has(k) ? OPEN.delete(k) : OPEN.add(k); g.classList.toggle("open"); });
@@ -813,7 +822,7 @@ function renderLog() {
   $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
   $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotDialog(LOG.spots.find(s => s.id === m.dataset.id)));
   $("logSpots").querySelectorAll("[data-map]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = LOG.spots.find(s => s.id === b.dataset.map); showView("active"); $("ownChk").checked = true; LAKE = o.lake; $("lakeSel").value = o.lake; SEL = "own:" + o.id; loadActive(); });
-  const RT = { pva: "PVA", groundbait: T("groundbaitMix", "Futtermischung") };
+  const RT = Object.fromEntries(feedTypes());
   $("logRecipes").innerHTML = L.recipes.length ? L.recipes.map(r => `<div class="mini" data-id="${esc(r.id)}"><div class="top">${esc(r.name)}<span>${esc(RT[r.type] || r.type)}</span></div><div class="b">${esc([r.base, ...r.additives].filter(Boolean).join(", "))}</div><div class="b" style="color:var(--muted)">${r.attractant ? esc(T("attractant", "Lockstoff")) + ": " + esc(r.attractant) : ""}${r.lakes.length ? (r.attractant ? " · " : "") + esc(r.lakes.join(", ")) : ""}${r.uses ? " · " + esc(T("catchesN", "{0} Fänge").replace("{0}", r.uses)) : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoRecipes", "Noch keine Rezepte."))}</div>`;
   $("logRecipes").querySelectorAll(".mini").forEach(m => m.onclick = () => recipeDialog(LOG.recipes.find(r => r.id === m.dataset.id)));
 }
@@ -825,7 +834,7 @@ async function recipeDialog(rc) {
   const add = [0, 1, 2, 3].map(i => field("rAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.additives[i] || "", 'list="dlItem"')).join("");
   openDlg(rc ? T("logEditRecipe", "Rezept bearbeiten") : T("logAddRecipe", "Rezept anlegen"),
     `${field("rName", T("name", "Name"), v.name, "", true)}
-     <label>${esc(T("type", "Art"))}<select id="rType"><option value="pva" ${v.type === "pva" ? "selected" : ""}>PVA</option><option value="groundbait" ${v.type === "groundbait" ? "selected" : ""}>${esc(T("groundbaitMix", "Futtermischung"))}</option></select></label>
+     <label>${esc(T("type", "Art"))}<select id="rType">${feedTypes().map(f => `<option value="${f[0]}" ${f[0] === v.type ? "selected" : ""}>${esc(f[1])}</option>`).join("")}</select></label>
      <label>${esc(T("lake", "Gewässer"))}<select id="rLake"><option value=""></option>${lakeOptions(lakeId)}</select></label>
      ${field("rBase", T("base", "Grundfutter"), v.base, 'list="dlItem"')}
      ${field("rAttr", T("attractant", "Lockstoff"), v.attractant, 'list="dlItem"')}
@@ -840,6 +849,32 @@ async function fillLists(lake) {
   const l = await api("/api/loglists?lake=" + encodeURIComponent(lake || ""));
   const opt = a => a.map(x => `<option value="${esc(x)}">`).join("");
   $("dlFish").innerHTML = opt(l.fish); $("dlBait").innerHTML = opt(l.baits); $("dlDip").innerHTML = opt(l.dips); $("dlPva").innerHTML = opt(l.pva); $("dlRig").innerHTML = opt(l.rigs);
+}
+const TECHS = ["float", "bottom", "spin", "marine", "trolling"];
+const IMGK = [["spot", "imgSpot", "Spotbild"], ["net", "imgNet", "Kescherbild"], ["setup", "imgSetup", "Setupbild"], ["feed", "imgFeed", "Futterbild"], ["map", "imgMap", "Kartenbild"], ["other", "imgOther", "Sonstiges"]];
+function feedTypes() { return [["ball", T("feedBall", "Futterbällchen")], ["groundbait", T("groundbaitMix", "Futtermischung")], ["pva", "PVA"]]; }
+function feedType(o) { return o.feedType || (o.pva ? "pva" : ""); }
+function feedFields(p, o) {
+  const ft = feedType(o);
+  return `<label>${esc(T("feed", "Futter"))}<select id="${p}FeedT"><option value=""></option>${feedTypes().map(f => `<option value="${f[0]}" ${f[0] === ft ? "selected" : ""}>${esc(f[1])}</option>`).join("")}</select></label>${field(p + "Pva", T("recipe", "Rezept"), o.pva, 'list="dlPva"')}`;
+}
+function techField(id, v) { return `<label>${esc(T("technique", "Angelart"))}<select id="${id}"><option value=""></option>${TECHS.map(t => `<option value="${t}" ${t === v ? "selected" : ""}>${esc(T("tech_" + t, t))}</option>`).join("")}</select></label>`; }
+function notesField(id, v) { return `<label class="wide">${esc(T("notes", "Notiz"))}<textarea id="${id}" maxlength="600">${esc(v || "")}</textarea><span class="cnt" id="${id}Cnt"></span></label>`; }
+function bindNotes(id) { const n = $(id), c = $(id + "Cnt"), up = () => c.textContent = T("charsLeft", "{0} Zeichen übrig").replace("{0}", 600 - n.value.length); n.oninput = up; up(); }
+let IMGS = {};
+function renderImgs() {
+  $("fImgs").innerHTML = IMGK.map(k => `<div class="fbimg" data-k="${k[0]}">${IMGS[k[0]] ? `<img src="/img/fb/${esc(IMGS[k[0]])}?t=${TOKEN}" alt=""><button class="x" title="${esc(T("delete", "Löschen"))}">✕</button>` : "+"}<small>${esc(T(k[1], k[2]))}</small><input type="file" accept="image/png,image/jpeg,image/webp" hidden></div>`).join("");
+  $("fImgs").querySelectorAll(".fbimg").forEach(d => {
+    const inp = d.querySelector("input"), k = d.dataset.k;
+    d.onclick = e => { if (e.target.classList.contains("x")) { delete IMGS[k]; renderImgs(); return; } if (e.target !== inp) inp.click(); };
+    inp.onchange = () => {
+      const f = inp.files[0]; if (!f) return;
+      d.classList.add("busy");
+      const r = new FileReader();
+      r.onload = async () => { try { IMGS[k] = (await api("/api/fbimage", { data: r.result })).name; } catch (e) { $("dlgErr").textContent = e.message; } renderImgs(); };
+      r.readAsDataURL(f);
+    };
+  });
 }
 function lakeOptions(sel) { return INIT.lakes.map(l => `<option value="${l.id}" ${l.id === sel ? "selected" : ""}>${esc(l.name)}</option>`).join(""); }
 function field(id, label, val, extra, wide) { return `<label class="${wide ? "wide" : ""}">${esc(label)}<input id="${id}" value="${esc(val == null ? "" : val)}" ${extra || ""}></label>`; }
@@ -864,16 +899,22 @@ async function catchDialog(c) {
      ${field("fBait", T("bait", "Köder"), last.bait, 'list="dlBait"')}
      ${field("fBait2", T("bait2", "Köder 2"), last.bait2, 'list="dlBait"')}
      ${field("fDip", "Dip", last.dip, 'list="dlDip"')}
-     ${field("fPva", "PVA", last.pva, 'list="dlPva"')}
+     ${feedFields("f", last)}
      ${field("fRig", T("rigL", "Montage"), last.rig, 'list="dlRig"')}
+     ${techField("fTech", last.tech)}
      <label>${esc(T("logSpot", "Eigener Spot"))}<select id="fSpot">${spotOptions(lake, last.spotId)}</select></label>
      ${field("fX", "X", last.x, 'inputmode="numeric"')}${field("fY", "Y", last.y, 'inputmode="numeric"')}
      ${field("fClip", "Clip (m)", c ? c.clip : "", 'inputmode="decimal"')}${field("fDepth", T("depth", "Tiefe"), c ? c.depth : "")}
-     ${field("fNotes", T("notes", "Notiz"), c ? c.notes : "", "", true)}`,
+     ${field("fTemp", T("temperature", "Temperatur") + " (°C)", c ? c.temp : last.temp, 'inputmode="decimal"')}
+     <label class="wide">${esc(T("images", "Bilder"))}</label><div class="fbimgs" id="fImgs"></div>
+     ${notesField("fNotes", c ? c.notes : "")}`,
     async () => {
-      await api("/api/catch/save", { id: c ? c.id : "", date: $("fDate").value, lake: $("fLake").value, fish: $("fFish").value, weight: $("fWeight").value, bait: $("fBait").value, bait2: $("fBait2").value, dip: $("fDip").value, pva: $("fPva").value, rig: $("fRig").value, spotId: $("fSpot").value, x: $("fX").value, y: $("fY").value, clip: $("fClip").value, depth: $("fDepth").value, notes: $("fNotes").value });
+      await api("/api/catch/save", { id: c ? c.id : "", date: $("fDate").value, lake: $("fLake").value, fish: $("fFish").value, weight: $("fWeight").value, bait: $("fBait").value, bait2: $("fBait2").value, dip: $("fDip").value, pva: $("fPva").value, feedType: $("fFeedT").value, tech: $("fTech").value, temp: $("fTemp").value, images: IMGS, rig: $("fRig").value, spotId: $("fSpot").value, x: $("fX").value, y: $("fY").value, clip: $("fClip").value, depth: $("fDepth").value, notes: $("fNotes").value });
     },
     c ? async () => { await api("/api/catch/delete", { ids: [c.id] }); } : null);
+  IMGS = Object.assign({}, c && c.images || {});
+  renderImgs();
+  bindNotes("fNotes");
   $("fLake").onchange = async () => { await fillLists($("fLake").value); $("fSpot").innerHTML = spotOptions($("fLake").value, ""); };
   $("fSpot").onchange = () => { const s = LOG.spots.find(x => x.id === $("fSpot").value); if (s && s.x) { $("fX").value = s.x; $("fY").value = s.y; } };
 }
@@ -887,11 +928,12 @@ async function spotDialog(s) {
      ${field("sFish", T("fish", "Fisch"), v.fish, 'list="dlFish"')}
      ${field("sX", "X", v.x, 'inputmode="numeric"')}${field("sY", "Y", v.y, 'inputmode="numeric"')}
      ${field("sBait", T("bait", "Köder"), v.bait, 'list="dlBait"')}${field("sBait2", T("bait2", "Köder 2"), v.bait2, 'list="dlBait"')}
-     ${field("sDip", "Dip", v.dip, 'list="dlDip"')}${field("sPva", "PVA", v.pva, 'list="dlPva"')}
+     ${field("sDip", "Dip", v.dip, 'list="dlDip"')}${techField("sTech", v.tech)}
+     ${feedFields("s", v)}
      ${field("sDist", T("distance", "Abstand"), v.dist)}${field("sDepth", T("depth", "Tiefe"), v.depth)}
      ${field("sNotes", T("notes", "Notiz"), v.notes, "", true)}`,
     async () => {
-      await api("/api/myspot/save", { id: s ? s.id : "", name: $("sName").value, lake: $("sLake").value, fish: $("sFish").value, x: $("sX").value, y: $("sY").value, bait: $("sBait").value, bait2: $("sBait2").value, dip: $("sDip").value, pva: $("sPva").value, dist: $("sDist").value, depth: $("sDepth").value, notes: $("sNotes").value });
+      await api("/api/myspot/save", { id: s ? s.id : "", name: $("sName").value, lake: $("sLake").value, fish: $("sFish").value, x: $("sX").value, y: $("sY").value, bait: $("sBait").value, bait2: $("sBait2").value, dip: $("sDip").value, pva: $("sPva").value, feedType: $("sFeedT").value, tech: $("sTech").value, dist: $("sDist").value, depth: $("sDepth").value, notes: $("sNotes").value });
     },
     s ? async () => { await api("/api/myspot/delete", { ids: [s.id] }); } : null);
   $("sLake").onchange = () => fillLists($("sLake").value);
