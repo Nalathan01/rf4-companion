@@ -897,7 +897,7 @@ async function fillLists(lake) {
   $("dlFish").innerHTML = opt(l.fish); $("dlBait").innerHTML = opt(l.baits); $("dlDip").innerHTML = opt(l.dips); $("dlPva").innerHTML = opt(l.pva); $("dlRig").innerHTML = opt(l.rigs);
 }
 const TECHS = ["float", "bottom", "spin", "marine", "trolling"];
-const IMGK = [["spot", "imgSpot", "Spotbild"], ["net", "imgNet", "Kescherbild"], ["setup", "imgSetup", "Setupbild"], ["feed", "imgFeed", "Futterbild"], ["map", "imgMap", "Kartenbild"], ["other", "imgOther", "Sonstiges"]];
+const IMGK = [["spot", "imgSpot", "Spotbild"], ["net", "imgNet", "Kescherbild"], ["setup", "imgSetup", "Setupbild"], ["feed", "imgFeed", "Futterbild"], ["map", "imgMap", "Kartenbild"], ["other", "imgTrophy", "Trophäe / besonderer Fisch"]];
 function feedTypes() { return [["ball", T("feedBall", "Futterbällchen")], ["groundbait", T("groundbaitMix", "Futtermischung")], ["pva", "PVA"]]; }
 function feedType(o) { return o.feedType || (o.pva ? "pva" : ""); }
 function feedFields(p, o) {
@@ -985,7 +985,7 @@ function wizSteps() {
       check: () => v.feedType && !v.pva && (v.rBase || v.rAdd.some(Boolean)) ? T("wizNeedRecipe", "Bitte dem Futter einen Namen geben, damit es als Rezept gespeichert wird.") : "",
       bind: () => { $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => $("wAdd" + i).value = r.additives[i] || ""); }; } },
     { t: T("wizDone", "Abschluss"), hint: T("wizDoneHint", "Name und Kommentar, dann alles prüfen und speichern."),
-      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", !v.notes || (WIZ.stats && v.notes.startsWith(T("fishTime", "Angelzeit") + ":")) ? wizNote() || v.notes : v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
+      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", !v.notes || ((WIZ.stats || WIZ.highlight) && (v.notes.startsWith(T("fishTime", "Angelzeit") + ":") || v.notes.startsWith(T("highlight", "Highlight") + ":"))) ? wizNote() || v.notes : v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
       read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; },
       check: () => "", bind: () => bindNotes("wNotes") }
   ];
@@ -1007,7 +1007,7 @@ function wizPrompt() {
   const why = { net: T("capRetakeNet", "Auf dem letzten Bild war kein Setzkescher zu erkennen."), setup: T("capRetakeSetup", "Die Köder waren nicht lesbar, vermutlich von der Futtermischung verdeckt."), feed: T("capRetakeFeed", "Die Futtermischung war nicht lesbar, vermutlich von den Ködern verdeckt.") };
   el.innerHTML = n
     ? `<div class="shot-now">📸 ${esc(T("capNow", "Jetzt im Spiel"))}: <b>${esc(what[n.k])}</b>, ${esc(T("capPress", "dann F12 drücken"))}.</div>${n.retake ? `<div class="shot-why">${esc(why[n.k])}</div>` : ""}${n.k === "net" ? `<div class="shot-wait">${esc(T("capNetMarket", "Noch besser: der Fischmarkt mit allen Fischen in der Verkaufsliste, dann wird auch der Erlös erkannt."))}</div>` : ""}${WIZ.watchDir ? `<div class="shot-wait">${esc(T("capWatching", "Das Tool wartet auf den Screenshot in {0}").replace("{0}", WIZ.watchDir))}</div>` : ""}${n.opt ? `<button class="btn small" id="wNoFeed">${esc(T("capNoFeed", "Ich füttere nicht an"))}</button>` : ""}`
-    : `<div class="shot-now">✓ ${esc(T("capDone", "Alle nötigen Bilder sind da. Weiter mit »Weiter«, ein Kartenbild kannst du noch dazulegen."))}</div>${IMGS.map ? "" : `<div class="shot-wait">${esc(T("capMapHint", "Für das Kartenbild die Maus auf den grünen Kreis deiner Position halten, dann stehen die Koordinaten mit drauf."))}</div>`}`;
+    : `<div class="shot-now">✓ ${esc(T("capDone", "Alle nötigen Bilder sind da. Weiter mit »Weiter«, ein Kartenbild kannst du noch dazulegen."))}</div>${IMGS.other ? "" : `<div class="shot-wait">${esc(T("capTrophyHint", "Besonderer Fisch oder Trophäe dabei? Öffne seine Fangkarte und drück F12."))}</div>`}${IMGS.map ? "" : `<div class="shot-wait">${esc(T("capMapHint", "Für das Kartenbild die Maus auf den grünen Kreis deiner Position halten, dann stehen die Koordinaten mit drauf."))}</div>`}`;
   if ($("wNoFeed")) $("wNoFeed").onclick = () => { WIZ.noFeed = true; wizPrompt(); };
 }
 function wizInfo() {
@@ -1035,6 +1035,7 @@ function wizApply(kind, a) {
   if (a.rig) { if (!v.rig) v.rig = a.rig; got.push(a.rig); }
   if (a.baits.length) { if (!v.bait) { v.bait = a.baits[0] || ""; v.bait2 = a.baits[1] || ""; } got.push(a.baits.join(" + ")); }
   if (a.dip) { if (!v.dip) v.dip = a.dip; got.push("Dip " + a.dip); }
+  if (a.catch && kind === "other") { WIZ.highlight = a.catch.name + (a.catch.weight ? " " + a.catch.weight : "") + (a.catch.level ? " (" + T(a.catch.level === "rare" ? "rare" : "trophy", a.catch.level) + ")" : ""); got.push(WIZ.highlight); }
   if (a.recipe) { if (!v.pva) { v.feedType = a.recipe.type || "groundbait"; v.pva = a.recipe.name; v.rBase = a.recipe.base; v.rAttr = a.recipe.attractant; v.rAdd = a.recipe.additives.slice(); } got.push(a.recipe.name || T("feed", "Futter")); }
   else if (a.pva) { if (!v.pva) { v.feedType = "pva"; v.pva = a.pva; } got.push("PVA " + a.pva); }
   WIZ.info = WIZ.info.filter(x => x.k !== kind);
@@ -1066,7 +1067,7 @@ async function wizPoll() {
       WIZ.busy--;
       if (!res || !WIZ || WIZ.v !== v) continue;
       const need = wizNeed(), kind = res.analysis.kind;
-      const slot = kind === "setup" && IMGS.setup && need && need.k === "feed" ? "feed" : SHOT_SLOT[kind] || (!IMGS.spot || (need && need.k === "spot") ? "spot" : "other");
+      const slot = res.analysis.catch ? "other" : kind === "setup" && IMGS.setup && need && need.k === "feed" ? "feed" : SHOT_SLOT[kind] || (!IMGS.spot || (need && need.k === "spot") ? "spot" : "other");
       IMGS[slot] = res.name;
       if ($("fImgs")) renderImgs(IMG_REQ);
       wizApply(slot, res.analysis);
@@ -1098,11 +1099,12 @@ function spotStats(s) {
 }
 function fmtMinutes(m) { const h = Math.floor(m / 60); return (h ? h + " h " : "") + (m % 60) + " min"; }
 function wizNote() {
-  const st = WIZ.stats;
-  if (!st) return "";
-  const parts = [T("fishTime", "Angelzeit") + ": " + fmtMinutes(st.minutes), T("fishTotal", "{0} Fische gesamt").replace("{0}", st.count)];
+  const st = WIZ.stats, parts = [];
+  if (!st && !WIZ.highlight) return "";
+  if (st) parts.push(T("fishTime", "Angelzeit") + ": " + fmtMinutes(st.minutes), T("fishTotal", "{0} Fische gesamt").replace("{0}", st.count));
+  if (WIZ.highlight) parts.push(T("highlight", "Highlight") + ": " + WIZ.highlight);
   const fmt = n => n.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (st.money) parts.push(T("revenue", "Erlös") + ": " + fmt(st.money) + " · " + fmt(st.money * 60 / Math.max(1, st.minutes)) + " " + T("perHour", "pro Stunde"));
+  if (st && st.money) parts.push(T("revenue", "Erlös") + ": " + fmt(st.money) + " · " + fmt(st.money * 60 / Math.max(1, st.minutes)) + " " + T("perHour", "pro Stunde"));
   return parts.join(" · ");
 }
 function wizSummary() {

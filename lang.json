@@ -577,7 +577,10 @@
   "revenue": "Erlös",
   "perHour": "pro Stunde",
   "capNetMarket": "Noch besser: der Fischmarkt mit allen Fischen in der Verkaufsliste, dann wird auch der Erlös erkannt.",
-  "capMapHint": "Für das Kartenbild die Maus auf den grünen Kreis deiner Position halten, dann stehen die Koordinaten mit drauf."
+  "capMapHint": "Für das Kartenbild die Maus auf den grünen Kreis deiner Position halten, dann stehen die Koordinaten mit drauf.",
+  "imgTrophy": "Trophäe / besonderer Fisch",
+  "highlight": "Highlight",
+  "capTrophyHint": "Besonderer Fisch oder Trophäe dabei? Öffne seine Fangkarte und drück F12."
  },
  "en": {
   "langName": "English",
@@ -1157,7 +1160,10 @@
   "revenue": "Revenue",
   "perHour": "per hour",
   "capNetMarket": "Even better: the fish market with all fish in the sale list, then the revenue is recognized too.",
-  "capMapHint": "For the map image, hover the mouse over the green circle of your position so the coordinates are shown."
+  "capMapHint": "For the map image, hover the mouse over the green circle of your position so the coordinates are shown.",
+  "imgTrophy": "Trophy / special fish",
+  "highlight": "Highlight",
+  "capTrophyHint": "Caught a special fish or trophy? Open its catch card and press F12."
  },
  "ru": {
   "langName": "Русский",
@@ -1734,7 +1740,10 @@
   "revenue": "Выручка",
   "perHour": "в час",
   "capNetMarket": "Ещё лучше: рыбный рынок со всей рыбой в списке на продажу, тогда распознаётся и выручка.",
-  "capMapHint": "Для снимка карты наведи курсор на зелёный круг своей позиции, тогда на нём будут координаты."
+  "capMapHint": "Для снимка карты наведи курсор на зелёный круг своей позиции, тогда на нём будут координаты.",
+  "imgTrophy": "Трофей / особая рыба",
+  "highlight": "Лучший улов",
+  "capTrophyHint": "Есть особая рыба или трофей? Открой её карточку и нажми F12."
  },
  "fr": {
   "langName": "Français",
@@ -2311,7 +2320,10 @@
   "revenue": "Recette",
   "perHour": "par heure",
   "capNetMarket": "Encore mieux : le marché aux poissons avec tous les poissons dans la liste de vente, la recette est alors aussi reconnue.",
-  "capMapHint": "Pour l'image de la carte, survole le cercle vert de ta position avec la souris, les coordonnées s'affichent alors."
+  "capMapHint": "Pour l'image de la carte, survole le cercle vert de ta position avec la souris, les coordonnées s'affichent alors.",
+  "imgTrophy": "Trophée / poisson spécial",
+  "highlight": "Temps fort",
+  "capTrophyHint": "Un poisson spécial ou un trophée ? Ouvre sa fiche de prise et appuie sur F12."
  },
  "es": {
   "langName": "Español",
@@ -2888,7 +2900,10 @@
   "revenue": "Ingresos",
   "perHour": "por hora",
   "capNetMarket": "Aún mejor: el mercado de pescado con todos los peces en la lista de venta, así también se reconocen los ingresos.",
-  "capMapHint": "Para la imagen del mapa, pasa el ratón sobre el círculo verde de tu posición y aparecerán las coordenadas."
+  "capMapHint": "Para la imagen del mapa, pasa el ratón sobre el círculo verde de tu posición y aparecerán las coordenadas.",
+  "imgTrophy": "Trofeo / pez especial",
+  "highlight": "Destacado",
+  "capTrophyHint": "¿Algún pez especial o trofeo? Abre su ficha de captura y pulsa F12."
  },
  "it": {
   "langName": "Italiano",
@@ -3465,7 +3480,10 @@
   "revenue": "Ricavo",
   "perHour": "all'ora",
   "capNetMarket": "Ancora meglio: il mercato del pesce con tutti i pesci nella lista di vendita, così viene riconosciuto anche il ricavo.",
-  "capMapHint": "Per l'immagine della mappa, passa il mouse sul cerchio verde della tua posizione, così compaiono le coordinate."
+  "capMapHint": "Per l'immagine della mappa, passa il mouse sul cerchio verde della tua posizione, così compaiono le coordinate.",
+  "imgTrophy": "Trofeo / pesce speciale",
+  "highlight": "In evidenza",
+  "capTrophyHint": "Un pesce speciale o un trofeo? Apri la sua scheda di cattura e premi F12."
  },
  "pl": {
   "langName": "Polski",
@@ -4042,7 +4060,10 @@
   "revenue": "Przychód",
   "perHour": "na godzinę",
   "capNetMarket": "Jeszcze lepiej: targ rybny ze wszystkimi rybami na liście sprzedaży, wtedy rozpoznany zostanie też przychód.",
-  "capMapHint": "Do obrazu mapy najedź myszą na zielone koło swojej pozycji, wtedy pojawią się współrzędne."
+  "capMapHint": "Do obrazu mapy najedź myszą na zielone koło swojej pozycji, wtedy pojawią się współrzędne.",
+  "imgTrophy": "Trofeum / wyjątkowa ryba",
+  "highlight": "Wyróżnienie",
+  "capTrophyHint": "Wyjątkowa ryba lub trofeum? Otwórz jej kartę połowu i naciśnij F12."
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4619,7 +4640,10 @@
   "revenue": "Receita",
   "perHour": "por hora",
   "capNetMarket": "Melhor ainda: o mercado de peixe com todos os peixes na lista de venda, assim a receita também é reconhecida.",
-  "capMapHint": "Para a imagem do mapa, passe o mouse sobre o círculo verde da sua posição para mostrar as coordenadas."
+  "capMapHint": "Para a imagem do mapa, passe o mouse sobre o círculo verde da sua posição para mostrar as coordenadas.",
+  "imgTrophy": "Troféu / peixe especial",
+  "highlight": "Destaque",
+  "capTrophyHint": "Algum peixe especial ou troféu? Abra o cartão da captura e aperte F12."
  },
  "nl": {
   "langName": "Nederlands",
@@ -5196,7 +5220,10 @@
   "revenue": "Opbrengst",
   "perHour": "per uur",
   "capNetMarket": "Nog beter: de vismarkt met alle vissen in de verkooplijst, dan wordt ook de opbrengst herkend.",
-  "capMapHint": "Houd voor de kaartafbeelding de muis boven de groene cirkel van je positie, dan staan de coördinaten erop."
+  "capMapHint": "Houd voor de kaartafbeelding de muis boven de groene cirkel van je positie, dan staan de coördinaten erop.",
+  "imgTrophy": "Trofee / bijzondere vis",
+  "highlight": "Hoogtepunt",
+  "capTrophyHint": "Een bijzondere vis of trofee? Open de vangstkaart en druk op F12."
  },
  "tr": {
   "langName": "Türkçe",
@@ -5773,7 +5800,10 @@
   "revenue": "Gelir",
   "perHour": "saatte",
   "capNetMarket": "Daha da iyisi: satış listesinde tüm balıklarla balık pazarı, böylece gelir de tanınır.",
-  "capMapHint": "Harita görseli için fareyi konumunun yeşil dairesinin üzerine getir, koordinatlar görünür."
+  "capMapHint": "Harita görseli için fareyi konumunun yeşil dairesinin üzerine getir, koordinatlar görünür.",
+  "imgTrophy": "Kupa / özel balık",
+  "highlight": "Öne çıkan",
+  "capTrophyHint": "Özel bir balık ya da kupa mı? Av kartını aç ve F12'ye bas."
  },
  "ro": {
   "langName": "Română",
@@ -6350,7 +6380,10 @@
   "revenue": "Venit",
   "perHour": "pe oră",
   "capNetMarket": "Și mai bine: piața de pește cu toți peștii în lista de vânzare, astfel se recunoaște și venitul.",
-  "capMapHint": "Pentru imaginea hărții, ține mouse-ul pe cercul verde al poziției tale, astfel apar coordonatele."
+  "capMapHint": "Pentru imaginea hărții, ține mouse-ul pe cercul verde al poziției tale, astfel apar coordonatele.",
+  "imgTrophy": "Trofeu / pește special",
+  "highlight": "Punct culminant",
+  "capTrophyHint": "Un pește special sau un trofeu? Deschide fișa capturii și apasă F12."
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6927,7 +6960,10 @@
   "revenue": "Pendapatan",
   "perHour": "per jam",
   "capNetMarket": "Lebih baik lagi: pasar ikan dengan semua ikan di daftar jual, maka pendapatan juga dikenali.",
-  "capMapHint": "Untuk gambar peta, arahkan mouse ke lingkaran hijau posisimu agar koordinat terlihat."
+  "capMapHint": "Untuk gambar peta, arahkan mouse ke lingkaran hijau posisimu agar koordinat terlihat.",
+  "imgTrophy": "Trofi / ikan istimewa",
+  "highlight": "Sorotan",
+  "capTrophyHint": "Ada ikan istimewa atau trofi? Buka kartu tangkapannya dan tekan F12."
  },
  "ja": {
   "langName": "日本語",
@@ -7504,7 +7540,10 @@
   "revenue": "売上",
   "perHour": "1時間あたり",
   "capNetMarket": "さらに良いのは、全ての魚を販売リストに入れた魚市場の画面です。売上も認識されます。",
-  "capMapHint": "マップ画像では、自分の位置の緑の円にマウスを合わせると座標が表示されます。"
+  "capMapHint": "マップ画像では、自分の位置の緑の円にマウスを合わせると座標が表示されます。",
+  "imgTrophy": "トロフィー / 特別な魚",
+  "highlight": "ハイライト",
+  "capTrophyHint": "特別な魚やトロフィーがある？釣果カードを開いてF12を押してください。"
  },
  "ko": {
   "langName": "한국어",
@@ -8081,7 +8120,10 @@
   "revenue": "수익",
   "perHour": "시간당",
   "capNetMarket": "더 좋은 방법: 모든 물고기를 판매 목록에 넣은 어시장 화면이면 수익도 인식됩니다.",
-  "capMapHint": "지도 이미지는 내 위치의 초록 원에 마우스를 올리면 좌표가 표시됩니다."
+  "capMapHint": "지도 이미지는 내 위치의 초록 원에 마우스를 올리면 좌표가 표시됩니다.",
+  "imgTrophy": "트로피 / 특별한 물고기",
+  "highlight": "하이라이트",
+  "capTrophyHint": "특별한 물고기나 트로피가 있나요? 조과 카드를 열고 F12를 누르세요."
  },
  "zh": {
   "langName": "简体中文",
@@ -8658,7 +8700,10 @@
   "revenue": "收入",
   "perHour": "每小时",
   "capNetMarket": "更好的是：鱼市场且所有鱼都在出售列表中，这样也能识别收入。",
-  "capMapHint": "地图截图时把鼠标放在你位置的绿色圆圈上，这样会显示坐标。"
+  "capMapHint": "地图截图时把鼠标放在你位置的绿色圆圈上，这样会显示坐标。",
+  "imgTrophy": "奖杯鱼 / 特别的鱼",
+  "highlight": "亮点",
+  "capTrophyHint": "钓到特别的鱼或奖杯鱼？打开它的渔获卡片并按 F12。"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -9235,6 +9280,9 @@
   "revenue": "收入",
   "perHour": "每小時",
   "capNetMarket": "更好的是：魚市場且所有魚都在出售清單中，這樣也能辨識收入。",
-  "capMapHint": "地圖截圖時把滑鼠放在你位置的綠色圓圈上，這樣會顯示座標。"
+  "capMapHint": "地圖截圖時把滑鼠放在你位置的綠色圓圈上，這樣會顯示座標。",
+  "imgTrophy": "獎盃魚 / 特別的魚",
+  "highlight": "亮點",
+  "capTrophyHint": "釣到特別的魚或獎盃魚？打開它的漁獲卡片並按 F12。"
  }
 }
