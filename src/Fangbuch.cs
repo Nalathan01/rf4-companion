@@ -66,6 +66,28 @@ internal static class Fangbuch
         return Tracker.Analyze(f, lang);
     }
 
+    public static object Watch(long since)
+    {
+        string dir = Tracker.Dir;
+        long upTo = DateTime.UtcNow.AddSeconds(-1).Ticks;
+        List<object> files = new List<object>();
+        if (since > 0 && Directory.Exists(dir))
+            foreach (FileInfo f in new DirectoryInfo(dir).GetFiles().Where(f => Regex.IsMatch(f.Extension, @"^\.(png|jpe?g)$", RegexOptions.IgnoreCase) && f.LastWriteTimeUtc.Ticks > since && f.LastWriteTimeUtc.Ticks <= upTo).OrderBy(f => f.LastWriteTimeUtc))
+                files.Add(f.FullName);
+        return AppEnv.Obj("now", (since > 0 ? Math.Max(upTo, since) : upTo).ToString(CultureInfo.InvariantCulture), "dir", dir, "dirOk", Directory.Exists(dir), "files", files.ToArray());
+    }
+
+    public static object Import(Dictionary<string, object> a, string lang)
+    {
+        string src = Path.GetFullPath(AppEnv.GetString(a, "path"));
+        string dir = Path.GetFullPath(Tracker.Dir).TrimEnd('\\') + "\\";
+        if (!src.StartsWith(dir, StringComparison.OrdinalIgnoreCase) || !File.Exists(src) || !Regex.IsMatch(src, @"\.(png|jpe?g)$", RegexOptions.IgnoreCase)) throw new AppError("imageInvalid", null);
+        Directory.CreateDirectory(ImgDir);
+        string name = NewId() + (src.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? ".png" : ".jpg");
+        File.Copy(src, Path.Combine(ImgDir, name));
+        return AppEnv.Obj("name", name, "analysis", Tracker.Analyze(Path.Combine(ImgDir, name), lang));
+    }
+
     private static void CleanImages()
     {
         try
