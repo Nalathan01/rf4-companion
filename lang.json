@@ -575,7 +575,9 @@
   "fishTime": "Angelzeit",
   "fishTotal": "{0} Fische gesamt",
   "revenue": "Erlös",
-  "perHour": "pro Stunde"
+  "perHour": "pro Stunde",
+  "capNetMarket": "Noch besser: der Fischmarkt mit allen Fischen in der Verkaufsliste, dann wird auch der Erlös erkannt.",
+  "capMapHint": "Für das Kartenbild die Maus auf den grünen Kreis deiner Position halten, dann stehen die Koordinaten mit drauf."
  },
  "en": {
   "langName": "English",
@@ -1153,7 +1155,9 @@
   "fishTime": "Fishing time",
   "fishTotal": "{0} fish in total",
   "revenue": "Revenue",
-  "perHour": "per hour"
+  "perHour": "per hour",
+  "capNetMarket": "Even better: the fish market with all fish in the sale list, then the revenue is recognized too.",
+  "capMapHint": "For the map image, hover the mouse over the green circle of your position so the coordinates are shown."
  },
  "ru": {
   "langName": "Русский",
@@ -1728,7 +1732,9 @@
   "fishTime": "Время ловли",
   "fishTotal": "Всего рыб: {0}",
   "revenue": "Выручка",
-  "perHour": "в час"
+  "perHour": "в час",
+  "capNetMarket": "Ещё лучше: рыбный рынок со всей рыбой в списке на продажу, тогда распознаётся и выручка.",
+  "capMapHint": "Для снимка карты наведи курсор на зелёный круг своей позиции, тогда на нём будут координаты."
  },
  "fr": {
   "langName": "Français",
@@ -2303,7 +2309,9 @@
   "fishTime": "Temps de pêche",
   "fishTotal": "{0} poissons au total",
   "revenue": "Recette",
-  "perHour": "par heure"
+  "perHour": "par heure",
+  "capNetMarket": "Encore mieux : le marché aux poissons avec tous les poissons dans la liste de vente, la recette est alors aussi reconnue.",
+  "capMapHint": "Pour l'image de la carte, survole le cercle vert de ta position avec la souris, les coordonnées s'affichent alors."
  },
  "es": {
   "langName": "Español",
@@ -2878,7 +2886,9 @@
   "fishTime": "Tiempo de pesca",
   "fishTotal": "{0} peces en total",
   "revenue": "Ingresos",
-  "perHour": "por hora"
+  "perHour": "por hora",
+  "capNetMarket": "Aún mejor: el mercado de pescado con todos los peces en la lista de venta, así también se reconocen los ingresos.",
+  "capMapHint": "Para la imagen del mapa, pasa el ratón sobre el círculo verde de tu posición y aparecerán las coordenadas."
  },
  "it": {
   "langName": "Italiano",
@@ -3453,7 +3463,9 @@
   "fishTime": "Tempo di pesca",
   "fishTotal": "{0} pesci in totale",
   "revenue": "Ricavo",
-  "perHour": "all'ora"
+  "perHour": "all'ora",
+  "capNetMarket": "Ancora meglio: il mercato del pesce con tutti i pesci nella lista di vendita, così viene riconosciuto anche il ricavo.",
+  "capMapHint": "Per l'immagine della mappa, passa il mouse sul cerchio verde della tua posizione, così compaiono le coordinate."
  },
  "pl": {
   "langName": "Polski",
@@ -4028,7 +4040,9 @@
   "fishTime": "Czas łowienia",
   "fishTotal": "Łącznie ryb: {0}",
   "revenue": "Przychód",
-  "perHour": "na godzinę"
+  "perHour": "na godzinę",
+  "capNetMarket": "Jeszcze lepiej: targ rybny ze wszystkimi rybami na liście sprzedaży, wtedy rozpoznany zostanie też przychód.",
+  "capMapHint": "Do obrazu mapy najedź myszą na zielone koło swojej pozycji, wtedy pojawią się współrzędne."
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4603,7 +4617,9 @@
   "fishTime": "Tempo de pesca",
   "fishTotal": "{0} peixes no total",
   "revenue": "Receita",
-  "perHour": "por hora"
+  "perHour": "por hora",
+  "capNetMarket": "Melhor ainda: o mercado de peixe com todos os peixes na lista de venda, assim a receita também é reconhecida.",
+  "capMapHint": "Para a imagem do mapa, passe o mouse sobre o círculo verde da sua posição para mostrar as coordenadas."
  },
  "nl": {
   "langName": "Nederlands",
@@ -5178,7 +5194,9 @@
   "fishTime": "Vistijd",
   "fishTotal": "{0} vissen totaal",
   "revenue": "Opbrengst",
-  "perHour": "per uur"
+  "perHour": "per uur",
+  "capNetMarket": "Nog beter: de vismarkt met alle vissen in de verkooplijst, dan wordt ook de opbrengst herkend.",
+  "capMapHint": "Houd voor de kaartafbeelding de muis boven de groene cirkel van je positie, dan staan de coördinaten erop."
  },
  "tr": {
   "langName": "Türkçe",
@@ -5753,7 +5771,9 @@
   "fishTime": "Avlanma süresi",
   "fishTotal": "Toplam {0} balık",
   "revenue": "Gelir",
-  "perHour": "saatte"
+  "perHour": "saatte",
+  "capNetMarket": "Daha da iyisi: satış listesinde tüm balıklarla balık pazarı, böylece gelir de tanınır.",
+  "capMapHint": "Harita görseli için fareyi konumunun yeşil dairesinin üzerine getir, koordinatlar görünür."
  },
  "ro": {
   "langName": "Română",
@@ -6328,7 +6348,9 @@
   "fishTime": "Timp de pescuit",
   "fishTotal": "{0} pești în total",
   "revenue": "Venit",
-  "perHour": "pe oră"
+  "perHour": "pe oră",
+  "capNetMarket": "Și mai bine: piața de pește cu toți peștii în lista de vânzare, astfel se recunoaște și venitul.",
+  "capMapHint": "Pentru imaginea hărții, ține mouse-ul pe cercul verde al poziției tale, astfel apar coordonatele."
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6903,7 +6925,9 @@
   "fishTime": "Waktu memancing",
   "fishTotal": "Total {0} ikan",
   "revenue": "Pendapatan",
-  "perHour": "per jam"
+  "perHour": "per jam",
+  "capNetMarket": "Lebih baik lagi: pasar ikan dengan semua ikan di daftar jual, maka pendapatan juga dikenali.",
+  "capMapHint": "Untuk gambar peta, arahkan mouse ke lingkaran hijau posisimu agar koordinat terlihat."
  },
  "ja": {
   "langName": "日本語",
@@ -7478,7 +7502,9 @@
   "fishTime": "釣り時間",
   "fishTotal": "合計{0}匹",
   "revenue": "売上",
-  "perHour": "1時間あたり"
+  "perHour": "1時間あたり",
+  "capNetMarket": "さらに良いのは、全ての魚を販売リストに入れた魚市場の画面です。売上も認識されます。",
+  "capMapHint": "マップ画像では、自分の位置の緑の円にマウスを合わせると座標が表示されます。"
  },
  "ko": {
   "langName": "한국어",
@@ -8053,7 +8079,9 @@
   "fishTime": "낚시 시간",
   "fishTotal": "총 {0}마리",
   "revenue": "수익",
-  "perHour": "시간당"
+  "perHour": "시간당",
+  "capNetMarket": "더 좋은 방법: 모든 물고기를 판매 목록에 넣은 어시장 화면이면 수익도 인식됩니다.",
+  "capMapHint": "지도 이미지는 내 위치의 초록 원에 마우스를 올리면 좌표가 표시됩니다."
  },
  "zh": {
   "langName": "简体中文",
@@ -8628,7 +8656,9 @@
   "fishTime": "钓鱼时长",
   "fishTotal": "共 {0} 条鱼",
   "revenue": "收入",
-  "perHour": "每小时"
+  "perHour": "每小时",
+  "capNetMarket": "更好的是：鱼市场且所有鱼都在出售列表中，这样也能识别收入。",
+  "capMapHint": "地图截图时把鼠标放在你位置的绿色圆圈上，这样会显示坐标。"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -9203,6 +9233,8 @@
   "fishTime": "釣魚時長",
   "fishTotal": "共 {0} 條魚",
   "revenue": "收入",
-  "perHour": "每小時"
+  "perHour": "每小時",
+  "capNetMarket": "更好的是：魚市場且所有魚都在出售清單中，這樣也能辨識收入。",
+  "capMapHint": "地圖截圖時把滑鼠放在你位置的綠色圓圈上，這樣會顯示座標。"
  }
 }
