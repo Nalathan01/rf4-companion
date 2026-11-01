@@ -21,6 +21,7 @@ internal sealed class AppServer
     private DateTime windowStart;
     private bool restart;
     private string pendingSpot;
+    private string cookieName = "rf4t";
     private Api api;
 
     public void Run(int port, bool noBrowser, string urlFile, string openSpot)
@@ -38,9 +39,11 @@ internal sealed class AppServer
         api = new Api(this);
         api.StartBackground();
         if (port == 0) port = FreePort();
-        string prefix = "http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture) + "/";
+        string prefix = "http://localhost:" + port.ToString(CultureInfo.InvariantCulture) + "/";
+        cookieName = "rf4t" + port.ToString(CultureInfo.InvariantCulture);
         HttpListener listener = new HttpListener();
         listener.Prefixes.Add(prefix);
+        listener.Prefixes.Add("http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture) + "/");
         listener.Start();
         string url = prefix + "?t=" + token;
         try { AppEnv.WriteJsonFile(instFile, AppEnv.Obj("url", url, "pid", Process.GetCurrentProcess().Id)); } catch (Exception) { }
@@ -168,6 +171,13 @@ internal sealed class AppServer
         string path = req.Url.AbsolutePath;
         try
         {
+            if ((path == "/" || path == "/index.html") && req.QueryString["t"] == token)
+            {
+                ctx.Response.Headers.Add("Set-Cookie", cookieName + "=" + token + "; Path=/; HttpOnly; SameSite=Strict");
+                ctx.Response.Redirect("/");
+                ctx.Response.Close();
+                return;
+            }
             if (path == "/" || path == "/index.html")
             {
                 Send(ctx, 200, AppEnv.Resource("ui/index.html"), "text/html; charset=utf-8", false);
@@ -183,6 +193,7 @@ internal sealed class AppServer
             }
             string given = req.Headers["X-Token"];
             if (string.IsNullOrEmpty(given)) given = req.QueryString["t"];
+            if (string.IsNullOrEmpty(given) && req.Cookies[cookieName] != null) given = req.Cookies[cookieName].Value;
             if (given != token) { SendJson(ctx, 403, AppEnv.Obj("error", "forbidden")); return; }
             if (path == "/api/alive") { SendJson(ctx, 200, AppEnv.Obj("ok", true)); return; }
             lastPing = DateTime.Now;
