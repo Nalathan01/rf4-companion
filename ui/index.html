@@ -969,7 +969,7 @@ function wizSteps() {
     { t: T("wizCond", "Bedingungen"), hint: TEMP_LAKES.includes(v.lake) ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : T("wizCondHint", "Was beißt hier und wie angelst du?"),
       f: () => `${field("wFish", T("fish", "Zielfisch") + " (" + T("optional", "optional") + ")", v.fish, 'list="dlFish"')}${techField("wTech", v.tech)}
         ${tempField("wTemp", v.temp, TEMP_LAKES.includes(v.lake))}`,
-      read: () => { v.fish = $("wFish").value.trim(); v.tech = $("wTech").value; v.temp = $("wTemp").value.trim(); },
+      read: () => { if ($("wFish").value.trim() !== v.fish) v.fishAuto = false; v.fish = $("wFish").value.trim(); v.tech = $("wTech").value; v.temp = $("wTemp").value.trim(); },
       check: () => !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : v.tech === "bottom" && !v.clip ? T("wizClipBack", "Beim Grundangeln ist der Clip Pflicht. Bitte im Schritt »Wo« eintragen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
     { t: T("wizRig", "Montage und Köder"), hint: T("wizRigHint", "Was hängt an der Rute? Bei mehreren gleichen Ruten reicht eine."),
       f: () => `${field("wRig", T("rigL", "Montage"), v.rig, 'list="dlRig"', true)}
@@ -985,7 +985,7 @@ function wizSteps() {
       check: () => v.feedType && !v.pva && (v.rBase || v.rAdd.some(Boolean)) ? T("wizNeedRecipe", "Bitte dem Futter einen Namen geben, damit es als Rezept gespeichert wird.") : "",
       bind: () => { $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => $("wAdd" + i).value = r.additives[i] || ""); }; } },
     { t: T("wizDone", "Abschluss"), hint: T("wizDoneHint", "Name und Kommentar, dann alles prüfen und speichern."),
-      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
+      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", v.notes || wizNote())}<div class="wiz-sum">${wizSummary()}</div>`,
       read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; },
       check: () => "", bind: () => bindNotes("wNotes") }
   ];
@@ -1019,7 +1019,12 @@ function wizInfo() {
 function wizApply(kind, a) {
   const v = WIZ.v, label = T((IMGK.find(k => k[0] === kind) || [])[1], kind), got = [];
   WIZ.ana[kind] = a;
-  if (a.fish.length) { if (!v.fish) v.fish = a.fish.map(f => f.name).join(", "); got.push(a.fish.map(f => (f.n > 1 ? f.n + "× " : "") + f.name).join(", ")); }
+  if (a.fish.length) {
+    const top = a.fish.slice(0, 3), total = a.fish.reduce((n, f) => n + f.n, 0);
+    if (!v.fish || v.fishAuto) { v.fish = top.map(f => f.name).join(", "); v.fishAuto = true; }
+    got.push(top.map(f => (f.n > 1 ? f.n + "× " : "") + f.name).join(", ") + (a.fish.length > 3 ? " · " + T("fishTotal", "{0} Fische gesamt").replace("{0}", total) : ""));
+    if (a.minutes) { WIZ.stats = { minutes: a.minutes, count: total }; got.push(T("fishTime", "Angelzeit") + " " + fmtMinutes(a.minutes)); }
+  }
   if (a.x && a.y) { if (!v.x) { v.x = a.x; v.y = a.y; } got.push(a.x + ":" + a.y); }
   if (a.lakes && a.lakes.length) WIZ.lakes = WIZ.lakes ? WIZ.lakes.filter(id => a.lakes.includes(id)) : a.lakes.slice();
   const lk = a.lake || (WIZ.lakes && WIZ.lakes.length === 1 ? WIZ.lakes[0] : "");
@@ -1073,6 +1078,14 @@ function wizWatch(on) {
   clearTimeout(WIZ.timer);
   WIZ.polling = on;
   if (on) { WIZ.since = 0; wizPoll(); }
+}
+function fmtMinutes(m) { const h = Math.floor(m / 60); return (h ? h + " h " : "") + (m % 60) + " min"; }
+function wizNote() {
+  const st = WIZ.stats;
+  if (!st) return "";
+  const parts = [T("fishTime", "Angelzeit") + ": " + fmtMinutes(st.minutes), T("fishTotal", "{0} Fische gesamt").replace("{0}", st.count)];
+  if (st.money) parts.push(T("revenue", "Erlös") + ": " + st.money.toLocaleString(INIT.lang) + " · " + Math.round(st.money * 60 / Math.max(1, st.minutes)).toLocaleString(INIT.lang) + " " + T("perHour", "pro Stunde"));
+  return parts.join(" · ");
 }
 function wizSummary() {
   const v = WIZ.v, ft = Object.fromEntries(feedTypes())[v.feedType] || "";

@@ -37,14 +37,15 @@ internal static class Privacy
             }
         }
         catch (Exception ex) { AppEnv.Log("Datenschutz", ex.Message); }
-        if (rects.Count == 0) return;
-        Rectangle all = rects.Aggregate(Rectangle.Union);
-        all.Intersect(new Rectangle(0, 0, w, h));
-        if (all.IsEmpty) return;
+        List<Rectangle> areas = new List<Rectangle>();
+        if (rects.Count > 0) areas.Add(rects.Aggregate(Rectangle.Union));
+        if (hud) areas.Add(Rectangle.FromLTRB(0, (int)(h * 0.4), (int)(w * 0.33), (int)(h * 0.875)));
+        areas = areas.Select(a => Rectangle.Intersect(a, new Rectangle(0, 0, w, h))).Where(a => !a.IsEmpty).ToList();
+        if (areas.Count == 0) return;
         string tmp = path + ".tmp";
         using (Bitmap bmp = Load(path))
         {
-            Pixelate(bmp, all, Math.Max(8, h / 90));
+            foreach (Rectangle a in areas) Pixelate(bmp, a, Math.Max(8, h / 90));
             bmp.Save(tmp, path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? ImageFormat.Png : ImageFormat.Jpeg);
         }
         File.Delete(path);
