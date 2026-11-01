@@ -147,6 +147,7 @@ internal sealed class Api
             case "/api/log": return Fangbuch.Log(Lang);
             case "/api/loglists": return Fangbuch.Lists(q["lake"] ?? "", Lang);
             case "/api/catch/save": return Fangbuch.SaveCatch(args ?? new Dictionary<string, object>(), Lang);
+            case "/api/fbanalyze": return Fangbuch.Analyze(args ?? new Dictionary<string, object>(), Lang);
             case "/api/fbimage": return Fangbuch.SaveImage(args ?? new Dictionary<string, object>());
             case "/api/catch/delete": return Fangbuch.Delete("catches", AppEnv.GetList(args, "ids"));
             case "/api/myspot/save": return Fangbuch.SaveSpot(args ?? new Dictionary<string, object>(), Lang);

@@ -57,6 +57,15 @@ internal static class Fangbuch
         return true;
     }
 
+    public static object Analyze(Dictionary<string, object> a, string lang)
+    {
+        string name = AppEnv.GetString(a, "name");
+        if (!Regex.IsMatch(name, "^[0-9a-f]{10}\\.(png|jpg|webp)$")) throw new AppError("imageInvalid", null);
+        string f = Path.Combine(ImgDir, name);
+        if (!File.Exists(f)) throw new AppError("imageInvalid", null);
+        return Tracker.Analyze(f, lang);
+    }
+
     private static void CleanImages()
     {
         try
