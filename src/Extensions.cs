@@ -73,7 +73,7 @@ public static class Ext
         if (!url.StartsWith("https://")) throw new ArgumentException("url");
         string edge = AppServer.EdgePath();
         if (edge == null) { Process.Start(url); return; }
-        string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"RF4Companion\edge");
+        string profileDir = AppEnv.EdgeProfile;
         ProcessStartInfo psi = new ProcessStartInfo(edge, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --no-first-run");
         psi.UseShellExecute = false;
         Process.Start(psi);
