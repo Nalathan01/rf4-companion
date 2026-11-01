@@ -19,8 +19,6 @@ internal static class Browser
     public const string Auto = "auto";
     public const string Default = "default";
 
-    private static readonly string[] AppCapable = new string[] { "msedge", "chrome", "brave", "vivaldi", "chromium", "thorium" };
-
     public static string WindowExe;
 
     private static string PrefPath
@@ -103,7 +101,6 @@ internal static class Browser
         info.Exe = exe;
         info.Id = exe;
         info.Name = name;
-        info.AppWindow = Array.IndexOf(AppCapable, Path.GetFileNameWithoutExtension(exe).ToLowerInvariant()) >= 0;
         return info;
     }
 
@@ -157,7 +154,7 @@ internal static class Browser
         if (target == null && choice != Default)
         {
             string edge = AppServer.EdgePath();
-            if (edge != null) target = Create(edge, "Microsoft Edge");
+            if (edge != null) { target = Create(edge, "Microsoft Edge"); target.AppWindow = true; }
         }
         WindowExe = null;
         try
@@ -166,9 +163,7 @@ internal static class Browser
             ProcessStartInfo psi;
             if (target.AppWindow)
             {
-                string profile = Path.GetFileNameWithoutExtension(target.Exe).ToLowerInvariant();
-                string profileDir = profile == "msedge" ? AppEnv.EdgeProfile : Path.Combine(Path.GetDirectoryName(AppEnv.EdgeProfile), profile);
-                psi = new ProcessStartInfo(target.Exe, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --start-maximized --no-first-run --no-default-browser-check");
+                psi = new ProcessStartInfo(target.Exe, "--app=" + url + " --user-data-dir=\"" + AppEnv.EdgeProfile + "\" --start-maximized --no-first-run --no-default-browser-check");
                 WindowExe = Path.GetFileName(target.Exe);
             }
             else
