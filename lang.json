@@ -552,7 +552,8 @@
   "browserAuto": "Edge-Fenster",
   "browserDefault": "Standardbrowser",
   "browserTab": "Tab",
-  "browserSwitch": "RF4 Companion wird im gewählten Browser neu geöffnet. Fortfahren?"
+  "browserSwitch": "RF4 Companion wird im gewählten Browser neu geöffnet. Fortfahren?",
+  "optional": "optional"
  },
  "en": {
   "langName": "English",
@@ -1107,7 +1108,8 @@
   "browserAuto": "Edge window",
   "browserDefault": "Default browser",
   "browserTab": "tab",
-  "browserSwitch": "RF4 Companion will reopen in the selected browser. Continue?"
+  "browserSwitch": "RF4 Companion will reopen in the selected browser. Continue?",
+  "optional": "optional"
  },
  "ru": {
   "langName": "Русский",
@@ -1659,7 +1661,8 @@
   "browserAuto": "Окно Edge",
   "browserDefault": "Браузер по умолчанию",
   "browserTab": "вкладка",
-  "browserSwitch": "RF4 Companion откроется заново в выбранном браузере. Продолжить?"
+  "browserSwitch": "RF4 Companion откроется заново в выбранном браузере. Продолжить?",
+  "optional": "необязательно"
  },
  "fr": {
   "langName": "Français",
@@ -2211,7 +2214,8 @@
   "browserAuto": "Fenêtre Edge",
   "browserDefault": "Navigateur par défaut",
   "browserTab": "onglet",
-  "browserSwitch": "RF4 Companion va se rouvrir dans le navigateur choisi. Continuer ?"
+  "browserSwitch": "RF4 Companion va se rouvrir dans le navigateur choisi. Continuer ?",
+  "optional": "facultatif"
  },
  "es": {
   "langName": "Español",
@@ -2763,7 +2767,8 @@
   "browserAuto": "Ventana de Edge",
   "browserDefault": "Navegador predeterminado",
   "browserTab": "pestaña",
-  "browserSwitch": "RF4 Companion se volverá a abrir en el navegador elegido. ¿Continuar?"
+  "browserSwitch": "RF4 Companion se volverá a abrir en el navegador elegido. ¿Continuar?",
+  "optional": "opcional"
  },
  "it": {
   "langName": "Italiano",
@@ -3315,7 +3320,8 @@
   "browserAuto": "Finestra Edge",
   "browserDefault": "Browser predefinito",
   "browserTab": "scheda",
-  "browserSwitch": "RF4 Companion verrà riaperto nel browser scelto. Continuare?"
+  "browserSwitch": "RF4 Companion verrà riaperto nel browser scelto. Continuare?",
+  "optional": "facoltativo"
  },
  "pl": {
   "langName": "Polski",
@@ -3867,7 +3873,8 @@
   "browserAuto": "Okno Edge",
   "browserDefault": "Domyślna przeglądarka",
   "browserTab": "karta",
-  "browserSwitch": "RF4 Companion otworzy się ponownie w wybranej przeglądarce. Kontynuować?"
+  "browserSwitch": "RF4 Companion otworzy się ponownie w wybranej przeglądarce. Kontynuować?",
+  "optional": "opcjonalnie"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4419,7 +4426,8 @@
   "browserAuto": "Janela do Edge",
   "browserDefault": "Navegador padrão",
   "browserTab": "aba",
-  "browserSwitch": "O RF4 Companion será reaberto no navegador escolhido. Continuar?"
+  "browserSwitch": "O RF4 Companion será reaberto no navegador escolhido. Continuar?",
+  "optional": "opcional"
  },
  "nl": {
   "langName": "Nederlands",
@@ -4971,7 +4979,8 @@
   "browserAuto": "Edge-venster",
   "browserDefault": "Standaardbrowser",
   "browserTab": "tabblad",
-  "browserSwitch": "RF4 Companion wordt opnieuw geopend in de gekozen browser. Doorgaan?"
+  "browserSwitch": "RF4 Companion wordt opnieuw geopend in de gekozen browser. Doorgaan?",
+  "optional": "optioneel"
  },
  "tr": {
   "langName": "Türkçe",
@@ -5523,7 +5532,8 @@
   "browserAuto": "Edge penceresi",
   "browserDefault": "Varsayılan tarayıcı",
   "browserTab": "sekme",
-  "browserSwitch": "RF4 Companion seçilen tarayıcıda yeniden açılacak. Devam edilsin mi?"
+  "browserSwitch": "RF4 Companion seçilen tarayıcıda yeniden açılacak. Devam edilsin mi?",
+  "optional": "isteğe bağlı"
  },
  "ro": {
   "langName": "Română",
@@ -6075,7 +6085,8 @@
   "browserAuto": "Fereastră Edge",
   "browserDefault": "Browser implicit",
   "browserTab": "filă",
-  "browserSwitch": "RF4 Companion se va redeschide în browserul ales. Continui?"
+  "browserSwitch": "RF4 Companion se va redeschide în browserul ales. Continui?",
+  "optional": "opțional"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6627,7 +6638,8 @@
   "browserAuto": "Jendela Edge",
   "browserDefault": "Peramban bawaan",
   "browserTab": "tab",
-  "browserSwitch": "RF4 Companion akan dibuka ulang di peramban yang dipilih. Lanjutkan?"
+  "browserSwitch": "RF4 Companion akan dibuka ulang di peramban yang dipilih. Lanjutkan?",
+  "optional": "opsional"
  },
  "ja": {
   "langName": "日本語",
@@ -7179,7 +7191,8 @@
   "browserAuto": "Edgeウィンドウ",
   "browserDefault": "既定のブラウザー",
   "browserTab": "タブ",
-  "browserSwitch": "RF4 Companion を選んだブラウザーで開き直します。続けますか？"
+  "browserSwitch": "RF4 Companion を選んだブラウザーで開き直します。続けますか？",
+  "optional": "任意"
  },
  "ko": {
   "langName": "한국어",
@@ -7731,7 +7744,8 @@
   "browserAuto": "Edge 창",
   "browserDefault": "기본 브라우저",
   "browserTab": "탭",
-  "browserSwitch": "RF4 Companion이 선택한 브라우저에서 다시 열립니다. 계속할까요?"
+  "browserSwitch": "RF4 Companion이 선택한 브라우저에서 다시 열립니다. 계속할까요?",
+  "optional": "선택"
  },
  "zh": {
   "langName": "简体中文",
@@ -8283,7 +8297,8 @@
   "browserAuto": "Edge 窗口",
   "browserDefault": "默认浏览器",
   "browserTab": "标签页",
-  "browserSwitch": "RF4 Companion 将在所选浏览器中重新打开。继续吗？"
+  "browserSwitch": "RF4 Companion 将在所选浏览器中重新打开。继续吗？",
+  "optional": "可选"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -8835,6 +8850,7 @@
   "browserAuto": "Edge 視窗",
   "browserDefault": "預設瀏覽器",
   "browserTab": "分頁",
-  "browserSwitch": "RF4 Companion 將在所選瀏覽器中重新開啟。繼續嗎？"
+  "browserSwitch": "RF4 Companion 將在所選瀏覽器中重新開啟。繼續嗎？",
+  "optional": "選填"
  }
 }

@@ -949,10 +949,10 @@ function wizSteps() {
       read: () => { v.lake = $("wLake").value; v.x = $("wX").value.trim(); v.y = $("wY").value.trim(); v.clip = $("wClip").value.trim(); v.depth = $("wDepth").value.trim(); },
       check: () => v.lake && /^\d+$/.test(v.x) && /^\d+$/.test(v.y) ? "" : T("wizNeedWhere", "Bitte Gewässer und beide Koordinaten angeben.") },
     { t: T("wizCond", "Bedingungen"), hint: TEMP_LAKES.includes(v.lake) ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : T("wizCondHint", "Was beißt hier und wie angelst du?"),
-      f: () => `${field("wFish", T("fish", "Zielfisch"), v.fish, 'list="dlFish"')}${techField("wTech", v.tech)}
+      f: () => `${field("wFish", T("fish", "Zielfisch") + " (" + T("optional", "optional") + ")", v.fish, 'list="dlFish"')}${techField("wTech", v.tech)}
         ${field("wTemp", T("temperature", "Temperatur") + " (°C)" + (TEMP_LAKES.includes(v.lake) ? " *" : ""), v.temp, 'inputmode="decimal"')}`,
       read: () => { v.fish = $("wFish").value.trim(); v.tech = $("wTech").value; v.temp = $("wTemp").value.trim(); },
-      check: () => !v.fish ? T("fishMissing", "Bitte einen Fisch angeben.") : !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
+      check: () => !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
     { t: T("wizRig", "Montage und Köder"), hint: T("wizRigHint", "Was hängt an der Rute? Bei mehreren gleichen Ruten reicht eine."),
       f: () => `${field("wRig", T("rigL", "Montage"), v.rig, 'list="dlRig"', true)}
         ${field("wBait", T("bait", "Köder"), v.bait, 'list="dlBait"')}${field("wBait2", T("bait2", "Köder 2"), v.bait2, 'list="dlBait"')}
