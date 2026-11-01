@@ -144,9 +144,13 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .cc { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .thumbs img { height: 74px; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; background: var(--surface-2); }
-.lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; place-items: center; z-index: 50; cursor: zoom-out; }
-.lightbox.show { display: grid; }
-.lightbox img { max-width: 92vw; max-height: 90vh; border-radius: 10px; }
+.lightbox { padding: 0; border: 0; background: transparent; width: 100vw; height: 100vh; max-width: none; max-height: none; cursor: zoom-out; }
+.lightbox[open] { display: grid; place-items: center; }
+.lightbox::backdrop { background: rgba(0,0,0,0.85); }
+.lightbox img { max-width: 94vw; max-height: 92vh; border-radius: 10px; }
+.fbimg img { cursor: zoom-in; }
+.fbimg .rp { position: absolute; top: 2px; left: 2px; background: rgba(0,0,0,0.6); border: 0; border-radius: 6px; color: var(--ink); cursor: pointer; font-size: 11px; padding: 1px 5px; }
+.mini .thumbs img { height: 46px; }
 .placeholder { margin: auto; text-align: center; color: var(--muted); max-width: 520px; }
 .placeholder h2 { color: var(--ink); font-family: var(--font-display); }
 .status { position: fixed; right: 16px; bottom: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 12.5px; color: var(--ink-2); display: none; }
@@ -344,7 +348,7 @@ dialog.sheet[open] { display: flex; }
   </section>
 </main>
 <div class="status" id="status"></div>
-<div class="lightbox" id="lightbox"><img id="lbImg"></div>
+<dialog class="lightbox" id="lightbox"><img id="lbImg" alt=""></dialog>
 <dialog id="dlg"><h3 id="dlgTitle"></h3><div class="form" id="dlgForm"></div><div class="dlg-err" id="dlgErr"></div><div class="dlg-acts"><button class="btn danger" id="dlgDel" data-t="delete">Löschen</button><button class="btn" id="dlgCancel" data-t="cancel">Abbrechen</button><button class="btn primary" id="dlgSave" data-t="save">Speichern</button></div></dialog>
 <div class="menu" id="menu">
   <button data-m="lookup" data-t="tabInfo">Nachschlagen</button>
@@ -556,7 +560,7 @@ function ownDetail(o) {
       <div class="ev-src" style="margin-top:10px"><button class="src" id="ownEdit">${esc(T("edit", "Bearbeiten"))}</button></div>
     </div>`;
   $("ownEdit").onclick = () => spotWizard(null, o);
-  document.querySelectorAll("#detail .thumbs.own img").forEach(im => im.onclick = () => { $("lbImg").src = im.src; $("lightbox").classList.add("show"); });
+  document.querySelectorAll("#detail .thumbs.own img").forEach(im => im.onclick = () => { showImg(im.src); });
 }
 function openSpotKey(k) { SEL = k; renderCards(); drawMap(); loadDetail(); }
 let DETAIL_KEY = null;
@@ -586,7 +590,7 @@ async function loadDetail() {
   document.querySelectorAll("#detail [data-adopt]").forEach(b => b.onclick = () => spotWizard(spotFromEvent(d, d.events[+b.dataset.adopt])));
   document.querySelectorAll("#detail .thumbs.web img").forEach(im => {
     im.onerror = () => im.remove();
-    im.onclick = () => { $("lbImg").src = im.src; $("lightbox").classList.add("show"); };
+    im.onclick = () => { showImg(im.src); };
   });
   document.querySelectorAll("#detail .thumbs:not(.web)").forEach(th => {
     const n = +th.dataset.n, cnt = n > 0 ? Math.min(n, 4) : 2;
@@ -594,14 +598,15 @@ async function loadDetail() {
       const im = document.createElement("img"); im.loading = "lazy";
       im.src = "/img/tg?p=" + encodeURIComponent(th.dataset.post) + "&i=" + i + "&t=" + TOKEN;
       im.onerror = () => im.remove();
-      im.onclick = () => { $("lbImg").src = im.src; $("lightbox").classList.add("show"); };
+      im.onclick = () => { showImg(im.src); };
       th.appendChild(im);
     }
   });
 }
 const detOrder = k => { const i = Object.keys(DET).indexOf(k); return i < 0 ? 99 : i; };
 const DET = { baitDetail: "bait", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed", baitRaw: "baitOrig" };
-$("lightbox").onclick = () => $("lightbox").classList.remove("show");
+function showImg(src) { $("lbImg").src = src; $("lightbox").showModal(); }
+$("lightbox").onclick = () => $("lightbox").close();
 (function mapInput() {
   const cv = $("map"); let drag = null;
   cv.addEventListener("wheel", e => { e.preventDefault(); const f = e.deltaY < 0 ? 1.2 : 1 / 1.2; VIEW.zoom = Math.max(1, Math.min(8, VIEW.zoom * f)); drawMap(); }, { passive: false });
@@ -859,8 +864,9 @@ function renderLog() {
   $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
   $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th>${esc(T("mostBait", "Meistgenutzter Köder"))}</th></tr>` +
     L.stats.map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
-  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
+  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div>${Object.keys(s.images || {}).length ? `<div class="thumbs">${IMGK.filter(k => s.images[k[0]]).map(k => `<img src="/img/fb/${esc(s.images[k[0]])}?t=${TOKEN}" title="${esc(T(k[1], k[2]))}" alt="">`).join("")}</div>` : ""}</div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
   $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotWizard(null, LOG.spots.find(s => s.id === m.dataset.id)));
+  $("logSpots").querySelectorAll(".thumbs img").forEach(im => im.onclick = e => { e.stopPropagation(); showImg(im.src); });
   $("logSpots").querySelectorAll("[data-map]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = LOG.spots.find(s => s.id === b.dataset.map); showView("active"); $("ownChk").checked = true; LAKE = o.lake; $("lakeSel").value = o.lake; SEL = "own:" + o.id; loadActive(); });
   const RT = Object.fromEntries(feedTypes());
   $("logRecipes").innerHTML = L.recipes.length ? L.recipes.map(r => `<div class="mini" data-id="${esc(r.id)}"><div class="top">${esc(r.name)}<span>${esc(RT[r.type] || r.type)}</span></div><div class="b">${esc([r.base, ...r.additives].filter(Boolean).join(", "))}</div><div class="b" style="color:var(--muted)">${r.attractant ? esc(T("attractant", "Lockstoff")) + ": " + esc(r.attractant) : ""}${r.lakes.length ? (r.attractant ? " · " : "") + esc(r.lakes.join(", ")) : ""}${r.uses ? " · " + esc(T("catchesN", "{0} Fänge").replace("{0}", r.uses)) : ""}</div></div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoRecipes", "Noch keine Rezepte."))}</div>`;
@@ -905,10 +911,10 @@ let IMGS = {}, IMG_HOOK = null;
 function tempField(id, v, req) { return `<label>${esc(T("temperature", "Temperatur") + (req ? " *" : ""))}<select id="${id}"><option value=""></option>${["cold", "normal", "warm"].map(k => `<option value="${k}" ${k === v ? "selected" : ""}>${esc(T("temp_" + k, k))}</option>`).join("")}</select></label>`; }
 function renderImgs(req) {
   req = req || [];
-  $("fImgs").innerHTML = IMGK.map(k => `<div class="fbimg" data-k="${k[0]}">${IMGS[k[0]] ? `<img src="/img/fb/${esc(IMGS[k[0]])}?t=${TOKEN}" alt=""><button class="x" title="${esc(T("delete", "Löschen"))}">✕</button>` : "+"}<small>${esc(T(k[1], k[2]))}${req.includes(k[0]) ? " *" : ""}</small><input type="file" accept="image/png,image/jpeg,image/webp" hidden></div>`).join("");
+  $("fImgs").innerHTML = IMGK.map(k => `<div class="fbimg" data-k="${k[0]}">${IMGS[k[0]] ? `<img src="/img/fb/${esc(IMGS[k[0]])}?t=${TOKEN}" alt=""><button class="x" title="${esc(T("delete", "Löschen"))}">✕</button><button class="rp" title="${esc(T("replace", "Ersetzen"))}">↻</button>` : "+"}<small>${esc(T(k[1], k[2]))}${req.includes(k[0]) ? " *" : ""}</small><input type="file" accept="image/png,image/jpeg,image/webp" hidden></div>`).join("");
   $("fImgs").querySelectorAll(".fbimg").forEach(d => {
     const inp = d.querySelector("input"), k = d.dataset.k;
-    d.onclick = e => { if (e.target.classList.contains("x")) { delete IMGS[k]; renderImgs(req); return; } if (e.target !== inp) inp.click(); };
+    d.onclick = e => { if (e.target.classList.contains("x")) { delete IMGS[k]; renderImgs(req); return; } if (e.target.tagName === "IMG") { showImg(e.target.src); return; } if (e.target !== inp) inp.click(); };
     inp.onchange = () => {
       const f = inp.files[0]; if (!f) return;
       d.classList.add("busy");
