@@ -270,6 +270,7 @@ dialog.sheet[open] { display: flex; }
   <div class="head-acts">
     <button class="btn primary big logonly" id="addSpotTop">＋ <span data-t="wizTitle">Spot merken</span></button>
     <div class="upd" id="upd"><span id="updText"></span><button class="btn small primary" id="updBtn" data-t="updateNow">Aktualisieren</button></div>
+    <select id="browserSel" style="min-width:0;max-width:220px"></select>
     <select id="lang" style="min-width:0"></select>
     <button class="icon-btn" id="gear" title=""><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
   </div>
@@ -387,6 +388,7 @@ async function boot() {
   if (!INIT) INIT = await api("/api/init");
   S = INIT.strings;
   $("ver").textContent = "Version " + INIT.version;
+  loadBrowsers();
   $("lang").innerHTML = INIT.langs.map(l => `<option value="${l}" ${l === INIT.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("");
   fillLakes();
   applyStrings();
@@ -638,7 +640,24 @@ $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActiv
 $("allChk").onchange = () => loadActive();
 $("ownChk").onchange = () => drawMap();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
-$("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); };
+async function loadBrowsers() {
+  try {
+    const r = await api("/api/browsers");
+    const tab = app => app ? "" : " (" + T("browserTab", "Tab") + ")";
+    const opts = [{ id: "auto", name: T("browserAuto", "Edge-Fenster") }, { id: "default", name: T("browserDefault", "Standardbrowser") + (r.defaultName ? ": " + r.defaultName : "") + tab(r.defaultApp) }]
+      .concat(r.list.map(b => ({ id: b.id, name: b.name + tab(b.app) })));
+    $("browserSel").innerHTML = opts.map(o => `<option value="${esc(o.id)}" ${o.id === r.choice ? "selected" : ""}>${esc(o.name)}</option>`).join("");
+    $("browserSel").dataset.current = r.choice;
+    $("browserSel").title = T("browserLabel", "Öffnen in");
+  } catch (e) { $("browserSel").style.display = "none"; }
+}
+$("browserSel").onchange = async () => {
+  const sel = $("browserSel");
+  if (!confirm(T("browserSwitch", "RF4 Companion wird im gewählten Browser neu geöffnet. Fortfahren?"))) { sel.value = sel.dataset.current; return; }
+  try { await api("/api/browser", { id: sel.value, reopen: true }); setTimeout(() => window.close(), 600); }
+  catch (e) { sel.value = sel.dataset.current; alert(e.message); }
+};
+$("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
 let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
 function findStatic() {

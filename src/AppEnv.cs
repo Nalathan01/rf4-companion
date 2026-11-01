@@ -23,6 +23,7 @@ internal sealed class AppError : Exception
 internal static class AppEnv
 {
     public static string DataDir;
+    public static string EdgeProfile;
     public static string DevRoot;
     private static readonly object logLock = new object();
 
@@ -40,6 +41,7 @@ internal static class AppEnv
     {
         DataDir = !string.IsNullOrEmpty(dataDir) ? dataDir : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RF4Companion");
         Directory.CreateDirectory(DataDir);
+        EdgeProfile = !string.IsNullOrEmpty(dataDir) ? Path.Combine(DataDir, "edge") : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"RF4Companion\edge");
         if (!string.IsNullOrEmpty(dev) && Directory.Exists(dev)) DevRoot = dev;
     }
 

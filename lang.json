@@ -547,7 +547,12 @@
   "wizNeedImgs": "Bitte Spotbild, Kescherbild und Setupbild hinzufügen.",
   "wizDone": "Abschluss",
   "wizDoneHint": "Name und Kommentar, dann alles prüfen und speichern.",
-  "logStart": "Du angelst gerade gut? Merk dir den Spot, das Tool führt dich Schritt für Schritt durch."
+  "logStart": "Du angelst gerade gut? Merk dir den Spot, das Tool führt dich Schritt für Schritt durch.",
+  "browserLabel": "Öffnen in",
+  "browserAuto": "Edge-Fenster",
+  "browserDefault": "Standardbrowser",
+  "browserTab": "Tab",
+  "browserSwitch": "RF4 Companion wird im gewählten Browser neu geöffnet. Fortfahren?"
  },
  "en": {
   "langName": "English",
@@ -1097,7 +1102,12 @@
   "wizNeedImgs": "Please add spot, keepnet and setup images.",
   "wizDone": "Finish",
   "wizDoneHint": "Name and comment, then check everything and save.",
-  "logStart": "Fishing well right now? Save the spot, the tool guides you step by step."
+  "logStart": "Fishing well right now? Save the spot, the tool guides you step by step.",
+  "browserLabel": "Open in",
+  "browserAuto": "Edge window",
+  "browserDefault": "Default browser",
+  "browserTab": "tab",
+  "browserSwitch": "RF4 Companion will reopen in the selected browser. Continue?"
  },
  "ru": {
   "langName": "Русский",
@@ -1644,7 +1654,12 @@
   "wizNeedImgs": "Добавь скриншоты места, садка и снасти.",
   "wizDone": "Готово",
   "wizDoneHint": "Название и комментарий, затем проверь всё и сохрани.",
-  "logStart": "Сейчас хорошо ловится? Сохрани точку, программа проведёт тебя шаг за шагом."
+  "logStart": "Сейчас хорошо ловится? Сохрани точку, программа проведёт тебя шаг за шагом.",
+  "browserLabel": "Открывать в",
+  "browserAuto": "Окно Edge",
+  "browserDefault": "Браузер по умолчанию",
+  "browserTab": "вкладка",
+  "browserSwitch": "RF4 Companion откроется заново в выбранном браузере. Продолжить?"
  },
  "fr": {
   "langName": "Français",
@@ -2191,7 +2206,12 @@
   "wizNeedImgs": "Ajoute les images du spot, de la bourriche et du montage.",
   "wizDone": "Fin",
   "wizDoneHint": "Nom et commentaire, puis vérifie tout et enregistre.",
-  "logStart": "Ça mord bien ? Enregistre le spot, l'outil te guide pas à pas."
+  "logStart": "Ça mord bien ? Enregistre le spot, l'outil te guide pas à pas.",
+  "browserLabel": "Ouvrir dans",
+  "browserAuto": "Fenêtre Edge",
+  "browserDefault": "Navigateur par défaut",
+  "browserTab": "onglet",
+  "browserSwitch": "RF4 Companion va se rouvrir dans le navigateur choisi. Continuer ?"
  },
  "es": {
   "langName": "Español",
@@ -2738,7 +2758,12 @@
   "wizNeedImgs": "Añade imágenes del lugar, el rejón y el equipo.",
   "wizDone": "Final",
   "wizDoneHint": "Nombre y comentario, luego revisa todo y guarda.",
-  "logStart": "¿Te está yendo bien? Guarda el lugar, la herramienta te guía paso a paso."
+  "logStart": "¿Te está yendo bien? Guarda el lugar, la herramienta te guía paso a paso.",
+  "browserLabel": "Abrir en",
+  "browserAuto": "Ventana de Edge",
+  "browserDefault": "Navegador predeterminado",
+  "browserTab": "pestaña",
+  "browserSwitch": "RF4 Companion se volverá a abrir en el navegador elegido. ¿Continuar?"
  },
  "it": {
   "langName": "Italiano",
@@ -3285,7 +3310,12 @@
   "wizNeedImgs": "Aggiungi le immagini di spot, nassa e attrezzatura.",
   "wizDone": "Fine",
   "wizDoneHint": "Nome e commento, poi controlla tutto e salva.",
-  "logStart": "Stai pescando bene? Salva lo spot, lo strumento ti guida passo dopo passo."
+  "logStart": "Stai pescando bene? Salva lo spot, lo strumento ti guida passo dopo passo.",
+  "browserLabel": "Apri in",
+  "browserAuto": "Finestra Edge",
+  "browserDefault": "Browser predefinito",
+  "browserTab": "scheda",
+  "browserSwitch": "RF4 Companion verrà riaperto nel browser scelto. Continuare?"
  },
  "pl": {
   "langName": "Polski",
@@ -3832,7 +3862,12 @@
   "wizNeedImgs": "Dodaj obrazy miejsca, siatki i zestawu.",
   "wizDone": "Zakończenie",
   "wizDoneHint": "Nazwa i komentarz, potem sprawdź wszystko i zapisz.",
-  "logStart": "Dobrze bierze? Zapisz miejsce, narzędzie poprowadzi cię krok po kroku."
+  "logStart": "Dobrze bierze? Zapisz miejsce, narzędzie poprowadzi cię krok po kroku.",
+  "browserLabel": "Otwieraj w",
+  "browserAuto": "Okno Edge",
+  "browserDefault": "Domyślna przeglądarka",
+  "browserTab": "karta",
+  "browserSwitch": "RF4 Companion otworzy się ponownie w wybranej przeglądarce. Kontynuować?"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4379,7 +4414,12 @@
   "wizNeedImgs": "Adicione imagens do local, da rede e do equipamento.",
   "wizDone": "Conclusão",
   "wizDoneHint": "Nome e comentário, depois confira tudo e salve.",
-  "logStart": "Pescando bem agora? Salve o local, a ferramenta guia você passo a passo."
+  "logStart": "Pescando bem agora? Salve o local, a ferramenta guia você passo a passo.",
+  "browserLabel": "Abrir em",
+  "browserAuto": "Janela do Edge",
+  "browserDefault": "Navegador padrão",
+  "browserTab": "aba",
+  "browserSwitch": "O RF4 Companion será reaberto no navegador escolhido. Continuar?"
  },
  "nl": {
   "langName": "Nederlands",
@@ -4926,7 +4966,12 @@
   "wizNeedImgs": "Voeg afbeeldingen van stek, leefnet en opstelling toe.",
   "wizDone": "Afronden",
   "wizDoneHint": "Naam en opmerking, daarna alles controleren en opslaan.",
-  "logStart": "Vang je goed? Sla de stek op, de tool leidt je stap voor stap."
+  "logStart": "Vang je goed? Sla de stek op, de tool leidt je stap voor stap.",
+  "browserLabel": "Openen in",
+  "browserAuto": "Edge-venster",
+  "browserDefault": "Standaardbrowser",
+  "browserTab": "tabblad",
+  "browserSwitch": "RF4 Companion wordt opnieuw geopend in de gekozen browser. Doorgaan?"
  },
  "tr": {
   "langName": "Türkçe",
@@ -5473,7 +5518,12 @@
   "wizNeedImgs": "Lütfen nokta, kepçe ve takım görsellerini ekle.",
   "wizDone": "Bitiş",
   "wizDoneHint": "Ad ve yorum, sonra her şeyi kontrol edip kaydet.",
-  "logStart": "Şu an iyi mi avlanıyorsun? Noktayı kaydet, araç seni adım adım yönlendirir."
+  "logStart": "Şu an iyi mi avlanıyorsun? Noktayı kaydet, araç seni adım adım yönlendirir.",
+  "browserLabel": "Şurada aç",
+  "browserAuto": "Edge penceresi",
+  "browserDefault": "Varsayılan tarayıcı",
+  "browserTab": "sekme",
+  "browserSwitch": "RF4 Companion seçilen tarayıcıda yeniden açılacak. Devam edilsin mi?"
  },
  "ro": {
   "langName": "Română",
@@ -6020,7 +6070,12 @@
   "wizNeedImgs": "Adaugă imaginile locului, juvelnicului și echipamentului.",
   "wizDone": "Final",
   "wizDoneHint": "Nume și comentariu, apoi verifică tot și salvează.",
-  "logStart": "Prinzi bine acum? Salvează locul, unealta te ghidează pas cu pas."
+  "logStart": "Prinzi bine acum? Salvează locul, unealta te ghidează pas cu pas.",
+  "browserLabel": "Deschide în",
+  "browserAuto": "Fereastră Edge",
+  "browserDefault": "Browser implicit",
+  "browserTab": "filă",
+  "browserSwitch": "RF4 Companion se va redeschide în browserul ales. Continui?"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6567,7 +6622,12 @@
   "wizNeedImgs": "Tambahkan gambar spot, jaring, dan perlengkapan.",
   "wizDone": "Selesai",
   "wizDoneHint": "Nama dan komentar, lalu periksa semuanya dan simpan.",
-  "logStart": "Sedang dapat banyak? Simpan spotnya, alat ini memandu langkah demi langkah."
+  "logStart": "Sedang dapat banyak? Simpan spotnya, alat ini memandu langkah demi langkah.",
+  "browserLabel": "Buka di",
+  "browserAuto": "Jendela Edge",
+  "browserDefault": "Peramban bawaan",
+  "browserTab": "tab",
+  "browserSwitch": "RF4 Companion akan dibuka ulang di peramban yang dipilih. Lanjutkan?"
  },
  "ja": {
   "langName": "日本語",
@@ -7114,7 +7174,12 @@
   "wizNeedImgs": "ポイント、フィッシュキーパー、タックルの画像を追加してください。",
   "wizDone": "仕上げ",
   "wizDoneHint": "名前とコメントを入れて、全体を確認して保存。",
-  "logStart": "今よく釣れている？ポイントを保存しよう、手順を一つずつ案内します。"
+  "logStart": "今よく釣れている？ポイントを保存しよう、手順を一つずつ案内します。",
+  "browserLabel": "開くブラウザ",
+  "browserAuto": "Edgeウィンドウ",
+  "browserDefault": "既定のブラウザー",
+  "browserTab": "タブ",
+  "browserSwitch": "RF4 Companion を選んだブラウザーで開き直します。続けますか？"
  },
  "ko": {
   "langName": "한국어",
@@ -7661,7 +7726,12 @@
   "wizNeedImgs": "포인트, 살림망, 장비 이미지를 추가하세요.",
   "wizDone": "마무리",
   "wizDoneHint": "이름과 코멘트를 입력하고 모두 확인한 뒤 저장하세요.",
-  "logStart": "지금 잘 잡히나요? 포인트를 저장하세요, 단계별로 안내합니다."
+  "logStart": "지금 잘 잡히나요? 포인트를 저장하세요, 단계별로 안내합니다.",
+  "browserLabel": "열기",
+  "browserAuto": "Edge 창",
+  "browserDefault": "기본 브라우저",
+  "browserTab": "탭",
+  "browserSwitch": "RF4 Companion이 선택한 브라우저에서 다시 열립니다. 계속할까요?"
  },
  "zh": {
   "langName": "简体中文",
@@ -8208,7 +8278,12 @@
   "wizNeedImgs": "请添加钓点、鱼护和装备的图片。",
   "wizDone": "完成",
   "wizDoneHint": "填写名称和备注，然后检查并保存。",
-  "logStart": "现在钓得不错？保存这个钓点，工具会一步步引导你。"
+  "logStart": "现在钓得不错？保存这个钓点，工具会一步步引导你。",
+  "browserLabel": "打开方式",
+  "browserAuto": "Edge 窗口",
+  "browserDefault": "默认浏览器",
+  "browserTab": "标签页",
+  "browserSwitch": "RF4 Companion 将在所选浏览器中重新打开。继续吗？"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -8755,6 +8830,11 @@
   "wizNeedImgs": "請新增釣點、魚護和裝備的圖片。",
   "wizDone": "完成",
   "wizDoneHint": "填寫名稱和備註，然後檢查並儲存。",
-  "logStart": "現在釣得不錯？儲存這個釣點，工具會一步步引導你。"
+  "logStart": "現在釣得不錯？儲存這個釣點，工具會一步步引導你。",
+  "browserLabel": "開啟方式",
+  "browserAuto": "Edge 視窗",
+  "browserDefault": "預設瀏覽器",
+  "browserTab": "分頁",
+  "browserSwitch": "RF4 Companion 將在所選瀏覽器中重新開啟。繼續嗎？"
  }
 }

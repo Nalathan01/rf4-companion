@@ -194,6 +194,12 @@ internal sealed class Api
             case "/api/about":
                 if (AppEnv.GetBool(args, "check")) Updater.CheckInBackground();
                 return AppEnv.Obj("version", Updater.CurrentText, "update", Updater.Available, "notes", Updater.Notes, "dataDir", AppEnv.DataDir);
+            case "/api/browsers": return Browser.List();
+            case "/api/browser":
+                Browser.Choice = AppEnv.GetString(args, "id");
+                AppEnv.Log("Browser", "Auswahl: " + Browser.Choice);
+                if (AppEnv.GetBool(args, "reopen")) server.Quit(true);
+                return AppEnv.Obj("ok", true);
             case "/api/update":
                 Updater.Install();
                 server.Quit(true);

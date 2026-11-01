@@ -72,7 +72,19 @@ internal sealed class AppServer
         api.Shutdown();
         try { File.Delete(instFile); } catch (Exception) { }
         AppEnv.Log("App", "Beendet");
-        if (restart) Process.Start(Assembly.GetExecutingAssembly().Location, noBrowser ? "-NoBrowser" : "");
+        if (restart) Process.Start(Assembly.GetExecutingAssembly().Location, RestartArgs());
+    }
+
+    private static string RestartArgs()
+    {
+        string[] a = Environment.GetCommandLineArgs();
+        List<string> keep = new List<string>();
+        for (int i = 1; i < a.Length; i++)
+        {
+            if ((a[i].Equals("-OpenSpot", StringComparison.OrdinalIgnoreCase) || a[i].Equals("-Export", StringComparison.OrdinalIgnoreCase)) && i + 1 < a.Length) { i++; continue; }
+            keep.Add("\"" + a[i].Replace("\"", "") + "\"");
+        }
+        return string.Join(" ", keep.ToArray());
     }
 
     public void Quit(bool restartAfter)
@@ -122,26 +134,15 @@ internal sealed class AppServer
 
     private void OpenWindow(string url)
     {
-        string edge = EdgePath();
-        if (edge != null)
-        {
-            string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"RF4Companion\edge");
-            ProcessStartInfo psi = new ProcessStartInfo(edge, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --start-maximized --no-first-run");
-            psi.UseShellExecute = false;
-            windowStart = DateTime.Now;
-            window = Process.Start(psi);
-        }
-        else
-        {
-            Process.Start(url);
-        }
+        windowStart = DateTime.Now;
+        window = Browser.Open(url);
     }
 
     private static Process FindAppWindow(string appUrl)
     {
         try
         {
-            using (ManagementObjectSearcher s = new ManagementObjectSearcher("SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name='msedge.exe'"))
+            using (ManagementObjectSearcher s = new ManagementObjectSearcher("SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name='" + (Browser.WindowExe ?? "msedge.exe").Replace("'", "") + "'"))
                 foreach (ManagementObject o in s.Get())
                 {
                     string cl = (o["CommandLine"] as string) ?? "";
