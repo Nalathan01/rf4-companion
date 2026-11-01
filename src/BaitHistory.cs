@@ -122,7 +122,7 @@ internal static class BaitHistory
         EnsureLoaded();
         List<Row> all;
         lock (gate) all = rows;
-        if (all == null) return AppEnv.Obj("loading", true, "error", error);
+        if (all == null || (running && all.Count == 0)) return AppEnv.Obj("loading", true, "error", error);
         string fish = q["fish"] ?? "";
         string lakeSel = q["lake"] ?? "";
         int months;
