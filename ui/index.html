@@ -832,7 +832,7 @@ async function loadLog() {
 function fmtDate(d) { const t = new Date(d + "T12:00:00"); return isNaN(t) ? d : t.toLocaleDateString(INIT.lang, { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }); }
 function renderLog() {
   const L = LOG;
-  $("logSub").textContent = T("logSub", "{0} Fänge an {1} Angeltagen").replace("{0}", L.catches.length).replace("{1}", L.days);
+  $("logSub").textContent = (L.spots.length ? T("spotsN", "{0} Spots").replace("{0}", L.spots.length) + " · " : "") + T("logSub", "{0} Fänge an {1} Angeltagen").replace("{0}", L.catches.length).replace("{1}", L.days);
   $("logQ").placeholder = T("logSearch", "Fisch, Köder oder Spot suchen");
   const lakes = [...new Set(L.catches.map(c => c.lake))];
   $("logLake").innerHTML = `<option value="">${esc(T("allLakes", "Alle Gewässer"))}</option>` + lakes.map(id => `<option value="${esc(id)}" ${id === LOGLAKE ? "selected" : ""}>${esc((L.catches.find(c => c.lake === id) || {}).lakeName || id)}</option>`).join("");
@@ -858,7 +858,7 @@ function renderLog() {
       <div class="line">${fish}${baits}</div>
       <div class="rows"><table class="tbl">${g.items.map(c => `<tr><td>${esc(c.fish)}</td><td class="num">${esc(c.weight)}</td><td>${esc(c.baits)}${c.dip ? `<small>${esc(c.dip)}</small>` : ""}</td><td class="num">${Object.keys(c.images || {}).length ? `<span title="${esc(T("images", "Bilder"))}">📷 ${Object.keys(c.images).length}</span> ` : ""}<button class="act" data-edit="${esc(c.id)}" title="${esc(T("edit", "Bearbeiten"))}">✎</button></td></tr>`).join("")}</table></div>
     </div>`;
-  }).join("") : L.catches.length ? `<div class="empty">${esc(T("logNoMatch", "Nichts gefunden."))}</div>` : `<div class="log-start"><p>${esc(T("logStart", "Du angelst gerade gut? Merk dir den Spot, das Tool führt dich Schritt für Schritt durch."))}</p><button class="btn primary big" id="addSpotEmpty">＋ ${esc(T("wizTitle", "Spot merken"))}</button></div>`;
+  }).join("") : L.catches.length || L.spots.length ? `<div class="empty">${esc(L.catches.length ? T("logNoMatch", "Nichts gefunden.") : T("logNoCatches", "Noch keine einzelnen Fänge. Die brauchst du nur, wenn du jeden Fisch extra festhalten willst."))}</div>` : `<div class="log-start"><p>${esc(T("logStart", "Du angelst gerade gut? Merk dir den Spot, das Tool führt dich Schritt für Schritt durch."))}</p><button class="btn primary big" id="addSpotEmpty">＋ ${esc(T("wizTitle", "Spot merken"))}</button></div>`;
   if ($("addSpotEmpty")) $("addSpotEmpty").onclick = () => spotWizard(null);
   $("logGroups").querySelectorAll(".grp-head").forEach(h => h.onclick = () => { const g = h.parentElement, k = g.dataset.k; OPEN.has(k) ? OPEN.delete(k) : OPEN.add(k); g.classList.toggle("open"); });
   $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
@@ -1036,7 +1036,7 @@ function wizApply(kind, a) {
   if (a.baits.length) { if (!v.bait) { v.bait = a.baits[0] || ""; v.bait2 = a.baits[1] || ""; } got.push(a.baits.join(" + ")); }
   if (a.dip) { if (!v.dip) v.dip = a.dip; got.push("Dip " + a.dip); }
   if (a.catch && kind === "other") { WIZ.highlight = a.catch.name + (a.catch.weight ? " " + a.catch.weight : "") + (a.catch.level ? " (" + T(a.catch.level === "rare" ? "rare" : "trophy", a.catch.level) + ")" : ""); got.push(WIZ.highlight); }
-  if (a.recipe) { if (!v.pva) { v.feedType = a.recipe.type || "groundbait"; v.pva = a.recipe.name; v.rBase = a.recipe.base; v.rAttr = a.recipe.attractant; v.rAdd = a.recipe.additives.slice(); } got.push(a.recipe.name || T("feed", "Futter")); }
+  if (a.recipe) { if (!v.pva || v.pva === a.recipe.name || !v.rBase) { v.feedType = a.recipe.type || "groundbait"; v.pva = a.recipe.name; v.rBase = a.recipe.base; v.rAttr = a.recipe.attractant; v.rAdd = a.recipe.additives.slice(); } got.push(a.recipe.name || T("feed", "Futter")); }
   else if (a.pva) { if (!v.pva) { v.feedType = "pva"; v.pva = a.pva; } got.push("PVA " + a.pva); }
   WIZ.info = WIZ.info.filter(x => x.k !== kind);
   WIZ.info.push({ k: kind, html: `<div><b>${esc(label)}:</b> ${esc(got.length ? got.join(" · ") : T("wizReadNone", "nichts erkannt"))}</div>`, toString() { return this.html; } });
