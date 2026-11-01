@@ -213,6 +213,7 @@ internal static class Fangbuch
                 "fish", Tr(S(s, "fish"), lang), "bait", Tr(S(s, "bait"), lang), "bait2", Tr(S(s, "bait2"), lang), "dip", Tr(S(s, "dip"), lang),
                 "groundbait", S(s, "groundbait"), "pva", S(s, "pva"), "feedType", S(s, "feedType"), "tech", S(s, "tech"), "dist", S(s, "dist"), "depth", S(s, "depth"), "notes", S(s, "notes"),
                 "clip", S(s, "clip"), "temp", S(s, "temp"), "rig", Tr(S(s, "rig"), lang), "src", S(s, "src"), "images", Images(s),
+                "count", AppEnv.GetDouble(s, "count", 0), "minutes", AppEnv.GetDouble(s, "minutes", 0), "money", AppEnv.GetDouble(s, "money", 0),
                 "catches", catches.Count(c => S(c, "spotId") == id),
                 "nx", AppEnv.GetDouble(s, "nx", -1), "ny", AppEnv.GetDouble(s, "ny", -1)));
         }
@@ -380,7 +381,7 @@ internal static class Fangbuch
             string id = AppEnv.GetString(a, "id");
             Dictionary<string, object> s = spots.FirstOrDefault(x => S(x, "id") == id && id.Length > 0);
             if (s == null) { s = new Dictionary<string, object>(); s["id"] = NewId(); spots.Add(s); }
-            foreach (string k in new string[] { "lake", "name", "groundbait", "pva", "feedType", "tech", "dist", "depth", "notes", "clip", "temp", "src" }) Put(s, a, k, false, lang);
+            foreach (string k in new string[] { "lake", "name", "groundbait", "pva", "feedType", "tech", "dist", "depth", "notes", "clip", "temp", "src", "count", "minutes", "money" }) Put(s, a, k, false, lang);
             foreach (string k in new string[] { "fish", "bait", "bait2", "dip", "rig" }) Put(s, a, k, true, lang);
             if (S(s, "notes").Length > NotesMax) s["notes"] = S(s, "notes").Substring(0, NotesMax);
             if (a.ContainsKey("images")) s["images"] = Images(a);
