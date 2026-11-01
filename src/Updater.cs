@@ -55,7 +55,7 @@ internal static class Updater
 
     public static void CheckInBackground()
     {
-#if PRIVATE
+#if PRIVATE || FANGBUCH
         return;
 #endif
         Task.Factory.StartNew(() =>

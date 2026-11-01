@@ -1,7 +1,8 @@
 param(
     [string]$OutFile = (Join-Path $PSScriptRoot "dist\RF4 Companion.exe"),
     [string]$Version = "2.0.0.0",
-    [switch]$Private
+    [switch]$Private,
+    [switch]$Fangbuch
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,6 +50,7 @@ foreach ($w in @("Windows.Foundation", "Windows.Graphics", "Windows.Media", "Win
 if (Test-Path $OutFile) { Remove-Item $OutFile -Force }
 $cscArgs = @("/nologo", "/target:winexe", "/optimize+", "/platform:anycpu", "/out:$OutFile", "/win32icon:$(Join-Path $PSScriptRoot 'app.ico')")
 if ($Private) { $cscArgs += "/define:PRIVATE" }
+elseif ($Fangbuch) { $cscArgs += "/define:FANGBUCH" }
 $cscArgs += $references | ForEach-Object { "/reference:$_" }
 $cscArgs += $resources
 $cscArgs += @(Get-ChildItem (Join-Path $PSScriptRoot "src") -Filter *.cs | ForEach-Object { $_.FullName })
