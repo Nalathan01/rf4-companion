@@ -363,12 +363,35 @@ internal static class Tracker
         if (r.Recipe != null)
             rc = AppEnv.Obj("name", S(r.Recipe, "name"), "type", S(r.Recipe, "type"), "base", item(S(r.Recipe, "base")), "attractant", item(S(r.Recipe, "attractant")),
                 "additives", AppEnv.GetList(r.Recipe, "additives").Cast<object>().Select(o => item((o ?? "").ToString())).Where(v => v.Length > 0).ToArray());
+        string cf = (r.Kind == "detail" || r.Kind == "catch") ? r.Fish : "";
+        int? cw = cf.Length > 0 ? r.Weight : null;
+        if (cf.Length == 0 && r.Kind.Length == 0 && Regex.IsMatch(string.Join(" ", lines), "Freilassen|Release|Отпустить|Leertaste|Space", RegexOptions.IgnoreCase))
+        {
+            NameHit fh = null;
+            foreach (string l in lines.Take(3)) if (fh == null) fh = TrackerParse.MatchFish(l, tl);
+            if (fh != null)
+            {
+                cf = fh.En;
+                foreach (string l in Ocr(path, tag, new RectangleF(0.38f, 0.12f, 0.24f, 0.045f), 4, true).Lines())
+                {
+                    Match wm = Regex.Match(l, @"(\d[\d\.,]*)\s*(kg|g|кг|г|lb|lbs)\b", RegexOptions.IgnoreCase);
+                    if (wm.Success) { cw = TrackerParse.Weight(wm.Groups[1].Value, wm.Groups[2].Value); if (cw != null) break; }
+                }
+            }
+        }
+        Dictionary<string, object> catchInfo = null;
+        if (cf.Length > 0)
+        {
+            int[] tw;
+            string level = cw != null && GameData.Trophies.TryGetValue(cf, out tw) ? (tw[1] > 0 && cw.Value >= tw[1] ? "rare" : tw[0] > 0 && cw.Value >= tw[0] ? "trophy" : "") : "";
+            catchInfo = AppEnv.Obj("name", tr(cf), "weight", cw != null ? GameData.FormatWeight(cw.Value, lang) : "", "level", level);
+        }
         double money = 0;
         Match mm = Regex.Match(string.Join("\n", lines), @"(Im\s*Wert\s*von|Worth|Total value|На\s*сумму|Стоимость|Wartość)[\s\S]{0,40}?(\d{1,3}(?:[., \u00a0]\d{3})*[.,]\d{2})(?!\d)", RegexOptions.IgnoreCase);
         if (mm.Success) money = Money(mm.Groups[2].Value);
         return AppEnv.Obj("kind", r.Kind, "fish", fish.GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj("name", tr(g.Key), "n", g.Count())).ToArray(),
             "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", lake, "lakes", lakes,
-            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud, "minutes", minutes, "money", money);
+            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud, "minutes", minutes, "money", money, "catch", catchInfo);
     }
 
     private static double Money(string s)
