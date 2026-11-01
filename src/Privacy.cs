@@ -9,6 +9,8 @@ using System.Text.RegularExpressions;
 
 internal static class Privacy
 {
+    public static readonly DateTime Since = DateTime.UtcNow;
+
     private static readonly Regex PathRx = new Regex(@"[A-Za-z]:\\|\\Users\\|Screenshots|rf4_\d|\.png\b", RegexOptions.IgnoreCase);
 
     public static void Clean(string path, string lang, Dictionary<string, object> analysis)

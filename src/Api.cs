@@ -43,6 +43,7 @@ internal sealed class Api
                 UserStore.Load();
                 Extensions.Load();
                 if (Features.Tracker) Tracker.Start();
+                if (Features.Log) ThreadPool.QueueUserWorkItem(delegate { Fangbuch.CleanExisting(Lang); });
                 Cloud.LoadState();
                 Scans.Load();
                 Community.Load();
