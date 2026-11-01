@@ -59,6 +59,9 @@ nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn.primary:hover { background: var(--accent-hover); }
 .btn.small { padding: 4px 10px; font-size: 12.5px; border-radius: 8px; }
+.log-start { text-align: center; padding: 70px 20px; border: 1px dashed var(--line); border-radius: 16px; margin-top: 10px; }
+.log-start p { color: var(--ink-2); font-size: 15px; margin: 0 0 18px; }
+.btn.big { padding: 10px 22px; font-size: 15px; border-radius: 12px; box-shadow: 0 4px 14px rgba(79,168,201,0.35); }
 
 main { flex: 1; min-height: 0; display: flex; }
 .view { flex: 1; min-height: 0; display: none; }
@@ -257,6 +260,7 @@ dialog.sheet[open] { display: flex; }
     <button class="nav-btn logonly" data-view="log" data-t="navLog">Mein Fangbuch</button>
   </nav>
   <div class="head-acts">
+    <button class="btn primary big logonly" id="addCatchTop">＋ <span data-t="logAdd">Fang eintragen</span></button>
     <div class="upd" id="upd"><span id="updText"></span><button class="btn small primary" id="updBtn" data-t="updateNow">Aktualisieren</button></div>
     <select id="lang" style="min-width:0"></select>
     <button class="icon-btn" id="gear" title=""><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
@@ -305,7 +309,7 @@ dialog.sheet[open] { display: flex; }
   <section class="view" id="view-log">
     <div class="split log-split">
       <div class="col">
-        <div class="title-row"><h2 data-t="navLog">Mein Fangbuch</h2><button class="btn small primary" id="addCatch" data-t="logAdd">Fang eintragen</button></div>
+        <div class="title-row"><h2 data-t="navLog">Mein Fangbuch</h2><button class="btn primary big" id="addCatch">＋ <span data-t="logAdd">Fang eintragen</span></button></div>
         <p class="sub" id="logSub"></p>
         <div class="trk trkonly" id="trk"></div>
         <div class="filters">
@@ -317,9 +321,9 @@ dialog.sheet[open] { display: flex; }
       <div class="col">
         <div class="hdr" style="margin-top:6px" data-t="logStats">Statistik</div>
         <div id="logStats"></div>
-        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logMySpots">Meine Spots</div><button class="btn small" id="addSpot" data-t="logAddSpot">Spot anlegen</button></div>
+        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logMySpots">Meine Spots</div><button class="btn" id="addSpot">＋ <span data-t="logAddSpot">Spot anlegen</span></button></div>
         <div class="mini-cards" id="logSpots" style="margin-top:8px"></div>
-        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logRecipes">Meine Rezepte</div><button class="btn small" id="addRecipe" data-t="logAddRecipe">Rezept anlegen</button></div>
+        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logRecipes">Meine Rezepte</div><button class="btn" id="addRecipe">＋ <span data-t="logAddRecipe">Rezept anlegen</span></button></div>
         <div class="mini-cards" id="logRecipes" style="margin-top:8px"></div>
       </div>
     </div>
@@ -814,7 +818,8 @@ function renderLog() {
       <div class="line">${fish}${baits}</div>
       <div class="rows"><table class="tbl">${g.items.map(c => `<tr><td>${esc(c.fish)}</td><td class="num">${esc(c.weight)}</td><td>${esc(c.baits)}${c.dip ? `<small>${esc(c.dip)}</small>` : ""}</td><td class="num">${Object.keys(c.images || {}).length ? `<span title="${esc(T("images", "Bilder"))}">📷 ${Object.keys(c.images).length}</span> ` : ""}<button class="act" data-edit="${esc(c.id)}" title="${esc(T("edit", "Bearbeiten"))}">✎</button></td></tr>`).join("")}</table></div>
     </div>`;
-  }).join("") : `<div class="empty">${esc(L.catches.length ? T("logNoMatch", "Nichts gefunden.") : T("logEmpty", "Noch keine Fänge. Mit „Fang eintragen“ legst du den ersten an."))}</div>`;
+  }).join("") : L.catches.length ? `<div class="empty">${esc(T("logNoMatch", "Nichts gefunden."))}</div>` : `<div class="log-start"><p>${esc(T("logEmpty", "Noch keine Fänge. Mit „Fang eintragen“ legst du den ersten an."))}</p><button class="btn primary big" id="addCatchEmpty">＋ ${esc(T("logAdd", "Fang eintragen"))}</button></div>`;
+  if ($("addCatchEmpty")) $("addCatchEmpty").onclick = () => catchDialog(null);
   $("logGroups").querySelectorAll(".grp-head").forEach(h => h.onclick = () => { const g = h.parentElement, k = g.dataset.k; OPEN.has(k) ? OPEN.delete(k) : OPEN.add(k); g.classList.toggle("open"); });
   $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
   $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th>${esc(T("mostBait", "Meistgenutzter Köder"))}</th></tr>` +
@@ -942,6 +947,7 @@ $("dlgCancel").onclick = () => $("dlg").close();
 $("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (DLG.keep) return; await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message; } };
 $("addCatch").onclick = () => catchDialog(null);
+$("addCatchTop").onclick = async () => { showView("log"); if (!LOG) await loadLog(); if (LOG) catchDialog(null); };
 $("addSpot").onclick = () => spotDialog(null);
 $("addRecipe").onclick = () => recipeDialog(null);
 $("gear").onclick = e => { e.stopPropagation(); $("menu").classList.toggle("show"); };
