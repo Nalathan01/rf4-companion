@@ -305,6 +305,7 @@ internal static class Tracker
         string[] lines = r0.Lines();
         TrackRes r = lines.Length > 0 ? TrackerParse.Parse(lines, r0.Boxes, code) : new TrackRes();
         List<string> fish = new List<string>();
+        int minutes = 0;
         switch (r.Kind)
         {
             case "setup":
@@ -320,7 +321,11 @@ internal static class Tracker
             case "keepnet":
                 {
                     OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.86f), 100, false);
-                    List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, File.GetLastWriteTime(path), new Dictionary<TrackItem, DateTime>());
+                    DateTime shot = File.GetLastWriteTime(path);
+                    Dictionary<TrackItem, DateTime> times = new Dictionary<TrackItem, DateTime>();
+                    List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, shot, times);
+                    if (times.Count > 0) minutes = (int)Math.Round(shot.Subtract(times.Values.Min()).TotalMinutes);
+                    minutes = Math.Max(minutes, r2.Lines().Select(l => TrackerParse.AgeMin(l) ?? 0).DefaultIfEmpty(0).Max());
                     if (items.Count == 0) items = TrackerParse.Merge(r.Items, TrackerParse.KeepnetItems(r2.Lines(), r2.Boxes, TrackerParse.Lists(code)));
                     fish.AddRange(items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).Select(i => i.Fish));
                     break;
@@ -358,7 +363,7 @@ internal static class Tracker
                 "additives", AppEnv.GetList(r.Recipe, "additives").Cast<object>().Select(o => tr((o ?? "").ToString())).Where(v => v.Length > 0).ToArray());
         return AppEnv.Obj("kind", r.Kind, "fish", fish.GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj("name", tr(g.Key), "n", g.Count())).ToArray(),
             "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", lake, "lakes", lakes,
-            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud);
+            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud, "minutes", minutes);
     }
 
     private static string Lake()

@@ -98,7 +98,7 @@ internal static class Fangbuch
         try
         {
             if (!Directory.Exists(ImgDir)) return;
-            string mark = Path.Combine(ImgDir, "clean.txt");
+            string mark = Path.Combine(ImgDir, "clean2.txt");
             HashSet<string> done = new HashSet<string>(File.Exists(mark) ? File.ReadAllLines(mark) : new string[0], StringComparer.OrdinalIgnoreCase);
             foreach (string f in Directory.GetFiles(ImgDir).Where(f => Regex.IsMatch(Path.GetFileName(f), "^[0-9a-f]{10}\\.(png|jpg|webp)$")))
             {
