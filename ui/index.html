@@ -864,7 +864,7 @@ function renderLog() {
   $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
   $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th>${esc(T("mostBait", "Meistgenutzter Köder"))}</th></tr>` +
     L.stats.map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
-  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}${s.dist ? " · " + esc(s.dist) : ""}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div>${Object.keys(s.images || {}).length ? `<div class="thumbs">${IMGK.filter(k => s.images[k[0]]).map(k => `<img src="/img/fb/${esc(s.images[k[0]])}?t=${TOKEN}" title="${esc(T(k[1], k[2]))}" alt="">`).join("")}</div>` : ""}</div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
+  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(spotStats(s))}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div>${Object.keys(s.images || {}).length ? `<div class="thumbs">${IMGK.filter(k => s.images[k[0]]).map(k => `<img src="/img/fb/${esc(s.images[k[0]])}?t=${TOKEN}" title="${esc(T(k[1], k[2]))}" alt="">`).join("")}</div>` : ""}</div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
   $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotWizard(null, LOG.spots.find(s => s.id === m.dataset.id)));
   $("logSpots").querySelectorAll(".thumbs img").forEach(im => im.onclick = e => { e.stopPropagation(); showImg(im.src); });
   $("logSpots").querySelectorAll("[data-map]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = LOG.spots.find(s => s.id === b.dataset.map); showView("active"); $("ownChk").checked = true; LAKE = o.lake; $("lakeSel").value = o.lake; SEL = "own:" + o.id; loadActive(); });
@@ -1088,6 +1088,14 @@ function wizWatch(on) {
   WIZ.polling = on;
   if (on) { WIZ.since = 0; wizPoll(); }
 }
+function spotStats(s) {
+  const p = [];
+  if (s.count) p.push(T("fishTotal", "{0} Fische gesamt").replace("{0}", s.count));
+  if (s.minutes) p.push(fmtMinutes(s.minutes));
+  if (s.money) p.push(s.money.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (s.minutes ? " · " + (s.money * 60 / s.minutes).toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + T("perHour", "pro Stunde") : ""));
+  if (s.catches) p.push(T("catchesN", "{0} Fänge").replace("{0}", s.catches));
+  return p.join(" · ");
+}
 function fmtMinutes(m) { const h = Math.floor(m / 60); return (h ? h + " h " : "") + (m % 60) + " min"; }
 function wizNote() {
   const st = WIZ.stats;
@@ -1131,7 +1139,8 @@ async function wizSave() {
     await api("/api/recipe/save", { id: r ? r.id : "", name: v.pva, type: v.feedType, lake: v.lake, base: v.rBase, attractant: v.rAttr, additives: v.rAdd, notes: r ? r.notes : "" });
   }
   await api("/api/myspot/save", { id: WIZ.existing ? WIZ.existing.id : "", name: v.name, lake: v.lake, x: v.x, y: v.y, clip: v.clip, depth: v.depth, fish: v.fish, tech: v.tech, temp: v.temp,
-    rig: v.rig, bait: v.bait, bait2: v.bait2, dip: v.dip, feedType: v.feedType, pva: v.pva, images: v.images, notes: v.notes, src: v.src || "" });
+    rig: v.rig, bait: v.bait, bait2: v.bait2, dip: v.dip, feedType: v.feedType, pva: v.pva, images: v.images, notes: v.notes, src: v.src || "",
+    count: String(WIZ.stats ? WIZ.stats.count : v.count || ""), minutes: String(WIZ.stats ? WIZ.stats.minutes : v.minutes || ""), money: String(WIZ.stats ? WIZ.stats.money : v.money || "") });
 }
 function lakeOptions(sel) { return INIT.lakes.map(l => `<option value="${l.id}" ${l.id === sel ? "selected" : ""}>${esc(l.name)}</option>`).join(""); }
 function field(id, label, val, extra, wide) { return `<label class="${wide ? "wide" : ""}">${esc(label)}<input id="${id}" value="${esc(val == null ? "" : val)}" ${extra || ""}></label>`; }
