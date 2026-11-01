@@ -21,6 +21,8 @@ internal static class Browser
 
     public static string WindowExe;
 
+    private static readonly string[] AppCapable = new string[] { "msedge", "chrome", "brave", "vivaldi", "opera", "launcher", "chromium", "thorium" };
+
     private static string PrefPath
     {
         get { return AppEnv.DataPath("browser.txt"); }
@@ -60,7 +62,7 @@ internal static class Browser
                         foreach (string sub in key.GetSubKeyNames())
                         {
                             BrowserInfo info = Read(key, sub);
-                            if (info == null || !seen.Add(info.Exe)) continue;
+                            if (info == null || !info.AppWindow || !seen.Add(info.Exe)) continue;
                             list.Add(info);
                         }
                     }
@@ -101,6 +103,7 @@ internal static class Browser
         info.Exe = exe;
         info.Id = exe;
         info.Name = name;
+        info.AppWindow = Array.IndexOf(AppCapable, Path.GetFileNameWithoutExtension(exe).ToLowerInvariant()) >= 0;
         return info;
     }
 
@@ -141,8 +144,8 @@ internal static class Browser
     public static object List()
     {
         BrowserInfo def = DefaultBrowser();
-        return AppEnv.Obj("choice", Choice, "defaultName", def == null ? null : def.Name, "defaultApp", def != null && def.AppWindow,
-            "list", Installed().Select(b => (object)AppEnv.Obj("id", b.Id, "name", b.Name, "app", b.AppWindow)).ToArray());
+        return AppEnv.Obj("choice", Choice, "defaultName", def != null && def.AppWindow ? def.Name : null,
+            "list", Installed().Select(b => (object)AppEnv.Obj("id", b.Id, "name", b.Name)).ToArray());
     }
 
     public static Process Open(string url)
@@ -151,7 +154,7 @@ internal static class Browser
         BrowserInfo target = null;
         if (choice == Default) target = DefaultBrowser();
         else if (choice != Auto) target = Installed().FirstOrDefault(b => string.Equals(b.Id, choice, StringComparison.OrdinalIgnoreCase));
-        if (target == null && choice != Default)
+        if (target == null || !target.AppWindow)
         {
             string edge = AppServer.EdgePath();
             if (edge != null) { target = Create(edge, "Microsoft Edge"); target.AppWindow = true; }
@@ -160,19 +163,12 @@ internal static class Browser
         try
         {
             if (target == null) { Process.Start(url); return null; }
-            ProcessStartInfo psi;
-            if (target.AppWindow)
-            {
-                psi = new ProcessStartInfo(target.Exe, "--app=" + url + " --user-data-dir=\"" + AppEnv.EdgeProfile + "\" --start-maximized --no-first-run --no-default-browser-check");
-                WindowExe = Path.GetFileName(target.Exe);
-            }
-            else
-            {
-                psi = new ProcessStartInfo(target.Exe, "\"" + url + "\"");
-            }
+            string profile = Path.GetFileNameWithoutExtension(target.Exe).ToLowerInvariant();
+            string profileDir = profile == "msedge" ? AppEnv.EdgeProfile : Path.Combine(Path.GetDirectoryName(AppEnv.EdgeProfile), profile);
+            ProcessStartInfo psi = new ProcessStartInfo(target.Exe, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --start-maximized --no-first-run --no-default-browser-check");
             psi.UseShellExecute = false;
-            Process p = Process.Start(psi);
-            return WindowExe != null ? p : null;
+            WindowExe = Path.GetFileName(target.Exe);
+            return Process.Start(psi);
         }
         catch (Exception ex)
         {

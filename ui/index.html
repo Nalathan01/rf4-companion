@@ -359,7 +359,7 @@ dialog.sheet[open] { display: flex; }
 <dialog id="sheet" class="sheet"><div class="sheet-head"><h3 id="sheetTitle"></h3><button class="icon-btn" id="sheetClose">✕</button></div><div id="sheetBody"></div></dialog>
 <datalist id="dlFish"></datalist><datalist id="dlBait"></datalist><datalist id="dlDip"></datalist><datalist id="dlPva"></datalist><datalist id="dlRig"></datalist><datalist id="dlItem"></datalist>
 <script>
-const TOKEN = new URLSearchParams(location.search).get("t");
+const TOKEN = new URLSearchParams(location.search).get("t") || "";
 let OCRV = -1;
 let S = {}, INIT = null, ACTIVE = [], HOURS = 24, LAKE = "", SEL = null, DATAV = -1;
 const $ = id => document.getElementById(id);
@@ -397,6 +397,7 @@ async function boot() {
   if (!INIT) INIT = await api("/api/init");
   S = INIT.strings;
   $("ver").textContent = "Version " + INIT.version;
+  document.title = "RF4 Companion " + INIT.version;
   loadBrowsers();
   $("lang").innerHTML = INIT.langs.map(l => `<option value="${l}" ${l === INIT.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("");
   fillLakes();
@@ -653,9 +654,8 @@ $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 async function loadBrowsers() {
   try {
     const r = await api("/api/browsers");
-    const tab = app => app ? "" : " (" + T("browserTab", "Tab") + ")";
-    const opts = [{ id: "auto", name: T("browserAuto", "Edge-Fenster") }, { id: "default", name: T("browserDefault", "Standardbrowser") + (r.defaultName ? ": " + r.defaultName : "") + tab(r.defaultApp) }]
-      .concat(r.list.map(b => ({ id: b.id, name: b.name + tab(b.app) })));
+    const opts = [{ id: "auto", name: T("browserAuto", "Edge-Fenster") }].concat(r.defaultName ? [{ id: "default", name: T("browserDefault", "Standardbrowser") + ": " + r.defaultName }] : [])
+      .concat(r.list.map(b => ({ id: b.id, name: b.name })));
     $("browserSel").innerHTML = opts.map(o => `<option value="${esc(o.id)}" ${o.id === r.choice ? "selected" : ""}>${esc(o.name)}</option>`).join("");
     $("browserSel").dataset.current = r.choice;
     $("browserSel").title = T("browserLabel", "Öffnen in");
