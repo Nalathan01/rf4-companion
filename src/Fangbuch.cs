@@ -57,12 +57,12 @@ internal static class Fangbuch
         return true;
     }
 
-    private static void CleanImages(List<Dictionary<string, object>> catches)
+    private static void CleanImages()
     {
         try
         {
             if (!Directory.Exists(ImgDir)) return;
-            HashSet<string> used = new HashSet<string>(catches.SelectMany(c => Images(c).Values.Select(v => v.ToString())), StringComparer.OrdinalIgnoreCase);
+            HashSet<string> used = new HashSet<string>(List("catches").Concat(List("spots")).SelectMany(c => Images(c).Values.Select(v => v.ToString())), StringComparer.OrdinalIgnoreCase);
             foreach (string f in Directory.GetFiles(ImgDir))
                 if (!used.Contains(Path.GetFileName(f)) && File.GetCreationTimeUtc(f) < DateTime.UtcNow.AddHours(-6)) File.Delete(f);
         }
@@ -157,6 +157,7 @@ internal static class Fangbuch
                 "x", xy != null ? xy[0].ToString(CultureInfo.InvariantCulture) : "", "y", xy != null ? xy[1].ToString(CultureInfo.InvariantCulture) : "",
                 "fish", Tr(S(s, "fish"), lang), "bait", Tr(S(s, "bait"), lang), "bait2", Tr(S(s, "bait2"), lang), "dip", Tr(S(s, "dip"), lang),
                 "groundbait", S(s, "groundbait"), "pva", S(s, "pva"), "feedType", S(s, "feedType"), "tech", S(s, "tech"), "dist", S(s, "dist"), "depth", S(s, "depth"), "notes", S(s, "notes"),
+                "clip", S(s, "clip"), "temp", S(s, "temp"), "rig", Tr(S(s, "rig"), lang), "src", S(s, "src"), "images", Images(s),
                 "catches", catches.Count(c => S(c, "spotId") == id),
                 "nx", AppEnv.GetDouble(s, "nx", -1), "ny", AppEnv.GetDouble(s, "ny", -1)));
         }
@@ -223,7 +224,7 @@ internal static class Fangbuch
             }
             if (S(c, "fish").Length == 0) throw new AppError("fishMissing", null);
             UserStore.Set("catches", catches);
-            CleanImages(catches);
+            CleanImages();
             return AppEnv.Obj("id", c["id"]);
         }
     }
@@ -238,7 +239,7 @@ internal static class Fangbuch
             int before = l.Count;
             l.RemoveAll(x => set.Contains(S(x, "id")));
             UserStore.Set(key, l);
-            if (key == "catches") CleanImages(l);
+            if (key == "catches" || key == "spots") CleanImages();
             return AppEnv.Obj("removed", before-l.Count);
         }
     }
@@ -324,8 +325,10 @@ internal static class Fangbuch
             string id = AppEnv.GetString(a, "id");
             Dictionary<string, object> s = spots.FirstOrDefault(x => S(x, "id") == id && id.Length > 0);
             if (s == null) { s = new Dictionary<string, object>(); s["id"] = NewId(); spots.Add(s); }
-            foreach (string k in new string[] { "lake", "name", "groundbait", "pva", "feedType", "tech", "dist", "depth", "notes" }) Put(s, a, k, false, lang);
-            foreach (string k in new string[] { "fish", "bait", "bait2", "dip" }) Put(s, a, k, true, lang);
+            foreach (string k in new string[] { "lake", "name", "groundbait", "pva", "feedType", "tech", "dist", "depth", "notes", "clip", "temp", "src" }) Put(s, a, k, false, lang);
+            foreach (string k in new string[] { "fish", "bait", "bait2", "dip", "rig" }) Put(s, a, k, true, lang);
+            if (S(s, "notes").Length > NotesMax) s["notes"] = S(s, "notes").Substring(0, NotesMax);
+            if (a.ContainsKey("images")) s["images"] = Images(a);
             Lake l;
             int px, py;
             if (GameData.LakeById.TryGetValue(S(s, "lake"), out l) && l.HasBounds && int.TryParse(AppEnv.GetString(a, "x"), out px) && int.TryParse(AppEnv.GetString(a, "y"), out py))
@@ -334,6 +337,7 @@ internal static class Fangbuch
                 s["ny"] = (py-l.YNorth) / (l.YSouth-l.YNorth);
             }
             UserStore.Set("spots", spots);
+            CleanImages();
             return AppEnv.Obj("id", s["id"]);
         }
     }
