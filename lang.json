@@ -517,7 +517,18 @@
   "srcRf4fish": "Daten von rf4.fish (ItsBlunty)",
   "siteRf4fish": "Rekorde, Spots aus China, Ausrüstungsdaten",
   "siteRf4trophies": "Trophäenfänge, Rekorde und Köderstatistik",
-  "siteFarmtrof": "Russische Community mit Beißstellen, Rekorden und Wissensdatenbank"
+  "siteFarmtrof": "Russische Community mit Beißstellen, Rekorden und Wissensdatenbank",
+  "feed": "Futter",
+  "feedBall": "Futterbällchen",
+  "recipe": "Rezept",
+  "images": "Bilder",
+  "imgSpot": "Spotbild",
+  "imgNet": "Kescherbild",
+  "imgSetup": "Setupbild",
+  "imgFeed": "Futterbild",
+  "imgMap": "Kartenbild",
+  "imgOther": "Sonstiges",
+  "charsLeft": "{0} Zeichen übrig"
  },
  "en": {
   "langName": "English",
@@ -1037,7 +1048,18 @@
   "srcRf4fish": "Data from rf4.fish (ItsBlunty)",
   "siteRf4fish": "Records, spots from China, gear data",
   "siteRf4trophies": "Trophy catches, records and bait stats",
-  "siteFarmtrof": "Russian community with spots, records and knowledge base"
+  "siteFarmtrof": "Russian community with spots, records and knowledge base",
+  "feed": "Groundbait",
+  "feedBall": "Groundbait balls",
+  "recipe": "Recipe",
+  "images": "Images",
+  "imgSpot": "Spot",
+  "imgNet": "Keepnet",
+  "imgSetup": "Setup",
+  "imgFeed": "Groundbait",
+  "imgMap": "Map",
+  "imgOther": "Other",
+  "charsLeft": "{0} characters left"
  },
  "ru": {
   "langName": "Русский",
@@ -1554,7 +1576,18 @@
   "srcRf4fish": "Данные с rf4.fish (ItsBlunty)",
   "siteRf4fish": "Рекорды, точки из Китая, данные о снаряжении",
   "siteRf4trophies": "Трофейные уловы, рекорды и статистика наживок",
-  "siteFarmtrof": "Сообщество РР4: точки клева, рекорды, база знаний"
+  "siteFarmtrof": "Сообщество РР4: точки клева, рекорды, база знаний",
+  "feed": "Прикормка",
+  "feedBall": "Шары прикормки",
+  "recipe": "Рецепт",
+  "images": "Изображения",
+  "imgSpot": "Место",
+  "imgNet": "Садок",
+  "imgSetup": "Снасть",
+  "imgFeed": "Прикормка",
+  "imgMap": "Карта",
+  "imgOther": "Другое",
+  "charsLeft": "Осталось символов: {0}"
  },
  "fr": {
   "langName": "Français",
@@ -2071,7 +2104,18 @@
   "srcRf4fish": "Données de rf4.fish (ItsBlunty)",
   "siteRf4fish": "Records, spots de Chine, données matériel",
   "siteRf4trophies": "Prises trophées, records et statistiques d’appâts",
-  "siteFarmtrof": "Communauté russe : spots, records et base de connaissances"
+  "siteFarmtrof": "Communauté russe : spots, records et base de connaissances",
+  "feed": "Amorce",
+  "feedBall": "Boules d'amorce",
+  "recipe": "Recette",
+  "images": "Images",
+  "imgSpot": "Spot",
+  "imgNet": "Bourriche",
+  "imgSetup": "Montage",
+  "imgFeed": "Amorce",
+  "imgMap": "Carte",
+  "imgOther": "Autre",
+  "charsLeft": "{0} caractères restants"
  },
  "es": {
   "langName": "Español",
@@ -2588,7 +2632,18 @@
   "srcRf4fish": "Datos de rf4.fish (ItsBlunty)",
   "siteRf4fish": "Récords, puntos de China, datos de equipo",
   "siteRf4trophies": "Capturas trofeo, récords y estadísticas de cebos",
-  "siteFarmtrof": "Comunidad rusa con puntos, récords y base de conocimiento"
+  "siteFarmtrof": "Comunidad rusa con puntos, récords y base de conocimiento",
+  "feed": "Cebo de fondo",
+  "feedBall": "Bolas de cebo",
+  "recipe": "Receta",
+  "images": "Imágenes",
+  "imgSpot": "Lugar",
+  "imgNet": "Rejón",
+  "imgSetup": "Equipo",
+  "imgFeed": "Cebo",
+  "imgMap": "Mapa",
+  "imgOther": "Otro",
+  "charsLeft": "Quedan {0} caracteres"
  },
  "it": {
   "langName": "Italiano",
@@ -3105,7 +3160,18 @@
   "srcRf4fish": "Dati da rf4.fish (ItsBlunty)",
   "siteRf4fish": "Record, spot dalla Cina, dati attrezzatura",
   "siteRf4trophies": "Catture trofeo, record e statistiche esche",
-  "siteFarmtrof": "Community russa con spot, record e guide"
+  "siteFarmtrof": "Community russa con spot, record e guide",
+  "feed": "Pastura",
+  "feedBall": "Palle di pastura",
+  "recipe": "Ricetta",
+  "images": "Immagini",
+  "imgSpot": "Spot",
+  "imgNet": "Nassa",
+  "imgSetup": "Attrezzatura",
+  "imgFeed": "Pastura",
+  "imgMap": "Mappa",
+  "imgOther": "Altro",
+  "charsLeft": "{0} caratteri rimasti"
  },
  "pl": {
   "langName": "Polski",
@@ -3622,7 +3688,18 @@
   "srcRf4fish": "Dane z rf4.fish (ItsBlunty)",
   "siteRf4fish": "Rekordy, miejscówki z Chin, dane sprzętu",
   "siteRf4trophies": "Trofea, rekordy i statystyki przynęt",
-  "siteFarmtrof": "Rosyjska społeczność: miejscówki, rekordy, baza wiedzy"
+  "siteFarmtrof": "Rosyjska społeczność: miejscówki, rekordy, baza wiedzy",
+  "feed": "Zanęta",
+  "feedBall": "Kule zanęty",
+  "recipe": "Przepis",
+  "images": "Obrazy",
+  "imgSpot": "Miejsce",
+  "imgNet": "Siatka",
+  "imgSetup": "Zestaw",
+  "imgFeed": "Zanęta",
+  "imgMap": "Mapa",
+  "imgOther": "Inne",
+  "charsLeft": "Pozostało znaków: {0}"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4139,7 +4216,18 @@
   "srcRf4fish": "Dados de rf4.fish (ItsBlunty)",
   "siteRf4fish": "Recordes, pontos da China, dados de equipamento",
   "siteRf4trophies": "Capturas troféu, recordes e estatísticas de iscas",
-  "siteFarmtrof": "Comunidade russa com pontos, recordes e base de conhecimento"
+  "siteFarmtrof": "Comunidade russa com pontos, recordes e base de conhecimento",
+  "feed": "Engodo",
+  "feedBall": "Bolas de engodo",
+  "recipe": "Receita",
+  "images": "Imagens",
+  "imgSpot": "Local",
+  "imgNet": "Rede",
+  "imgSetup": "Equipamento",
+  "imgFeed": "Engodo",
+  "imgMap": "Mapa",
+  "imgOther": "Outro",
+  "charsLeft": "{0} caracteres restantes"
  },
  "nl": {
   "langName": "Nederlands",
@@ -4656,7 +4744,18 @@
   "srcRf4fish": "Gegevens van rf4.fish (ItsBlunty)",
   "siteRf4fish": "Records, stekken uit China, uitrustingsgegevens",
   "siteRf4trophies": "Trofeevangsten, records en aasstatistiek",
-  "siteFarmtrof": "Russische community met stekken, records en kennisbank"
+  "siteFarmtrof": "Russische community met stekken, records en kennisbank",
+  "feed": "Lokvoer",
+  "feedBall": "Voerballen",
+  "recipe": "Recept",
+  "images": "Afbeeldingen",
+  "imgSpot": "Stek",
+  "imgNet": "Leefnet",
+  "imgSetup": "Opstelling",
+  "imgFeed": "Lokvoer",
+  "imgMap": "Kaart",
+  "imgOther": "Overig",
+  "charsLeft": "Nog {0} tekens"
  },
  "tr": {
   "langName": "Türkçe",
@@ -5173,7 +5272,18 @@
   "srcRf4fish": "Veriler rf4.fish (ItsBlunty) kaynaklı",
   "siteRf4fish": "Rekorlar, Çin noktaları, ekipman verileri",
   "siteRf4trophies": "Kupa avları, rekorlar ve yem istatistikleri",
-  "siteFarmtrof": "Rus topluluğu: noktalar, rekorlar ve bilgi bankası"
+  "siteFarmtrof": "Rus topluluğu: noktalar, rekorlar ve bilgi bankası",
+  "feed": "Yem",
+  "feedBall": "Yem topları",
+  "recipe": "Tarif",
+  "images": "Görseller",
+  "imgSpot": "Nokta",
+  "imgNet": "Kepçe",
+  "imgSetup": "Takım",
+  "imgFeed": "Yem",
+  "imgMap": "Harita",
+  "imgOther": "Diğer",
+  "charsLeft": "{0} karakter kaldı"
  },
  "ro": {
   "langName": "Română",
@@ -5690,7 +5800,18 @@
   "srcRf4fish": "Date de la rf4.fish (ItsBlunty)",
   "siteRf4fish": "Recorduri, locuri din China, date echipament",
   "siteRf4trophies": "Capturi trofeu, recorduri și statistici momeli",
-  "siteFarmtrof": "Comunitate rusă cu locuri, recorduri și bază de cunoștințe"
+  "siteFarmtrof": "Comunitate rusă cu locuri, recorduri și bază de cunoștințe",
+  "feed": "Nadă",
+  "feedBall": "Bile de nadă",
+  "recipe": "Rețetă",
+  "images": "Imagini",
+  "imgSpot": "Loc",
+  "imgNet": "Juvelnic",
+  "imgSetup": "Echipament",
+  "imgFeed": "Nadă",
+  "imgMap": "Hartă",
+  "imgOther": "Altele",
+  "charsLeft": "{0} caractere rămase"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6207,7 +6328,18 @@
   "srcRf4fish": "Data dari rf4.fish (ItsBlunty)",
   "siteRf4fish": "Rekor, spot dari Tiongkok, data perlengkapan",
   "siteRf4trophies": "Tangkapan trofi, rekor dan statistik umpan",
-  "siteFarmtrof": "Komunitas Rusia dengan spot, rekor dan basis pengetahuan"
+  "siteFarmtrof": "Komunitas Rusia dengan spot, rekor dan basis pengetahuan",
+  "feed": "Umpan tabur",
+  "feedBall": "Bola umpan",
+  "recipe": "Resep",
+  "images": "Gambar",
+  "imgSpot": "Spot",
+  "imgNet": "Jaring",
+  "imgSetup": "Perlengkapan",
+  "imgFeed": "Umpan",
+  "imgMap": "Peta",
+  "imgOther": "Lainnya",
+  "charsLeft": "Sisa {0} karakter"
  },
  "ja": {
   "langName": "日本語",
@@ -6724,7 +6856,18 @@
   "srcRf4fish": "データ提供: rf4.fish (ItsBlunty)",
   "siteRf4fish": "記録、中国のポイント、装備データ",
   "siteRf4trophies": "トロフィー釣果、記録、エサ統計",
-  "siteFarmtrof": "ロシアのコミュニティ: ポイント、記録、ナレッジベース"
+  "siteFarmtrof": "ロシアのコミュニティ: ポイント、記録、ナレッジベース",
+  "feed": "撒き餌",
+  "feedBall": "撒き餌ボール",
+  "recipe": "レシピ",
+  "images": "画像",
+  "imgSpot": "ポイント",
+  "imgNet": "フィッシュキーパー",
+  "imgSetup": "タックル",
+  "imgFeed": "撒き餌",
+  "imgMap": "マップ",
+  "imgOther": "その他",
+  "charsLeft": "残り{0}文字"
  },
  "ko": {
   "langName": "한국어",
@@ -7241,7 +7384,18 @@
   "srcRf4fish": "데이터 출처: rf4.fish (ItsBlunty)",
   "siteRf4fish": "기록, 중국 포인트, 장비 데이터",
   "siteRf4trophies": "트로피 조과, 기록, 미끼 통계",
-  "siteFarmtrof": "러시아 커뮤니티: 포인트, 기록, 지식 베이스"
+  "siteFarmtrof": "러시아 커뮤니티: 포인트, 기록, 지식 베이스",
+  "feed": "밑밥",
+  "feedBall": "밑밥 볼",
+  "recipe": "레시피",
+  "images": "이미지",
+  "imgSpot": "포인트",
+  "imgNet": "살림망",
+  "imgSetup": "장비",
+  "imgFeed": "밑밥",
+  "imgMap": "지도",
+  "imgOther": "기타",
+  "charsLeft": "{0}자 남음"
  },
  "zh": {
   "langName": "简体中文",
@@ -7758,7 +7912,18 @@
   "srcRf4fish": "数据来自 rf4.fish（ItsBlunty）",
   "siteRf4fish": "记录、国服钓点、装备数据",
   "siteRf4trophies": "奖杯渔获、记录和鱼饵统计",
-  "siteFarmtrof": "俄服社区：钓点、记录和知识库"
+  "siteFarmtrof": "俄服社区：钓点、记录和知识库",
+  "feed": "窝料",
+  "feedBall": "窝料球",
+  "recipe": "配方",
+  "images": "图片",
+  "imgSpot": "钓点",
+  "imgNet": "鱼护",
+  "imgSetup": "装备",
+  "imgFeed": "窝料",
+  "imgMap": "地图",
+  "imgOther": "其他",
+  "charsLeft": "还剩 {0} 个字符"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -8275,6 +8440,17 @@
   "srcRf4fish": "資料來自 rf4.fish（ItsBlunty）",
   "siteRf4fish": "記錄、國服釣點、裝備資料",
   "siteRf4trophies": "獎盃漁獲、記錄和魚餌統計",
-  "siteFarmtrof": "俄服社群：釣點、記錄和知識庫"
+  "siteFarmtrof": "俄服社群：釣點、記錄和知識庫",
+  "feed": "窩料",
+  "feedBall": "窩料球",
+  "recipe": "配方",
+  "images": "圖片",
+  "imgSpot": "釣點",
+  "imgNet": "魚護",
+  "imgSetup": "裝備",
+  "imgFeed": "窩料",
+  "imgMap": "地圖",
+  "imgOther": "其他",
+  "charsLeft": "還剩 {0} 個字元"
  }
 }
