@@ -933,7 +933,7 @@ async function spotWizard(pre, existing) {
   if (!LOG) await loadLog();
   if (!LOG) return;
   if (!ITEMS) { ITEMS = await api("/api/itemnames"); $("dlItem").innerHTML = ITEMS.map(x => `<option value="${esc(x)}">`).join(""); }
-  const v = Object.assign({ lake: LAKE || "", images: {} }, existing || pre || {});
+  const v = Object.assign({ lake: "", images: {} }, existing || pre || {});
   v.images = Object.assign({}, v.images || {});
   if (!v.clip && v.dist) v.clip = v.dist;
   const rc = recipeOf(v.pva);
@@ -955,16 +955,16 @@ function wizSteps() {
       check: () => { const n = wizNeed(); return n && !n.opt ? T("wizNeedImgs", "Bitte Spotbild, Kescherbild und Setupbild hinzufügen.") : ""; },
       bind: () => { IMGS = Object.assign({}, v.images); IMG_HOOK = wizAnalyze; renderImgs(IMG_REQ); wizInfo(); wizPrompt(); wizWatch(true); } },
     { t: T("wizWhere", "Wo"), hint: T("wizWhereHint", "Gewässer und Koordinaten der Stelle, an der du angelst."),
-      f: () => `<label>${esc(T("lake", "Gewässer"))}<select id="wLake">${lakeOptions(v.lake)}</select></label><span></span>
+      f: () => `<label>${esc(T("lake", "Gewässer"))}<select id="wLake"><option value=""></option>${lakeOptions(v.lake)}</select></label><span></span>
         ${field("wX", "X", v.x, 'inputmode="numeric"')}${field("wY", "Y", v.y, 'inputmode="numeric"')}
-        ${field("wClip", "Clip (m)", v.clip, 'inputmode="decimal"')}${field("wDepth", T("depth", "Tiefe") + " (m)", v.depth)}`,
-      read: () => { v.lake = $("wLake").value; v.x = $("wX").value.trim(); v.y = $("wY").value.trim(); v.clip = $("wClip").value.trim(); v.depth = $("wDepth").value.trim(); },
-      check: () => v.lake && /^\d+$/.test(v.x) && /^\d+$/.test(v.y) ? "" : T("wizNeedWhere", "Bitte Gewässer und beide Koordinaten angeben.") },
+        ${field("wClip", "Clip (m)" + (v.tech === "bottom" ? " *" : ""), v.clip, 'inputmode="decimal"')}`,
+      read: () => { if ($("wLake").value !== v.lake) v.lakeAuto = false; v.lake = $("wLake").value; v.x = $("wX").value.trim(); v.y = $("wY").value.trim(); v.clip = $("wClip").value.trim(); },
+      check: () => !(v.lake && /^\d+$/.test(v.x) && /^\d+$/.test(v.y)) ? T("wizNeedWhere", "Bitte Gewässer und beide Koordinaten angeben.") : v.tech === "bottom" && !v.clip ? T("wizClipReq", "Beim Grundangeln ist der Clip Pflicht.") : "" },
     { t: T("wizCond", "Bedingungen"), hint: TEMP_LAKES.includes(v.lake) ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : T("wizCondHint", "Was beißt hier und wie angelst du?"),
       f: () => `${field("wFish", T("fish", "Zielfisch") + " (" + T("optional", "optional") + ")", v.fish, 'list="dlFish"')}${techField("wTech", v.tech)}
         ${tempField("wTemp", v.temp, TEMP_LAKES.includes(v.lake))}`,
       read: () => { v.fish = $("wFish").value.trim(); v.tech = $("wTech").value; v.temp = $("wTemp").value.trim(); },
-      check: () => !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
+      check: () => !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : v.tech === "bottom" && !v.clip ? T("wizClipBack", "Beim Grundangeln ist der Clip Pflicht. Bitte im Schritt »Wo« eintragen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
     { t: T("wizRig", "Montage und Köder"), hint: T("wizRigHint", "Was hängt an der Rute? Bei mehreren gleichen Ruten reicht eine."),
       f: () => `${field("wRig", T("rigL", "Montage"), v.rig, 'list="dlRig"', true)}
         ${field("wBait", T("bait", "Köder"), v.bait, 'list="dlBait"')}${field("wBait2", T("bait2", "Köder 2"), v.bait2, 'list="dlBait"')}
@@ -1015,7 +1015,9 @@ function wizApply(kind, a) {
   WIZ.ana[kind] = a;
   if (a.fish.length) { if (!v.fish) v.fish = a.fish.map(f => f.name).join(", "); got.push(a.fish.map(f => (f.n > 1 ? f.n + "× " : "") + f.name).join(", ")); }
   if (a.x && a.y) { if (!v.x) { v.x = a.x; v.y = a.y; } got.push(a.x + ":" + a.y); }
-  if (a.lake) { if (!v.lake) v.lake = a.lake; got.push((INIT.lakes.find(l => l.id === a.lake) || {}).name || a.lake); }
+  if (a.lakes && a.lakes.length) WIZ.lakes = WIZ.lakes ? WIZ.lakes.filter(id => a.lakes.includes(id)) : a.lakes.slice();
+  const lk = a.lake || (WIZ.lakes && WIZ.lakes.length === 1 ? WIZ.lakes[0] : "");
+  if (lk) { if (!v.lake || v.lakeAuto) { v.lake = lk; v.lakeAuto = true; } if (a.lake || WIZ.lakes.length === 1) got.push((INIT.lakes.find(l => l.id === lk) || {}).name || lk); }
   if (a.temp) { if (!v.temp) v.temp = a.temp; got.push(T("temperature", "Temperatur") + " " + T("temp_" + a.temp, a.temp)); }
   if (a.tech) { if (!v.tech) v.tech = a.tech; got.push(T("tech_" + a.tech, a.tech)); }
   if (a.rig) { if (!v.rig) v.rig = a.rig; got.push(a.rig); }
@@ -1068,7 +1070,7 @@ function wizWatch(on) {
 }
 function wizSummary() {
   const v = WIZ.v, ft = Object.fromEntries(feedTypes())[v.feedType] || "";
-  const rows = [[T("lake", "Gewässer"), (INIT.lakes.find(l => l.id === v.lake) || {}).name + " · " + v.x + ":" + v.y], ["Clip", v.clip ? v.clip + " m" : ""], [T("depth", "Tiefe"), v.depth],
+  const rows = [[T("lake", "Gewässer"), (INIT.lakes.find(l => l.id === v.lake) || {}).name + " · " + v.x + ":" + v.y], ["Clip", v.clip ? v.clip + " m" : ""],
     [T("fish", "Zielfisch"), v.fish], [T("technique", "Angelart"), v.tech ? T("tech_" + v.tech, v.tech) : ""], [T("temperature", "Temperatur"), v.temp ? T("temp_" + v.temp, v.temp) : ""],
     [T("rigL", "Montage"), v.rig], [T("bait", "Köder"), [v.bait, v.bait2].filter(Boolean).join(" + ")], ["Dip", v.dip], [ft || T("feed", "Futter"), v.pva],
     [T("images", "Bilder"), IMGK.filter(k => v.images[k[0]]).map(k => T(k[1], k[2])).join(", ")]];

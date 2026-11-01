@@ -333,13 +333,29 @@ internal static class Tracker
             if (hp != null) { x = hp[0]; y = hp[1]; }
         }
         string temp = TrackerParse.MatchTemp(Ocr(path, tag, new RectangleF(0.9f, 0.1f, 0.1f, 0.022f), 4, true).Lines());
+        string lake = r.Lake;
+        if (lake.Length == 0 && (r.Kind == "position" || r.Kind == ""))
+        {
+            lake = lines.Where(l => l.Length >= 4 && l.Length <= 40).Select(l => TrackerParse.MatchLake(l, code)).FirstOrDefault(id => id.Length > 0) ?? "";
+            if (lake.Length == 0 && r.Kind == "position" && RuAvailable())
+                lake = Ocr(path, "ru", RectangleF.Empty, 1, false).Lines().Where(l => l.Length >= 4 && l.Length <= 40).Select(l => TrackerParse.MatchLake(l, "ru")).FirstOrDefault(id => id.Length > 0) ?? "";
+        }
+        IEnumerable<Lake> cand = GameData.Lakes;
+        List<string> fk = fish.Distinct().ToList();
+        if (fk.Count > 0)
+        {
+            int best = GameData.Lakes.Select(l => fk.Count(f => l.Fish.Contains(f))).DefaultIfEmpty(0).Max();
+            cand = best >= Math.Max(1, (int)Math.Ceiling(fk.Count * 0.7)) ? cand.Where(l => fk.Count(f => l.Fish.Contains(f)) == best) : Enumerable.Empty<Lake>();
+        }
+        if (x > 0 && y > 0) cand = cand.Where(l => l.HasBounds && x >= Math.Min(l.XMin, l.XMax) && x <= Math.Max(l.XMin, l.XMax) && y >= Math.Min(l.YNorth, l.YSouth) && y <= Math.Max(l.YNorth, l.YSouth));
+        string[] lakes = lake.Length > 0 ? new string[] { lake } : fk.Count > 0 || x > 0 ? cand.Select(l => l.Id).ToArray() : new string[0];
         Func<string, string> tr = k => string.IsNullOrEmpty(k) ? "" : GameData.Translate(k, lang);
         Dictionary<string, object> rc = null;
         if (r.Recipe != null)
             rc = AppEnv.Obj("name", S(r.Recipe, "name"), "type", S(r.Recipe, "type"), "base", tr(S(r.Recipe, "base")), "attractant", tr(S(r.Recipe, "attractant")),
                 "additives", AppEnv.GetList(r.Recipe, "additives").Cast<object>().Select(o => tr((o ?? "").ToString())).Where(v => v.Length > 0).ToArray());
         return AppEnv.Obj("kind", r.Kind, "fish", fish.GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj("name", tr(g.Key), "n", g.Count())).ToArray(),
-            "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", r.Lake,
+            "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", lake, "lakes", lakes,
             "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc);
     }
 
