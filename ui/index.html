@@ -543,7 +543,7 @@ function mapLabel(g, x, y, t) {
 function ownDetail(o) {
   const st = LOG.catches.filter(c => c.spotId === o.id);
   const fc = {}; st.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
-  const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], [(Object.fromEntries(feedTypes())[feedType(o)] || T("feed", "Futter")), o.pva], [T("technique", "Angelart"), o.tech ? T("tech_" + o.tech, o.tech) : ""], ["Clip", o.clip || o.dist], [T("temperature", "Temperatur"), o.temp ? o.temp + " °C" : ""], [T("rigL", "Montage"), o.rig], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
+  const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], [(Object.fromEntries(feedTypes())[feedType(o)] || T("feed", "Futter")), o.pva], [T("technique", "Angelart"), o.tech ? T("tech_" + o.tech, o.tech) : ""], ["Clip", o.clip || o.dist], [T("temperature", "Temperatur"), o.temp ? T("temp_" + o.temp, o.temp) : ""], [T("rigL", "Montage"), o.rig], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
   $("detail").innerHTML = `<div class="d-head"><h3>${esc(o.lakeName)} · ${esc(o.name || o.x + ":" + o.y)}</h3><span class="d-sum">${esc(T("ownSpot", "Eigener Spot"))}</span></div>
     <div class="ev">${rows.map(x => `<div class="ev-det"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}
       ${st.length ? `<div class="line" style="margin-top:8px">${Object.entries(fc).sort((a, b) => b[1]-a[1]).map(([f, n]) => `<span class="tag">${n}× ${esc(f)}</span>`).join("")}</div>` : ""}
@@ -896,7 +896,8 @@ function feedFields(p, o) {
 function techField(id, v) { return `<label>${esc(T("technique", "Angelart"))}<select id="${id}"><option value=""></option>${TECHS.map(t => `<option value="${t}" ${t === v ? "selected" : ""}>${esc(T("tech_" + t, t))}</option>`).join("")}</select></label>`; }
 function notesField(id, v) { return `<label class="wide">${esc(T("notes", "Notiz"))}<textarea id="${id}" maxlength="600">${esc(v || "")}</textarea><span class="cnt" id="${id}Cnt"></span></label>`; }
 function bindNotes(id) { const n = $(id), c = $(id + "Cnt"), up = () => c.textContent = T("charsLeft", "{0} Zeichen übrig").replace("{0}", 600 - n.value.length); n.oninput = up; up(); }
-let IMGS = {};
+let IMGS = {}, IMG_HOOK = null;
+function tempField(id, v, req) { return `<label>${esc(T("temperature", "Temperatur") + (req ? " *" : ""))}<select id="${id}"><option value=""></option>${["cold", "normal", "warm"].map(k => `<option value="${k}" ${k === v ? "selected" : ""}>${esc(T("temp_" + k, k))}</option>`).join("")}</select></label>`; }
 function renderImgs(req) {
   req = req || [];
   $("fImgs").innerHTML = IMGK.map(k => `<div class="fbimg" data-k="${k[0]}">${IMGS[k[0]] ? `<img src="/img/fb/${esc(IMGS[k[0]])}?t=${TOKEN}" alt=""><button class="x" title="${esc(T("delete", "Löschen"))}">✕</button>` : "+"}<small>${esc(T(k[1], k[2]))}${req.includes(k[0]) ? " *" : ""}</small><input type="file" accept="image/png,image/jpeg,image/webp" hidden></div>`).join("");
@@ -907,7 +908,7 @@ function renderImgs(req) {
       const f = inp.files[0]; if (!f) return;
       d.classList.add("busy");
       const r = new FileReader();
-      r.onload = async () => { try { IMGS[k] = (await api("/api/fbimage", { data: r.result })).name; } catch (e) { $("dlgErr").textContent = e.message; } renderImgs(req); };
+      r.onload = async () => { try { IMGS[k] = (await api("/api/fbimage", { data: r.result })).name; if (IMG_HOOK) IMG_HOOK(k, IMGS[k]); } catch (e) { $("dlgErr").textContent = e.message; } renderImgs(req); };
       r.readAsDataURL(f);
     };
   });
@@ -919,7 +920,7 @@ function techOf(m) { m = String(m || "").toLowerCase(); return /troll/.test(m) ?
 function spotFromEvent(d, e) {
   const det = e.detail || {}, baits = String(det.baitDetail || "").split(" + ").filter(Boolean);
   const feed = det.pva ? ["pva", det.pva] : det.groundbait ? ["groundbait", det.groundbait] : ["", ""];
-  return { lake: d.lake, x: String(d.x), y: String(d.y), clip: e.clip || "", depth: e.depth || "", fish: (e.fish || [])[0] || "", tech: techOf(e.method), temp: String(e.temp || "").replace(/[^\d.,-]/g, ""),
+  return { lake: d.lake, x: String(d.x), y: String(d.y), clip: e.clip || "", depth: e.depth || "", fish: (e.fish || [])[0] || "", tech: techOf(e.method), temp: ["cold", "normal", "warm"].find(k => String(e.temp || "").toLowerCase().includes(k) || String(e.temp || "") === T("temp_" + k)) || "",
     bait: baits[0] || "", bait2: baits[1] || "", dip: det.dip || "", rig: det.rig || "", feedType: feed[0], pva: feed[1], src: (e.sources.find(s => s.url) || {}).url || "", images: {} };
 }
 function recipeOf(name) { return LOG && name ? LOG.recipes.find(r => r.name === name) : null; }
@@ -932,7 +933,7 @@ async function spotWizard(pre, existing) {
   if (!v.clip && v.dist) v.clip = v.dist;
   const rc = recipeOf(v.pva);
   v.rBase = rc ? rc.base : ""; v.rAttr = rc ? rc.attractant : ""; v.rAdd = rc ? rc.additives.slice() : [];
-  WIZ = { i: 0, v, existing: existing || null };
+  WIZ = { i: 0, v, existing: existing || null, info: [], busy: 0 };
   await fillLists(v.lake);
   openDlg(existing ? T("logEditSpot", "Spot bearbeiten") : T("wizTitle", "Spot merken"), "", async () => {}, existing ? async () => { await api("/api/myspot/delete", { ids: [existing.id] }); } : null);
   $("dlgSave").style.display = "none";
@@ -942,6 +943,11 @@ async function spotWizard(pre, existing) {
 function wizSteps() {
   const v = WIZ.v;
   return [
+    { t: T("images", "Bilder"), hint: T("wizImgHint", "Nur eigene Screenshots. Spotbild, Kescherbild und Setupbild sind Pflicht, ein Setupbild reicht.") + " " + T("wizImgRead", "Das Tool liest die Bilder aus und füllt die nächsten Schritte schon vor."),
+      f: () => `<div class="fbimgs" id="fImgs"></div><div class="wiz-sum" id="wImgInfo" style="${WIZ.info.length ? "" : "display:none"}">${WIZ.info.join("")}</div>`,
+      read: () => { v.images = Object.assign({}, IMGS); },
+      check: () => IMG_REQ.every(k => v.images[k]) ? "" : T("wizNeedImgs", "Bitte Spotbild, Kescherbild und Setupbild hinzufügen."),
+      bind: () => { IMGS = Object.assign({}, v.images); IMG_HOOK = wizAnalyze; renderImgs(IMG_REQ); } },
     { t: T("wizWhere", "Wo"), hint: T("wizWhereHint", "Gewässer und Koordinaten der Stelle, an der du angelst."),
       f: () => `<label>${esc(T("lake", "Gewässer"))}<select id="wLake">${lakeOptions(v.lake)}</select></label><span></span>
         ${field("wX", "X", v.x, 'inputmode="numeric"')}${field("wY", "Y", v.y, 'inputmode="numeric"')}
@@ -950,7 +956,7 @@ function wizSteps() {
       check: () => v.lake && /^\d+$/.test(v.x) && /^\d+$/.test(v.y) ? "" : T("wizNeedWhere", "Bitte Gewässer und beide Koordinaten angeben.") },
     { t: T("wizCond", "Bedingungen"), hint: TEMP_LAKES.includes(v.lake) ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : T("wizCondHint", "Was beißt hier und wie angelst du?"),
       f: () => `${field("wFish", T("fish", "Zielfisch") + " (" + T("optional", "optional") + ")", v.fish, 'list="dlFish"')}${techField("wTech", v.tech)}
-        ${field("wTemp", T("temperature", "Temperatur") + " (°C)" + (TEMP_LAKES.includes(v.lake) ? " *" : ""), v.temp, 'inputmode="decimal"')}`,
+        ${tempField("wTemp", v.temp, TEMP_LAKES.includes(v.lake))}`,
       read: () => { v.fish = $("wFish").value.trim(); v.tech = $("wTech").value; v.temp = $("wTemp").value.trim(); },
       check: () => !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
     { t: T("wizRig", "Montage und Köder"), hint: T("wizRigHint", "Was hängt an der Rute? Bei mehreren gleichen Ruten reicht eine."),
@@ -966,21 +972,38 @@ function wizSteps() {
       read: () => { v.feedType = $("wFeedT").value; v.pva = $("wPva").value.trim(); v.rBase = $("wBase").value.trim(); v.rAttr = $("wAttr").value.trim(); v.rAdd = [0, 1, 2, 3].map(i => $("wAdd" + i).value.trim()); },
       check: () => v.feedType && !v.pva && (v.rBase || v.rAdd.some(Boolean)) ? T("wizNeedRecipe", "Bitte dem Futter einen Namen geben, damit es als Rezept gespeichert wird.") : "",
       bind: () => { $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => $("wAdd" + i).value = r.additives[i] || ""); }; } },
-    { t: T("images", "Bilder"), hint: T("wizImgHint", "Nur eigene Screenshots. Spotbild, Kescherbild und Setupbild sind Pflicht, ein Setupbild reicht."),
-      f: () => `<div class="fbimgs" id="fImgs"></div>`,
-      read: () => { v.images = Object.assign({}, IMGS); },
-      check: () => IMG_REQ.every(k => v.images[k]) ? "" : T("wizNeedImgs", "Bitte Spotbild, Kescherbild und Setupbild hinzufügen."),
-      bind: () => { IMGS = Object.assign({}, v.images); renderImgs(IMG_REQ); } },
     { t: T("wizDone", "Abschluss"), hint: T("wizDoneHint", "Name und Kommentar, dann alles prüfen und speichern."),
       f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
       read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; },
       check: () => "", bind: () => bindNotes("wNotes") }
   ];
 }
+async function wizAnalyze(kind, name) {
+  const v = WIZ.v, label = T((IMGK.find(k => k[0] === kind) || [])[1], kind);
+  const show = () => { const el = $("wImgInfo"); if (!el) return; el.style.display = WIZ.info.length || WIZ.busy ? "" : "none"; el.innerHTML = WIZ.info.join("") + (WIZ.busy ? `<div style="color:var(--muted)">${esc(T("wizReading", "Bilder werden gelesen …"))}</div>` : ""); };
+  WIZ.busy++; show();
+  let a = null;
+  try { a = await api("/api/fbanalyze", { name }); } catch (e) { }
+  WIZ.busy--;
+  if (!a || WIZ.v !== v) { show(); return; }
+  const got = [];
+  if (a.fish.length) { const names = a.fish.map(f => f.name); if (!v.fish) v.fish = names.join(", "); got.push(a.fish.map(f => (f.n > 1 ? f.n + "× " : "") + f.name).join(", ")); }
+  if (a.x && a.y) { if (!v.x) { v.x = a.x; v.y = a.y; } got.push(a.x + ":" + a.y); }
+  if (a.lake) { if (!v.lake) v.lake = a.lake; got.push((INIT.lakes.find(l => l.id === a.lake) || {}).name || a.lake); }
+  if (a.temp) { if (!v.temp) v.temp = a.temp; got.push(T("temperature", "Temperatur") + " " + T("temp_" + a.temp, a.temp)); }
+  if (a.tech) { if (!v.tech) v.tech = a.tech; got.push(T("tech_" + a.tech, a.tech)); }
+  if (a.rig) { if (!v.rig) v.rig = a.rig; got.push(a.rig); }
+  if (a.baits.length) { if (!v.bait) { v.bait = a.baits[0] || ""; v.bait2 = a.baits[1] || ""; } got.push(a.baits.join(" + ")); }
+  if (a.dip) { if (!v.dip) v.dip = a.dip; got.push("Dip " + a.dip); }
+  if (a.recipe) { if (!v.pva) { v.feedType = a.recipe.type || "groundbait"; v.pva = a.recipe.name; v.rBase = a.recipe.base; v.rAttr = a.recipe.attractant; v.rAdd = a.recipe.additives.slice(); } got.push(a.recipe.name || T("feed", "Futter")); }
+  else if (a.pva) { if (!v.pva) { v.feedType = "pva"; v.pva = a.pva; } got.push("PVA " + a.pva); }
+  WIZ.info.push(`<div><b>${esc(label)}:</b> ${esc(got.length ? got.join(" · ") : T("wizReadNone", "nichts erkannt"))}</div>`);
+  show();
+}
 function wizSummary() {
   const v = WIZ.v, ft = Object.fromEntries(feedTypes())[v.feedType] || "";
   const rows = [[T("lake", "Gewässer"), (INIT.lakes.find(l => l.id === v.lake) || {}).name + " · " + v.x + ":" + v.y], ["Clip", v.clip ? v.clip + " m" : ""], [T("depth", "Tiefe"), v.depth],
-    [T("fish", "Zielfisch"), v.fish], [T("technique", "Angelart"), v.tech ? T("tech_" + v.tech, v.tech) : ""], [T("temperature", "Temperatur"), v.temp ? v.temp + " °C" : ""],
+    [T("fish", "Zielfisch"), v.fish], [T("technique", "Angelart"), v.tech ? T("tech_" + v.tech, v.tech) : ""], [T("temperature", "Temperatur"), v.temp ? T("temp_" + v.temp, v.temp) : ""],
     [T("rigL", "Montage"), v.rig], [T("bait", "Köder"), [v.bait, v.bait2].filter(Boolean).join(" + ")], ["Dip", v.dip], [ft || T("feed", "Futter"), v.pva],
     [T("images", "Bilder"), IMGK.filter(k => v.images[k[0]]).map(k => T(k[1], k[2])).join(", ")]];
   return rows.filter(r => r[1]).map(r => `<div><b>${esc(r[0])}:</b> ${esc(r[1])}</div>`).join("");
@@ -992,7 +1015,8 @@ function wizRender() {
     <p class="wiz-hint">${esc(s.hint)}</p>${s.f()}
     <div class="wiz-nav">${WIZ.i ? `<button class="btn" id="wBack">← ${esc(T("back", "Zurück"))}</button>` : "<span></span>"}<button class="btn primary big" id="wNext">${esc(last ? T("save", "Speichern") : T("next", "Weiter") + " →")}</button></div>`;
   if (s.bind) s.bind();
-  if (WIZ.i === 0) $("wLake").onchange = () => fillLists($("wLake").value);
+  if ($("wLake")) $("wLake").onchange = () => fillLists($("wLake").value);
+  if (!s.bind || s.t !== T("images", "Bilder")) IMG_HOOK = null;
   if ($("wBack")) $("wBack").onclick = () => { s.read(); WIZ.i--; wizRender(); };
   $("wNext").onclick = async () => {
     s.read();
@@ -1041,7 +1065,7 @@ async function catchDialog(c) {
      <label>${esc(T("logSpot", "Eigener Spot"))}<select id="fSpot">${spotOptions(lake, last.spotId)}</select></label>
      ${field("fX", "X", last.x, 'inputmode="numeric"')}${field("fY", "Y", last.y, 'inputmode="numeric"')}
      ${field("fClip", "Clip (m)", c ? c.clip : "", 'inputmode="decimal"')}${field("fDepth", T("depth", "Tiefe"), c ? c.depth : "")}
-     ${field("fTemp", T("temperature", "Temperatur") + " (°C)", c ? c.temp : last.temp, 'inputmode="decimal"')}
+     ${tempField("fTemp", c ? c.temp : last.temp)}
      <label class="wide">${esc(T("images", "Bilder"))}</label><div class="fbimgs" id="fImgs"></div>
      ${notesField("fNotes", c ? c.notes : "")}`,
     async () => {
@@ -1049,6 +1073,7 @@ async function catchDialog(c) {
     },
     c ? async () => { await api("/api/catch/delete", { ids: [c.id] }); } : null);
   IMGS = Object.assign({}, c && c.images || {});
+  IMG_HOOK = null;
   renderImgs();
   bindNotes("fNotes");
   $("fLake").onchange = async () => { await fillLists($("fLake").value); $("fSpot").innerHTML = spotOptions($("fLake").value, ""); };

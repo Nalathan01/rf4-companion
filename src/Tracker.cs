@@ -298,6 +298,51 @@ internal static class Tracker
         else Say(T("trackerUnknown", "Screenshot ohne Fang oder Setup"));
     }
 
+    public static object Analyze(string path, string lang)
+    {
+        string tag = LangTag, code = TrackerParse.Code(tag);
+        OcrRead r0 = Ocr(path, tag, RectangleF.Empty, 1, false);
+        string[] lines = r0.Lines();
+        TrackRes r = lines.Length > 0 ? TrackerParse.Parse(lines, r0.Boxes, code) : new TrackRes();
+        List<string> fish = new List<string>();
+        switch (r.Kind)
+        {
+            case "setup":
+                TrackerParse.RepairSetup(r, lines, code);
+                break;
+            case "detail":
+                TrackerParse.RepairDetail(r, lines, code);
+                if (r.Fish.Length > 0) fish.Add(r.Fish);
+                break;
+            case "catch":
+                if (r.Fish.Length > 0) fish.Add(r.Fish);
+                break;
+            case "keepnet":
+                {
+                    OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.86f), 100, false);
+                    List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, File.GetLastWriteTime(path), new Dictionary<TrackItem, DateTime>());
+                    if (items.Count == 0) items = TrackerParse.Merge(r.Items, TrackerParse.KeepnetItems(r2.Lines(), r2.Boxes, TrackerParse.Lists(code)));
+                    fish.AddRange(items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).Select(i => i.Fish));
+                    break;
+                }
+        }
+        int x = r.Kind == "position" ? r.X : 0, y = r.Kind == "position" ? r.Y : 0;
+        if (x == 0)
+        {
+            int[] hp = TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.925f, 0.87f, 0.055f, 0.075f), 4, false).Lines(), null);
+            if (hp != null) { x = hp[0]; y = hp[1]; }
+        }
+        string temp = TrackerParse.MatchTemp(Ocr(path, tag, new RectangleF(0.9f, 0.1f, 0.1f, 0.022f), 4, true).Lines());
+        Func<string, string> tr = k => string.IsNullOrEmpty(k) ? "" : GameData.Translate(k, lang);
+        Dictionary<string, object> rc = null;
+        if (r.Recipe != null)
+            rc = AppEnv.Obj("name", S(r.Recipe, "name"), "type", S(r.Recipe, "type"), "base", tr(S(r.Recipe, "base")), "attractant", tr(S(r.Recipe, "attractant")),
+                "additives", AppEnv.GetList(r.Recipe, "additives").Cast<object>().Select(o => tr((o ?? "").ToString())).Where(v => v.Length > 0).ToArray());
+        return AppEnv.Obj("kind", r.Kind, "fish", fish.GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj("name", tr(g.Key), "n", g.Count())).ToArray(),
+            "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", r.Lake,
+            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc);
+    }
+
     private static string Lake()
     {
         lock (gate) { Dictionary<string, object> s = Cur(false); return s != null ? S(s, "lake") : ""; }

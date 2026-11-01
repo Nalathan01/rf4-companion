@@ -553,7 +553,10 @@
   "browserDefault": "Standardbrowser",
   "browserTab": "Tab",
   "browserSwitch": "RF4 Companion wird im gewählten Browser neu geöffnet. Fortfahren?",
-  "optional": "optional"
+  "optional": "optional",
+  "wizImgRead": "Das Tool liest die Bilder aus und füllt die nächsten Schritte schon vor.",
+  "wizReading": "Bilder werden gelesen …",
+  "wizReadNone": "nichts erkannt"
  },
  "en": {
   "langName": "English",
@@ -1109,7 +1112,10 @@
   "browserDefault": "Default browser",
   "browserTab": "tab",
   "browserSwitch": "RF4 Companion will reopen in the selected browser. Continue?",
-  "optional": "optional"
+  "optional": "optional",
+  "wizImgRead": "The tool reads the images and fills in the next steps for you.",
+  "wizReading": "Reading images …",
+  "wizReadNone": "nothing recognized"
  },
  "ru": {
   "langName": "Русский",
@@ -1662,7 +1668,10 @@
   "browserDefault": "Браузер по умолчанию",
   "browserTab": "вкладка",
   "browserSwitch": "RF4 Companion откроется заново в выбранном браузере. Продолжить?",
-  "optional": "необязательно"
+  "optional": "необязательно",
+  "wizImgRead": "Программа считывает изображения и заранее заполняет следующие шаги.",
+  "wizReading": "Изображения считываются …",
+  "wizReadNone": "ничего не распознано"
  },
  "fr": {
   "langName": "Français",
@@ -2215,7 +2224,10 @@
   "browserDefault": "Navigateur par défaut",
   "browserTab": "onglet",
   "browserSwitch": "RF4 Companion va se rouvrir dans le navigateur choisi. Continuer ?",
-  "optional": "facultatif"
+  "optional": "facultatif",
+  "wizImgRead": "L'outil lit les images et pré-remplit les étapes suivantes.",
+  "wizReading": "Lecture des images …",
+  "wizReadNone": "rien reconnu"
  },
  "es": {
   "langName": "Español",
@@ -2768,7 +2780,10 @@
   "browserDefault": "Navegador predeterminado",
   "browserTab": "pestaña",
   "browserSwitch": "RF4 Companion se volverá a abrir en el navegador elegido. ¿Continuar?",
-  "optional": "opcional"
+  "optional": "opcional",
+  "wizImgRead": "La herramienta lee las imágenes y rellena los siguientes pasos.",
+  "wizReading": "Leyendo imágenes …",
+  "wizReadNone": "nada reconocido"
  },
  "it": {
   "langName": "Italiano",
@@ -3321,7 +3336,10 @@
   "browserDefault": "Browser predefinito",
   "browserTab": "scheda",
   "browserSwitch": "RF4 Companion verrà riaperto nel browser scelto. Continuare?",
-  "optional": "facoltativo"
+  "optional": "facoltativo",
+  "wizImgRead": "Lo strumento legge le immagini e precompila i passaggi successivi.",
+  "wizReading": "Lettura delle immagini …",
+  "wizReadNone": "nulla riconosciuto"
  },
  "pl": {
   "langName": "Polski",
@@ -3874,7 +3892,10 @@
   "browserDefault": "Domyślna przeglądarka",
   "browserTab": "karta",
   "browserSwitch": "RF4 Companion otworzy się ponownie w wybranej przeglądarce. Kontynuować?",
-  "optional": "opcjonalnie"
+  "optional": "opcjonalnie",
+  "wizImgRead": "Narzędzie odczyta obrazy i wstępnie wypełni kolejne kroki.",
+  "wizReading": "Odczytywanie obrazów …",
+  "wizReadNone": "nic nie rozpoznano"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4427,7 +4448,10 @@
   "browserDefault": "Navegador padrão",
   "browserTab": "aba",
   "browserSwitch": "O RF4 Companion será reaberto no navegador escolhido. Continuar?",
-  "optional": "opcional"
+  "optional": "opcional",
+  "wizImgRead": "A ferramenta lê as imagens e preenche os próximos passos.",
+  "wizReading": "Lendo imagens …",
+  "wizReadNone": "nada reconhecido"
  },
  "nl": {
   "langName": "Nederlands",
@@ -4980,7 +5004,10 @@
   "browserDefault": "Standaardbrowser",
   "browserTab": "tabblad",
   "browserSwitch": "RF4 Companion wordt opnieuw geopend in de gekozen browser. Doorgaan?",
-  "optional": "optioneel"
+  "optional": "optioneel",
+  "wizImgRead": "De tool leest de afbeeldingen en vult de volgende stappen alvast in.",
+  "wizReading": "Afbeeldingen worden gelezen …",
+  "wizReadNone": "niets herkend"
  },
  "tr": {
   "langName": "Türkçe",
@@ -5533,7 +5560,10 @@
   "browserDefault": "Varsayılan tarayıcı",
   "browserTab": "sekme",
   "browserSwitch": "RF4 Companion seçilen tarayıcıda yeniden açılacak. Devam edilsin mi?",
-  "optional": "isteğe bağlı"
+  "optional": "isteğe bağlı",
+  "wizImgRead": "Araç görselleri okur ve sonraki adımları önceden doldurur.",
+  "wizReading": "Görseller okunuyor …",
+  "wizReadNone": "hiçbir şey tanınmadı"
  },
  "ro": {
   "langName": "Română",
@@ -6086,7 +6116,10 @@
   "browserDefault": "Browser implicit",
   "browserTab": "filă",
   "browserSwitch": "RF4 Companion se va redeschide în browserul ales. Continui?",
-  "optional": "opțional"
+  "optional": "opțional",
+  "wizImgRead": "Unealta citește imaginile și precompletează pașii următori.",
+  "wizReading": "Se citesc imaginile …",
+  "wizReadNone": "nimic recunoscut"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6639,7 +6672,10 @@
   "browserDefault": "Peramban bawaan",
   "browserTab": "tab",
   "browserSwitch": "RF4 Companion akan dibuka ulang di peramban yang dipilih. Lanjutkan?",
-  "optional": "opsional"
+  "optional": "opsional",
+  "wizImgRead": "Alat ini membaca gambar dan mengisi langkah berikutnya.",
+  "wizReading": "Membaca gambar …",
+  "wizReadNone": "tidak ada yang dikenali"
  },
  "ja": {
   "langName": "日本語",
@@ -7192,7 +7228,10 @@
   "browserDefault": "既定のブラウザー",
   "browserTab": "タブ",
   "browserSwitch": "RF4 Companion を選んだブラウザーで開き直します。続けますか？",
-  "optional": "任意"
+  "optional": "任意",
+  "wizImgRead": "画像を読み取り、次のステップをあらかじめ入力します。",
+  "wizReading": "画像を読み取り中 …",
+  "wizReadNone": "認識なし"
  },
  "ko": {
   "langName": "한국어",
@@ -7745,7 +7784,10 @@
   "browserDefault": "기본 브라우저",
   "browserTab": "탭",
   "browserSwitch": "RF4 Companion이 선택한 브라우저에서 다시 열립니다. 계속할까요?",
-  "optional": "선택"
+  "optional": "선택",
+  "wizImgRead": "이미지를 읽어 다음 단계를 미리 채웁니다.",
+  "wizReading": "이미지를 읽는 중 …",
+  "wizReadNone": "인식된 내용 없음"
  },
  "zh": {
   "langName": "简体中文",
@@ -8298,7 +8340,10 @@
   "browserDefault": "默认浏览器",
   "browserTab": "标签页",
   "browserSwitch": "RF4 Companion 将在所选浏览器中重新打开。继续吗？",
-  "optional": "可选"
+  "optional": "可选",
+  "wizImgRead": "工具会读取图片并预先填写后续步骤。",
+  "wizReading": "正在读取图片 …",
+  "wizReadNone": "未识别到内容"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -8851,6 +8896,9 @@
   "browserDefault": "預設瀏覽器",
   "browserTab": "分頁",
   "browserSwitch": "RF4 Companion 將在所選瀏覽器中重新開啟。繼續嗎？",
-  "optional": "選填"
+  "optional": "選填",
+  "wizImgRead": "工具會讀取圖片並預先填寫後續步驟。",
+  "wizReading": "正在讀取圖片 …",
+  "wizReadNone": "未辨識到內容"
  }
 }
