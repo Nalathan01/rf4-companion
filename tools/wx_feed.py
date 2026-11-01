@@ -16,7 +16,7 @@ from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
-VERSION = 3
+VERSION = 4
 WORKERS = 3
 BUDGET = 540
 CJK = re.compile(r"[一-鿿]")
@@ -82,8 +82,14 @@ def match_tail(line, names):
             continue
         if any(c not in cj for c in CJK.findall(k)):
             continue
+        kc = "".join(CJK.findall(k))
+        i = s.rfind(kc)
+        if len(k) <= 4 and kc and (i < 0 or i > 0 and CJK.match(s[i-1])):
+            continue
         for cut in (0, 1, 2):
             t = s[:len(s)-cut] if cut else s
+            if cut and CJK.search(s[len(s)-cut:]):
+                break
             if len(t) < len(k)-2:
                 break
             d = min(lev(t[-len(k):], k), lev(t, k))
@@ -121,8 +127,16 @@ def prepare(im):
     return g.resize((int(g.width * f), int(g.height * f)), Image.LANCZOS)
 
 
-def find_box(im):
-    a = np.asarray(im).max(axis=2)[::4, ::4] < 28
+def photo(im, blur):
+    g = ImageOps.grayscale(im)
+    f = min(3.0, 2000.0 / g.width)
+    g = np.asarray(g.resize((int(g.width * f), int(g.height * f)), Image.LANCZOS), dtype=np.float32)
+    g = ndimage.gaussian_filter(g, blur)
+    return Image.fromarray(np.where(g-ndimage.uniform_filter(g, 61) > 18, 0, 255).astype(np.uint8))
+
+
+def find_box(im, thr=28, smooth=1):
+    a = ndimage.uniform_filter(np.asarray(im).max(axis=2).astype(np.float32), smooth)[::4, ::4] < thr
     lab, _ = ndimage.label(a)
     best = None
     for i, sl in enumerate(ndimage.find_objects(lab), 1):
@@ -140,15 +154,15 @@ def feed_from_lines(lines, names):
     feed = []
     inside = False
     for line in lines:
-        if line.startswith("类型"):
+        rest = LABEL.sub("", CRUSHED.sub("", line))
+        if line.startswith("类型") or (LABEL.match(line) and len(norm(rest)) < 2):
             inside = True
             continue
         if not inside:
             continue
         if line.startswith("情况") or line.startswith("类别"):
             break
-        rest = LABEL.sub("", CRUSHED.sub("", line))
-        if len(norm(rest)) < 2:
+        if len(norm(rest)) < 2 or line.startswith("形式"):
             continue
         en = match_tail(rest, names)
         if en and en not in feed:
@@ -185,7 +199,25 @@ def read_image(data, feed_names, bait_names):
         baits = baits_from_lines(lines, bait_names)
         if not baits:
             feed = feed_from_lines(lines, feed_names)
-    return feed, baits
+    if feed or baits:
+        return feed, baits, False
+    reads = [ocr(photo(im, b), 6) for b in (1.5, 2.5)]
+    for lines in reads:
+        feed += [x for x in feed_from_lines(lines, feed_names) if x not in feed]
+    box = find_box(im, 55, 9)
+    if box:
+        crop = im.crop(box[1:])
+        crop = ImageOps.invert(ImageOps.grayscale(crop.crop((int(crop.width * 0.55), 0, crop.width, crop.height))))
+        f = min(4.0, 900.0 / crop.width)
+        crop = crop.resize((int(crop.width * f), int(crop.height * f)), Image.LANCZOS)
+        vals = [en for en in (match_tail(x, feed_names) for x in ocr(crop, 6)) if en]
+        if len(set(vals)) >= 2:
+            feed += [x for x in vals if x not in feed]
+    if not feed:
+        for lines in reads:
+            if any(HEAD.search(x) for x in lines):
+                baits += [x for x in baits_from_lines(lines, bait_names) if x not in baits]
+    return feed, baits, bool(feed or baits)
 
 
 def read_post(urls, feed_names, bait_names, start):
@@ -205,7 +237,9 @@ def read_post(urls, feed_names, bait_names, start):
                 time.sleep(2 + attempt * 3)
         if data is None:
             return None
-        feed, baits = read_image(data, feed_names, bait_names)
+        feed, baits, ph = read_image(data, feed_names, bait_names)
+        if ph:
+            res["p"] = 1
         res["f"] += [x for x in feed if x not in res["f"]]
         res["b"] += [x for x in baits if x not in res["b"]]
     return res
@@ -215,7 +249,7 @@ def main(src, cache_path, out_path):
     feed_names, bait_names = candidates()
     cache = {}
     if os.path.exists(cache_path):
-        cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict) and v.get("v") == VERSION}
+        cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict) and (v.get("v") == VERSION or v.get("v") == 3 and (v.get("f") or v.get("b")))}
     start = time.time()
     posts = []
     for f in glob.glob(os.path.join(src, "api_wechat_positions_*")):

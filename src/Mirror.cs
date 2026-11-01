@@ -119,6 +119,7 @@ internal static class Mirror
             Dictionary<string, object> wd = wf as Dictionary<string, object>;
             string[] imgFeed = (wd != null ? AppEnv.GetList(wd, "f") : wf as System.Collections.IList ?? new object[0]).Cast<object>().Select(o => o.ToString()).ToArray();
             string[] imgBaits = wd != null ? AppEnv.GetList(wd, "b").Cast<object>().Select(o => o.ToString()).ToArray() : new string[0];
+            if (imgBaits.Length > 0 && wd.ContainsKey("p")) imgBaits = baits.Concat(imgBaits).Distinct().ToArray();
             if (imgBaits.Length > 0) { raw["baitDetail"] = string.Join(" + ", imgBaits); raw["mimg"] = true; raw["ms"] = true; }
             else if (r.Id.StartsWith("wx:", StringComparison.Ordinal) && baits.Length == 0 && ImageOcr.ZhLang().Length > 0)
             {
