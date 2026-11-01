@@ -7,7 +7,7 @@ using System.Linq;
 internal static class Finder
 {
     public const string KoiGroup = "grp:koi";
-    private static readonly string[] KoiNames = { "Kohaku", "Hi Utsuri", "Orenji Ogon", "Narumi Asagi", "Mameshibori Goshiki", "Yotsushiro", "Midori goi", "Showa Sanshoku", "Taisho Sanke", "Tancho", "Shiro Utsuri", "Ki Utsuri", "Asagi", "Shusui", "Ogon", "Kujaku", "Chagoi", "Soragoi", "Karashigoi", "Benigoi", "Kumonryu", "Ochiba" };
+    public static readonly string[] KoiNames = { "Kohaku", "Hi Utsuri", "Orenji Ogon", "Narumi Asagi", "Mameshibori Goshiki", "Yotsushiro", "Midori goi", "Showa Sanshoku", "Taisho Sanke", "Tancho", "Shiro Utsuri", "Ki Utsuri", "Asagi", "Shusui", "Ogon", "Kujaku", "Chagoi", "Soragoi", "Karashigoi", "Benigoi", "Kumonryu", "Ochiba" };
 
     private sealed class Agg
     {

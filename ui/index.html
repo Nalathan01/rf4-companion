@@ -248,7 +248,7 @@ dialog.sheet[open] { display: flex; }
 .site:hover { border-color: rgba(79,168,201,0.6); }
 .site small { display: block; color: var(--muted); margin-top: 2px; }
 .star { color: var(--warm); }
-.nolog .logonly, .notrk .trkonly { display: none !important; }
+.nolog .logonly, .notrk .trkonly, .nohist .histonly { display: none !important; }
 .boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
 .boot.hide { opacity: 0; pointer-events: none; }
 .boot-box { width: min(420px, 86vw); text-align: center; }
@@ -274,6 +274,7 @@ dialog.sheet[open] { display: flex; }
   <nav>
     <button class="nav-btn active" data-view="active" data-t="navActive">Aktive Spots</button>
     <button class="nav-btn" data-view="find" data-t="navFind">Aktuelle Köder</button>
+    <button class="nav-btn histonly" data-view="hist" data-t="navHist">Köderhistorie</button>
     <button class="nav-btn logonly" data-view="log" data-t="navLog">Mein Fangbuch</button>
   </nav>
   <div class="head-acts">
@@ -301,6 +302,20 @@ dialog.sheet[open] { display: flex; }
         <div class="fish-list" id="fishList"></div>
       </div>
       <div class="col" id="findDetail"></div>
+    </div>
+  </section>
+  <section class="view" id="view-hist">
+    <div class="split find-split">
+      <div class="col">
+        <div class="title-row"><h2 data-t="navHist">Köderhistorie</h2></div>
+        <p class="sub" id="histSub"></p>
+        <input class="search" id="histQ" type="search" autocomplete="off">
+        <div class="filters">
+          <div class="seg" id="histSeg"><button data-m="3"></button><button data-m="6"></button><button data-m="12" class="on"></button><button data-m="24"></button><button data-m="0"></button></div>
+        </div>
+        <div class="fish-list" id="histList"></div>
+      </div>
+      <div class="col" id="histDetail"></div>
     </div>
   </section>
   <section class="view active" id="view-active">
@@ -403,15 +418,17 @@ async function boot() {
   fillLakes();
   applyStrings();
   findStatic();
+  histStatic();
   await loadActive();
   loadFind();
   document.documentElement.classList.toggle("nolog", !INIT.features.log);
   document.documentElement.classList.toggle("notrk", !INIT.features.tracker);
+  document.documentElement.classList.toggle("nohist", !INIT.features.history);
   loadLog();
   trk("status");
   loadExtensions();
   const hv = location.hash.slice(1).split("=");
-  if (hv[0] === "find" || hv[0] === "log") { showView(hv[0]); if (hv[0] === "find" && hv[1]) { FIND.fish = decodeURIComponent(hv[1]); loadFind(); } }
+  if (hv[0] === "find" || hv[0] === "log" || (hv[0] === "hist" && INIT.features.history)) { showView(hv[0]); if (hv[0] === "find" && hv[1]) { FIND.fish = decodeURIComponent(hv[1]); loadFind(); } }
   $("boot").classList.add("hide");
   setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);
@@ -667,7 +684,7 @@ $("browserSel").onchange = async () => {
   try { await api("/api/browser", { id: sel.value, reopen: true }); setTimeout(() => window.close(), 600); }
   catch (e) { sel.value = sel.dataset.current; alert(e.message); }
 };
-$("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); };
+$("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); histStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); if (HDATA) loadHist(); };
 $("updBtn").onclick = () => { $("updBtn").disabled = true; api("/api/update", {}).catch(e => { alert(e.message); $("updBtn").disabled = false; }); };
 let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
 function findStatic() {
@@ -738,6 +755,57 @@ function renderFindDetail() {
   el.querySelectorAll(".chip[data-l]").forEach(c => c.onclick = () => { FIND.lake = c.dataset.l; loadFind(); });
   el.querySelectorAll(".mini[data-k]").forEach(c => c.onclick = () => goSpot(d.lake, c.dataset.k));
 }
+let HIST = { fish: "", lake: "", months: 12, q: "" }, HDATA = null, HSEQ = 0;
+function histStatic() {
+  $("histSeg").querySelectorAll("button").forEach(b => b.textContent = +b.dataset.m ? T("histMonths", "{0} Monate").replace("{0}", b.dataset.m) : T("histAll", "Alles"));
+  $("histQ").placeholder = T("histSearch", "Fisch suchen");
+}
+function histMonth(m) {
+  return m ? new Date(m + "-15T12:00:00").toLocaleDateString(INIT.lang, { month: "short", year: "numeric" }) : "";
+}
+async function loadHist() {
+  if (!INIT.features.history) return;
+  const seq = ++HSEQ;
+  let d;
+  try { d = await api("/api/history?fish=" + encodeURIComponent(HIST.fish) + "&lake=" + encodeURIComponent(HIST.lake) + "&months=" + HIST.months); } catch (e) { return; }
+  if (seq !== HSEQ) return;
+  HDATA = d;
+  if (d.loading) {
+    $("histSub").textContent = T("histLoading", "Die Köderhistorie wird geladen.");
+    $("histList").innerHTML = ""; $("histDetail").innerHTML = "";
+    setTimeout(() => { if ($("view-hist").classList.contains("active")) loadHist(); }, 2000);
+    return;
+  }
+  $("histSub").textContent = (d.first ? T("histSub", "{0} Rekorde in der Auswahl, Daten von {1} bis {2}").replace("{0}", d.total.toLocaleString(INIT.lang)).replace("{1}", histMonth(d.first)).replace("{2}", histMonth(d.last)) : T("histEmpty", "Noch keine Köderhistorie vorhanden."))
+    + (d.error ? " · " + T("cloudFailed", "Cloud nicht erreichbar: {0}").replace("{0}", d.error) : "");
+  renderHistList();
+  renderHistDetail();
+}
+function renderHistList() {
+  const q = HIST.q.toLowerCase();
+  const list = HDATA.fishList.filter(f => !q || f.name.toLowerCase().includes(q) || f.key.toLowerCase().includes(q));
+  $("histList").innerHTML = list.length ? list.map(f => `<div class="fish-row ${f.key === HIST.fish ? "sel" : ""}" data-k="${esc(f.key)}"><span>${esc(f.name)}</span><span class="n">${f.n.toLocaleString(INIT.lang)}</span></div>`).join("") : `<div class="empty">${esc(T("findNoFish", "Kein Fisch gefunden."))}</div>`;
+  $("histList").querySelectorAll(".fish-row").forEach(r => r.onclick = () => { HIST.fish = r.dataset.k; HIST.lake = ""; loadHist(); });
+}
+function renderHistDetail() {
+  const d = HDATA, el = $("histDetail");
+  if (!d.fish) { el.innerHTML = `<div class="placeholder" style="margin-top:18vh"><h2>${esc(T("navHist", "Köderhistorie"))}</h2><p>${esc(T("histPick", "Links einen Fisch wählen. Dann siehst du, auf welche Köder er über die Monate in den Rekorden gebissen hat."))}</p></div>`; return; }
+  const lakes = `<div class="chips"><button class="chip ${!d.lake ? "on" : ""}" data-l="">${esc(T("allLakes", "Alle Gewässer"))}</button>${d.lakes.map(l => `<button class="chip ${l.id === d.lake ? "on" : ""}" data-l="${esc(l.id)}">${esc(l.name)}<span class="n">${l.n}</span></button>`).join("")}</div>`;
+  const multi = d.fish === "grp:koi";
+  const baits = d.baits.length ? `<table class="tbl"><tr><th>${esc(T("bait", "Köder"))}</th><th class="num">${esc(T("records", "Rekorde"))}</th><th class="num">${esc(T("histShare", "Anteil"))}</th><th class="num">${esc(T("histMax", "Größter"))}</th><th>${esc(T("histLast", "Zuletzt"))}</th></tr>` +
+    d.baits.map(b => `<tr><td>${esc(b.name)}${multi || b.fish.length > 1 ? `<small>${esc(b.fish.join(", "))}</small>` : ""}</td><td class="num">${b.n.toLocaleString(INIT.lang)}</td><td class="num">${b.share.toLocaleString(INIT.lang)} %</td><td class="num">${esc(b.max)}</td><td>${esc(histMonth(b.last))}</td></tr>`).join("") + `</table>` : `<div class="empty">${esc(T("findNoBaits", "Keine Rekorde an diesem Gewässer in der Auswahl."))}</div>`;
+  const months = d.months.length ? `<table class="tbl"><tr><th>${esc(T("histMonth", "Monat"))}</th><th class="num">${esc(T("records", "Rekorde"))}</th><th>${esc(T("histTop", "Häufigste Köder"))}</th></tr>` +
+    d.months.map(m => `<tr><td>${esc(histMonth(m.month))}</td><td class="num">${m.n.toLocaleString(INIT.lang)}</td><td>${m.top.map(t => esc(t.name) + ` <span class="n">${t.n}</span>`).join("<br>")}</td></tr>`).join("") + `</table>` : "";
+  el.innerHTML = `<div class="title-row"><h2>${esc(d.fishName)}</h2></div>
+    <p class="sub">${esc(T("histFishSub", "{0} Rekorde in der Auswahl").replace("{0}", d.n.toLocaleString(INIT.lang)))}</p>
+    ${lakes}
+    <div class="hdr">${esc(T("tgtBaits", "Köder aus den Rekorden"))} · ${esc(d.lakeName)}</div>${baits}
+    ${months ? `<div class="hdr">${esc(T("histByMonth", "Nach Monat"))} · ${esc(d.lakeName)}</div>${months}` : ""}
+    <p class="sub" style="margin-top:14px">${esc(T("histSource", "Quelle: offizielle Rekordlisten von rf4game.com, gesammelt von RF4 Companion."))}</p>`;
+  el.querySelectorAll(".chip[data-l]").forEach(c => c.onclick = () => { HIST.lake = c.dataset.l; loadHist(); });
+}
+$("histSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HIST.months = +b.dataset.m; $("histSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadHist(); });
+$("histQ").oninput = () => { HIST.q = $("histQ").value.trim(); if (HDATA && !HDATA.loading) renderHistList(); };
 window.RF4 = {
   api, T, esc,
   addView(id, label, html, onShow) {
@@ -760,6 +828,7 @@ function showView(v) {
   document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.view === v));
   document.querySelectorAll(".view").forEach(x => x.classList.toggle("active", x.id === "view-" + v));
   if (v === "active") drawMap();
+  if (v === "hist") loadHist();
 }
 function goSpot(lake, key) {
   showView("active");

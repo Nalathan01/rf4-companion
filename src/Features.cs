@@ -7,7 +7,9 @@ internal static class Features
 #endif
 #if PRIVATE
     public static readonly bool Tracker = true;
+    public static readonly bool BaitHistory = true;
 #else
     public static readonly bool Tracker = false;
+    public static readonly bool BaitHistory = false;
 #endif
 }

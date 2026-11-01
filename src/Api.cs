@@ -145,6 +145,7 @@ internal sealed class Api
                 return Init();
             case "/api/active": return Active(q);
             case "/api/find": return Finder.Find(q, Lang, GameData.Strings(Lang));
+            case "/api/history": if (!Features.BaitHistory) break; return BaitHistory.Query(q, Lang);
             case "/api/log": return Fangbuch.Log(Lang);
             case "/api/loglists": return Fangbuch.Lists(q["lake"] ?? "", Lang);
             case "/api/catch/save": return Fangbuch.SaveCatch(args ?? new Dictionary<string, object>(), Lang);
@@ -459,7 +460,7 @@ internal sealed class Api
             lakes.Add(AppEnv.Obj("id", l.Id, "name", l.Name(lang), "map", l.HasBounds && l.MapKey.Length > 0 ? "/maps/" + l.MapKey + ".jpg" : "",
                 "b", new double[] { l.XMin, l.XMax, l.YSouth, l.YNorth }));
         }
-        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
+        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker, "history", Features.BaitHistory), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
             "reports", Community.Count);
     }
 
