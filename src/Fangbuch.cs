@@ -93,6 +93,25 @@ internal static class Fangbuch
         return AppEnv.Obj("name", name, "analysis", analysis);
     }
 
+    public static void CleanExisting(string lang)
+    {
+        try
+        {
+            if (!Directory.Exists(ImgDir)) return;
+            string mark = Path.Combine(ImgDir, "clean.txt");
+            HashSet<string> done = new HashSet<string>(File.Exists(mark) ? File.ReadAllLines(mark) : new string[0], StringComparer.OrdinalIgnoreCase);
+            foreach (string f in Directory.GetFiles(ImgDir).Where(f => Regex.IsMatch(Path.GetFileName(f), "^[0-9a-f]{10}\\.(png|jpg|webp)$")))
+            {
+                string n = Path.GetFileName(f);
+                if (done.Contains(n)) continue;
+                if (File.GetCreationTimeUtc(f) > Privacy.Since) { File.AppendAllText(mark, n + Environment.NewLine); continue; }
+                Privacy.Clean(f, Tracker.LangTag, Tracker.Analyze(f, lang) as Dictionary<string, object>);
+                File.AppendAllText(mark, n + Environment.NewLine);
+            }
+        }
+        catch (Exception ex) { AppEnv.Log("Datenschutz", "Nachbearbeitung: " + ex.Message); }
+    }
+
     private static void CleanImages()
     {
         try
