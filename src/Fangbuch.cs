@@ -31,7 +31,7 @@ internal static class Fangbuch
         return outD;
     }
 
-    public static object SaveImage(Dictionary<string, object> a)
+    public static object SaveImage(Dictionary<string, object> a, string lang)
     {
         string data = AppEnv.GetString(a, "data");
         Match m = Regex.Match(data, "^data:image/(png|jpeg|webp);base64,");
@@ -41,8 +41,11 @@ internal static class Fangbuch
         catch (FormatException) { throw new AppError("imageInvalid", null); }
         Directory.CreateDirectory(ImgDir);
         string name = NewId() + "." + (m.Groups[1].Value == "jpeg" ? "jpg" : m.Groups[1].Value);
-        File.WriteAllBytes(Path.Combine(ImgDir, name), b);
-        return AppEnv.Obj("name", name);
+        string file = Path.Combine(ImgDir, name);
+        File.WriteAllBytes(file, b);
+        Dictionary<string, object> analysis = Tracker.Analyze(file, lang) as Dictionary<string, object>;
+        Privacy.Clean(file, Tracker.LangTag, analysis);
+        return AppEnv.Obj("name", name, "analysis", analysis);
     }
 
     public static bool ImageFile(string name, out byte[] data, out string type)
@@ -85,7 +88,9 @@ internal static class Fangbuch
         Directory.CreateDirectory(ImgDir);
         string name = NewId() + (src.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? ".png" : ".jpg");
         File.Copy(src, Path.Combine(ImgDir, name));
-        return AppEnv.Obj("name", name, "analysis", Tracker.Analyze(Path.Combine(ImgDir, name), lang));
+        Dictionary<string, object> analysis = Tracker.Analyze(Path.Combine(ImgDir, name), lang) as Dictionary<string, object>;
+        Privacy.Clean(Path.Combine(ImgDir, name), Tracker.LangTag, analysis);
+        return AppEnv.Obj("name", name, "analysis", analysis);
     }
 
     private static void CleanImages()

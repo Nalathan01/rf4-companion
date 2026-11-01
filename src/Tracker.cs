@@ -329,10 +329,12 @@ internal static class Tracker
         int x = r.Kind == "position" ? r.X : 0, y = r.Kind == "position" ? r.Y : 0;
         if (x == 0)
         {
-            int[] hp = TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.925f, 0.87f, 0.055f, 0.075f), 4, false).Lines(), null);
+            int[] hp = TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.925f, 0.87f, 0.055f, 0.075f), 4, false).Lines(), null)
+                ?? TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.91f, 0.86f, 0.08f, 0.1f), 6, true).Lines(), null);
             if (hp != null) { x = hp[0]; y = hp[1]; }
         }
         string temp = TrackerParse.MatchTemp(Ocr(path, tag, new RectangleF(0.9f, 0.1f, 0.1f, 0.022f), 4, true).Lines());
+        bool hud = r.Kind.Length == 0 && (x > 0 || Regex.IsMatch(string.Join(" ", lines), "Bedienfeld|Hilfe|Chat|Rute aufnehmen|Schnur straffen|Control panel|Help|Меню|Помощь|Чат", RegexOptions.IgnoreCase));
         string lake = r.Lake;
         if (lake.Length == 0 && (r.Kind == "position" || r.Kind == ""))
         {
@@ -356,7 +358,7 @@ internal static class Tracker
                 "additives", AppEnv.GetList(r.Recipe, "additives").Cast<object>().Select(o => tr((o ?? "").ToString())).Where(v => v.Length > 0).ToArray());
         return AppEnv.Obj("kind", r.Kind, "fish", fish.GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj("name", tr(g.Key), "n", g.Count())).ToArray(),
             "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", lake, "lakes", lakes,
-            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc);
+            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud);
     }
 
     private static string Lake()

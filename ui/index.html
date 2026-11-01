@@ -913,7 +913,7 @@ function renderImgs(req) {
       const f = inp.files[0]; if (!f) return;
       d.classList.add("busy");
       const r = new FileReader();
-      r.onload = async () => { try { IMGS[k] = (await api("/api/fbimage", { data: r.result })).name; if (IMG_HOOK) IMG_HOOK(k, IMGS[k]); } catch (e) { $("dlgErr").textContent = e.message; } renderImgs(req); };
+      r.onload = async () => { try { const up = await api("/api/fbimage", { data: r.result }); IMGS[k] = up.name; if (IMG_HOOK) IMG_HOOK(k, up.name, up.analysis); } catch (e) { $("dlgErr").textContent = e.message; } renderImgs(req); };
       r.readAsDataURL(f);
     };
   });
@@ -1030,11 +1030,11 @@ function wizApply(kind, a) {
   wizInfo();
   wizPrompt();
 }
-async function wizAnalyze(kind, name) {
+async function wizAnalyze(kind, name, given) {
   const v = WIZ.v;
   WIZ.busy++; wizInfo();
-  let a = null;
-  try { a = await api("/api/fbanalyze", { name }); } catch (e) { }
+  let a = given || null;
+  if (!a) try { a = await api("/api/fbanalyze", { name }); } catch (e) { }
   WIZ.busy--;
   if (!a || !WIZ || WIZ.v !== v) { wizInfo(); return; }
   wizApply(kind, a);
