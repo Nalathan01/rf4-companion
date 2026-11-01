@@ -959,7 +959,7 @@ function wizSteps() {
       f: () => `<div class="shot" id="wShot"></div><div class="fbimgs" id="fImgs"></div><div class="wiz-sum" id="wImgInfo" style="display:none"></div>`,
       read: () => { v.images = Object.assign({}, IMGS); },
       check: () => { const n = wizNeed(); return n && !n.opt ? T("wizNeedImgs", "Bitte Spotbild, Kescherbild und Setupbild hinzufügen.") : ""; },
-      bind: () => { IMGS = Object.assign({}, v.images); IMG_HOOK = wizAnalyze; renderImgs(IMG_REQ); wizInfo(); wizPrompt(); wizWatch(true); } },
+      bind: () => { IMGS = Object.assign({}, v.images); IMG_HOOK = wizAnalyze; renderImgs(IMG_REQ); wizInfo(); wizPrompt(); wizWatch(true); wizReread(); } },
     { t: T("wizWhere", "Wo"), hint: T("wizWhereHint", "Gewässer und Koordinaten der Stelle, an der du angelst."),
       f: () => `<label>${esc(T("lake", "Gewässer"))}<select id="wLake"><option value=""></option>${lakeOptions(v.lake)}</select></label><span></span>
         ${field("wX", "X", v.x, 'inputmode="numeric"')}${field("wY", "Y", v.y, 'inputmode="numeric"')}
@@ -1073,6 +1073,14 @@ async function wizPoll() {
     }
   } catch (e) { }
   if (WIZ && WIZ.polling && WIZ.v === v) WIZ.timer = setTimeout(wizPoll, 1500);
+}
+async function wizReread() {
+  WIZ.reread = WIZ.reread || {};
+  for (const k of Object.keys(IMGS)) {
+    if (WIZ.ana[k] || WIZ.reread[k]) continue;
+    WIZ.reread[k] = true;
+    await wizAnalyze(k, IMGS[k]);
+  }
 }
 function wizWatch(on) {
   if (!WIZ) return;
