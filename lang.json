@@ -570,7 +570,8 @@
   "capNoFeed": "Ich füttere nicht an",
   "capDone": "Alle nötigen Bilder sind da. Weiter mit »Weiter«, ein Kartenbild kannst du noch dazulegen.",
   "wizClipReq": "Beim Grundangeln ist der Clip Pflicht.",
-  "wizClipBack": "Beim Grundangeln ist der Clip Pflicht. Bitte im Schritt »Wo« eintragen."
+  "wizClipBack": "Beim Grundangeln ist der Clip Pflicht. Bitte im Schritt »Wo« eintragen.",
+  "replace": "Ersetzen"
  },
  "en": {
   "langName": "English",
@@ -1143,7 +1144,8 @@
   "capNoFeed": "I don't use groundbait",
   "capDone": "All required images are there. Continue with »Next«, you can still add a map image.",
   "wizClipReq": "The clip is required for bottom fishing.",
-  "wizClipBack": "The clip is required for bottom fishing. Please enter it in the »Where« step."
+  "wizClipBack": "The clip is required for bottom fishing. Please enter it in the »Where« step.",
+  "replace": "Replace"
  },
  "ru": {
   "langName": "Русский",
@@ -1713,7 +1715,8 @@
   "capNoFeed": "Я не прикармливаю",
   "capDone": "Все нужные изображения есть. Нажми «Далее», можно ещё добавить карту.",
   "wizClipReq": "При донной ловле клипса обязательна.",
-  "wizClipBack": "При донной ловле клипса обязательна. Укажи её на шаге «Где»."
+  "wizClipBack": "При донной ловле клипса обязательна. Укажи её на шаге «Где».",
+  "replace": "Заменить"
  },
  "fr": {
   "langName": "Français",
@@ -2283,7 +2286,8 @@
   "capNoFeed": "Je n'amorce pas",
   "capDone": "Toutes les images nécessaires sont là. Continue avec « Suivant », tu peux encore ajouter une carte.",
   "wizClipReq": "Le clip est obligatoire en pêche au fond.",
-  "wizClipBack": "Le clip est obligatoire en pêche au fond. Indique-le à l'étape « Où »."
+  "wizClipBack": "Le clip est obligatoire en pêche au fond. Indique-le à l'étape « Où ».",
+  "replace": "Remplacer"
  },
  "es": {
   "langName": "Español",
@@ -2853,7 +2857,8 @@
   "capNoFeed": "No uso cebo de fondo",
   "capDone": "Ya están todas las imágenes necesarias. Sigue con «Siguiente», aún puedes añadir un mapa.",
   "wizClipReq": "El clip es obligatorio en la pesca de fondo.",
-  "wizClipBack": "El clip es obligatorio en la pesca de fondo. Indícalo en el paso «Dónde»."
+  "wizClipBack": "El clip es obligatorio en la pesca de fondo. Indícalo en el paso «Dónde».",
+  "replace": "Reemplazar"
  },
  "it": {
   "langName": "Italiano",
@@ -3423,7 +3428,8 @@
   "capNoFeed": "Non pasturo",
   "capDone": "Ci sono tutte le immagini necessarie. Prosegui con «Avanti», puoi ancora aggiungere una mappa.",
   "wizClipReq": "La clip è obbligatoria nella pesca a fondo.",
-  "wizClipBack": "La clip è obbligatoria nella pesca a fondo. Inseriscila nel passaggio «Dove»."
+  "wizClipBack": "La clip è obbligatoria nella pesca a fondo. Inseriscila nel passaggio «Dove».",
+  "replace": "Sostituisci"
  },
  "pl": {
   "langName": "Polski",
@@ -3993,7 +3999,8 @@
   "capNoFeed": "Nie nęcę",
   "capDone": "Wszystkie potrzebne obrazy są. Kliknij „Dalej”, możesz jeszcze dodać mapę.",
   "wizClipReq": "Przy łowieniu z gruntu klips jest wymagany.",
-  "wizClipBack": "Przy łowieniu z gruntu klips jest wymagany. Wpisz go w kroku „Gdzie”."
+  "wizClipBack": "Przy łowieniu z gruntu klips jest wymagany. Wpisz go w kroku „Gdzie”.",
+  "replace": "Zastąp"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4563,7 +4570,8 @@
   "capNoFeed": "Não uso engodo",
   "capDone": "Todas as imagens necessárias estão aqui. Continue com «Próximo», ainda pode adicionar um mapa.",
   "wizClipReq": "O clipe é obrigatório na pesca de fundo.",
-  "wizClipBack": "O clipe é obrigatório na pesca de fundo. Informe-o no passo «Onde»."
+  "wizClipBack": "O clipe é obrigatório na pesca de fundo. Informe-o no passo «Onde».",
+  "replace": "Substituir"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5133,7 +5141,8 @@
   "capNoFeed": "Ik voer niet",
   "capDone": "Alle benodigde afbeeldingen zijn er. Ga verder met »Volgende«, een kaart kun je nog toevoegen.",
   "wizClipReq": "Bij grondvissen is de clip verplicht.",
-  "wizClipBack": "Bij grondvissen is de clip verplicht. Vul hem in bij de stap »Waar«."
+  "wizClipBack": "Bij grondvissen is de clip verplicht. Vul hem in bij de stap »Waar«.",
+  "replace": "Vervangen"
  },
  "tr": {
   "langName": "Türkçe",
@@ -5703,7 +5712,8 @@
   "capNoFeed": "Yem kullanmıyorum",
   "capDone": "Gerekli tüm görseller tamam. »İleri« ile devam et, istersen harita da ekleyebilirsin.",
   "wizClipReq": "Dip avında klips zorunludur.",
-  "wizClipBack": "Dip avında klips zorunludur. Lütfen »Nerede« adımında gir."
+  "wizClipBack": "Dip avında klips zorunludur. Lütfen »Nerede« adımında gir.",
+  "replace": "Değiştir"
  },
  "ro": {
   "langName": "Română",
@@ -6273,7 +6283,8 @@
   "capNoFeed": "Nu folosesc nadă",
   "capDone": "Toate imaginile necesare sunt aici. Continuă cu »Înainte«, poți adăuga și o hartă.",
   "wizClipReq": "La pescuitul la fund clipul este obligatoriu.",
-  "wizClipBack": "La pescuitul la fund clipul este obligatoriu. Introdu-l la pasul »Unde«."
+  "wizClipBack": "La pescuitul la fund clipul este obligatoriu. Introdu-l la pasul »Unde«.",
+  "replace": "Înlocuiește"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -6843,7 +6854,8 @@
   "capNoFeed": "Saya tidak menabur umpan",
   "capDone": "Semua gambar yang diperlukan sudah ada. Lanjut dengan »Lanjut«, peta masih bisa ditambahkan.",
   "wizClipReq": "Klip wajib untuk mancing dasar.",
-  "wizClipBack": "Klip wajib untuk mancing dasar. Isi di langkah »Di mana«."
+  "wizClipBack": "Klip wajib untuk mancing dasar. Isi di langkah »Di mana«.",
+  "replace": "Ganti"
  },
  "ja": {
   "langName": "日本語",
@@ -7413,7 +7425,8 @@
   "capNoFeed": "撒き餌は使わない",
   "capDone": "必要な画像はそろいました。「次へ」で進んでください。マップ画像も追加できます。",
   "wizClipReq": "底釣りではクリップが必須です。",
-  "wizClipBack": "底釣りではクリップが必須です。「場所」のステップで入力してください。"
+  "wizClipBack": "底釣りではクリップが必須です。「場所」のステップで入力してください。",
+  "replace": "差し替え"
  },
  "ko": {
   "langName": "한국어",
@@ -7983,7 +7996,8 @@
   "capNoFeed": "밑밥을 쓰지 않음",
   "capDone": "필요한 이미지가 모두 있습니다. »다음«으로 진행하세요, 지도 이미지도 추가할 수 있습니다.",
   "wizClipReq": "바닥낚시에서는 클립이 필수입니다.",
-  "wizClipBack": "바닥낚시에서는 클립이 필수입니다. »위치« 단계에서 입력하세요."
+  "wizClipBack": "바닥낚시에서는 클립이 필수입니다. »위치« 단계에서 입력하세요.",
+  "replace": "교체"
  },
  "zh": {
   "langName": "简体中文",
@@ -8553,7 +8567,8 @@
   "capNoFeed": "我不打窝",
   "capDone": "所需图片已齐全。点击“下一步”继续，还可以再添加地图图片。",
   "wizClipReq": "底钓时必须填写卡线距离。",
-  "wizClipBack": "底钓时必须填写卡线距离，请在“位置”步骤中填写。"
+  "wizClipBack": "底钓时必须填写卡线距离，请在“位置”步骤中填写。",
+  "replace": "替换"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -9123,6 +9138,7 @@
   "capNoFeed": "我不打窩",
   "capDone": "所需圖片已齊全。點擊「下一步」繼續，還可以再新增地圖圖片。",
   "wizClipReq": "底釣時必須填寫卡線距離。",
-  "wizClipBack": "底釣時必須填寫卡線距離，請在「位置」步驟中填寫。"
+  "wizClipBack": "底釣時必須填寫卡線距離，請在「位置」步驟中填寫。",
+  "replace": "替換"
  }
 }
