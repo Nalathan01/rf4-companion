@@ -1,4 +1,5 @@
 import glob
+import gzip
 import io
 import json
 import os
@@ -19,6 +20,7 @@ MAX_NEW = 150
 VERSION = 5
 WORKERS = 3
 BUDGET = 540
+MIRROR = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/spots.json.gz"
 CJK = re.compile(r"[一-鿿]")
 HEAD = re.compile(r"^(安装|钓组)|修改")
 SKIP = re.compile(r"[:：+＋]")
@@ -252,6 +254,17 @@ def read_post(urls, feed_names, bait_names, start):
     return res
 
 
+def older_posts():
+    try:
+        req = urllib.request.Request(MIRROR, headers={"User-Agent": "RF4CompanionMirror/1.0 (+https://github.com/Nalathan01/rf4-companion)"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            reports = json.loads(gzip.decompress(r.read())).get("reports", [])
+    except Exception as e:
+        print("Spiegel", e)
+        return []
+    return [(r.get("posted") or "", r["id"][3:], (r.get("cfg") or [])[:3]) for r in reports if str(r.get("id", "")).startswith("wx:")]
+
+
 def main(src, cache_path, out_path):
     feed_names, bait_names = candidates()
     cache = {}
@@ -261,11 +274,12 @@ def main(src, cache_path, out_path):
     posts = []
     for f in glob.glob(os.path.join(src, "api_wechat_positions_*")):
         posts.extend(json.load(open(f, encoding="utf-8")).get("positions", []))
-    posts.sort(key=lambda p: p.get("publish_date") or "", reverse=True)
+    items = [(p.get("publish_date") or "", p.get("post_id") or "", ((p.get("image_urls") or {}).get("config") or [])[:3]) for p in posts]
+    known = {x[1] for x in items}
+    items += [x for x in older_posts() if x[1] not in known]
+    items.sort(reverse=True)
     todo = {}
-    for p in posts:
-        pid = p.get("post_id") or ""
-        urls = ((p.get("image_urls") or {}).get("config") or [])[:3]
+    for _, pid, urls in items:
         if pid and urls and (cache.get(pid) or {}).get("v") != VERSION and pid not in todo and len(todo) < MAX_NEW:
             todo[pid] = urls
     done = 0
