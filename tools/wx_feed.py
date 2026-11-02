@@ -16,14 +16,15 @@ from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
-VERSION = 4
+VERSION = 5
 WORKERS = 3
 BUDGET = 540
 CJK = re.compile(r"[一-鿿]")
 HEAD = re.compile(r"^(安装|钓组)|修改")
 SKIP = re.compile(r"[:：+＋]")
 LABEL = re.compile(r"^(基.?料|诱.{1,2}添加剂|添加剂|增香剂|香料|(pop-?up)?香.{0,2}成饵)", re.I)
-CRUSHED = re.compile(r"[\(（]?碎的[\)）]?")
+CRUSHED = re.compile(r"[\(（]?(?<!磨)碎的[\)）]?")
+OCR_FIX = {"蛋糖": "蛋糕", "王米": "玉米", "磨砻": "磨碎"}
 
 
 def norm(s):
@@ -118,7 +119,10 @@ def ocr(img, psm):
         text = subprocess.run([os.environ.get("TESSERACT", "tesseract"), path, "-", "-l", "chi_sim+eng", "--psm", str(psm)], capture_output=True, text=True, encoding="utf-8").stdout
     finally:
         os.remove(path)
-    return [x.replace(" ", "") for x in text.splitlines() if x.strip()]
+    lines = [x.replace(" ", "") for x in text.splitlines() if x.strip()]
+    for a, b in OCR_FIX.items():
+        lines = [x.replace(a, b) for x in lines]
+    return lines
 
 
 def prepare(im):
@@ -194,6 +198,9 @@ def read_image(data, feed_names, bait_names):
         f = min(3.0, 1800.0 / crop.width)
         crop = crop.resize((int(crop.width * f), int(crop.height * f)), Image.LANCZOS)
         feed = feed_from_lines(ocr(crop, 4), feed_names)
+        if feed:
+            right = crop.crop((int(crop.width * 0.5), 0, crop.width, crop.height))
+            feed += [en for en in (match_tail(x, feed_names) for x in ocr(right, 6)) if en and en not in feed]
     if not feed:
         lines = ocr(prepare(im), 6)
         baits = baits_from_lines(lines, bait_names)
@@ -249,7 +256,7 @@ def main(src, cache_path, out_path):
     feed_names, bait_names = candidates()
     cache = {}
     if os.path.exists(cache_path):
-        cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict) and (v.get("v") == VERSION or v.get("v") == 3 and (v.get("f") or v.get("b")))}
+        cache = {k: v for k, v in json.load(open(cache_path, encoding="utf-8")).items() if isinstance(v, dict) and (v.get("v") == VERSION or v.get("f") or v.get("b"))}
     start = time.time()
     posts = []
     for f in glob.glob(os.path.join(src, "api_wechat_positions_*")):
@@ -259,7 +266,7 @@ def main(src, cache_path, out_path):
     for p in posts:
         pid = p.get("post_id") or ""
         urls = ((p.get("image_urls") or {}).get("config") or [])[:3]
-        if pid and urls and pid not in cache and pid not in todo and len(todo) < MAX_NEW:
+        if pid and urls and (cache.get(pid) or {}).get("v") != VERSION and pid not in todo and len(todo) < MAX_NEW:
             todo[pid] = urls
     done = 0
     with ThreadPoolExecutor(WORKERS) as ex:
@@ -268,15 +275,14 @@ def main(src, cache_path, out_path):
             res = job.result()
             if res is None:
                 continue
+            old = cache.get(pid) or {}
+            if not (res["f"] or res["b"]) and (old.get("f") or old.get("b")):
+                res = dict(old, v=VERSION)
             cache[pid] = res
             done += 1
             if done % 20 == 0:
                 json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False)
-    out = {}
-    for p in posts:
-        pid = p.get("post_id") or ""
-        if pid in cache and (cache[pid]["f"] or cache[pid]["b"]):
-            out[pid] = cache[pid]
+    out = {pid: v for pid, v in cache.items() if v.get("f") or v.get("b")}
     json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(out, open(out_path, "w", encoding="utf-8"), ensure_ascii=False)
     print("Aus Bild:", len(out), "Spots, Futter:", sum(1 for v in out.values() if v["f"]), "Köder:", sum(1 for v in out.values() if v["b"]), "neu gelesen:", done, "offen:", len(todo)-done)
