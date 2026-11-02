@@ -73,7 +73,6 @@ internal static class Mirror
             Community.QueueRecentOcr(192);
             Wait(() => ImageOcr.Pending, 20);
         }
-        DateTime since = DateTime.UtcNow.AddDays(-8);
         List<object> outL = new List<object>();
         Dictionary<string, object> wxFeed = null;
         try
@@ -82,7 +81,7 @@ internal static class Mirror
             if (!string.IsNullOrEmpty(fd) && File.Exists(Path.Combine(fd, "wx_feed.json"))) wxFeed = AppEnv.ReadJsonFile(Path.Combine(fd, "wx_feed.json")) as Dictionary<string, object>;
         }
         catch (Exception ex) { AppEnv.Log("Spiegel", "Futter aus Bild: " + ex.Message); }
-        foreach (Report r in Community.All().Where(x => x.Posted >= since && Community.Plausible(x)))
+        foreach (Report r in Community.All().Where(Community.Plausible))
         {
             Dictionary<string, object> raw = new Dictionary<string, object>(r.Raw);
             raw.Remove("weight");

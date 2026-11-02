@@ -159,8 +159,7 @@ internal static class Rf4Fish
     public static void SaveSetupCache()
     {
         if (setupCache == null) return;
-        DateTime cutoff = DateTime.UtcNow.AddDays(-9);
-        HashSet<string> keep = new HashSet<string>(Community.All().Where(x => x.Posted >= cutoff).Select(x => x.Id), StringComparer.Ordinal);
+        HashSet<string> keep = new HashSet<string>(Community.All().Select(x => x.Id), StringComparer.Ordinal);
         foreach (string k in setupCache.Keys.Where(k => !keep.Contains(k)).ToList()) setupCache.Remove(k);
         AppEnv.WriteJsonFile(AppEnv.DataPath("wx_setup.json"), setupCache);
     }
