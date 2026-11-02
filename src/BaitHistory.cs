@@ -12,11 +12,18 @@ internal static class BaitHistory
 {
     private const string Repo = "Nalathan01/rf4-companion-data";
     private static readonly Regex FileRx = new Regex(@"^baits_(\d{4}-\d{2})\.json\.gz$");
+    private static readonly Regex TopRx = new Regex(@"^top_(\d{4})\.json\.gz$");
 
     private sealed class Row
     {
         public string Month, Fish, Lake, Bait;
         public int N, Max;
+    }
+
+    private sealed class Top
+    {
+        public string Month, Fish, Lake, Bait, Date, Region, Table;
+        public int W;
     }
 
     private sealed class Agg
@@ -28,6 +35,7 @@ internal static class BaitHistory
 
     private static readonly object gate = new object();
     private static List<Row> rows;
+    private static List<Top> tops = new List<Top>();
     private static volatile bool running;
     private static volatile string error = "";
     private static DateTime lastSync = DateTime.MinValue;
@@ -66,7 +74,7 @@ internal static class BaitHistory
         {
             Dictionary<string, object> f = o as Dictionary<string, object>;
             string n = AppEnv.GetString(f, "name");
-            if (!FileRx.IsMatch(n)) continue;
+            if (!FileRx.IsMatch(n) && !TopRx.IsMatch(n)) continue;
             string path = Path.Combine(Dir, n);
             if (File.Exists(path) && AppEnv.GetString(shas, n) == AppEnv.GetString(f, "sha")) continue;
             byte[] gz = Http.GetBytes(AppEnv.GetString(f, "download_url"), 60000);
@@ -108,7 +116,40 @@ internal static class BaitHistory
                 }
             }
         }
-        lock (gate) rows = list;
+        List<Top> top = new List<Top>();
+        if (Directory.Exists(Dir))
+        {
+            foreach (string path in Directory.GetFiles(Dir, "top_*.json.gz"))
+            {
+                if (!TopRx.IsMatch(Path.GetFileName(path))) continue;
+                Dictionary<string, object> d;
+                try { d = AppEnv.ReadGzJsonFile(path) as Dictionary<string, object>; }
+                catch (Exception ex) { AppEnv.Log("Historie", Path.GetFileName(path) + ": " + ex.Message); continue; }
+                foreach (object o in AppEnv.GetList(d, "items"))
+                {
+                    IList r = o as IList;
+                    if (r == null || r.Count < 7) continue;
+                    string date = Convert.ToString(r[4], CultureInfo.InvariantCulture);
+                    string loc = Convert.ToString(r[1], CultureInfo.InvariantCulture);
+                    string lake = GameData.LakeIdByName(loc);
+                    Match dm = Regex.Match(date, @"^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$");
+                    if (!dm.Success) continue;
+                    string y = dm.Groups[3].Value;
+                    top.Add(new Top
+                    {
+                        Month = (y.Length == 2 ? "20" + y : y) + "-" + dm.Groups[2].Value.PadLeft(2, '0'),
+                        Fish = Convert.ToString(r[0], CultureInfo.InvariantCulture),
+                        Lake = lake.Length > 0 ? lake : loc,
+                        Bait = Finder.BaitKey(Convert.ToString(r[2], CultureInfo.InvariantCulture)),
+                        W = Convert.ToInt32(r[3], CultureInfo.InvariantCulture),
+                        Date = date,
+                        Region = Convert.ToString(r[5], CultureInfo.InvariantCulture),
+                        Table = Convert.ToString(r[6], CultureInfo.InvariantCulture)
+                    });
+                }
+            }
+        }
+        lock (gate) { rows = list; tops = top; }
     }
 
     private static string LakeName(string id, string lang)
@@ -121,12 +162,13 @@ internal static class BaitHistory
     {
         EnsureLoaded();
         List<Row> all;
-        lock (gate) all = rows;
+        List<Top> allTop;
+        lock (gate) { all = rows; allTop = tops; }
         if (all == null || (running && all.Count == 0)) return AppEnv.Obj("loading", true, "error", error);
         string fish = q["fish"] ?? "";
         string lakeSel = q["lake"] ?? "";
         int months;
-        if (!int.TryParse(q["months"] ?? "12", NumberStyles.Integer, CultureInfo.InvariantCulture, out months)) months = 12;
+        if (!int.TryParse(q["months"] ?? "0", NumberStyles.Integer, CultureInfo.InvariantCulture, out months)) months = 0;
         string from = months > 0 ? DateTime.UtcNow.AddMonths(1-months).ToString("yyyy-MM", CultureInfo.InvariantCulture) : "";
         List<Row> cur = all.Where(r => string.CompareOrdinal(r.Month, from) >= 0).ToList();
 
@@ -178,6 +220,10 @@ internal static class BaitHistory
         res["months"] = byMonth.OrderByDescending(kv => kv.Key).Select(kv => (object)AppEnv.Obj(
             "month", kv.Key, "n", kv.Value.Values.Sum(),
             "top", kv.Value.OrderByDescending(x => x.Value).Take(3).Select(x => (object)AppEnv.Obj("name", Finder.BaitLabel(x.Key, lang), "n", x.Value)).ToArray())).ToArray();
+        res["top"] = allTop.Where(t => set.Contains(t.Fish) && (lake.Length == 0 || t.Lake == lake) && string.CompareOrdinal(t.Month, from) >= 0)
+            .OrderByDescending(t => t.W).Take(15).Select(t => (object)AppEnv.Obj(
+            "fish", GameData.Translate(t.Fish, lang), "w", GameData.FormatWeight(t.W, lang), "bait", Finder.BaitLabel(t.Bait, lang), "lake", LakeName(t.Lake, lang),
+            "region", t.Region, "date", t.Date, "table", t.Table == "n" ? GameData.Ui(lang, "records", "Rekorde") : GameData.Ui(lang, "table_" + t.Table, t.Table))).ToArray();
         return res;
     }
 }
