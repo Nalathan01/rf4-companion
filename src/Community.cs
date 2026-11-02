@@ -390,8 +390,7 @@ internal static class Community
                 spots = null; spotsAll = null;
                 foreach (Report r in reports) { Lake lk; GameData.LakeById.TryGetValue(r.Lake, out lk); SetFish(r, lk); }
             }
-            DateTime since = DateTime.UtcNow.AddDays(-8);
-            List<Report> recent = reports.FindAll(r => r.Posted >= since);
+            List<Report> recent = new List<Report>(reports);
             if (all)
             {
                 if (spotsAll == null) spotsAll = BuildSpots(recent);
