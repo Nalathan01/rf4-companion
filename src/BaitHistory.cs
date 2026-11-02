@@ -221,6 +221,8 @@ internal static class BaitHistory
             "month", kv.Key, "n", kv.Value.Values.Sum(),
             "top", kv.Value.OrderByDescending(x => x.Value).Take(3).Select(x => (object)AppEnv.Obj("name", Finder.BaitLabel(x.Key, lang), "n", x.Value)).ToArray())).ToArray();
         res["top"] = allTop.Where(t => set.Contains(t.Fish) && (lake.Length == 0 || t.Lake == lake) && string.CompareOrdinal(t.Month, from) >= 0)
+            .GroupBy(t => t.Fish + "|" + t.W + "|" + t.Date + "|" + t.Bait + "|" + t.Lake + "|" + t.Table)
+            .Select(g => g.OrderBy(t => t.Region == "GL" ? 1 : 0).First())
             .OrderByDescending(t => t.W).Take(15).Select(t => (object)AppEnv.Obj(
             "fish", GameData.Translate(t.Fish, lang), "w", GameData.FormatWeight(t.W, lang), "bait", Finder.BaitLabel(t.Bait, lang), "lake", LakeName(t.Lake, lang),
             "region", t.Region, "date", t.Date, "table", t.Table == "n" ? GameData.Ui(lang, "records", "Rekorde") : GameData.Ui(lang, "table_" + t.Table, t.Table))).ToArray();
