@@ -311,7 +311,7 @@ dialog.sheet[open] { display: flex; }
         <p class="sub" id="histSub"></p>
         <input class="search" id="histQ" type="search" autocomplete="off">
         <div class="filters">
-          <div class="seg" id="histSeg"><button data-m="3"></button><button data-m="6"></button><button data-m="12" class="on"></button><button data-m="24"></button><button data-m="0"></button></div>
+          <div class="seg" id="histSeg"><button data-m="3"></button><button data-m="6"></button><button data-m="12"></button><button data-m="24"></button><button data-m="0" class="on"></button></div>
         </div>
         <div class="fish-list" id="histList"></div>
       </div>
@@ -745,6 +745,8 @@ function renderFindDetail() {
   const spots = d.spots.length ? `<div class="mini-cards">${d.spots.map(s => `<div class="mini" data-k="${esc(s.key)}"><div class="top">${esc(s.name)}<span>${esc(ago(s.hoursAgo))}</span></div><div class="b">${esc(s.baits.join(", ") || T("catchesN", "{0} Fänge").replace("{0}", s.catches))}</div></div>`).join("")}</div>` : `<div class="empty" style="padding:14px">${esc(T("findNoSpots", "In den letzten 3 Tagen keine Spotmeldung mit Köder für diesen Fisch hier."))}</div>`;
   const recs = d.records.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("weight", "Gewicht"))}</th><th>${esc(T("bait", "Köder"))}</th><th>${esc(T("date", "Datum"))}</th><th>${esc(T("resetTable", "Tabelle"))}</th></tr>` +
     d.records.slice(0, 30).map(r => `<tr><td>${esc(r.fish)}</td><td class="num">${esc(r.weight)}</td><td>${esc(r.bait)}</td><td>${esc(r.date)}</td><td>${esc(r.table)}${r.region ? " · " + esc(r.region) : ""}</td></tr>`).join("") + `</table>` : "";
+  const top = d.top && d.top.length ? `<table class="tbl"><tr><th class="num">${esc(T("weight", "Gewicht"))}</th><th>${esc(T("bait", "Köder"))}</th><th>${esc(T("lake", "Gewässer"))}</th><th>${esc(T("region", "Region"))}</th><th>${esc(T("date", "Datum"))}</th><th>${esc(T("resetTable", "Tabelle"))}</th></tr>` +
+    d.top.map(t => `<tr><td class="num">${esc(t.w)}</td><td>${esc(t.bait)}${multi ? `<small>${esc(t.fish)}</small>` : ""}</td><td>${esc(t.lake)}</td><td>${esc(t.region)}</td><td>${esc(t.date)}</td><td>${esc(t.table)}</td></tr>`).join("") + `</table>` : "";
   el.innerHTML = `<div class="title-row"><h2>${esc(d.fishName)}</h2></div>
     <p class="sub">${d.n ? esc(T("tgtWeekRecords", "Diese Woche {0} Rekorde, davon {1} in den letzten 48 Stunden. Meistgenutzt: {2}").replace("{0}", d.n).replace("{1}", d.n48).replace("{2}", top)) : ""}</p>
     ${lakes}
@@ -755,7 +757,7 @@ function renderFindDetail() {
   el.querySelectorAll(".chip[data-l]").forEach(c => c.onclick = () => { FIND.lake = c.dataset.l; loadFind(); });
   el.querySelectorAll(".mini[data-k]").forEach(c => c.onclick = () => goSpot(d.lake, c.dataset.k));
 }
-let HIST = { fish: "", lake: "", months: 12, q: "" }, HDATA = null, HSEQ = 0;
+let HIST = { fish: "", lake: "", months: 0, q: "" }, HDATA = null, HSEQ = 0;
 function histStatic() {
   $("histSeg").querySelectorAll("button").forEach(b => b.textContent = +b.dataset.m ? T("histMonths", "{0} Monate").replace("{0}", b.dataset.m) : T("histAll", "Alles"));
   $("histQ").placeholder = T("histSearch", "Fisch suchen");
@@ -800,6 +802,7 @@ function renderHistDetail() {
     <p class="sub">${esc(T("histFishSub", "{0} Rekorde in der Auswahl").replace("{0}", d.n.toLocaleString(INIT.lang)))}</p>
     ${lakes}
     <div class="hdr">${esc(T("tgtBaits", "Köder aus den Rekorden"))} · ${esc(d.lakeName)}</div>${baits}
+    ${top ? `<div class="hdr">${esc(T("histRecords", "Größte offizielle Rekorde"))} · ${esc(d.lakeName)}</div>${top}` : ""}
     ${months ? `<div class="hdr">${esc(T("histByMonth", "Nach Monat"))} · ${esc(d.lakeName)}</div>${months}` : ""}
     <p class="sub" style="margin-top:14px">${esc(T("histSource", "Quelle: offizielle Rekordlisten von rf4game.com, gesammelt von RF4 Companion."))}</p>`;
   el.querySelectorAll(".chip[data-l]").forEach(c => c.onclick = () => { HIST.lake = c.dataset.l; loadHist(); });
