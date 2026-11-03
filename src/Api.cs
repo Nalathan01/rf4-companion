@@ -131,7 +131,7 @@ internal sealed class Api
         if (path == "/api/ping")
         {
             return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct, "stepInfo", stepInfo, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
-                "update", Updater.Available, "tracker", Tracker.Version, "spot", server.TakePendingSpot());
+                "update", Updater.Available, "updPct", Updater.Progress, "updErr", Updater.InstallError, "tracker", Tracker.Version, "spot", server.TakePendingSpot());
         }
         WaitReady();
         if (path.StartsWith("/api/ext/", StringComparison.Ordinal)) return Extensions.Call(path.Substring(9), args);
@@ -211,8 +211,8 @@ internal sealed class Api
                 if (AppEnv.GetBool(args, "reopen")) server.Quit(true);
                 return AppEnv.Obj("ok", true);
             case "/api/update":
-                Updater.Install();
-                server.Quit(true);
+                if (Updater.Available == null) throw new AppError("updateNone", null);
+                Updater.InstallAsync(() => server.Quit(true));
                 return AppEnv.Obj("ok", true);
         }
         throw new AppError("unknown", path);

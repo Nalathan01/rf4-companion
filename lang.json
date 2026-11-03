@@ -604,7 +604,10 @@
   "whatsNew": "Neu in dieser Version",
   "whatsNewIn": "Neu in {0}",
   "win2w": "2 Wochen",
-  "tempAll": "Alle Temperaturen"
+  "tempAll": "Alle Temperaturen",
+  "updDownloading": "Update wird geladen: {0} %",
+  "updRestarting": "Neustart: Das neue Fenster öffnet sich gleich.",
+  "updFailed": "Update fehlgeschlagen: {0}"
  },
  "en": {
   "langName": "English",
@@ -1211,7 +1214,10 @@
   "whatsNew": "New in this version",
   "whatsNewIn": "New in {0}",
   "win2w": "2 weeks",
-  "tempAll": "All temperatures"
+  "tempAll": "All temperatures",
+  "updDownloading": "Downloading update: {0} %",
+  "updRestarting": "Restarting: the new window opens in a moment.",
+  "updFailed": "Update failed: {0}"
  },
  "ru": {
   "langName": "Русский",
@@ -1815,7 +1821,10 @@
   "whatsNew": "Новое в этой версии",
   "whatsNewIn": "Новое в {0}",
   "win2w": "2 недели",
-  "tempAll": "Любая температура"
+  "tempAll": "Любая температура",
+  "updDownloading": "Загрузка обновления: {0} %",
+  "updRestarting": "Перезапуск: новое окно сейчас откроется.",
+  "updFailed": "Ошибка обновления: {0}"
  },
  "fr": {
   "langName": "Français",
@@ -2419,7 +2428,10 @@
   "whatsNew": "Nouveautés de cette version",
   "whatsNewIn": "Nouveautés de la {0}",
   "win2w": "2 semaines",
-  "tempAll": "Toutes températures"
+  "tempAll": "Toutes températures",
+  "updDownloading": "Téléchargement de la mise à jour : {0} %",
+  "updRestarting": "Redémarrage : la nouvelle fenêtre s'ouvre dans un instant.",
+  "updFailed": "Échec de la mise à jour : {0}"
  },
  "es": {
   "langName": "Español",
@@ -3023,7 +3035,10 @@
   "whatsNew": "Novedades de esta versión",
   "whatsNewIn": "Novedades de la {0}",
   "win2w": "2 semanas",
-  "tempAll": "Todas las temperaturas"
+  "tempAll": "Todas las temperaturas",
+  "updDownloading": "Descargando actualización: {0} %",
+  "updRestarting": "Reiniciando: la nueva ventana se abrirá en un momento.",
+  "updFailed": "Error en la actualización: {0}"
  },
  "it": {
   "langName": "Italiano",
@@ -3627,7 +3642,10 @@
   "whatsNew": "Novità di questa versione",
   "whatsNewIn": "Novità della {0}",
   "win2w": "2 settimane",
-  "tempAll": "Tutte le temperature"
+  "tempAll": "Tutte le temperature",
+  "updDownloading": "Download aggiornamento: {0} %",
+  "updRestarting": "Riavvio: la nuova finestra si apre a breve.",
+  "updFailed": "Aggiornamento non riuscito: {0}"
  },
  "pl": {
   "langName": "Polski",
@@ -4231,7 +4249,10 @@
   "whatsNew": "Nowości w tej wersji",
   "whatsNewIn": "Nowości w {0}",
   "win2w": "2 tygodnie",
-  "tempAll": "Wszystkie temperatury"
+  "tempAll": "Wszystkie temperatury",
+  "updDownloading": "Pobieranie aktualizacji: {0} %",
+  "updRestarting": "Ponowne uruchamianie: nowe okno zaraz się otworzy.",
+  "updFailed": "Aktualizacja nie powiodła się: {0}"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4835,7 +4856,10 @@
   "whatsNew": "Novidades desta versão",
   "whatsNewIn": "Novidades da {0}",
   "win2w": "2 semanas",
-  "tempAll": "Todas as temperaturas"
+  "tempAll": "Todas as temperaturas",
+  "updDownloading": "Baixando atualização: {0} %",
+  "updRestarting": "Reiniciando: a nova janela abre em instantes.",
+  "updFailed": "Falha na atualização: {0}"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5439,7 +5463,10 @@
   "whatsNew": "Nieuw in deze versie",
   "whatsNewIn": "Nieuw in {0}",
   "win2w": "2 weken",
-  "tempAll": "Alle temperaturen"
+  "tempAll": "Alle temperaturen",
+  "updDownloading": "Update downloaden: {0} %",
+  "updRestarting": "Herstarten: het nieuwe venster opent zo.",
+  "updFailed": "Update mislukt: {0}"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6043,7 +6070,10 @@
   "whatsNew": "Bu sürümdeki yenilikler",
   "whatsNewIn": "{0} sürümündeki yenilikler",
   "win2w": "2 hafta",
-  "tempAll": "Tüm sıcaklıklar"
+  "tempAll": "Tüm sıcaklıklar",
+  "updDownloading": "Güncelleme indiriliyor: %{0}",
+  "updRestarting": "Yeniden başlatılıyor: yeni pencere birazdan açılacak.",
+  "updFailed": "Güncelleme başarısız: {0}"
  },
  "ro": {
   "langName": "Română",
@@ -6647,7 +6677,10 @@
   "whatsNew": "Noutăți în această versiune",
   "whatsNewIn": "Noutăți în {0}",
   "win2w": "2 săptămâni",
-  "tempAll": "Toate temperaturile"
+  "tempAll": "Toate temperaturile",
+  "updDownloading": "Se descarcă actualizarea: {0} %",
+  "updRestarting": "Repornire: fereastra nouă se deschide imediat.",
+  "updFailed": "Actualizare eșuată: {0}"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7251,7 +7284,10 @@
   "whatsNew": "Baru di versi ini",
   "whatsNewIn": "Baru di {0}",
   "win2w": "2 minggu",
-  "tempAll": "Semua suhu"
+  "tempAll": "Semua suhu",
+  "updDownloading": "Mengunduh pembaruan: {0} %",
+  "updRestarting": "Memulai ulang: jendela baru segera terbuka.",
+  "updFailed": "Pembaruan gagal: {0}"
  },
  "ja": {
   "langName": "日本語",
@@ -7855,7 +7891,10 @@
   "whatsNew": "このバージョンの新機能",
   "whatsNewIn": "{0} の新機能",
   "win2w": "2週間",
-  "tempAll": "すべての水温"
+  "tempAll": "すべての水温",
+  "updDownloading": "アップデートをダウンロード中: {0} %",
+  "updRestarting": "再起動中: まもなく新しいウィンドウが開きます。",
+  "updFailed": "アップデートに失敗しました: {0}"
  },
  "ko": {
   "langName": "한국어",
@@ -8459,7 +8498,10 @@
   "whatsNew": "이 버전의 새로운 기능",
   "whatsNewIn": "{0}의 새로운 기능",
   "win2w": "2주",
-  "tempAll": "모든 수온"
+  "tempAll": "모든 수온",
+  "updDownloading": "업데이트 다운로드 중: {0} %",
+  "updRestarting": "다시 시작 중: 곧 새 창이 열립니다.",
+  "updFailed": "업데이트 실패: {0}"
  },
  "zh": {
   "langName": "简体中文",
@@ -9063,7 +9105,10 @@
   "whatsNew": "此版本新内容",
   "whatsNewIn": "{0} 新内容",
   "win2w": "2 周",
-  "tempAll": "全部水温"
+  "tempAll": "全部水温",
+  "updDownloading": "正在下载更新：{0} %",
+  "updRestarting": "正在重启：新窗口即将打开。",
+  "updFailed": "更新失败：{0}"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -9667,6 +9712,9 @@
   "whatsNew": "此版本新內容",
   "whatsNewIn": "{0} 新內容",
   "win2w": "2 週",
-  "tempAll": "全部水溫"
+  "tempAll": "全部水溫",
+  "updDownloading": "正在下載更新：{0} %",
+  "updRestarting": "正在重新啟動：新視窗即將開啟。",
+  "updFailed": "更新失敗：{0}"
  }
 }

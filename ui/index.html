@@ -442,6 +442,9 @@ function fillLakes() {
 async function ping() {
   try {
     const p = await api("/api/ping");
+    if (p.updPct >= 0 && p.updPct < 100) updOverlay(p.updPct, T("updDownloading", "Update wird geladen: {0} %").replace("{0}", p.updPct));
+    if (p.updPct >= 100) updOverlay(100, T("updRestarting", "Neustart: Das neue Fenster öffnet sich gleich."));
+    if (p.updErr && p.updErr !== UPD_ERR) { UPD_ERR = p.updErr; if ($("updOv")) $("updOv").remove(); alert(T("updFailed", "Update fehlgeschlagen: {0}").replace("{0}", p.updErr)); }
     if (p.update) { $("upd").classList.add("show"); $("updText").textContent = T("updateAvailable", "Version {0} ist verfügbar").replace("{0}", p.update); }
     $("status").classList.toggle("show", !!p.syncing);
     if (p.syncing) $("status").textContent = T("syncing", "Wird abgeglichen") + (p.syncState ? " · " + p.syncState : "");
@@ -694,7 +697,20 @@ $("browserSel").onchange = async () => {
   catch (e) { sel.value = sel.dataset.current; alert(e.message); }
 };
 $("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); histStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); if (HDATA) loadHist(); };
-function doUpdate(btn) { btn.disabled = true; api("/api/update", {}).catch(e => { alert(e.message); btn.disabled = false; }); }
+function updOverlay(pct, text) {
+  let o = $("updOv");
+  if (!o) { o = document.createElement("div"); o.id = "updOv"; o.className = "boot"; o.innerHTML = '<div class="boot-box"><h2>RF4 Companion</h2><div class="boot-bar"><div id="updOvBar"></div></div><div class="boot-step" id="updOvStep"></div></div>'; document.body.appendChild(o); }
+  $("updOvBar").style.width = pct + "%";
+  $("updOvStep").textContent = text;
+}
+let UPD_ERR = "";
+function doUpdate(btn) {
+  btn.disabled = true;
+  if ($("dlg").open) $("dlg").close();
+  const t = setInterval(() => { if (!$("updOv")) clearInterval(t); else ping(); }, 800);
+  updOverlay(0, T("updDownloading", "Update wird geladen: {0} %").replace("{0}", 0));
+  api("/api/update", {}).catch(e => { if ($("updOv")) $("updOv").remove(); alert(e.message); btn.disabled = false; });
+}
 $("updBtn").onclick = () => MENU.about();
 let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FDATA = null, FSEQ = 0;
 function findStatic() {
