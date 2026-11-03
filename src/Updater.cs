@@ -19,6 +19,7 @@ internal static class Updater
     private static string notes;
     private static string currentNotes;
     private static System.Threading.Timer timer;
+    private static DateTime lastCheck = DateTime.MinValue;
 
     public static string Available
     {
@@ -60,12 +61,18 @@ internal static class Updater
         catch (Exception) { }
     }
 
+    public static void CheckIfStale()
+    {
+        if (DateTime.UtcNow.Subtract(lastCheck).TotalMinutes >= 10) CheckInBackground();
+    }
+
     public static void CheckInBackground()
     {
 #if PRIVATE || FANGBUCH
         return;
 #endif
         if (timer == null) timer = new System.Threading.Timer(delegate { CheckInBackground(); }, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
+        lastCheck = DateTime.UtcNow;
         Task.Factory.StartNew(() =>
         {
             try { Check(); }
