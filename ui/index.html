@@ -328,6 +328,7 @@ dialog.sheet[open] { display: flex; }
             <button data-h="6">6 h</button><button data-h="24" class="on">24 h</button><button data-h="72">3 d</button><button data-h="168">7 d</button>
           </div>
           <select id="lakeSel"></select>
+          <input class="search" id="actQ" type="search" autocomplete="off" style="flex:1;min-width:140px;margin:0">
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
           <label class="chk"><input type="checkbox" id="dcChk"> <span data-t="onlyDiscordBot">Nur Discord-Community</span></label>
           <label class="chk logonly"><input type="checkbox" id="ownChk" checked> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
@@ -452,7 +453,7 @@ async function ping() {
   } catch (e) {}
 }
 async function loadActive() {
-  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + ($("dcChk").checked ? "&dc=1" : ""));
+  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + ($("dcChk").checked ? "&dc=1" : "") + ($("actQ").value.trim().length >= 2 ? "&fish=" + encodeURIComponent($("actQ").value.trim()) : ""));
   ACTIVE = r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
   if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
@@ -668,6 +669,8 @@ $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS 
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
 $("dcChk").onchange = () => { DETAIL_KEY = null; loadActive(); };
+let ACTQ_T = 0;
+$("actQ").oninput = () => { clearTimeout(ACTQ_T); ACTQ_T = setTimeout(loadActive, 350); };
 $("ownChk").onchange = () => drawMap();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 async function loadBrowsers() {
@@ -697,6 +700,7 @@ function findStatic() {
   w[2].textContent = T("prefWinHours", "Erste {0} Std. nach Reset").replace("{0}", 24);
   w[3].textContent = T("tgtLast48", "Letzte 48 Std.");
   $("findQ").placeholder = T("findSearch", "Fisch oder Köder suchen");
+  $("actQ").placeholder = T("histSearch", "Fisch suchen");
 }
 async function loadFind() {
   const seq = ++FSEQ;

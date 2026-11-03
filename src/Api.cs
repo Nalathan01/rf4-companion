@@ -505,7 +505,7 @@ internal sealed class Api
             List<SpotEvent> recent = (dc ? DcEvents(s.Events) : s.Events).Where(e => e.Last >= since).ToList();
             if (recent.Count == 0) continue;
             List<Report> rr = recent.SelectMany(e => e.Reports).ToList();
-            if (fishFilter.Length > 0 && !rr.Any(r => r.Fish.Contains(fishFilter))) continue;
+            if (fishFilter.Length > 0 && !rr.Any(r => r.Fish.Any(f => f.IndexOf(fishFilter, StringComparison.OrdinalIgnoreCase) >= 0 || GameData.Translate(f, lang).IndexOf(fishFilter, StringComparison.OrdinalIgnoreCase) >= 0))) continue;
             Dictionary<string, int> fish = new Dictionary<string, int>();
             Dictionary<string, HashSet<string>> fishCc = new Dictionary<string, HashSet<string>>();
             Dictionary<string, int> baits = new Dictionary<string, int>();
