@@ -22,6 +22,9 @@ ul{padding-left:20px;margin:0}li{margin:4px 0}
 .step{background:var(--card);border-radius:10px;padding:16px 18px;margin:12px 0;display:flex;gap:14px}
 .num{flex:none;width:32px;height:32px;border-radius:50%;background:var(--blue);color:var(--bg);font-weight:700;display:flex;align-items:center;justify-content:center}
 .step h3{margin:2px 0 6px;font-size:17px}
+.step.plus{border:2px solid var(--yel);background:linear-gradient(180deg,rgba(240,196,40,.10),var(--card) 60%)}
+.step.plus .num{background:var(--yel)}
+.tag{display:inline-block;background:var(--yel);color:#161b20;font-size:12px;font-weight:700;border-radius:4px;padding:1px 8px;margin-bottom:4px}
 .step ol{margin:0;padding-left:20px}
 .btn{display:inline-block;background:var(--yel);color:#161b20;font-weight:600;text-decoration:none;padding:8px 16px;border-radius:6px;margin-top:8px}
 b.ui{color:var(--yel);font-weight:600}
@@ -52,11 +55,12 @@ body.de [data-l=de],body.en [data-l=en]{display:revert}
 <a class="btn" href="https://discord.com/oauth2/authorize?client_id=1567133709440782386&amp;scope=bot&amp;permissions=66560">Bot einladen</a></div></div>
 <div class="step"><div class="num">2</div><div><h3>Spot-Kanäle freigeben</h3>
 <ol><li>Rechtsklick auf die Kategorie mit euren Spot-Kanälen, dann <b class="ui">Kategorie bearbeiten</b>.</li><li><b class="ui">Berechtigungen</b>, dann beim <b class="ui">+</b> den Bot <b class="ui">RF4 Companion Spots</b> hinzufügen.</li><li><b class="ui">Kanäle ansehen</b> und <b class="ui">Nachrichtenverlauf lesen</b> auf den grünen Haken stellen und speichern.</li></ol></div></div>
-<div class="step"><div class="num">3</div><div><h3>Server-Widget einschalten</h3>
+<div class="step plus"><div class="num">3</div><div><span class="tag">Freiwillig, aber lohnt sich</span><h3>Neue Mitglieder über das Tool</h3>
+<p style="margin:0 0 8px">Bei jedem eurer Spots zeigt die App euren Servernamen und einen Knopf <b class="ui">Server beitreten</b>. Wer euren Spot spannend findet, landet mit einem Klick bei euch. Dafür braucht es nur das Server-Widget:</p>
 <ol><li><b class="ui">Servereinstellungen</b>, dann <b class="ui">Widget</b>.</li><li><b class="ui">Server-Widget aktivieren</b> einschalten.</li><li>Bei <b class="ui">Einladungskanal</b> einen Kanal wählen, in dem neue Leute landen sollen.</li></ol>
-<p style="margin:8px 0 0;color:var(--mut)">Darüber bekommt die App euren Servernamen und den Einladungslink. Ohne Widget steht bei euren Spots nur "Discord".</p></div></div>
+<p style="margin:8px 0 0;color:var(--mut)">Ohne Widget steht bei euren Spots nur "Discord", ohne Namen und ohne Knopf.</p></div></div>
 <div class="step"><div class="num">4</div><div><h3>Fertig</h3>
-<p style="margin:0">Der Bot liest von selbst alle freigegebenen Kanäle, die nach einem Gewässer benannt sind (zum Beispiel "kupfersee" oder "bärensee") oder "Spot" im Namen haben. Das gilt auch für alle Kanäle in einer Kategorie mit "Spot" im Namen. Andere Kanäle liest er nicht, auch wenn er sie sehen könnte.</p></div></div>
+<p style="margin:0">Gelesen werden nur Kanäle mit einem Gewässer oder "Spot" im Namen.<br>Fragen oder Fehler? Schreib <b class="ui">Nalathan</b> auf Discord oder melde es auf <a href="https://github.com/Nalathan01/rf4-companion/issues" style="color:var(--blue)">GitHub</a>.</p></div></div>
 
 <p class="note">Neue Spots tauchen etwa eine Stunde nach dem Posten in der App auf. Am besten erkennt der Bot Spots mit Koordinaten im Text (zum Beispiel 79:78), Clip und einem Setup-Screenshot. Den Bot könnt ihr jederzeit wieder vom Server werfen.</p>
 <p class="note"><a href="terms.html" style="color:var(--blue)">Nutzungsbedingungen</a> · <a href="privacy.html" style="color:var(--blue)">Datenschutz</a></p>
@@ -76,11 +80,12 @@ body.de [data-l=de],body.en [data-l=en]{display:revert}
 <a class="btn" href="https://discord.com/oauth2/authorize?client_id=1567133709440782386&amp;scope=bot&amp;permissions=66560">Invite bot</a></div></div>
 <div class="step"><div class="num">2</div><div><h3>Allow your spot channels</h3>
 <ol><li>Right click the category with your spot channels, then <b class="ui">Edit Category</b>.</li><li><b class="ui">Permissions</b>, then add the bot <b class="ui">RF4 Companion Spots</b> with the <b class="ui">+</b>.</li><li>Set <b class="ui">View Channels</b> and <b class="ui">Read Message History</b> to the green tick and save.</li></ol></div></div>
-<div class="step"><div class="num">3</div><div><h3>Turn on the server widget</h3>
+<div class="step plus"><div class="num">3</div><div><span class="tag">Optional, but worth it</span><h3>New members through the app</h3>
+<p style="margin:0 0 8px">Next to each of your spots the app shows your server name and a <b class="ui">Join server</b> button. Anyone who likes your spot gets to you with one click. All it takes is the server widget:</p>
 <ol><li><b class="ui">Server Settings</b>, then <b class="ui">Widget</b>.</li><li>Turn on <b class="ui">Enable Server Widget</b>.</li><li>Pick an <b class="ui">Invite Channel</b> where new people should land.</li></ol>
-<p style="margin:8px 0 0;color:var(--mut)">This is how the app gets your server name and invite link. Without the widget your spots only say "Discord".</p></div></div>
+<p style="margin:8px 0 0;color:var(--mut)">Without the widget your spots only say "Discord", with no name and no button.</p></div></div>
 <div class="step"><div class="num">4</div><div><h3>Done</h3>
-<p style="margin:0">The bot automatically reads every allowed channel that is named after a waterbody (for example "copper-lake" or "bear-lake") or has "spot" in its name. This also covers all channels in a category with "spot" in its name. It does not read any other channel, even if it could see it.</p></div></div>
+<p style="margin:0">Only channels with a waterbody or "spot" in their name are read.<br>Questions or bugs? Message <b class="ui">Nalathan</b> on Discord or report it on <a href="https://github.com/Nalathan01/rf4-companion/issues" style="color:var(--blue)">GitHub</a>.</p></div></div>
 
 <p class="note">New spots show up in the app about an hour after they are posted. The bot works best with coordinates in the text (for example 79:78), the clip and a setup screenshot. You can kick the bot from your server at any time.</p>
 <p class="note"><a href="terms.html" style="color:var(--blue)">Terms of service</a> · <a href="privacy.html" style="color:var(--blue)">Privacy policy</a></p>

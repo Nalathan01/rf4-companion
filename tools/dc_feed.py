@@ -18,6 +18,7 @@ CLIP = re.compile(r"(?:clip\w*|klipp?\w*)\s*[:=]?\s*(?:auf\s*)?(\d{1,3}(?:[.,]\d
 DEPTH = re.compile(r"tiefe\w*\s*[:=]?\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|m)?", re.I)
 TEMP = re.compile(r"(?:wasser)?temp\w*\s*[:=]?\s*(kalt|normal|warm|cold)", re.I)
 MENTION = re.compile(r"<[@#][&!]?\d+>|<a?:\w+:\d+>")
+ALIASES = {"elk_lake": ("elchsee",), "the_amber_lake": ("bernie",)}
 GENERIC = {"fluss", "river", "lake", "lower", "untere", "rivulet"}
 SPOTNAME = re.compile(r"spot|angelpl|fangpl", re.I)
 NOT_BAIT = {"haken", "hook", "fisch", "fische"}
@@ -63,6 +64,7 @@ class Catalog:
                         words.setdefault(norm(w), set()).add(l["id"])
         for lid, names, _ in self.lakes:
             names |= {w for w, ids in words.items() if ids == {lid}}
+            names |= set(ALIASES.get(lid, ()))
         self.bounds = {i: b for i, _, b in self.lakes}
         self.fish = {}
         self.fish_family = {}
