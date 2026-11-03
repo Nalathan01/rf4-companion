@@ -602,7 +602,8 @@
   "histSource": "Quelle: offizielle Rekordlisten von rf4game.com, gesammelt von RF4 Companion.",
   "histRecords": "Größte offizielle Rekorde",
   "whatsNew": "Neu in dieser Version",
-  "whatsNewIn": "Neu in {0}"
+  "whatsNewIn": "Neu in {0}",
+  "win2w": "2 Wochen"
  },
  "en": {
   "langName": "English",
@@ -1207,7 +1208,8 @@
   "histSource": "Source: official record lists from rf4game.com, collected by RF4 Companion.",
   "histRecords": "Biggest official records",
   "whatsNew": "New in this version",
-  "whatsNewIn": "New in {0}"
+  "whatsNewIn": "New in {0}",
+  "win2w": "2 weeks"
  },
  "ru": {
   "langName": "Русский",
@@ -1809,7 +1811,8 @@
   "histSource": "Источник: официальные таблицы рекордов rf4game.com, собраны RF4 Companion.",
   "histRecords": "Крупнейшие официальные рекорды",
   "whatsNew": "Новое в этой версии",
-  "whatsNewIn": "Новое в {0}"
+  "whatsNewIn": "Новое в {0}",
+  "win2w": "2 недели"
  },
  "fr": {
   "langName": "Français",
@@ -2411,7 +2414,8 @@
   "histSource": "Source : classements officiels de rf4game.com, collectés par RF4 Companion.",
   "histRecords": "Plus gros records officiels",
   "whatsNew": "Nouveautés de cette version",
-  "whatsNewIn": "Nouveautés de la {0}"
+  "whatsNewIn": "Nouveautés de la {0}",
+  "win2w": "2 semaines"
  },
  "es": {
   "langName": "Español",
@@ -3013,7 +3017,8 @@
   "histSource": "Fuente: tablas oficiales de récords de rf4game.com, recopiladas por RF4 Companion.",
   "histRecords": "Mayores récords oficiales",
   "whatsNew": "Novedades de esta versión",
-  "whatsNewIn": "Novedades de la {0}"
+  "whatsNewIn": "Novedades de la {0}",
+  "win2w": "2 semanas"
  },
  "it": {
   "langName": "Italiano",
@@ -3615,7 +3620,8 @@
   "histSource": "Fonte: classifiche ufficiali dei record di rf4game.com, raccolte da RF4 Companion.",
   "histRecords": "Record ufficiali più grandi",
   "whatsNew": "Novità di questa versione",
-  "whatsNewIn": "Novità della {0}"
+  "whatsNewIn": "Novità della {0}",
+  "win2w": "2 settimane"
  },
  "pl": {
   "langName": "Polski",
@@ -4217,7 +4223,8 @@
   "histSource": "Źródło: oficjalne tabele rekordów rf4game.com, zebrane przez RF4 Companion.",
   "histRecords": "Największe oficjalne rekordy",
   "whatsNew": "Nowości w tej wersji",
-  "whatsNewIn": "Nowości w {0}"
+  "whatsNewIn": "Nowości w {0}",
+  "win2w": "2 tygodnie"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4819,7 +4826,8 @@
   "histSource": "Fonte: tabelas oficiais de recordes do rf4game.com, coletadas pelo RF4 Companion.",
   "histRecords": "Maiores recordes oficiais",
   "whatsNew": "Novidades desta versão",
-  "whatsNewIn": "Novidades da {0}"
+  "whatsNewIn": "Novidades da {0}",
+  "win2w": "2 semanas"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5421,7 +5429,8 @@
   "histSource": "Bron: officiële recordlijsten van rf4game.com, verzameld door RF4 Companion.",
   "histRecords": "Grootste officiële records",
   "whatsNew": "Nieuw in deze versie",
-  "whatsNewIn": "Nieuw in {0}"
+  "whatsNewIn": "Nieuw in {0}",
+  "win2w": "2 weken"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6023,7 +6032,8 @@
   "histSource": "Kaynak: rf4game.com resmi rekor tabloları, RF4 Companion tarafından toplandı.",
   "histRecords": "En büyük resmi rekorlar",
   "whatsNew": "Bu sürümdeki yenilikler",
-  "whatsNewIn": "{0} sürümündeki yenilikler"
+  "whatsNewIn": "{0} sürümündeki yenilikler",
+  "win2w": "2 hafta"
  },
  "ro": {
   "langName": "Română",
@@ -6625,7 +6635,8 @@
   "histSource": "Sursa: clasamentele oficiale de recorduri de pe rf4game.com, colectate de RF4 Companion.",
   "histRecords": "Cele mai mari recorduri oficiale",
   "whatsNew": "Noutăți în această versiune",
-  "whatsNewIn": "Noutăți în {0}"
+  "whatsNewIn": "Noutăți în {0}",
+  "win2w": "2 săptămâni"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7227,7 +7238,8 @@
   "histSource": "Sumber: tabel rekor resmi rf4game.com, dikumpulkan oleh RF4 Companion.",
   "histRecords": "Rekor resmi terbesar",
   "whatsNew": "Baru di versi ini",
-  "whatsNewIn": "Baru di {0}"
+  "whatsNewIn": "Baru di {0}",
+  "win2w": "2 minggu"
  },
  "ja": {
   "langName": "日本語",
@@ -7829,7 +7841,8 @@
   "histSource": "出典: rf4game.com の公式記録表、RF4 Companion が収集。",
   "histRecords": "最大の公式記録",
   "whatsNew": "このバージョンの新機能",
-  "whatsNewIn": "{0} の新機能"
+  "whatsNewIn": "{0} の新機能",
+  "win2w": "2週間"
  },
  "ko": {
   "langName": "한국어",
@@ -8431,7 +8444,8 @@
   "histSource": "출처: rf4game.com 공식 기록표, RF4 Companion이 수집.",
   "histRecords": "가장 큰 공식 기록",
   "whatsNew": "이 버전의 새로운 기능",
-  "whatsNewIn": "{0}의 새로운 기능"
+  "whatsNewIn": "{0}의 새로운 기능",
+  "win2w": "2주"
  },
  "zh": {
   "langName": "简体中文",
@@ -9033,7 +9047,8 @@
   "histSource": "来源：rf4game.com 官方记录榜，由 RF4 Companion 收集。",
   "histRecords": "最大官方记录",
   "whatsNew": "此版本新内容",
-  "whatsNewIn": "{0} 新内容"
+  "whatsNewIn": "{0} 新内容",
+  "win2w": "2 周"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -9635,6 +9650,7 @@
   "histSource": "來源：rf4game.com 官方紀錄榜，由 RF4 Companion 收集。",
   "histRecords": "最大官方紀錄",
   "whatsNew": "此版本新內容",
-  "whatsNewIn": "{0} 新內容"
+  "whatsNewIn": "{0} 新內容",
+  "win2w": "2 週"
  }
 }
