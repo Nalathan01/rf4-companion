@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RF4 Companion Spots Datenschutz</title>
+<link rel="icon" href="avatar.png">
+<style>
+:root{--bg:#161b20;--card:#1f262d;--fg:#e8ecf0;--mut:#8a96a3;--blue:#52aad0;--line:#2a323a}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 "Segoe UI",system-ui,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 8px}
+a{color:var(--blue)}ul{padding-left:20px;margin:0}li{margin:4px 0}
+.sub{color:var(--mut);margin:0}
+.lang{margin:16px 0 8px;display:flex;gap:8px}
+.lang button{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font:inherit}
+.lang button.on{border-color:var(--blue);color:var(--blue)}
+[data-l]{display:none}body.de [data-l=de],body.en [data-l=en]{display:revert}
+</style>
+</head>
+<body class="de">
+<div class="wrap">
+<p class="sub"><a href="./">RF4 Companion Spots</a></p>
+<div class="lang"><button class="on" onclick="setL('de',this)">Deutsch</button><button onclick="setL('en',this)">English</button></div>
+
+<div data-l="de">
+<h1>Datenschutz</h1>
+<p class="sub">Stand: 3. November 2026</p>
+<h2>Was der Bot liest</h2>
+<p>Der Bot liest nur Nachrichten in den Kanälen, die ein Server-Admin für ihn freigegeben hat und die zusätzlich bei uns eingetragen sind. Gelesen werden der Nachrichtentext, angehängte Bilder, der Zeitpunkt der Nachricht und die Kennungen von Server, Kanal und Nachricht. Einmal pro Stunde werden die Nachrichten der letzten 8 Tage abgefragt.</p>
+<h2>Was gespeichert und veröffentlicht wird</h2>
+<p>Aus einer Nachricht werden nur Angaben zum Spot übernommen:</p>
+<ul>
+<li>Gewässer, Koordinaten, Clip, Tiefe, Wassertemperatur</li>
+<li>Fischarten, Köder und Dips</li>
+<li>Datum der Nachricht und ein Link zur Nachricht auf Discord</li>
+<li>Kennung, Name und Einladungslink des Servers, soweit der Server sein Widget freigegeben hat</li>
+</ul>
+<p>Diese Angaben stehen in einer öffentlichen Datei auf GitHub und werden in der App RF4 Companion angezeigt.</p>
+<h2>Was nicht gespeichert wird</h2>
+<ul>
+<li>Keine Benutzernamen, keine Benutzerkennungen, keine Profilbilder</li>
+<li>Kein Nachrichtentext</li>
+<li>Keine Bilder. Bilder werden nur kurz geladen, um Köder aus Setup-Screenshots zu lesen, und danach verworfen.</li>
+<li>Keine Nachrichten aus Kanälen, die nicht freigegeben sind, und keine Direktnachrichten</li>
+</ul>
+<h2>Wo die Verarbeitung läuft</h2>
+<p>Das Auslesen läuft automatisch auf GitHub Actions. Die App RF4 Companion selbst verbindet sich nie mit Discord.</p>
+<h2>Löschen</h2>
+<p>Ein Admin kann den Bot jederzeit vom Server entfernen oder ihm die Kanäle wieder entziehen, dann liest er dort nichts mehr. Wer möchte, dass ein bestimmter Spot entfernt wird, meldet sich bei Nalathan auf Discord oder über <a href="https://github.com/Nalathan01/rf4-companion/issues">GitHub</a>.</p>
+<h2>Kontakt</h2>
+<p>Nalathan, Discord: Nalathan, GitHub: <a href="https://github.com/Nalathan01">Nalathan01</a></p>
+</div>
+
+<div data-l="en">
+<h1>Privacy policy</h1>
+<p class="sub">Last updated: November 3, 2026</p>
+<h2>What the bot reads</h2>
+<p>The bot only reads messages in channels that a server admin has allowed for it and that are also listed on our side. It reads the message text, attached images, the message time and the server, channel and message IDs. Once an hour it checks the messages of the last 8 days.</p>
+<h2>What is stored and published</h2>
+<p>Only spot details are taken from a message:</p>
+<ul>
+<li>Waterbody, coordinates, clip, depth, water temperature</li>
+<li>Fish, baits and dips</li>
+<li>Date of the message and a link to the message on Discord</li>
+<li>Server ID, name and invite link, if the server has its widget enabled</li>
+</ul>
+<p>These details are kept in a public file on GitHub and shown in the RF4 Companion app.</p>
+<h2>What is not stored</h2>
+<ul>
+<li>No user names, no user IDs, no avatars</li>
+<li>No message text</li>
+<li>No images. Images are only loaded briefly to read baits from setup screenshots and then discarded.</li>
+<li>No messages from channels that are not allowed, and no direct messages</li>
+</ul>
+<h2>Where it runs</h2>
+<p>Reading runs automatically on GitHub Actions. The RF4 Companion app itself never connects to Discord.</p>
+<h2>Removal</h2>
+<p>An admin can remove the bot from the server or take away its channel access at any time, then it stops reading there. If you want a specific spot removed, contact Nalathan on Discord or via <a href="https://github.com/Nalathan01/rf4-companion/issues">GitHub</a>.</p>
+<h2>Contact</h2>
+<p>Nalathan, Discord: Nalathan, GitHub: <a href="https://github.com/Nalathan01">Nalathan01</a></p>
+</div>
+</div>
+<script>function setL(l,b){document.body.className=l;document.querySelectorAll('.lang button').forEach(x=>x.classList.toggle('on',x===b))}</script>
+</body>
+</html>

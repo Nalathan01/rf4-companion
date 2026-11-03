@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RF4 Companion Spots Nutzungsbedingungen</title>
+<link rel="icon" href="avatar.png">
+<style>
+:root{--bg:#161b20;--card:#1f262d;--fg:#e8ecf0;--mut:#8a96a3;--blue:#52aad0;--line:#2a323a}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 "Segoe UI",system-ui,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 8px}
+a{color:var(--blue)}ul{padding-left:20px;margin:0}li{margin:4px 0}
+.sub{color:var(--mut);margin:0}
+.lang{margin:16px 0 8px;display:flex;gap:8px}
+.lang button{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font:inherit}
+.lang button.on{border-color:var(--blue);color:var(--blue)}
+[data-l]{display:none}body.de [data-l=de],body.en [data-l=en]{display:revert}
+</style>
+</head>
+<body class="de">
+<div class="wrap">
+<p class="sub"><a href="./">RF4 Companion Spots</a></p>
+<div class="lang"><button class="on" onclick="setL('de',this)">Deutsch</button><button onclick="setL('en',this)">English</button></div>
+
+<div data-l="de">
+<h1>Nutzungsbedingungen</h1>
+<p class="sub">Stand: 3. November 2026</p>
+<h2>Der Bot</h2>
+<p>RF4 Companion Spots ist ein kostenloser Bot für Discord-Server rund um Russian Fishing 4. Er liest Angelspots aus freigegebenen Kanälen und zeigt sie in der kostenlosen App <a href="https://nalathan.itch.io/rf4-companion">RF4 Companion</a> an. Der Bot schreibt nichts und führt keine Befehle aus.</p>
+<h2>Für Server-Admins</h2>
+<ul>
+<li>Ladet den Bot nur auf einen Server ein, für den ihr das Recht dazu habt.</li>
+<li>Gebt ihm nur Kanäle frei, deren Spots öffentlich in der App erscheinen dürfen. Sagt euren Mitgliedern am besten, dass Spots aus diesen Kanälen geteilt werden.</li>
+<li>Ihr könnt den Bot jederzeit entfernen. Was danach gepostet wird, liest er nicht mehr.</li>
+</ul>
+<h2>Keine Garantie</h2>
+<p>Der Bot wird ohne Gewähr angeboten. Er kann jederzeit geändert oder abgeschaltet werden. Erkannte Spots und Köder können falsch oder unvollständig sein.</p>
+<h2>Kein offizielles Produkt</h2>
+<p>RF4 Companion Spots gehört weder zu Discord noch zu den Entwicklern von Russian Fishing 4.</p>
+<h2>Datenschutz</h2>
+<p>Was der Bot liest und speichert, steht unter <a href="privacy.html">Datenschutz</a>.</p>
+<h2>Kontakt</h2>
+<p>Nalathan, Discord: Nalathan, GitHub: <a href="https://github.com/Nalathan01">Nalathan01</a></p>
+</div>
+
+<div data-l="en">
+<h1>Terms of service</h1>
+<p class="sub">Last updated: November 3, 2026</p>
+<h2>The bot</h2>
+<p>RF4 Companion Spots is a free bot for Russian Fishing 4 Discord servers. It reads fishing spots from allowed channels and shows them in the free <a href="https://nalathan.itch.io/rf4-companion">RF4 Companion</a> app. The bot never posts and has no commands.</p>
+<h2>For server admins</h2>
+<ul>
+<li>Only invite the bot to a server where you are allowed to do so.</li>
+<li>Only allow channels whose spots may be shown publicly in the app. It is best to tell your members that spots from these channels are shared.</li>
+<li>You can remove the bot at any time. It does not read anything posted after that.</li>
+</ul>
+<h2>No warranty</h2>
+<p>The bot is provided as is. It can be changed or shut down at any time. Recognised spots and baits may be wrong or incomplete.</p>
+<h2>Not an official product</h2>
+<p>RF4 Companion Spots is not affiliated with Discord or the developers of Russian Fishing 4.</p>
+<h2>Privacy</h2>
+<p>What the bot reads and stores is described in the <a href="privacy.html">privacy policy</a>.</p>
+<h2>Contact</h2>
+<p>Nalathan, Discord: Nalathan, GitHub: <a href="https://github.com/Nalathan01">Nalathan01</a></p>
+</div>
+</div>
+<script>function setL(l,b){document.body.className=l;document.querySelectorAll('.lang button').forEach(x=>x.classList.toggle('on',x===b))}</script>
+</body>
+</html>
