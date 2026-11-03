@@ -64,6 +64,7 @@ internal static class Mirror
         Records.Refresh();
         Community.Sync(false);
         TgDirect.Sync(true);
+        DcFeed.Load(Environment.GetEnvironmentVariable("RF4_FISH_DIR"));
         Rf4Fish.SyncSpots(true);
         Community.QueuePosts(192);
         Wait(() => Scans.Pending, 15);
@@ -108,7 +109,7 @@ internal static class Mirror
             double deg = pk.Length > 0 ? Scans.Degrees(pk) : -1;
             if (deg >= 0) raw["mdeg"] = deg;
             bool fromImg = !hadBait && oc != null && AppEnv.GetList(oc, "baits").Cast<object>().Any(o => !GameData.DipKeys.Contains(o.ToString()));
-            raw["mimg"] = fromImg;
+            raw["mimg"] = fromImg || (r.Id.StartsWith("dcd:", StringComparison.Ordinal) && AppEnv.GetBool(r.Raw, "mimg"));
             RecordHit rec = !hadBait && !fromImg ? Records.Match(r) : null;
             if (rec != null) raw["mrec"] = AppEnv.Obj("t", rec.Table, "r", rec.Region, "d", rec.Date, "b", rec.Bait);
             raw["mixed"] = PostText.Mixed(text);
