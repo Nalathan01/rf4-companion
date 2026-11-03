@@ -82,55 +82,97 @@ internal static class Mirror
             if (!string.IsNullOrEmpty(fd) && File.Exists(Path.Combine(fd, "wx_feed.json"))) wxFeed = AppEnv.ReadJsonFile(Path.Combine(fd, "wx_feed.json")) as Dictionary<string, object>;
         }
         catch (Exception ex) { AppEnv.Log("Spiegel", "Futter aus Bild: " + ex.Message); }
-        foreach (Report r in Community.All().Where(Community.Plausible))
-        {
-            Dictionary<string, object> raw = new Dictionary<string, object>(r.Raw);
-            raw.Remove("weight");
-            raw["fish"] = r.Fish.ToArray();
-            string pk = Scans.PostKey(r.Url);
-            string text = pk.Length > 0 ? Scans.Text(pk) : "";
-            Dictionary<string, string> info = PostText.Parse(text);
-            bool hadBait = r.S("baitDetail").Length > 0 || r.S("lure").Length > 0 || info.ContainsKey("baitDetail");
-            string[] baits = Api.ReportBaits(r);
-            if (baits.Length > 0) raw["baitDetail"] = string.Join(" + ", baits);
-            foreach (string k in new string[] { "dip", "groundbait", "pva", "reelSpeed", "clip", "depth" })
-            {
-                string v;
-                if (AppEnv.GetString(raw, k).Length == 0 && info.TryGetValue(k, out v)) raw[k] = v;
-            }
-            Dictionary<string, object> oc = pk.Length > 0 ? ImageOcr.Result(pk) : null;
-            if (oc != null && AppEnv.GetString(raw, "dip").Length == 0)
-            {
-                string[] dips = AppEnv.GetList(oc, "baits").Cast<object>().Select(o => o.ToString()).Where(GameData.DipKeys.Contains).ToArray();
-                if (dips.Length > 0) raw["dip"] = string.Join(" + ", dips);
-            }
-            string t;
-            if (info.TryGetValue("temp", out t)) raw["ptemp"] = t;
-            double deg = pk.Length > 0 ? Scans.Degrees(pk) : -1;
-            if (deg >= 0) raw["mdeg"] = deg;
-            bool fromImg = !hadBait && oc != null && AppEnv.GetList(oc, "baits").Cast<object>().Any(o => !GameData.DipKeys.Contains(o.ToString()));
-            raw["mimg"] = fromImg || (r.Id.StartsWith("dcd:", StringComparison.Ordinal) && AppEnv.GetBool(r.Raw, "mimg"));
-            RecordHit rec = !hadBait && !fromImg ? Records.Match(r) : null;
-            if (rec != null) raw["mrec"] = AppEnv.Obj("t", rec.Table, "r", rec.Region, "d", rec.Date, "b", rec.Bait);
-            raw["mixed"] = PostText.Mixed(text);
-            raw["ms"] = Community.HasSetup(r);
-            object wf = null;
-            if (wxFeed != null && r.Id.StartsWith("wx:", StringComparison.Ordinal)) wxFeed.TryGetValue(r.Id.Substring(3), out wf);
-            Dictionary<string, object> wd = wf as Dictionary<string, object>;
-            string[] imgFeed = (wd != null ? AppEnv.GetList(wd, "f") : wf as System.Collections.IList ?? new object[0]).Cast<object>().Select(o => o.ToString()).ToArray();
-            string[] imgBaits = wd != null ? AppEnv.GetList(wd, "b").Cast<object>().Select(o => o.ToString()).ToArray() : new string[0];
-            if (imgBaits.Length > 0 && wd.ContainsKey("p")) imgBaits = baits.Concat(imgBaits).Distinct().ToArray();
-            if (imgBaits.Length > 0) { raw["baitDetail"] = string.Join(" + ", imgBaits); raw["mimg"] = true; raw["ms"] = true; }
-            else if (r.Id.StartsWith("wx:", StringComparison.Ordinal) && baits.Length == 0 && ImageOcr.ZhLang().Length > 0)
-            {
-                string[] wb = Rf4Fish.SetupBaits(r);
-                if (wb.Length > 0) { raw["baitDetail"] = string.Join(" + ", wb); raw["mimg"] = true; raw["ms"] = true; }
-            }
-            if (imgFeed.Length > 0) raw["groundbait"] = string.Join(" + ", imgFeed);
-            outL.Add(raw);
-        }
+        foreach (Report r in Community.All().Where(Community.Plausible)) outL.Add(ExportRaw(r, wxFeed));
         Rf4Fish.SaveSetupCache();
-        string json = AppEnv.Json.Serialize(AppEnv.Obj("v", 1, "generated", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture), "reports", outL));
+        WriteGz(path, DateTime.UtcNow, outL);
+        string dir = Path.GetDirectoryName(Path.GetFullPath(path));
+        Community.SaveNow();
+        try { Rf4Fish.ExportInfo(Path.Combine(dir, "rf4fish_info.json.gz")); }
+        catch (Exception ex) { AppEnv.Log("Spiegel", "Nachschlagedaten: " + ex.Message); }
+        AppEnv.Log("Spiegel", "Export: " + outL.Count + " Meldungen");
+        return outL.Count;
+    }
+
+    private static Dictionary<string, object> ExportRaw(Report r, Dictionary<string, object> wxFeed)
+    {
+        Dictionary<string, object> raw = new Dictionary<string, object>(r.Raw);
+        raw.Remove("weight");
+        raw["fish"] = r.Fish.ToArray();
+        string pk = Scans.PostKey(r.Url);
+        string text = pk.Length > 0 ? Scans.Text(pk) : "";
+        Dictionary<string, string> info = PostText.Parse(text);
+        bool hadBait = r.S("baitDetail").Length > 0 || r.S("lure").Length > 0 || info.ContainsKey("baitDetail");
+        string[] baits = Api.ReportBaits(r);
+        if (baits.Length > 0) raw["baitDetail"] = string.Join(" + ", baits);
+        foreach (string k in new string[] { "dip", "groundbait", "pva", "reelSpeed", "clip", "depth" })
+        {
+            string v;
+            if (AppEnv.GetString(raw, k).Length == 0 && info.TryGetValue(k, out v)) raw[k] = v;
+        }
+        Dictionary<string, object> oc = pk.Length > 0 ? ImageOcr.Result(pk) : null;
+        if (oc != null && AppEnv.GetString(raw, "dip").Length == 0)
+        {
+            string[] dips = AppEnv.GetList(oc, "baits").Cast<object>().Select(o => o.ToString()).Where(GameData.DipKeys.Contains).ToArray();
+            if (dips.Length > 0) raw["dip"] = string.Join(" + ", dips);
+        }
+        string t;
+        if (info.TryGetValue("temp", out t)) raw["ptemp"] = t;
+        double deg = pk.Length > 0 ? Scans.Degrees(pk) : -1;
+        if (deg >= 0) raw["mdeg"] = deg;
+        bool fromImg = !hadBait && oc != null && AppEnv.GetList(oc, "baits").Cast<object>().Any(o => !GameData.DipKeys.Contains(o.ToString()));
+        raw["mimg"] = fromImg || (r.Id.StartsWith("dcd:", StringComparison.Ordinal) && AppEnv.GetBool(r.Raw, "mimg"));
+        RecordHit rec = !hadBait && !fromImg ? Records.Match(r) : null;
+        if (rec != null) raw["mrec"] = AppEnv.Obj("t", rec.Table, "r", rec.Region, "d", rec.Date, "b", rec.Bait);
+        raw["mixed"] = PostText.Mixed(text);
+        raw["ms"] = Community.HasSetup(r);
+        object wf = null;
+        if (wxFeed != null && r.Id.StartsWith("wx:", StringComparison.Ordinal)) wxFeed.TryGetValue(r.Id.Substring(3), out wf);
+        Dictionary<string, object> wd = wf as Dictionary<string, object>;
+        string[] imgFeed = (wd != null ? AppEnv.GetList(wd, "f") : wf as System.Collections.IList ?? new object[0]).Cast<object>().Select(o => o.ToString()).ToArray();
+        string[] imgBaits = wd != null ? AppEnv.GetList(wd, "b").Cast<object>().Select(o => o.ToString()).ToArray() : new string[0];
+        if (imgBaits.Length > 0 && wd.ContainsKey("p")) imgBaits = baits.Concat(imgBaits).Distinct().ToArray();
+        if (imgBaits.Length > 0) { raw["baitDetail"] = string.Join(" + ", imgBaits); raw["mimg"] = true; raw["ms"] = true; }
+        else if (r.Id.StartsWith("wx:", StringComparison.Ordinal) && baits.Length == 0 && ImageOcr.ZhLang().Length > 0)
+        {
+            string[] wb = Rf4Fish.SetupBaits(r);
+            if (wb.Length > 0) { raw["baitDetail"] = string.Join(" + ", wb); raw["mimg"] = true; raw["ms"] = true; }
+        }
+        if (imgFeed.Length > 0) raw["groundbait"] = string.Join(" + ", imgFeed);
+        return raw;
+    }
+
+    public static int MergeDiscord(string feedDir, string inPath, string outPath)
+    {
+        GameData.Load();
+        Scans.Load();
+        Community.Load();
+        DcFeed.Load(feedDir);
+        string json;
+        using (FileStream fs = File.OpenRead(inPath))
+        using (GZipStream z = new GZipStream(fs, CompressionMode.Decompress))
+        using (StreamReader sr = new StreamReader(z, Encoding.UTF8)) json = sr.ReadToEnd();
+        Dictionary<string, object> d = AppEnv.Json.DeserializeObject(json) as Dictionary<string, object>;
+        DateTime gen;
+        if (d == null || !DateTime.TryParse(AppEnv.GetString(d, "generated"), CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out gen)) return -1;
+        List<object> keep = new List<object>(), oldDc = new List<object>();
+        foreach (object o in AppEnv.GetList(d, "reports"))
+        {
+            Dictionary<string, object> raw = o as Dictionary<string, object>;
+            if (raw == null) continue;
+            if (AppEnv.GetString(raw, "id").StartsWith("dcd:", StringComparison.Ordinal)) oldDc.Add(raw); else keep.Add(raw);
+        }
+        List<object> dc = Community.All().Where(r => r.Id.StartsWith("dcd:", StringComparison.Ordinal) && Community.Plausible(r)).Select(r => (object)ExportRaw(r, null)).ToList();
+        Community.SaveNow();
+        if (AppEnv.Json.Serialize(dc) == AppEnv.Json.Serialize(oldDc)) { AppEnv.Log("Discord", "keine Änderung"); return 0; }
+        keep.AddRange(dc);
+        WriteGz(outPath, gen.AddSeconds(1), keep);
+        AppEnv.Log("Discord", "Spiegel ergänzt: " + dc.Count + " Discord-Meldungen");
+        return dc.Count;
+    }
+
+    private static void WriteGz(string path, DateTime generated, List<object> reports)
+    {
+        string json = AppEnv.Json.Serialize(AppEnv.Obj("v", 1, "generated", generated.ToString("o", CultureInfo.InvariantCulture), "reports", reports));
         string dir = Path.GetDirectoryName(Path.GetFullPath(path));
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
         using (FileStream fs = File.Create(path))
@@ -139,11 +181,6 @@ internal static class Mirror
             byte[] b = Encoding.UTF8.GetBytes(json);
             z.Write(b, 0, b.Length);
         }
-        Community.SaveNow();
-        try { Rf4Fish.ExportInfo(Path.Combine(dir, "rf4fish_info.json.gz")); }
-        catch (Exception ex) { AppEnv.Log("Spiegel", "Nachschlagedaten: " + ex.Message); }
-        AppEnv.Log("Spiegel", "Export: " + outL.Count + " Meldungen");
-        return outL.Count;
     }
 
     private static void Wait(Func<int> pending, int minutes)
