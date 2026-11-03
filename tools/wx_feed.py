@@ -17,7 +17,7 @@ from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
-VERSION = 6
+VERSION = 7
 WORKERS = 3
 BUDGET = 540
 MIRROR = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/spots.json.gz"
@@ -55,11 +55,17 @@ def candidates():
         if CJK.search(v.get("zh") or ""):
             feed.setdefault(norm(v["zh"]), k)
     baits = {}
+    ALTS.clear()
+    DIPS.clear()
+    DIPS_ZH.clear()
     cats = json.load(open(os.path.join(ROOT, "data", "itemcats.json"), encoding="utf-8"))
     keys = list(game["baits"]) + [x for c in ("spinlure", "pilker", "seasoft", "teaser", "seanatural") for x in cats.get(c, [])]
     for k in keys:
         zh = (game["names"].get(k) or {}).get("zh") or ""
         if CJK.search(zh):
+            ALTS.setdefault(norm(zh), [])
+            if k not in ALTS[norm(zh)]:
+                ALTS[norm(zh)].append(k)
             old = baits.get(norm(zh))
             if old is None or ("Pellets" in old and "Pellets" not in k):
                 baits[norm(zh)] = k
@@ -67,9 +73,57 @@ def candidates():
             baits.setdefault(norm(k), k)
     dips = json.load(open(os.path.join(ROOT, "data", "dips.json"), encoding="utf-8"))
     for k, v in dips.items():
+        DIPS.add(k)
         if CJK.search(v.get("zh") or ""):
+            DIPS_ZH[k] = norm(re.sub(r"^[A-Za-z0-9'&.\s]+", "", v["zh"]))
             baits.setdefault(norm(v["zh"]), k)
     return feed, baits
+
+
+ALTS = {}
+DIPS = set()
+DIPS_ZH = {}
+
+
+def form_of(line):
+    s = norm(line)
+    if not ("形" in s or "式" in s):
+        return ""
+    if "玉米" in s or "人造" in s:
+        return "corn"
+    if "颗粒" in s or "颗" in s:
+        return "pellets"
+    if "小药" in s or "药" in s:
+        return "dip"
+    if "成饵" in s or "煮" in s:
+        return "boilie"
+    return ""
+
+
+def kind_of(key):
+    if key in DIPS:
+        return "dip"
+    if "Pellets" in key:
+        return "pellets"
+    if "Flavor" in key or not re.search(r"\d", key):
+        return "corn"
+    return "boilie"
+
+
+def pick_form(en, form):
+    if not form or kind_of(en) == form:
+        return en
+    if en in DIPS_ZH:
+        for k in ALTS.get(DIPS_ZH[en], []):
+            if kind_of(k) == form:
+                return k
+        return en
+    for keys in ALTS.values():
+        if en in keys:
+            for k in keys:
+                if kind_of(k) == form:
+                    return k
+    return en
 
 
 def match_tail(line, names):
@@ -200,13 +254,16 @@ def feed_from_lines(lines, names):
 def baits_from_lines(lines, names):
     baits = []
     inside = not any(HEAD.search(x) for x in lines)
-    for line in lines:
+    for i, line in enumerate(lines):
         if HEAD.search(line):
             inside = True
             continue
         if not inside or SKIP.search(line) or LABEL.match(line) or len(norm(line)) < 2:
             continue
         en = match_tail(line, names)
+        if en:
+            form = next((f for f in (form_of(x) for x in lines[i+1:i+3]) if f), "")
+            en = pick_form(en, form)
         if en and en not in baits:
             baits.append(en)
     return baits
