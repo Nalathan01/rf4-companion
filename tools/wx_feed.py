@@ -12,19 +12,19 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
-from PIL import Image, ImageOps
+from PIL import Image, ImageDraw, ImageOps
 from scipy import ndimage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
-VERSION = 5
+VERSION = 6
 WORKERS = 3
 BUDGET = 540
 MIRROR = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/spots.json.gz"
 CJK = re.compile(r"[一-鿿]")
 HEAD = re.compile(r"^(安装|钓组)|修改")
 SKIP = re.compile(r"[:：+＋]")
-LABEL = re.compile(r"^(基.?料|诱.{1,2}添加剂|添加剂|增香剂|香料|(pop-?up)?香.{0,2}成饵)", re.I)
+LABEL = re.compile(r"^(.?基.?.?料|.{1,3}添.{1,2}剂|添加剂|增香剂|.?香料|真料|(pop-?up)?香.{0,2}成饵)", re.I)
 CRUSHED = re.compile(r"[\(（]?(?<!磨)碎的[\)）]?")
 OCR_FIX = {"蛋糖": "蛋糕", "王米": "玉米", "磨砻": "磨碎"}
 
@@ -60,7 +60,9 @@ def candidates():
     for k in keys:
         zh = (game["names"].get(k) or {}).get("zh") or ""
         if CJK.search(zh):
-            baits.setdefault(norm(zh), k)
+            old = baits.get(norm(zh))
+            if old is None or ("Pellets" in old and "Pellets" not in k):
+                baits[norm(zh)] = k
         if len(norm(k)) >= 6:
             baits.setdefault(norm(k), k)
     dips = json.load(open(os.path.join(ROOT, "data", "dips.json"), encoding="utf-8"))
@@ -83,7 +85,8 @@ def match_tail(line, names):
             if cj == k:
                 best.append((0, -1, k, en))
             continue
-        if any(c not in cj for c in CJK.findall(k)):
+        miss = [c for c in CJK.findall(k) if c not in cj]
+        if miss and (len(miss) > 1 or len(k) < 6 or miss[0] != k[-1] or "".join(CJK.findall(k))[:-1] not in cj):
             continue
         kc = "".join(CJK.findall(k))
         i = s.rfind(kc)
@@ -103,7 +106,7 @@ def match_tail(line, names):
         return None
     best.sort()
     d, nl, k, en = best[0]
-    if d > max(1, len(k) // 5):
+    if d > max(1, len(k) // (3 if len(k) >= 6 else 5)):
         return None
     for o in best[1:]:
         if o[0] != d or o[1] != nl:
@@ -127,9 +130,9 @@ def ocr(img, psm):
     return lines
 
 
-def prepare(im):
+def prepare(im, target=2000.0):
     g = ImageOps.invert(ImageOps.grayscale(im))
-    f = min(3.0, 2000.0 / g.width)
+    f = min(4.0, target / g.width)
     return g.resize((int(g.width * f), int(g.height * f)), Image.LANCZOS)
 
 
@@ -141,19 +144,37 @@ def photo(im, blur):
     return Image.fromarray(np.where(g-ndimage.uniform_filter(g, 61) > 18, 0, 255).astype(np.uint8))
 
 
-def find_box(im, thr=28, smooth=1):
+def find_boxes(im, thr=28, smooth=1):
     a = ndimage.uniform_filter(np.asarray(im).max(axis=2).astype(np.float32), smooth)[::4, ::4] < thr
     lab, _ = ndimage.label(a)
-    best = None
+    found = []
     for i, sl in enumerate(ndimage.find_objects(lab), 1):
         if sl is None:
             continue
         ys, xs = sl
         hh, ww = ys.stop-ys.start, xs.stop-xs.start
         n = int((lab[sl] == i).sum())
-        if n / (hh * ww) > 0.55 and ww > a.shape[1] / 12 and hh > a.shape[0] / 8 and (best is None or n > best[0]):
-            best = (n, xs.start * 4, ys.start * 4, xs.stop * 4, ys.stop * 4)
-    return best
+        if n / (hh * ww) > 0.55 and ww > a.shape[1] / 12 and hh > a.shape[0] / 8:
+            found.append((n, xs.start * 4, ys.start * 4, xs.stop * 4, ys.stop * 4))
+    return sorted(found, reverse=True)
+
+
+def find_box(im, thr=28, smooth=1):
+    found = find_boxes(im, thr, smooth)
+    return found[0] if found else None
+
+
+def box_feed(im, box, feed_names):
+    gray = ImageOps.invert(ImageOps.grayscale(im.crop(box[1:])))
+    for limit, width, psm in ((3.0, 1800.0, 4), (5.0, 2400.0, 6)):
+        f = min(limit, width / gray.width)
+        crop = gray.resize((int(gray.width * f), int(gray.height * f)), Image.LANCZOS)
+        feed = feed_from_lines(ocr(crop, psm), feed_names)
+        if feed:
+            right = crop.crop((int(crop.width * 0.5), 0, crop.width, crop.height))
+            feed += [en for en in (match_tail(x, feed_names) for x in ocr(right, 6)) if en and en not in feed]
+            return feed
+    return []
 
 
 def feed_from_lines(lines, names):
@@ -161,7 +182,7 @@ def feed_from_lines(lines, names):
     inside = False
     for line in lines:
         rest = LABEL.sub("", CRUSHED.sub("", line))
-        if line.startswith("类型") or (LABEL.match(line) and len(norm(rest)) < 2):
+        if re.match(r"^类.{0,2}[:：]?$", line) or line.startswith("类型") or (LABEL.match(line) and len(norm(rest)) < 2):
             inside = True
             continue
         if not inside:
@@ -194,20 +215,18 @@ def baits_from_lines(lines, names):
 def read_image(data, feed_names, bait_names):
     im = Image.open(io.BytesIO(data)).convert("RGB")
     feed, baits = [], []
-    box = find_box(im)
-    if box:
-        crop = ImageOps.invert(ImageOps.grayscale(im.crop(box[1:])))
-        f = min(3.0, 1800.0 / crop.width)
-        crop = crop.resize((int(crop.width * f), int(crop.height * f)), Image.LANCZOS)
-        feed = feed_from_lines(ocr(crop, 4), feed_names)
-        if feed:
-            right = crop.crop((int(crop.width * 0.5), 0, crop.width, crop.height))
-            feed += [en for en in (match_tail(x, feed_names) for x in ocr(right, 6)) if en and en not in feed]
+    masked = im.copy()
+    draw = ImageDraw.Draw(masked)
+    for box in find_boxes(im)[:3]:
+        got = box_feed(im, box, feed_names)
+        if got:
+            feed += [x for x in got if x not in feed]
+            draw.rectangle(box[1:], fill=(70, 70, 70))
+    lines = ocr(prepare(masked), 6)
+    baits = baits_from_lines(lines, bait_names)
+    baits += [x for x in baits_from_lines(ocr(prepare(masked, 3200.0), 6), bait_names) if x not in baits]
     if not feed:
-        lines = ocr(prepare(im), 6)
-        baits = baits_from_lines(lines, bait_names)
-        if not baits:
-            feed = feed_from_lines(lines, feed_names)
+        feed = feed_from_lines(lines, feed_names)
     if feed or baits:
         return feed, baits, False
     reads = [ocr(photo(im, b), 6) for b in (1.5, 2.5)]
