@@ -17,6 +17,7 @@ internal static class Updater
     private static string assetUrl;
     private static string assetSha;
     private static string notes;
+    private static string currentNotes;
 
     public static string Available
     {
@@ -26,6 +27,11 @@ internal static class Updater
     public static string Notes
     {
         get { return notes ?? ""; }
+    }
+
+    public static string CurrentNotes
+    {
+        get { return currentNotes ?? ""; }
     }
 
     public static string CurrentText
@@ -83,6 +89,7 @@ internal static class Updater
         Version v;
         if (string.IsNullOrEmpty(tag) || !Version.TryParse(tag.TrimStart('v', 'V'), out v)) return;
         v = Short(v);
+        if (v == Short(Assembly.GetExecutingAssembly().GetName().Version)) currentNotes = AppEnv.GetString(rel, "body");
         if (v <= Short(Assembly.GetExecutingAssembly().GetName().Version)) return;
         foreach (object o in AppEnv.GetList(rel, "assets"))
         {
