@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RF4 Companion Spots</title>
+<link rel="icon" href="avatar.png">
+<style>
+:root{--bg:#161b20;--card:#1f262d;--fg:#e8ecf0;--mut:#8a96a3;--blue:#52aad0;--yel:#f0c428;--line:#2a323a}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 "Segoe UI",system-ui,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;gap:16px;align-items:center;margin-bottom:8px}
+header img{width:72px;height:72px;border-radius:50%}
+h1{font-size:26px;margin:0}h1 span{color:var(--blue)}
+.sub{color:var(--mut);margin:0}
+.lang{margin:16px 0 24px;display:flex;gap:8px}
+.lang button{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font:inherit}
+.lang button.on{border-color:var(--blue);color:var(--blue)}
+h2{font-size:19px;margin:32px 0 10px}
+ul{padding-left:20px;margin:0}li{margin:4px 0}
+.step{background:var(--card);border-radius:10px;padding:16px 18px;margin:12px 0;display:flex;gap:14px}
+.num{flex:none;width:32px;height:32px;border-radius:50%;background:var(--blue);color:var(--bg);font-weight:700;display:flex;align-items:center;justify-content:center}
+.step h3{margin:2px 0 6px;font-size:17px}
+.step ol{margin:0;padding-left:20px}
+.btn{display:inline-block;background:var(--yel);color:#161b20;font-weight:600;text-decoration:none;padding:8px 16px;border-radius:6px;margin-top:8px}
+b.ui{color:var(--yel);font-weight:600}
+.note{color:var(--mut);font-size:14px;margin-top:28px;border-top:1px solid var(--line);padding-top:14px}
+[data-l]{display:none}
+body.de [data-l=de],body.en [data-l=en]{display:revert}
+</style>
+</head>
+<body class="de">
+<div class="wrap">
+<header>
+<img src="avatar.png" alt="">
+<div><h1><span>RF4 Companion</span> Spots</h1><p class="sub" data-l="de">Ein Bot für euren Russian Fishing 4 Discord</p><p class="sub" data-l="en">A bot for your Russian Fishing 4 Discord</p></div>
+</header>
+<div class="lang"><button class="on" onclick="setL('de',this)">Deutsch</button><button onclick="setL('en',this)">English</button></div>
+
+<div data-l="de">
+<h2>Was der Bot macht</h2>
+<ul>
+<li>Er liest Angelspots aus den Kanälen, die ihr freigebt: Gewässer, Koordinaten, Clip und Fische, die Köder auch aus Setup-Screenshots.</li>
+<li>Die Spots erscheinen im kostenlosen <a href="https://nalathan.itch.io/rf4-companion" style="color:var(--blue)">RF4 Companion</a> unter Aktive Spots, mit eurem Servernamen und einem Knopf zum Beitreten.</li>
+<li>Er schreibt nichts, liest nur die freigegebenen Kanäle und speichert keine Spielernamen.</li>
+</ul>
+
+<h2>Einrichtung in 4 Schritten</h2>
+<div class="step"><div class="num">1</div><div><h3>Bot einladen</h3>
+<ol><li>Auf den Knopf klicken und euren Server auswählen.</li><li>Es werden nur zwei Rechte verlangt: <b class="ui">Kanäle ansehen</b> und <b class="ui">Nachrichtenverlauf lesen</b>.</li><li>Auf <b class="ui">Autorisieren</b> klicken.</li></ol>
+<a class="btn" href="https://discord.com/oauth2/authorize?client_id=1567133709440782386&amp;scope=bot&amp;permissions=66560">Bot einladen</a></div></div>
+<div class="step"><div class="num">2</div><div><h3>Spot-Kanäle freigeben</h3>
+<ol><li>Rechtsklick auf die Kategorie mit euren Spot-Kanälen, dann <b class="ui">Kategorie bearbeiten</b>.</li><li><b class="ui">Berechtigungen</b>, dann beim <b class="ui">+</b> den Bot <b class="ui">RF4 Companion Spots</b> hinzufügen.</li><li><b class="ui">Kanäle ansehen</b> und <b class="ui">Nachrichtenverlauf lesen</b> auf den grünen Haken stellen und speichern.</li></ol></div></div>
+<div class="step"><div class="num">3</div><div><h3>Server-Widget einschalten</h3>
+<ol><li><b class="ui">Servereinstellungen</b>, dann <b class="ui">Widget</b>.</li><li><b class="ui">Server-Widget aktivieren</b> einschalten.</li><li>Bei <b class="ui">Einladungskanal</b> einen Kanal wählen, in dem neue Leute landen sollen.</li></ol>
+<p style="margin:8px 0 0;color:var(--mut)">Darüber bekommt die App euren Servernamen und den Einladungslink. Ohne Widget steht bei euren Spots nur "Discord".</p></div></div>
+<div class="step"><div class="num">4</div><div><h3>Kurz Bescheid geben</h3>
+<p style="margin:0">Schreibt Nalathan auf Discord, welche Kanäle gelesen werden sollen. Erst danach liest der Bot dort mit.</p></div></div>
+
+<p class="note">Neue Spots tauchen etwa eine Stunde nach dem Posten in der App auf. Am besten erkennt der Bot Spots mit Koordinaten im Text (zum Beispiel 79:78), Clip und einem Setup-Screenshot. Den Bot könnt ihr jederzeit wieder vom Server werfen.</p>
+<p class="note"><a href="terms.html" style="color:var(--blue)">Nutzungsbedingungen</a> · <a href="privacy.html" style="color:var(--blue)">Datenschutz</a></p>
+</div>
+
+<div data-l="en">
+<h2>What the bot does</h2>
+<ul>
+<li>It reads fishing spots from the channels you allow: waterbody, coordinates, clip and fish, baits also from setup screenshots.</li>
+<li>The spots show up in the free <a href="https://nalathan.itch.io/rf4-companion" style="color:var(--blue)">RF4 Companion</a> under Active spots, with your server name and a join button.</li>
+<li>It never posts, only reads the channels you allow and stores no player names.</li>
+</ul>
+
+<h2>Setup in 4 steps</h2>
+<div class="step"><div class="num">1</div><div><h3>Invite the bot</h3>
+<ol><li>Click the button and pick your server.</li><li>It only asks for two permissions: <b class="ui">View Channels</b> and <b class="ui">Read Message History</b>.</li><li>Click <b class="ui">Authorize</b>.</li></ol>
+<a class="btn" href="https://discord.com/oauth2/authorize?client_id=1567133709440782386&amp;scope=bot&amp;permissions=66560">Invite bot</a></div></div>
+<div class="step"><div class="num">2</div><div><h3>Allow your spot channels</h3>
+<ol><li>Right click the category with your spot channels, then <b class="ui">Edit Category</b>.</li><li><b class="ui">Permissions</b>, then add the bot <b class="ui">RF4 Companion Spots</b> with the <b class="ui">+</b>.</li><li>Set <b class="ui">View Channels</b> and <b class="ui">Read Message History</b> to the green tick and save.</li></ol></div></div>
+<div class="step"><div class="num">3</div><div><h3>Turn on the server widget</h3>
+<ol><li><b class="ui">Server Settings</b>, then <b class="ui">Widget</b>.</li><li>Turn on <b class="ui">Enable Server Widget</b>.</li><li>Pick an <b class="ui">Invite Channel</b> where new people should land.</li></ol>
+<p style="margin:8px 0 0;color:var(--mut)">This is how the app gets your server name and invite link. Without the widget your spots only say "Discord".</p></div></div>
+<div class="step"><div class="num">4</div><div><h3>Let us know</h3>
+<p style="margin:0">Message Nalathan on Discord which channels should be read. The bot only reads them after that.</p></div></div>
+
+<p class="note">New spots show up in the app about an hour after they are posted. The bot works best with coordinates in the text (for example 79:78), the clip and a setup screenshot. You can kick the bot from your server at any time.</p>
+<p class="note"><a href="terms.html" style="color:var(--blue)">Terms of service</a> · <a href="privacy.html" style="color:var(--blue)">Privacy policy</a></p>
+</div>
+</div>
+<script>function setL(l,b){document.body.className=l;document.querySelectorAll('.lang button').forEach(x=>x.classList.toggle('on',x===b))}</script>
+</body>
+</html>
