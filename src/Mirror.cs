@@ -161,8 +161,12 @@ internal static class Mirror
             if (raw == null) continue;
             if (AppEnv.GetString(raw, "id").StartsWith("dcd:", StringComparison.Ordinal)) oldDc.Add(raw); else keep.Add(raw);
         }
-        List<object> dc = Community.All().Where(r => r.Id.StartsWith("dcd:", StringComparison.Ordinal) && Community.Plausible(r)).Select(r => (object)ExportRaw(r, null)).ToList();
+        DateTime keepFrom = DateTime.UtcNow.AddDays(-DcFeed.KeepDays);
+        List<object> dc = Community.All().Where(r => r.Id.StartsWith("dcd:", StringComparison.Ordinal) && r.Posted >= keepFrom && Community.Plausible(r)).Select(r => (object)ExportRaw(r, null)).ToList();
         Community.SaveNow();
+        string keepFile = Environment.GetEnvironmentVariable("DC_IMG_KEEP");
+        if (!string.IsNullOrEmpty(keepFile))
+            File.WriteAllLines(keepFile, dc.SelectMany(o => AppEnv.GetList((Dictionary<string, object>)o, "imgs").Cast<object>()).Select(u => u.ToString()).Where(u => u.StartsWith(DcFeed.ImgBase, StringComparison.Ordinal)).Select(u => u.Substring(DcFeed.ImgBase.Length)).ToArray());
         if (AppEnv.Json.Serialize(dc) == AppEnv.Json.Serialize(oldDc)) { AppEnv.Log("Discord", "keine Änderung"); return 0; }
         keep.AddRange(dc);
         WriteGz(outPath, gen.AddSeconds(1), keep);

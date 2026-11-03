@@ -22,6 +22,10 @@ RF4 Companion is a free Windows tool that runs next to the game. It combines the
 * **16 languages**, the same as the game.
 * **Updates itself:** new versions are downloaded from GitHub and checked by their SHA-256 hash before they replace the program.
 
+## Discord bot
+
+Run an RF4 Discord with a spot channel? The bot **RF4 Companion Spots** reads the channels you allow and brings their spots into Active spots, with your server name and a join button. It never posts. Setup takes two minutes: [guide for server admins](https://nalathan01.github.io/rf4-companion/discord-bot/).
+
 ![Active spots](docs/screenshots/1_active_spots.png)
 ![Find fish](docs/screenshots/2_find_fish.png)
 
@@ -39,7 +43,7 @@ Updating from version 1.x: run the new setup. It replaces the old version in the
 
 ## Privacy
 
-Everything stays on your PC in `%APPDATA%\RF4Companion`. No account, no tracking, no telemetry. The app downloads public data only: the anonymised weekly records archive ([rf4-companion-data](https://github.com/Nalathan01/rf4-companion-data)), public community reports, the images and text of public Telegram posts, public Discord server names and the release information on GitHub. Spot facts (waterbody, position, fish, bait, clip, cast direction and the link to the source post) are prepared every 30 minutes on GitHub so the app starts fast; post texts and images are always loaded from the original source.
+Everything stays on your PC in `%APPDATA%\RF4Companion`. No account, no tracking, no telemetry. The app downloads public data only: the anonymised weekly records archive ([rf4-companion-data](https://github.com/Nalathan01/rf4-companion-data)), public community reports, the images and text of public Telegram posts, public Discord server names and the release information on GitHub. Spot facts (waterbody, position, fish, bait, clip, cast direction and the link to the source post) are prepared every 30 minutes on GitHub so the app starts fast; post texts and images are loaded from the original source. Spots from Discord servers that invited the RF4 Companion Spots bot are prepared every 15 minutes, their screenshots are stored cropped (without chat and player name) and deleted after 30 days, see the [bot privacy policy](https://nalathan01.github.io/rf4-companion/discord-bot/privacy.html).
 
 ## Bug reports
 
@@ -52,7 +56,7 @@ Please report bugs only via [GitHub issues](https://github.com/Nalathan01/rf4-co
 ## Data sources and credits
 
 * Weekly records: official record tables on rf4game.com, archived without player names.
-* Community spots: [rf4intel.com](https://rf4intel.com), public reports from Telegram, Discord and VK.
+* Community spots: [rf4intel.com](https://rf4intel.com), public reports from Telegram, Discord and VK, and the Discord servers that invited the RF4 Companion Spots bot.
 * Spots from the Chinese WeChat community, telescopic records, trophy rarity and gear tables (rods, reels, lines, lures): [rf4.fish](https://rf4.fish) by ItsBlunty. Every spot links back to its rf4.fish page.
 * Maps, fish and item names: Russian Fishing 4 by Fishsoft.
 

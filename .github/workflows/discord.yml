@@ -42,35 +42,37 @@ jobs:
           $k = Join-Path $env:RUNNER_TEMP "deploy_key"
           [IO.File]::WriteAllText($k, $env:KEY.Replace("`r", "") + "`n")
           $env:GIT_SSH_COMMAND = "ssh -i `"$k`" -o StrictHostKeyChecking=accept-new"
+          $repo = "git@github.com:Nalathan01/rf4-companion-data.git"
           $exe = "$env:RUNNER_TEMP\app\RF4 Companion.exe"
           $out = Join-Path $env:RUNNER_TEMP "out"
           $env:DC_IMG_DIR = Join-Path $env:RUNNER_TEMP "img"
+          $env:DC_IMG_KEEP = Join-Path $env:RUNNER_TEMP "keep.txt"
           New-Item -ItemType Directory -Force $out, $env:DC_IMG_DIR | Out-Null
           for ($try = 1; $try -le 3; $try++) {
             $pub = Join-Path $env:RUNNER_TEMP "pub$try"
-            git clone -q --depth 1 -b mirror git@github.com:Nalathan01/rf4-companion-data.git $pub
+            git clone -q --depth 1 -b mirror $repo $pub
             $sha = git -C $pub rev-parse HEAD
             $p = Start-Process -FilePath $exe -ArgumentList "-DcMerge", "`"$PWD\dc-feed`"", "`"$pub\spots.json.gz`"", "`"$out\spots.json.gz`"", "-DataDir", "`"$PWD\dc-data`"" -Wait -PassThru
             Get-Content dc-data\app.log -Tail 5
             if ($p.ExitCode -eq 3) { exit 0 }
             if ($p.ExitCode -ne 0) { exit 1 }
-            if (Get-ChildItem $env:DC_IMG_DIR -File) {
-              $im = Join-Path $env:RUNNER_TEMP "dcimg"
-              if (git ls-remote --heads git@github.com:Nalathan01/rf4-companion-data.git dcimg) {
-                git clone -q --depth 1 -b dcimg git@github.com:Nalathan01/rf4-companion-data.git $im
-              } else {
-                git init -q $im; git -C $im checkout -q --orphan dcimg
-                git -C $im remote add origin git@github.com:Nalathan01/rf4-companion-data.git
-              }
-              Move-Item "$env:DC_IMG_DIR\*" $im -Force
-              git -C $im config user.name "rf4-mirror"
-              git -C $im config user.email "rf4-mirror@users.noreply.github.com"
-              git -C $im add -A
-              git -C $im commit -q -m "Discord images $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mmZ')"
-              git -C $im push -q origin dcimg
-              if ($LASTEXITCODE -ne 0) { exit 1 }
-              Remove-Item $im -Recurse -Force
+            $keep = @(Get-Content $env:DC_IMG_KEEP)
+            $im = Join-Path $env:RUNNER_TEMP "dcimg$try"
+            New-Item -ItemType Directory -Force $im | Out-Null
+            if (git ls-remote --heads $repo dcimg) {
+              $old = Join-Path $env:RUNNER_TEMP "dcimg_old$try"
+              git clone -q --depth 1 -b dcimg $repo $old
+              Get-ChildItem $old -File | Where-Object { $keep -contains $_.Name } | Copy-Item -Destination $im
             }
+            Get-ChildItem $env:DC_IMG_DIR -File | Where-Object { $keep -contains $_.Name } | Copy-Item -Destination $im -Force
+            git init -q $im
+            git -C $im checkout -q --orphan dcimg
+            git -C $im config user.name "rf4-mirror"
+            git -C $im config user.email "rf4-mirror@users.noreply.github.com"
+            git -C $im add -A
+            git -C $im commit -q --allow-empty -m "Discord images $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mmZ')"
+            git -C $im push -q --force $repo dcimg
+            if ($LASTEXITCODE -ne 0) { exit 1 }
             Copy-Item "$out\spots.json.gz" $pub -Force
             git -C $pub config user.name "rf4-mirror"
             git -C $pub config user.email "rf4-mirror@users.noreply.github.com"
@@ -87,3 +89,15 @@ jobs:
         with:
           path: dc-data
           key: discord-${{ github.run_id }}
+  next:
+    needs: discord
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: write
+    steps:
+      - run: sleep 720
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run discord.yml -R ${{ github.repository }} --ref main

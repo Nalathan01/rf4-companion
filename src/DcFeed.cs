@@ -9,6 +9,7 @@ using System.Linq;
 internal static class DcFeed
 {
     private const int Version = 3;
+    public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
     public static int Load(string dir)
