@@ -603,7 +603,8 @@
   "histRecords": "Größte offizielle Rekorde",
   "whatsNew": "Neu in dieser Version",
   "whatsNewIn": "Neu in {0}",
-  "win2w": "2 Wochen"
+  "win2w": "2 Wochen",
+  "tempAll": "Alle Temperaturen"
  },
  "en": {
   "langName": "English",
@@ -1209,7 +1210,8 @@
   "histRecords": "Biggest official records",
   "whatsNew": "New in this version",
   "whatsNewIn": "New in {0}",
-  "win2w": "2 weeks"
+  "win2w": "2 weeks",
+  "tempAll": "All temperatures"
  },
  "ru": {
   "langName": "Русский",
@@ -1812,7 +1814,8 @@
   "histRecords": "Крупнейшие официальные рекорды",
   "whatsNew": "Новое в этой версии",
   "whatsNewIn": "Новое в {0}",
-  "win2w": "2 недели"
+  "win2w": "2 недели",
+  "tempAll": "Любая температура"
  },
  "fr": {
   "langName": "Français",
@@ -2415,7 +2418,8 @@
   "histRecords": "Plus gros records officiels",
   "whatsNew": "Nouveautés de cette version",
   "whatsNewIn": "Nouveautés de la {0}",
-  "win2w": "2 semaines"
+  "win2w": "2 semaines",
+  "tempAll": "Toutes températures"
  },
  "es": {
   "langName": "Español",
@@ -3018,7 +3022,8 @@
   "histRecords": "Mayores récords oficiales",
   "whatsNew": "Novedades de esta versión",
   "whatsNewIn": "Novedades de la {0}",
-  "win2w": "2 semanas"
+  "win2w": "2 semanas",
+  "tempAll": "Todas las temperaturas"
  },
  "it": {
   "langName": "Italiano",
@@ -3621,7 +3626,8 @@
   "histRecords": "Record ufficiali più grandi",
   "whatsNew": "Novità di questa versione",
   "whatsNewIn": "Novità della {0}",
-  "win2w": "2 settimane"
+  "win2w": "2 settimane",
+  "tempAll": "Tutte le temperature"
  },
  "pl": {
   "langName": "Polski",
@@ -4224,7 +4230,8 @@
   "histRecords": "Największe oficjalne rekordy",
   "whatsNew": "Nowości w tej wersji",
   "whatsNewIn": "Nowości w {0}",
-  "win2w": "2 tygodnie"
+  "win2w": "2 tygodnie",
+  "tempAll": "Wszystkie temperatury"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -4827,7 +4834,8 @@
   "histRecords": "Maiores recordes oficiais",
   "whatsNew": "Novidades desta versão",
   "whatsNewIn": "Novidades da {0}",
-  "win2w": "2 semanas"
+  "win2w": "2 semanas",
+  "tempAll": "Todas as temperaturas"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5430,7 +5438,8 @@
   "histRecords": "Grootste officiële records",
   "whatsNew": "Nieuw in deze versie",
   "whatsNewIn": "Nieuw in {0}",
-  "win2w": "2 weken"
+  "win2w": "2 weken",
+  "tempAll": "Alle temperaturen"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6033,7 +6042,8 @@
   "histRecords": "En büyük resmi rekorlar",
   "whatsNew": "Bu sürümdeki yenilikler",
   "whatsNewIn": "{0} sürümündeki yenilikler",
-  "win2w": "2 hafta"
+  "win2w": "2 hafta",
+  "tempAll": "Tüm sıcaklıklar"
  },
  "ro": {
   "langName": "Română",
@@ -6636,7 +6646,8 @@
   "histRecords": "Cele mai mari recorduri oficiale",
   "whatsNew": "Noutăți în această versiune",
   "whatsNewIn": "Noutăți în {0}",
-  "win2w": "2 săptămâni"
+  "win2w": "2 săptămâni",
+  "tempAll": "Toate temperaturile"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7239,7 +7250,8 @@
   "histRecords": "Rekor resmi terbesar",
   "whatsNew": "Baru di versi ini",
   "whatsNewIn": "Baru di {0}",
-  "win2w": "2 minggu"
+  "win2w": "2 minggu",
+  "tempAll": "Semua suhu"
  },
  "ja": {
   "langName": "日本語",
@@ -7842,7 +7854,8 @@
   "histRecords": "最大の公式記録",
   "whatsNew": "このバージョンの新機能",
   "whatsNewIn": "{0} の新機能",
-  "win2w": "2週間"
+  "win2w": "2週間",
+  "tempAll": "すべての水温"
  },
  "ko": {
   "langName": "한국어",
@@ -8445,7 +8458,8 @@
   "histRecords": "가장 큰 공식 기록",
   "whatsNew": "이 버전의 새로운 기능",
   "whatsNewIn": "{0}의 새로운 기능",
-  "win2w": "2주"
+  "win2w": "2주",
+  "tempAll": "모든 수온"
  },
  "zh": {
   "langName": "简体中文",
@@ -9048,7 +9062,8 @@
   "histRecords": "最大官方记录",
   "whatsNew": "此版本新内容",
   "whatsNewIn": "{0} 新内容",
-  "win2w": "2 周"
+  "win2w": "2 周",
+  "tempAll": "全部水温"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -9651,6 +9666,7 @@
   "histRecords": "最大官方紀錄",
   "whatsNew": "此版本新內容",
   "whatsNewIn": "{0} 新內容",
-  "win2w": "2 週"
+  "win2w": "2 週",
+  "tempAll": "全部水溫"
  }
 }

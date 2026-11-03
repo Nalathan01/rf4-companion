@@ -242,6 +242,14 @@ internal static class PostText
         if (m.Success) o["reelSpeed"] = m.Groups[1].Value;
         m = Regex.Match(t, @"(?i)температур[а-я]*(?:\s*воды)?\s*" + Dash + @"?\s*(холодн|нормальн|тепл)");
         if (m.Success) { string v = m.Groups[1].Value.ToLowerInvariant(); o["temp"] = v == "холодн" ? "cold" : (v == "тепл" ? "warm" : "normal"); }
+        if (!o.ContainsKey("temp"))
+        {
+            m = Regex.Match(t, @"(?i)(?:wasser)?temp[a-z]*\s*" + Dash + @"?\s*(kalt|cold|normal|warm)");
+            if (m.Success) { string v = m.Groups[1].Value.ToLowerInvariant(); o["temp"] = v == "kalt" || v == "cold" ? "cold" : (v == "warm" ? "warm" : "normal"); }
+            else if (t.Contains("低温")) o["temp"] = "cold";
+            else if (t.Contains("高温")) o["temp"] = "warm";
+            else if (t.Contains("常温")) o["temp"] = "normal";
+        }
         string baitTxt = "", dipTxt = "", gbTxt = "", pvaTxt = "", comment = "";
         foreach (string line in t.Split('\n'))
         {

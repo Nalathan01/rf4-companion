@@ -328,6 +328,7 @@ dialog.sheet[open] { display: flex; }
             <button data-h="6">6 h</button><button data-h="24" class="on">24 h</button><button data-h="72">3 d</button><button data-h="168">7 d</button>
           </div>
           <select id="lakeSel"></select>
+          <select id="tempSel" style="display:none"><option value=""></option><option value="cold"></option><option value="normal"></option><option value="warm"></option></select>
           <input class="search" id="actQ" type="search" autocomplete="off" style="flex:1;min-width:140px;margin:0">
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
           <label class="chk"><input type="checkbox" id="dcChk"> <span data-t="onlyDiscordBot">Nur Discord-Community</span></label>
@@ -453,7 +454,7 @@ async function ping() {
   } catch (e) {}
 }
 async function loadActive() {
-  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + ($("dcChk").checked ? "&dc=1" : "") + ($("actQ").value.trim().length >= 2 ? "&fish=" + encodeURIComponent($("actQ").value.trim()) : ""));
+  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + ($("dcChk").checked ? "&dc=1" : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + ($("actQ").value.trim().length >= 2 ? "&fish=" + encodeURIComponent($("actQ").value.trim()) : ""));
   ACTIVE = r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
   if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
@@ -592,7 +593,7 @@ async function loadDetail() {
   if (DETAIL_KEY === key) return;
   DETAIL_KEY = key;
   let d;
-  try { d = await api("/api/spot?key=" + encodeURIComponent(key) + ($("dcChk").checked ? "&dc=1" : "")); } catch (e) { $("detail").innerHTML = ""; return; }
+  try { d = await api("/api/spot?key=" + encodeURIComponent(key) + ($("dcChk").checked ? "&dc=1" : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "")); } catch (e) { $("detail").innerHTML = ""; return; }
   if (SEL !== key) return;
   const dirs = d.dirs.length ? T("castDir", "Wurfrichtung") + ": " + d.dirs.slice(0, 3).map(x => x.dir + (x.n > 1 ? " (" + x.n + ")" : "")).join(", ") : "";
   const sum = T("catchesN", "{0} Fänge").replace("{0}", d.totalEvents) + " · " + T("reportsN", "{0} Meldungen").replace("{0}", d.totalReports);
@@ -666,7 +667,10 @@ $("lightbox").onclick = () => $("lightbox").close();
 })();
 document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => showView(b.dataset.view));
 $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS = +b.dataset.h; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadActive(); });
-$("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
+function tempOn() { return TEMP_LAKES.includes(LAKE); }
+function tempVis() { $("tempSel").style.display = tempOn() ? "" : "none"; }
+$("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; tempVis(); loadActive(); };
+$("tempSel").onchange = () => { DETAIL_KEY = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
 $("dcChk").onchange = () => { DETAIL_KEY = null; loadActive(); };
 let ACTQ_T = 0;
@@ -701,6 +705,9 @@ function findStatic() {
   w[3].textContent = T("tgtLast48", "Letzte 48 Std.");
   $("findQ").placeholder = T("findSearch", "Fisch oder Köder suchen");
   $("actQ").placeholder = T("histSearch", "Fisch suchen");
+  const ts = $("tempSel").options;
+  ts[0].textContent = T("tempAll", "Alle Temperaturen"); ts[1].textContent = T("temp_cold", "Kalt"); ts[2].textContent = T("temp_normal", "Normal"); ts[3].textContent = T("temp_warm", "Warm");
+  tempVis();
 }
 async function loadFind() {
   const seq = ++FSEQ;
@@ -844,7 +851,7 @@ function showView(v) {
 }
 function goSpot(lake, key) {
   showView("active");
-  LAKE = lake; $("lakeSel").value = lake;
+  LAKE = lake; $("lakeSel").value = lake; tempVis();
   HOURS = 72; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", +x.dataset.h === 72));
   SEL = key; loadActive();
 }
