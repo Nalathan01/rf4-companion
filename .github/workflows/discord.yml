@@ -24,7 +24,6 @@ jobs:
           key: discord-${{ github.run_id }}
           restore-keys: discord-
       - name: Read Discord
-        id: read
         shell: pwsh
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -32,18 +31,10 @@ jobs:
           New-Item -ItemType Directory -Force dc-feed, dc-data | Out-Null
           python tools/dc_feed.py dc-feed/dc_feed.json
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          $f = Get-Content dc-feed/dc_feed.json -Raw | ConvertFrom-Json
-          foreach ($r in $f.reports) { $r.PSObject.Properties.Remove("images") }
-          $key = $f.reports | ConvertTo-Json -Depth 6 -Compress
-          $old = if (Test-Path dc-data/feed.key) { Get-Content dc-data/feed.key -Raw } else { "" }
-          "changed=$([int]($key -ne $old))" >> $env:GITHUB_OUTPUT
-          Set-Content dc-feed/feed.key $key -NoNewline
       - name: Build
-        if: steps.read.outputs.changed == '1'
         shell: pwsh
         run: ./build.ps1 -OutFile "$env:RUNNER_TEMP\app\RF4 Companion.exe"
       - name: Merge into mirror
-        if: steps.read.outputs.changed == '1'
         shell: pwsh
         env:
           KEY: ${{ secrets.DATA_DEPLOY_KEY }}
@@ -60,7 +51,7 @@ jobs:
             $sha = git -C $pub rev-parse HEAD
             $p = Start-Process -FilePath $exe -ArgumentList "-DcMerge", "`"$PWD\dc-feed`"", "`"$pub\spots.json.gz`"", "`"$out\spots.json.gz`"", "-DataDir", "`"$PWD\dc-data`"" -Wait -PassThru
             Get-Content dc-data\app.log -Tail 5
-            if ($p.ExitCode -eq 3) { Copy-Item dc-feed/feed.key dc-data -Force; exit 0 }
+            if ($p.ExitCode -eq 3) { exit 0 }
             if ($p.ExitCode -ne 0) { exit 1 }
             Copy-Item "$out\spots.json.gz" $pub -Force
             git -C $pub config user.name "rf4-mirror"
@@ -69,7 +60,7 @@ jobs:
             git -C $pub add -A
             git -C $pub commit -q -m "Spiegel $(Get-Date -AsUTC -Format 'yyyy-MM-ddTHH:mmZ') Discord"
             git -C $pub push -q --force-with-lease="mirror:$sha" origin next:mirror
-            if ($LASTEXITCODE -eq 0) { Copy-Item dc-feed/feed.key dc-data -Force; exit 0 }
+            if ($LASTEXITCODE -eq 0) { exit 0 }
             Start-Sleep 20
           }
           exit 1
