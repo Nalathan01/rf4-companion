@@ -202,25 +202,33 @@ def parse(cat, guild, ch, ch_lake, m):
     return r, text, fish_fam, bait_fam, m
 
 
+def country(locale):
+    l = (locale or "").lower()
+    if not l:
+        return ""
+    return {"zh-cn": "CN", "zh-tw": "TW", "pt-br": "PT", "es-es": "ES", "es-419": "ES", "sv-se": "SE", "ja": "JP", "ko": "KR", "uk": "UA", "cs": "CZ", "da": "DK", "el": "GR", "hi": "IN", "vi": "VN"}.get(l, l.split("-")[0].upper())
+
+
 def channels(token, cfg, cat):
     for g in api("/users/@me/guilds", token) or []:
         gc = cfg.get(g["id"], {})
         cats = set(gc.get("categories", []))
         ids = set(gc.get("channels", []))
         skip = set(gc.get("exclude", []))
+        cc = country((api("/guilds/%s" % g["id"], token) or {}).get("preferred_locale"))
         chs = api("/guilds/%s/channels" % g["id"], token) or []
         names = {c["id"]: c.get("name") or "" for c in chs if c.get("type") == 4}
         for c in chs:
             if c.get("type") not in (0, 5) or c["id"] in skip:
                 continue
             if c.get("parent_id") in cats or c["id"] in ids or SPOTNAME.search(c.get("name") or "") or SPOTNAME.search(names.get(c.get("parent_id"), "")) or cat.lake_from(c.get("name") or ""):
-                yield g["id"], c
+                yield g["id"], c, cc
 
 
 def collect(token, cfg, cat, days):
     since = datetime.now(timezone.utc)-timedelta(days=days)
     out = []
-    for guild, ch in channels(token, cfg, cat):
+    for guild, ch, cc in channels(token, cfg, cat):
         ch_lake = cat.lake_from(ch["name"])
         before = None
         while True:
@@ -234,7 +242,10 @@ def collect(token, cfg, cat, days):
                     break
                 if m.get("type") not in (0, 19):
                     continue
-                out.append((ch["name"],) + parse(cat, guild, ch, ch_lake, m))
+                row = parse(cat, guild, ch, ch_lake, m)
+                if cc:
+                    row[0]["cc"] = cc
+                out.append((ch["name"],) + row)
             if stop or len(msgs) < 100:
                 break
             before = msgs[-1]["id"]
