@@ -108,15 +108,21 @@ internal static class DcFeed
         File.WriteAllBytes(tmp, b);
         try
         {
+            string latin = Environment.GetEnvironmentVariable("DC_OCR_LATIN");
             foreach (string tag in new string[] { "de-DE", "en-US", "en-GB", "ru" })
             {
-                if (!ImageOcr.Available(tag)) continue;
-                string code = TrackerParse.Code(tag);
+                if (!ImageOcr.Available(tag) || (!string.IsNullOrEmpty(latin) && tag != latin && tag != "ru")) continue;
                 OcrRead r0 = TrackerOcr.Read(tmp, tag, RectangleF.Empty, 1, false);
                 string[] lines = r0.Lines();
                 if (lines.Length == 0) continue;
-                TrackRes res = TrackerParse.Parse(lines, r0.Boxes, code);
-                if (res.Kind != "keepnet") continue;
+                TrackRes res = null;
+                string code = null;
+                foreach (string c in tag == "ru" ? new string[] { "ru" } : new string[] { "de", "en", "fr", "pl", "es", "it" })
+                {
+                    res = TrackerParse.Parse(lines, r0.Boxes, c);
+                    if (res.Kind == "keepnet") { code = c; break; }
+                }
+                if (code == null) continue;
                 OcrRead r2 = TrackerOcr.Read(tmp, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.86f), 100, false);
                 List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, DateTime.Now, new Dictionary<TrackItem, DateTime>());
                 if (items.Count == 0) items = TrackerParse.Merge(res.Items, TrackerParse.KeepnetItems(r2.Lines(), r2.Boxes, TrackerParse.Lists(code)));
