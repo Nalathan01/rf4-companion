@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 4;
+    private const int Version = 5;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -29,6 +29,7 @@ internal static class DcFeed
             string[] imgs = AppEnv.GetList(r, "images").Cast<object>().Where(x => x != null).Select(x => x.ToString()).ToArray();
             r.Remove("images");
             if (ReadImages(r, imgs)) read++;
+            if (!r.ContainsKey("x")) continue;
             raws.Add(r);
         }
         int added = Community.ApplyMirror(raws, DateTime.MinValue);
@@ -76,6 +77,11 @@ internal static class DcFeed
                     count.TryGetValue(it.Fish, out n);
                     count[it.Fish] = n + 1;
                     if (it.Weight != null && it.Weight.Value > maxW) maxW = it.Weight.Value;
+                }
+                if (!r.ContainsKey("x"))
+                {
+                    int[] pos = HudPos(b, AppEnv.GetString(r, "lake"));
+                    if (pos != null) { r["x"] = pos[0]; r["y"] = pos[1]; r["mpos"] = true; }
                 }
                 if (deg < 0)
                 {
@@ -132,6 +138,25 @@ internal static class DcFeed
         }
         finally { try { File.Delete(tmp); } catch (Exception) { } }
         return new List<TrackItem>();
+    }
+
+    private static int[] HudPos(byte[] b, string lakeId)
+    {
+        Lake lake;
+        GameData.LakeById.TryGetValue(lakeId ?? "", out lake);
+        string tag = new string[] { "en-US", "en-GB", "de-DE" }.FirstOrDefault(ImageOcr.Available);
+        if (tag == null) return null;
+        string tmp = Path.Combine(Path.GetTempPath(), "rf4dc_" + Guid.NewGuid().ToString("N") + ".png");
+        File.WriteAllBytes(tmp, b);
+        try
+        {
+            int[] p = TrackerParse.FindPos(TrackerOcr.Read(tmp, tag, new RectangleF(0.925f, 0.87f, 0.055f, 0.075f), 4, false).Lines(), lake)
+                ?? TrackerParse.FindPos(TrackerOcr.Read(tmp, tag, new RectangleF(0.91f, 0.86f, 0.08f, 0.1f), 6, true).Lines(), lake);
+            if (p == null || lake == null || !lake.HasBounds) return p;
+            bool inside = p[0] >= lake.XMin-1 && p[0] <= lake.XMax + 1 && p[1] >= Math.Min(lake.YSouth, lake.YNorth)-1 && p[1] <= Math.Max(lake.YSouth, lake.YNorth) + 1;
+            return inside ? p : null;
+        }
+        finally { try { File.Delete(tmp); } catch (Exception) { } }
     }
 
     private static bool Impossible(string fish, int? w)

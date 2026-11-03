@@ -14,11 +14,12 @@ UA = "DiscordBot (https://github.com/Nalathan01/rf4-companion, 1.0)"
 MAX_DAYS = 8
 COORD = re.compile(r"(?<![\d.,])(\d{1,3})'?\s*[:;_/]\s*(\d{1,3})(?![\d.,]*\s*(?:uhr|h\b|:))", re.I)
 COORD_DOT = re.compile(r"(?:^|koord\w*\s*:?\s*|kordi?\w*\s*:?\s*|spot\s*:?\s*|\s)(\d{2,3})[.,](\d{2,3})(?!\s*(?:kg|g|cm|m)\b)(?!\d)", re.I | re.M)
-CLIP = re.compile(r"(?:clip\w*|klipp?\w*)\s*[:=]?\s*(?:auf\s*)?(\d{1,3}(?:[.,]\d)?)\s*m?\b|(\d{1,3}(?:[.,]\d)?)\s*m\s*(?:clip|klipp?)", re.I)
+CLIP = re.compile(r"(?:clip\w*|klipp?\w*)\s*[:;=]?\s*(?:auf\s*)?(\d{1,3}(?:[.,]\d)?)\s*m?\b|(\d{1,3}(?:[.,]\d)?)\s*m\s*(?:clip|klipp?)", re.I)
+CLIP_BARE = re.compile(r"(?<![\d.,:;/])(\d{1,2}(?:[.,]\d)?)\s*m(?:eter)?\b(?!\s*(?:tief|tiefe|depth))", re.I)
 DEPTH = re.compile(r"tiefe\w*\s*[:=]?\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|m)?", re.I)
 TEMP = re.compile(r"(?:wasser)?temp\w*\s*[:=]?\s*(kalt|normal|warm|cold)", re.I)
 MENTION = re.compile(r"<[@#][&!]?\d+>|<a?:\w+:\d+>")
-ALIASES = {"elk_lake": ("elchsee",), "the_amber_lake": ("bernie",)}
+ALIASES = {"elk_lake": ("elchsee",), "the_amber_lake": ("bernie",), "norwegian_sea": ("norwegischesmeer", "norwegisch", "nordmeer")}
 GENERIC = {"fluss", "river", "lake", "lower", "untere", "rivulet"}
 SPOTNAME = re.compile(r"spot|angelpl|fangpl", re.I)
 NOT_BAIT = {"haken", "hook", "fisch", "fische"}
@@ -192,6 +193,10 @@ def parse(cat, guild, ch, ch_lake, m):
     c = CLIP.search(text)
     if c:
         r["clip"] = float((c.group(1) or c.group(2)).replace(",", "."))
+    elif not DEPTH.search(text):
+        c = CLIP_BARE.search(text)
+        if c:
+            r["clip"] = float(c.group(1).replace(",", "."))
     d = DEPTH.search(text)
     if d:
         v = float(d.group(1).replace(",", "."))
@@ -324,7 +329,7 @@ def main():
         return 0
     out = sys.argv[1] if len(sys.argv) > 1 else "dc_feed.json"
     rows = collect(token, cfg, cat, int(sys.argv[2]) if len(sys.argv) > 2 else MAX_DAYS)
-    spots = [r for _, r, *_ in rows if r["lake"] and "x" in r]
+    spots = [r for _, r, *_ in rows if r["lake"] and ("x" in r or r["images"])]
     with open(out, "w", encoding="utf-8") as fh:
         json.dump({"generated": datetime.now(timezone.utc).isoformat(), "reports": spots}, fh, ensure_ascii=False)
     print(len(rows), "Nachrichten,", len(spots), "Spots")
