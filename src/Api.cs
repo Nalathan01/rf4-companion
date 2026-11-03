@@ -139,7 +139,7 @@ internal sealed class Api
         if (path.StartsWith("/api/tracker/", StringComparison.Ordinal) && Features.Tracker) return Tracker.Command(path.Substring(13), args ?? new Dictionary<string, object>());
         switch (path)
         {
-            case "/api/init": return Init();
+            case "/api/init": Updater.CheckIfStale(); return Init();
             case "/api/lang":
                 UserStore.Set("lang", AppEnv.GetString(args, "lang"));
                 return Init();
