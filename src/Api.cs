@@ -474,6 +474,7 @@ internal sealed class Api
         string lakeFilter = q["lake"] ?? "";
         string fishFilter = q["fish"] ?? "";
         bool all = q["all"] == "1";
+        bool dc = q["dc"] == "1";
         DateTime now = DateTime.UtcNow;
         DateTime since = now.AddHours(-hours);
         List<object> rows = new List<object>();
@@ -481,7 +482,7 @@ internal sealed class Api
         {
             if (s.Last < since) continue;
             if (lakeFilter.Length > 0 && !string.Equals(s.Lake, lakeFilter, StringComparison.OrdinalIgnoreCase)) continue;
-            List<SpotEvent> recent = s.Events.Where(e => e.Last >= since).ToList();
+            List<SpotEvent> recent = s.Events.Where(e => e.Last >= since && (!dc || e.Reports.Any(r => r.Id.StartsWith("dcd:", StringComparison.Ordinal)))).ToList();
             if (recent.Count == 0) continue;
             List<Report> rr = recent.SelectMany(e => e.Reports).ToList();
             if (fishFilter.Length > 0 && !rr.Any(r => r.Fish.Contains(fishFilter))) continue;

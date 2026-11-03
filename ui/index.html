@@ -329,6 +329,7 @@ dialog.sheet[open] { display: flex; }
           </div>
           <select id="lakeSel"></select>
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
+          <label class="chk"><input type="checkbox" id="dcChk"> <span data-t="onlyDiscordBot">Nur Discord-Community</span></label>
           <label class="chk logonly"><input type="checkbox" id="ownChk" checked> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
         </div>
         <div class="cards" id="cards"></div>
@@ -451,7 +452,7 @@ async function ping() {
   } catch (e) {}
 }
 async function loadActive() {
-  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : ""));
+  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + ($("dcChk").checked ? "&dc=1" : ""));
   ACTIVE = r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
   if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
@@ -666,6 +667,7 @@ document.querySelectorAll(".nav-btn").forEach(b => b.onclick = () => showView(b.
 $("hoursSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HOURS = +b.dataset.h; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadActive(); });
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
+$("dcChk").onchange = () => loadActive();
 $("ownChk").onchange = () => drawMap();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 async function loadBrowsers() {
