@@ -64,7 +64,6 @@ internal static class Mirror
         Records.Refresh();
         Community.Sync(false);
         TgDirect.Sync(true);
-        DcFeed.Load(Environment.GetEnvironmentVariable("RF4_FISH_DIR"));
         Rf4Fish.SyncSpots(true);
         Community.QueuePosts(192);
         Wait(() => Scans.Pending, 15);
@@ -82,7 +81,8 @@ internal static class Mirror
             if (!string.IsNullOrEmpty(fd) && File.Exists(Path.Combine(fd, "wx_feed.json"))) wxFeed = AppEnv.ReadJsonFile(Path.Combine(fd, "wx_feed.json")) as Dictionary<string, object>;
         }
         catch (Exception ex) { AppEnv.Log("Spiegel", "Futter aus Bild: " + ex.Message); }
-        foreach (Report r in Community.All().Where(Community.Plausible)) outL.Add(ExportRaw(r, wxFeed));
+        foreach (Report r in Community.All().Where(Community.Plausible)) if (!r.Id.StartsWith("dcd:", StringComparison.Ordinal)) outL.Add(ExportRaw(r, wxFeed));
+        outL.AddRange(PublishedDiscord());
         Rf4Fish.SaveSetupCache();
         WriteGz(path, DateTime.UtcNow, outL);
         string dir = Path.GetDirectoryName(Path.GetFullPath(path));
@@ -96,7 +96,7 @@ internal static class Mirror
     private static Dictionary<string, object> ExportRaw(Report r, Dictionary<string, object> wxFeed)
     {
         Dictionary<string, object> raw = new Dictionary<string, object>(r.Raw);
-        raw.Remove("weight");
+        if (!r.Id.StartsWith("dcd:", StringComparison.Ordinal)) raw.Remove("weight");
         raw["fish"] = r.Fish.ToArray();
         string pk = Scans.PostKey(r.Url);
         string text = pk.Length > 0 ? Scans.Text(pk) : "";
@@ -168,6 +168,27 @@ internal static class Mirror
         WriteGz(outPath, gen.AddSeconds(1), keep);
         AppEnv.Log("Discord", "Spiegel ergänzt: " + dc.Count + " Discord-Meldungen");
         return dc.Count;
+    }
+
+    private static List<object> PublishedDiscord()
+    {
+        List<object> outL = new List<object>();
+        try
+        {
+            byte[] gz = Http.GetBytes(Url + "?t=" + DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture), 30000);
+            string json;
+            using (MemoryStream ms = new MemoryStream(gz))
+            using (GZipStream z = new GZipStream(ms, CompressionMode.Decompress))
+            using (StreamReader sr = new StreamReader(z, Encoding.UTF8)) json = sr.ReadToEnd();
+            Dictionary<string, object> d = AppEnv.Json.DeserializeObject(json) as Dictionary<string, object>;
+            foreach (object o in AppEnv.GetList(d, "reports"))
+            {
+                Dictionary<string, object> raw = o as Dictionary<string, object>;
+                if (raw != null && AppEnv.GetString(raw, "id").StartsWith("dcd:", StringComparison.Ordinal)) outL.Add(raw);
+            }
+        }
+        catch (Exception ex) { AppEnv.Log("Spiegel", "Discord übernehmen: " + ex.Message); }
+        return outL;
     }
 
     private static void WriteGz(string path, DateTime generated, List<object> reports)
