@@ -18,6 +18,8 @@ CLIP = re.compile(r"(?:clip\w*|klipp?\w*)\s*[:=]?\s*(?:auf\s*)?(\d{1,3}(?:[.,]\d
 DEPTH = re.compile(r"tiefe\w*\s*[:=]?\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|m)?", re.I)
 TEMP = re.compile(r"(?:wasser)?temp\w*\s*[:=]?\s*(kalt|normal|warm|cold)", re.I)
 MENTION = re.compile(r"<[@#][&!]?\d+>|<a?:\w+:\d+>")
+GENERIC = {"fluss", "river", "lake", "lower", "untere", "rivulet"}
+SPOTNAME = re.compile(r"spot|angelpl|fangpl", re.I)
 NOT_BAIT = {"haken", "hook", "fisch", "fische"}
 WORD = re.compile(r"[\wäöüß-]+", re.I)
 
@@ -53,6 +55,14 @@ class Catalog:
             names = {norm(l["name"].get(k) or "") for k in ("de", "en")}
             names |= {norm(re.sub(r"^(fluss|der|die|das|untere)\s+|\s+(lake|river|see)$", "", l["name"].get(k) or "", flags=re.I)) for k in ("de", "en")}
             self.lakes.append((l["id"], {n for n in names if len(n) >= 4}, l.get("bounds")))
+        words = {}
+        for l in g["lakes"]:
+            for k in ("de", "en"):
+                for w in re.split(r"[\s.-]+", l["name"].get(k) or ""):
+                    if len(w) >= 5 and w.lower() not in GENERIC:
+                        words.setdefault(norm(w), set()).add(l["id"])
+        for lid, names, _ in self.lakes:
+            names |= {w for w, ids in words.items() if ids == {lid}}
         self.bounds = {i: b for i, _, b in self.lakes}
         self.fish = {}
         self.fish_family = {}
@@ -190,19 +200,25 @@ def parse(cat, guild, ch, ch_lake, m):
     return r, text, fish_fam, bait_fam, m
 
 
-def channels(token, cfg):
-    for guild, gc in cfg.items():
+def channels(token, cfg, cat):
+    for g in api("/users/@me/guilds", token) or []:
+        gc = cfg.get(g["id"], {})
         cats = set(gc.get("categories", []))
         ids = set(gc.get("channels", []))
-        for c in api("/guilds/%s/channels" % guild, token) or []:
-            if c.get("type") in (0, 5) and (c.get("parent_id") in cats or c["id"] in ids):
-                yield guild, c
+        skip = set(gc.get("exclude", []))
+        chs = api("/guilds/%s/channels" % g["id"], token) or []
+        names = {c["id"]: c.get("name") or "" for c in chs if c.get("type") == 4}
+        for c in chs:
+            if c.get("type") not in (0, 5) or c["id"] in skip:
+                continue
+            if c.get("parent_id") in cats or c["id"] in ids or SPOTNAME.search(c.get("name") or "") or SPOTNAME.search(names.get(c.get("parent_id"), "")) or cat.lake_from(c.get("name") or ""):
+                yield g["id"], c
 
 
 def collect(token, cfg, cat, days):
     since = datetime.now(timezone.utc)-timedelta(days=days)
     out = []
-    for guild, ch in channels(token, cfg):
+    for guild, ch in channels(token, cfg, cat):
         ch_lake = cat.lake_from(ch["name"])
         before = None
         while True:
