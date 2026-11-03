@@ -26,6 +26,16 @@ internal static class DiscordInfo
         return Countries.TryGetValue(guild, out c) ? c : "";
     }
 
+    public static string[] ForReport(Report r)
+    {
+        string[] w = Lookup(r.Guild);
+        string name = AppEnv.GetString(r.Raw, "gname"), invite = AppEnv.GetString(r.Raw, "ginv");
+        if (name.Length == 0 && invite.Length == 0) return w;
+        if (name.Length == 0) name = w != null ? w[0] : "";
+        if (invite.Length == 0) invite = w != null && w.Length > 1 ? w[1] : "";
+        return name.Length == 0 ? null : new string[] { name, invite };
+    }
+
     private static void Ensure()
     {
         if (cache != null) return;

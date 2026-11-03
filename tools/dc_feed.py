@@ -220,20 +220,23 @@ def channels(token, cfg, cat):
         cats = set(gc.get("categories", []))
         ids = set(gc.get("channels", []))
         skip = set(gc.get("exclude", []))
-        cc = country((api("/guilds/%s" % g["id"], token) or {}).get("preferred_locale"))
+        meta = {"cc": country((api("/guilds/%s" % g["id"], token) or {}).get("preferred_locale")), "ginv": gc.get("invite", "")}
+        if not gc.get("hideName"):
+            meta["gname"] = g.get("name") or ""
+        meta = {k: v for k, v in meta.items() if v}
         chs = api("/guilds/%s/channels" % g["id"], token) or []
         names = {c["id"]: c.get("name") or "" for c in chs if c.get("type") == 4}
         for c in chs:
             if c.get("type") not in (0, 5) or c["id"] in skip:
                 continue
             if c.get("parent_id") in cats or c["id"] in ids or SPOTNAME.search(c.get("name") or "") or SPOTNAME.search(names.get(c.get("parent_id"), "")) or cat.lake_from(c.get("name") or ""):
-                yield g["id"], c, cc
+                yield g["id"], c, meta
 
 
 def collect(token, cfg, cat, days):
     since = datetime.now(timezone.utc)-timedelta(days=days)
     out = []
-    for guild, ch, cc in channels(token, cfg, cat):
+    for guild, ch, meta in channels(token, cfg, cat):
         ch_lake = cat.lake_from(ch["name"])
         before = None
         while True:
@@ -248,8 +251,7 @@ def collect(token, cfg, cat, days):
                 if m.get("type") not in (0, 19):
                     continue
                 row = parse(cat, guild, ch, ch_lake, m)
-                if cc:
-                    row[0]["cc"] = cc
+                row[0].update(meta)
                 out.append((ch["name"],) + row)
             if stop or len(msgs) < 100:
                 break

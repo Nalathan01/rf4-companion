@@ -24,7 +24,20 @@ internal static class DcFeed
             Dictionary<string, object> r = o as Dictionary<string, object>;
             if (r == null) continue;
             Report old = Community.Get(AppEnv.GetString(r, "id"));
-            if (old != null && AppEnv.GetDouble(old.Raw, "dv", 0) >= Version) continue;
+            if (old != null && AppEnv.GetDouble(old.Raw, "dv", 0) >= Version)
+            {
+                Dictionary<string, object> upd = new Dictionary<string, object>(old.Raw);
+                bool diff = false;
+                foreach (string k in new string[] { "cc", "gname", "ginv" })
+                {
+                    string v = AppEnv.GetString(r, k);
+                    if (v == AppEnv.GetString(upd, k)) continue;
+                    if (v.Length > 0) upd[k] = v; else upd.Remove(k);
+                    diff = true;
+                }
+                if (diff) raws.Add(upd);
+                continue;
+            }
             r["dv"] = Version;
             string[] imgs = AppEnv.GetList(r, "images").Cast<object>().Where(x => x != null).Select(x => x.ToString()).ToArray();
             r.Remove("images");

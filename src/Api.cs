@@ -379,7 +379,7 @@ internal sealed class Api
             {
                 if (seenSrc.Add(r.SourceKey))
                 {
-                    string[] dc = r.Guild.Length > 0 ? DiscordInfo.Lookup(r.Guild) : null;
+                    string[] dc = r.Guild.Length > 0 ? DiscordInfo.ForReport(r) : null;
                     src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"),
                         "invite", dc != null && dc.Length > 1 ? dc[1] : ""));
                 }
@@ -566,7 +566,7 @@ internal sealed class Api
     private static string SourceName(Report r)
     {
         if (r.Guild.Length == 0) return r.SourceLabel;
-        string[] dc = DiscordInfo.Lookup(r.Guild);
+        string[] dc = DiscordInfo.ForReport(r);
         return dc != null ? "Discord · " + dc[0] : "Discord";
     }
 
