@@ -166,7 +166,7 @@ internal static class Community
         m = Vk.Match(u);
         if (m.Success) { r.SourceKey = "vk:" + m.Groups[1].Value; r.SourceLabel = "VK"; r.Linkable = true; r.Country = "RU"; return; }
         m = Dc.Match(u);
-        if (m.Success) { r.SourceKey = "dc:" + m.Groups[2].Value; r.SourceLabel = "Discord"; r.Linkable = false; r.Guild = m.Groups[1].Value; r.Country = DiscordInfo.Country(r.Guild); return; }
+        if (m.Success) { r.SourceKey = "dc:" + m.Groups[2].Value; r.SourceLabel = "Discord"; r.Linkable = false; r.Guild = m.Groups[1].Value; r.Country = DiscordInfo.Country(r.Guild); if (r.Country.Length == 0) r.Country = AppEnv.GetString(r.Raw, "cc"); return; }
         if (r.Id.StartsWith("wx:", StringComparison.Ordinal)) { r.SourceKey = "wx"; r.SourceLabel = "WeChat · rf4.fish"; r.Linkable = true; r.Country = "CN"; return; }
         if (u.Length == 0) { r.SourceKey = "companion:" + r.Id; r.SourceLabel = "RF4 Companion"; r.Linkable = false; return; }
         r.SourceKey = "web:" + u; r.SourceLabel = "Web"; r.Linkable = true;
