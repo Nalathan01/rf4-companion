@@ -75,6 +75,7 @@ internal sealed class AppServer
         api.Shutdown();
         try { File.Delete(instFile); } catch (Exception) { }
         AppEnv.Log("App", "Beendet");
+        if (restart) CloseAppWindow(prefix);
         if (restart) Process.Start(Assembly.GetExecutingAssembly().Location, RestartArgs());
     }
 
@@ -139,6 +140,18 @@ internal sealed class AppServer
     {
         windowStart = DateTime.Now;
         window = Browser.Open(url);
+    }
+
+    private static void CloseAppWindow(string appUrl)
+    {
+        try
+        {
+            Process p = FindAppWindow(appUrl);
+            if (p == null) return;
+            p.CloseMainWindow();
+            if (!p.WaitForExit(3000)) p.Kill();
+        }
+        catch (Exception) { }
     }
 
     private static Process FindAppWindow(string appUrl)
