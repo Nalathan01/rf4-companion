@@ -88,6 +88,7 @@ internal static class Finder
         Func<RecordHit, bool> baseFilter = h => (region.Length == 0 || h.Region == region) && (table.Length == 0 || h.Table == table);
         Func<RecordHit, bool> inWin = h =>
         {
+            if (win == "2w") return h.Week == week || h.Week == prev;
             if (h.Week != week) return false;
             if (win == "reset24") return reset != DateTime.MinValue && Seen(h) < reset.AddHours(24);
             if (win == "48h") return now.Subtract(Seen(h)).TotalHours <= 48;
@@ -198,7 +199,7 @@ internal static class Finder
         res["lakeName"] = lakeObj != null ? lakeObj.Name(lang) : lake;
         res["lakes"] = lakeOrder.Select(kv => (object)AppEnv.Obj("id", kv.Key, "name", GameData.LakeById.ContainsKey(kv.Key) ? GameData.LakeById[kv.Key].Name(lang) : kv.Key,
             "n", kv.Value.N, "n48", kv.Value.N48, "lastH", Hours(now, kv.Value.Last))).ToArray();
-        res["baits"] = baits.OrderByDescending(kv => kv.Value.N48).ThenByDescending(kv => kv.Value.N).Take(20).Select(kv => (object)AppEnv.Obj(
+        res["baits"] = baits.OrderByDescending(kv => kv.Value.N48).ThenByDescending(kv => kv.Value.N).Take(40).Select(kv => (object)AppEnv.Obj(
             "name", BaitLabel(kv.Key, lang), "n", kv.Value.N, "n48", kv.Value.N48, "lastH", Hours(now, kv.Value.Last),
             "isNew", !kv.Value.Fish.Any(f => Records.SeenLastWeek(f, lake, kv.Key)),
             "firstH", reset == DateTime.MinValue ? -1 : Math.Round(Math.Max(0, kv.Value.First.Subtract(reset).TotalHours), 0),

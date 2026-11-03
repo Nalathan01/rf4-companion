@@ -294,7 +294,7 @@ dialog.sheet[open] { display: flex; }
         <div class="banner" id="resetBanner"></div>
         <input class="search" id="findQ" type="search" autocomplete="off">
         <div class="filters">
-          <div class="seg" id="winSeg"><button data-w="week" class="on"></button><button data-w="reset24"></button><button data-w="48h"></button></div>
+          <div class="seg" id="winSeg"><button data-w="week" class="on"></button><button data-w="2w"></button><button data-w="reset24"></button><button data-w="48h"></button></div>
           <select id="regionSel" style="min-width:120px"></select>
           <select id="tableSel" style="min-width:150px"></select>
         </div>
@@ -693,8 +693,9 @@ let FIND = { fish: "", lake: "", region: "", table: "", win: "week", q: "" }, FD
 function findStatic() {
   const w = $("winSeg").querySelectorAll("button");
   w[0].textContent = T("prefWinAll", "Ganze Woche");
-  w[1].textContent = T("prefWinHours", "Erste {0} Std. nach Reset").replace("{0}", 24);
-  w[2].textContent = T("tgtLast48", "Letzte 48 Std.");
+  w[1].textContent = T("win2w", "2 Wochen");
+  w[2].textContent = T("prefWinHours", "Erste {0} Std. nach Reset").replace("{0}", 24);
+  w[3].textContent = T("tgtLast48", "Letzte 48 Std.");
   $("findQ").placeholder = T("findSearch", "Fisch oder Köder suchen");
 }
 async function loadFind() {
@@ -729,8 +730,9 @@ function renderFishList() {
     (list.length ? list.map(f => `<div class="fish-row ${f.key === FIND.fish ? "sel" : ""}" data-k="${esc(f.key)}"><span>${esc(f.name)}</span><span class="n">${f.n.toLocaleString(INIT.lang)}</span></div>`).join("") : `<div class="empty">${esc(T("findNoFish", "Kein Fisch gefunden."))}</div>`);
   $("fishList").querySelectorAll(".fish-row").forEach(r => r.onclick = () => { FIND.fish = r.dataset.k; FIND.lake = ""; loadFind(); });
   const s = d.search || [];
-  $("baitHits").innerHTML = s.length ? `<div class="hdr">${esc(T("prefBaitSearch", "Köder suchen"))}</div><table class="tbl"><tr><th>${esc(T("bait", "Köder"))}</th><th class="num">${esc(T("records", "Rekorde"))}</th><th class="num">48 h</th></tr>` +
-    s.slice(0, 12).map(b => `<tr><td>${esc(b.name)}<small>${esc(b.fish.slice(0, 8).join(", "))}${b.fish.length > 8 ? " …" : ""}</small></td><td class="num">${b.n}</td><td class="num">${b.n48}</td></tr>`).join("") + `</table>` : "";
+  $("baitHits").innerHTML = "";
+  if (s.length) $("fishList").insertAdjacentHTML("beforeend", `<div class="hdr">${esc(T("prefBaitSearch", "Köder suchen"))}</div><table class="tbl"><tr><th>${esc(T("bait", "Köder"))}</th><th class="num">${esc(T("records", "Rekorde"))}</th><th class="num">48 h</th></tr>` +
+    s.slice(0, 12).map(b => `<tr><td>${esc(b.name)}<small>${esc(b.fish.slice(0, 8).join(", "))}${b.fish.length > 8 ? " …" : ""}</small></td><td class="num">${b.n}</td><td class="num">${b.n48}</td></tr>`).join("") + `</table>`);
 }
 function renderFindDetail() {
   const d = FDATA, el = $("findDetail");
