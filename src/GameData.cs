@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Globalization;
 using System.IO;
 
@@ -201,7 +202,11 @@ internal static class GameData
             if (e.TryGetValue(lang, out v) && v != null && v.ToString().Length > 0) return v.ToString();
             return en;
         }
+        string alias = Alias(en);
+        if (alias != null) return Translate(alias, lang);
         if (lang == "en") return en;
+        string variant = VariantBase(en, lang);
+        if (variant != null) return variant;
         EnsureItems();
         string[] row;
         if (itemRows.TryGetValue(en, out row))
@@ -210,6 +215,39 @@ internal static class GameData
             if (idx >= 0 && idx < row.Length && !string.IsNullOrEmpty(row[idx])) return row[idx];
         }
         return en;
+    }
+
+    private static readonly Dictionary<string, string> aliasMemo = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static readonly Dictionary<string, string> variantMemo = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    private static string Alias(string en)
+    {
+        lock (aliasMemo)
+        {
+            string a;
+            if (!aliasMemo.TryGetValue(en, out a))
+            {
+                a = Names.Keys.FirstOrDefault(k => k != en && string.Equals(k, en, StringComparison.OrdinalIgnoreCase));
+                aliasMemo[en] = a;
+            }
+            return a;
+        }
+    }
+
+    private static string VariantBase(string en, string lang)
+    {
+        string v;
+        lock (aliasMemo)
+        {
+            if (!variantMemo.TryGetValue(en, out v))
+            {
+                v = Names.Keys.FirstOrDefault(k => k.StartsWith(en + " \"", StringComparison.OrdinalIgnoreCase));
+                variantMemo[en] = v;
+            }
+        }
+        if (v == null) return null;
+        string b = System.Text.RegularExpressions.Regex.Replace(Translate(v, lang), @"\s*[""„“”«»].*$", "").Trim();
+        return b.Length > 0 ? b : null;
     }
 
     private static void EnsureItems()
