@@ -27,12 +27,6 @@ jobs:
         env:
           RF4_MIRROR_KEY: ${{ secrets.RF4_MIRROR_KEY }}
         run: python3 tools/rf4fish_fetch.py rf4fish
-      - name: Discord spots
-        continue-on-error: true
-        timeout-minutes: 5
-        env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-        run: python3 tools/dc_feed.py rf4fish/dc_feed.json
       - name: Groundbait from setup images
         continue-on-error: true
         timeout-minutes: 12
