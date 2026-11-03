@@ -18,6 +18,7 @@ internal static class Updater
     private static string assetSha;
     private static string notes;
     private static string currentNotes;
+    private static System.Threading.Timer timer;
 
     public static string Available
     {
@@ -64,6 +65,7 @@ internal static class Updater
 #if PRIVATE || FANGBUCH
         return;
 #endif
+        if (timer == null) timer = new System.Threading.Timer(delegate { CheckInBackground(); }, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
         Task.Factory.StartNew(() =>
         {
             try { Check(); }
