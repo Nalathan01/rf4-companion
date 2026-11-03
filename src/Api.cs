@@ -175,7 +175,7 @@ internal sealed class Api
                     Tracker.Process(q["file"], null);
                     return Tracker.Command("status", new Dictionary<string, object>());
                 }
-            case "/api/spot": return SpotDetail(q["key"] ?? "");
+            case "/api/spot": return SpotDetail(q["key"] ?? "", q["dc"] == "1");
             case "/api/devocr":
                 {
                     if (AppEnv.DevRoot == null) throw new AppError("unknown", path);
@@ -319,7 +319,26 @@ internal sealed class Api
         return string.Join(((char)10).ToString(), keep.ToArray()).Trim();
     }
 
-    private object SpotDetail(string key)
+    private static bool IsDc(Report r)
+    {
+        return r.Id.StartsWith("dcd:", StringComparison.Ordinal);
+    }
+
+    private static List<SpotEvent> DcEvents(IEnumerable<SpotEvent> events)
+    {
+        List<SpotEvent> outL = new List<SpotEvent>();
+        foreach (SpotEvent e in events)
+        {
+            List<Report> rr = e.Reports.Where(IsDc).ToList();
+            if (rr.Count == 0) continue;
+            DateTime last = rr.Max(r => r.Posted);
+            DateTime first = rr.Min(r => r.Posted);
+            outL.Add(new SpotEvent { FishKey = e.FishKey, Reports = rr, Last = last > DateTime.MinValue ? last : e.Last, First = first > DateTime.MinValue ? first : e.First });
+        }
+        return outL;
+    }
+
+    private object SpotDetail(string key, bool dcOnly)
     {
         string lang = Lang;
         Dictionary<string, object> strings = GameData.Strings(lang);
@@ -333,7 +352,8 @@ internal sealed class Api
         List<SpotEvent> evList = new List<SpotEvent>();
         int fetched = 0;
         Dictionary<string, int> dirs = new Dictionary<string, int>();
-        foreach (SpotEvent e in s.Events.OrderByDescending(x => x.Last).Take(60))
+        List<SpotEvent> spotEvents = dcOnly ? DcEvents(s.Events) : s.Events;
+        foreach (SpotEvent e in spotEvents.OrderByDescending(x => x.Last).Take(60))
         {
             List<object> src = new List<object>();
             HashSet<string> seenSrc = new HashSet<string>();
@@ -447,7 +467,7 @@ internal sealed class Api
         }
         return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
             "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
-            "sea", s.Mark != null, "x", s.X, "y", s.Y, "events", events, "totalEvents", s.Events.Count, "totalReports", s.Reports.Count,
+            "sea", s.Mark != null, "x", s.X, "y", s.Y, "events", events, "totalEvents", spotEvents.Count, "totalReports", dcOnly ? spotEvents.Sum(x => x.Reports.Count) : s.Reports.Count,
             "dirs", dirs.OrderByDescending(kv => kv.Value).Select(kv => (object)AppEnv.Obj("dir", kv.Key, "n", kv.Value)).ToArray());
     }
 
@@ -482,7 +502,7 @@ internal sealed class Api
         {
             if (s.Last < since) continue;
             if (lakeFilter.Length > 0 && !string.Equals(s.Lake, lakeFilter, StringComparison.OrdinalIgnoreCase)) continue;
-            List<SpotEvent> recent = s.Events.Where(e => e.Last >= since && (!dc || e.Reports.Any(r => r.Id.StartsWith("dcd:", StringComparison.Ordinal)))).ToList();
+            List<SpotEvent> recent = (dc ? DcEvents(s.Events) : s.Events).Where(e => e.Last >= since).ToList();
             if (recent.Count == 0) continue;
             List<Report> rr = recent.SelectMany(e => e.Reports).ToList();
             if (fishFilter.Length > 0 && !rr.Any(r => r.Fish.Contains(fishFilter))) continue;
@@ -521,7 +541,7 @@ internal sealed class Api
                 "key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
                 "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
                 "sea", s.Mark != null, "x", s.X, "y", s.Y, "nx", norm[0], "ny", norm[1],
-                "last", s.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(s.Last).TotalHours, 1),
+                "last", (dc ? recent.Max(e => e.Last) : s.Last).ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(dc ? recent.Max(e => e.Last) : s.Last).TotalHours, 1),
                 "catches", recent.Count, "reports", rr.Count, "score", Math.Round(score, 3),
                 "fish", Top(fish, 4, lang, fishCc), "baits", Top(baits, 3, lang, null),
                 "clip", clips.Count > 0 ? clips.OrderByDescending(kv => kv.Value).First().Key : "",
