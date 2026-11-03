@@ -19,6 +19,8 @@ internal static class Updater
     private static string notes;
     private static string currentNotes;
     private static System.Threading.Timer timer;
+    public static volatile int Progress = -1;
+    public static volatile string InstallError = "";
     private static DateTime lastCheck = DateTime.MinValue;
 
     public static string Available
@@ -115,6 +117,19 @@ internal static class Updater
         }
     }
 
+    public static void InstallAsync(Action done)
+    {
+        if (Progress >= 0) return;
+        Progress = 0;
+        InstallError = "";
+        Task.Factory.StartNew(() =>
+        {
+            try { Install(); Progress = 100; done(); }
+            catch (AppError e) { InstallError = e.Code; Progress = -1; }
+            catch (Exception e) { InstallError = e.Message; Progress = -1; }
+        });
+    }
+
     public static void Install()
     {
         if (Available == null) throw new AppError("updateNone", null);
@@ -123,10 +138,23 @@ internal static class Updater
         string old = exe + ".old";
         try
         {
-            using (WebClient wc = new WebClient())
+            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(assetUrl);
+            req.UserAgent = Agent;
+            req.Timeout = 30000;
+            req.ReadWriteTimeout = 60000;
+            using (WebResponse res = req.GetResponse())
+            using (Stream src = res.GetResponseStream())
+            using (FileStream dst = File.Create(tmp))
             {
-                wc.Headers[HttpRequestHeader.UserAgent] = Agent;
-                wc.DownloadFile(assetUrl, tmp);
+                long total = res.ContentLength, got = 0;
+                byte[] buf = new byte[81920];
+                int n;
+                while ((n = src.Read(buf, 0, buf.Length)) > 0)
+                {
+                    dst.Write(buf, 0, n);
+                    got += n;
+                    if (total > 0) Progress = (int)Math.Min(99, got * 100 / total);
+                }
             }
             string hash;
             using (SHA256 sha = SHA256.Create())
