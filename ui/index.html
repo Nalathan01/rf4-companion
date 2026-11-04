@@ -173,6 +173,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .chip .n { color: var(--muted); margin-left: 6px; font-size: 12px; }
 .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl th.sortable { cursor: pointer; user-select: none; }
+.tbl th.sortable:hover { color: var(--ink); }
 .tbl td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); color: var(--ink-2); vertical-align: top; }
 .tbl td:first-child { color: var(--ink); }
 .tbl td.num, .tbl th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -1385,26 +1387,64 @@ function relNotes(md, title) {
   if (list) out.push("</ul>");
   return out.length ? `<div style="margin-top:12px"><div class="hdr">${esc(title)}</div>${out.join("")}</div>` : "";
 }
+const LKS = {};
+function lkNum(v) {
+  const m = String(v == null ? "" : v).trim().match(/^(\d[\d.,\s]*)\s*(\S*)/);
+  if (!m) return NaN;
+  let t = m[1].replace(/\s/g, "");
+  const seps = t.match(/[.,]/g) || [];
+  if (seps.length > 1) { const k = Math.max(t.lastIndexOf("."), t.lastIndexOf(",")); t = t.slice(0, k).replace(/[.,]/g, "") + "." + t.slice(k + 1); }
+  const n = parseFloat(t.replace(",", "."));
+  return /^(kg|кг|公斤|千克|キロ|㎏|킬로)/i.test(m[2]) ? n * 1000 : n;
+}
+function lkSorted(id, list, getters) {
+  const st = LKS[id], g = st && getters[st.i];
+  if (!g) return list;
+  const empty = v => v === "" || v === null || v === undefined || v === 0;
+  return list.slice().sort((x, y) => {
+    const a = g(x), b = g(y);
+    if (empty(a) || empty(b)) return empty(a) - empty(b);
+    const na = typeof a === "number" ? a : lkNum(a), nb = typeof b === "number" ? b : lkNum(b);
+    if (!isNaN(na) && !isNaN(nb)) return (na - nb) * st.dir;
+    return String(a).localeCompare(String(b), INIT.lang, { numeric: true }) * st.dir;
+  });
+}
+function lkTh(id, i, label, cls) {
+  const st = LKS[id], on = st && st.i === i;
+  return `<th class="sortable ${cls || ""}" data-sid="${id}" data-si="${i}">${esc(label)}${on ? (st.dir > 0 ? " ▲" : " ▼") : ""}</th>`;
+}
+function lkSortBind(id, again) {
+  $("lkBody").querySelectorAll(`th[data-sid="${id}"]`).forEach(h => h.onclick = () => {
+    const i = +h.dataset.si, st = LKS[id];
+    LKS[id] = st && st.i === i ? { i, dir: -st.dir } : { i, dir: h.classList.contains("num") ? -1 : 1 };
+    again();
+  });
+}
 function lkLakes(sel) {
   const L = LOOKUP.lakes, cur = L.find(l => l.id === sel) || L.find(l => l.id === (LAKE || FIND.lake)) || L[0];
   $("lkBody").innerHTML = `<div class="lk-split"><div class="lk-list">${L.map(l => `<div class="fish-row ${l.id === cur.id ? "sel" : ""}" data-l="${l.id}"><span>${esc(l.name)}</span></div>`).join("")}</div>
     <div style="overflow-y:auto"><h2 style="margin:0 0 8px;font-family:var(--font-display)">${esc(cur.name)}</h2><p class="sub" style="color:var(--ink-2);font-size:13.5px;line-height:1.5">${esc(cur.desc)}</p>
     <div class="hdr">${esc(T("fishHere", "Fische hier"))} (${cur.fish.length})</div>
-    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th><th class="num logonly">${esc(T("ownBest", "Dein bester"))}</th></tr>
-    ${cur.fish.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num logonly">${esc(f.own)}${STAR(f)}</td></tr>`).join("")}</table></div></div>`;
+    <table class="tbl"><tr>${lkTh("lake", 0, T("fish", "Fisch"))}${lkTh("lake", 1, T("trophy", "Trophäe"), "num")}${lkTh("lake", 2, T("rare", "Seltene Trophäe"), "num")}${lkTh("lake", 3, T("ownBest", "Dein bester"), "num logonly")}</tr>
+    ${lkSorted("lake", cur.fish, [f => f.name, f => f.trophy, f => f.rare, f => f.own]).map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td><td class="num logonly">${esc(f.own)}${STAR(f)}</td></tr>`).join("")}</table></div></div>`;
   $("lkBody").querySelectorAll("[data-l]").forEach(r => r.onclick = () => lkLakes(r.dataset.l));
+  lkSortBind("lake", () => lkLakes(cur.id));
 }
 function lkTrophies(q) {
   q = q || "";
-  const list = LOOKUP.trophies.filter(f => !q || f.name.toLowerCase().includes(q.toLowerCase()));
   const ex = LOOKUP.extra;
+  const cols = [[T("fish", "Fisch"), "", f => f.name], [T("trophy", "Trophäe"), "num", f => f.trophy], [T("rare", "Seltene Trophäe"), "num", f => f.rare]]
+    .concat(ex ? [[T("rarity", "Seltenheit"), "", f => f.rarity], [T("cardValue", "Kartenwert"), "num", f => f.card], [T("stars", "Sterne"), "", f => f.stars]] : [])
+    .concat([[T("ownBest", "Dein bester"), "num logonly", f => f.own], [T("tabLakes", "Gewässer"), "", f => f.lakes.join(", ")]]);
+  const list = lkSorted("tro", LOOKUP.trophies.filter(f => !q || f.name.toLowerCase().includes(q.toLowerCase())), cols.map(c => c[2]));
   $("lkBody").innerHTML = `<input class="search" id="lkQ" type="search" value="${esc(q)}" placeholder="${esc(T("fishSearch", "Fisch suchen"))}">
-    <table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("trophy", "Trophäe"))}</th><th class="num">${esc(T("rare", "Seltene Trophäe"))}</th>${ex ? `<th>${esc(T("rarity", "Seltenheit"))}</th><th class="num">${esc(T("cardValue", "Kartenwert"))}</th><th>${esc(T("stars", "Sterne"))}</th>` : ""}<th class="num logonly">${esc(T("ownBest", "Dein bester"))}</th><th>${esc(T("tabLakes", "Gewässer"))}</th></tr>
+    <table class="tbl"><tr>${cols.map((c, i) => lkTh("tro", i, c[0], c[1])).join("")}</tr>
     ${list.map(f => `<tr><td>${esc(f.name)}</td><td class="num">${esc(f.trophy)}</td><td class="num">${esc(f.rare)}</td>${ex ? `<td>${esc(f.rarity)}</td><td class="num">${f.card ? esc(f.card.toLocaleString(INIT.lang)) : ""}</td><td class="star">${"★".repeat(f.stars || 0)}</td>` : ""}<td class="num logonly">${esc(f.own)}${STAR(f)}</td><td><small style="margin:0">${esc(f.lakes.join(", "))}</small></td></tr>`).join("")}</table>
     ${ex ? lkCredit() : ""}`;
   lkCreditBind();
   const inp = $("lkQ"); inp.focus(); inp.setSelectionRange(q.length, q.length);
   inp.oninput = () => lkTrophies(inp.value);
+  lkSortBind("tro", () => lkTrophies(inp.value));
 }
 const ITEM_KINDS = [["rods", "tabRods", "Ruten"], ["reels", "tabReels", "Rollen"], ["lines", "tabLines", "Schnüre"], ["lures", "tabLures", "Kunstköder"]];
 const ITEM_TEXT = new Set(["itName", "itType", "itBrand", "itAction", "itPower", "itBonus", "itHooks"]);
@@ -1425,16 +1465,17 @@ async function lkItems(kind, q) {
     ITEMS_CACHE[kind] = d;
   }
   const lq = q.toLowerCase();
-  const list = d.rows.filter(r => !lq || r.some(v => String(v).toLowerCase().includes(lq)));
+  const list = lkSorted("it" + kind, d.rows.filter(r => !lq || r.some(v => String(v).toLowerCase().includes(lq))), d.cols.map((c, i) => r => r[i]));
   const shown = list.slice(0, 300);
   $("lkBody").innerHTML = `<input class="search" id="lkQ" type="search" value="${esc(q)}" placeholder="${esc(T("itemSearch", "Name, Marke oder Typ suchen"))}">
     <p class="sub" style="margin:0 0 8px">${esc(T("itemsCount", "{0} Einträge").replace("{0}", list.length.toLocaleString(INIT.lang)))}${list.length > shown.length ? " · " + esc(T("itemsFirst", "die ersten {0} werden angezeigt").replace("{0}", shown.length)) : ""}</p>
-    <table class="tbl"><tr>${d.cols.map(c => `<th class="${ITEM_TEXT.has(c) ? "" : "num"}">${esc(T(c, c))}</th>`).join("")}</tr>
+    <table class="tbl"><tr>${d.cols.map((c, i) => lkTh("it" + kind, i, T(c, c), ITEM_TEXT.has(c) ? "" : "num")).join("")}</tr>
     ${shown.map(r => `<tr>${r.map((v, i) => `<td class="${ITEM_TEXT.has(d.cols[i]) ? "" : "num"}">${d.cols[i] === "itBonus" ? `<small style="margin:0">${esc(v)}</small>` : esc(v)}</td>`).join("")}</tr>`).join("")}</table>
     ${lkCredit()}`;
   lkCreditBind();
   const inp = $("lkQ"); inp.focus(); inp.setSelectionRange(q.length, q.length);
   inp.oninput = () => lkItems(kind, inp.value);
+  lkSortBind("it" + kind, () => lkItems(kind, inp.value));
 }
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
