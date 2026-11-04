@@ -459,7 +459,7 @@ async function ping() {
   } catch (e) {}
 }
 async function loadActive() {
-  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + ($("dcChk").checked ? "&dc=1" : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + ($("actQ").value.trim().length >= 2 ? "&fish=" + encodeURIComponent($("actQ").value.trim()) : ""));
+  const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + actParams());
   ACTIVE = r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
   if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
@@ -598,7 +598,7 @@ async function loadDetail() {
   if (DETAIL_KEY === key) return;
   DETAIL_KEY = key;
   let d;
-  try { d = await api("/api/spot?key=" + encodeURIComponent(key) + ($("dcChk").checked ? "&dc=1" : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "")); } catch (e) { $("detail").innerHTML = ""; return; }
+  try { d = await api("/api/spot?key=" + encodeURIComponent(key) + actParams()); } catch (e) { $("detail").innerHTML = ""; return; }
   if (SEL !== key) return;
   const dirs = d.dirs.length ? T("castDir", "Wurfrichtung") + ": " + d.dirs.slice(0, 3).map(x => x.dir + (x.n > 1 ? " (" + x.n + ")" : "")).join(", ") : "";
   const sum = T("catchesN", "{0} Fänge").replace("{0}", d.totalEvents) + " · " + T("reportsN", "{0} Meldungen").replace("{0}", d.totalReports);
@@ -678,8 +678,21 @@ $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; tempVis()
 $("tempSel").onchange = () => { DETAIL_KEY = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
 $("dcChk").onchange = () => { DETAIL_KEY = null; loadActive(); };
-let ACTQ_T = 0;
-$("actQ").oninput = () => { clearTimeout(ACTQ_T); ACTQ_T = setTimeout(loadActive, 350); };
+function actParams() {
+  const q = $("actQ").value.trim();
+  return ($("dcChk").checked ? "&dc=1" : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + (q.length >= 2 ? "&fish=" + encodeURIComponent(q) : "");
+}
+let FISHQ_T = 0;
+function setFishQ(raw) {
+  const v = raw.trim();
+  ["actQ", "histQ", "findQ"].forEach(id => { if ($(id).value.trim() !== v) $(id).value = v; });
+  HIST.q = v; FIND.q = v;
+  if (HDATA && !HDATA.loading) renderHistList();
+  if (FDATA) renderFishList();
+  clearTimeout(FISHQ_T);
+  FISHQ_T = setTimeout(() => { DETAIL_KEY = null; loadActive(); loadFind(); }, 350);
+}
+$("actQ").oninput = () => setFishQ($("actQ").value);
 $("ownChk").onchange = () => drawMap();
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 async function loadBrowsers() {
@@ -842,7 +855,7 @@ function renderHistDetail() {
   el.querySelectorAll(".chip[data-l]").forEach(c => c.onclick = () => { HIST.lake = c.dataset.l; loadHist(); });
 }
 $("histSeg").querySelectorAll("button").forEach(b => b.onclick = () => { HIST.months = +b.dataset.m; $("histSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadHist(); });
-$("histQ").oninput = () => { HIST.q = $("histQ").value.trim(); if (HDATA && !HDATA.loading) renderHistList(); };
+$("histQ").oninput = () => setFishQ($("histQ").value);
 window.RF4 = {
   api, T, esc,
   addView(id, label, html, onShow) {
@@ -1431,7 +1444,7 @@ function lkLakes(sel) {
   lkSortBind("lake", () => lkLakes(cur.id));
 }
 function lkTrophies(q) {
-  q = q || "";
+  q = q === undefined ? FIND.q : q;
   const ex = LOOKUP.extra;
   const cols = [[T("fish", "Fisch"), "", f => f.name], [T("trophy", "Trophäe"), "num", f => f.trophy], [T("rare", "Seltene Trophäe"), "num", f => f.rare]]
     .concat(ex ? [[T("rarity", "Seltenheit"), "", f => f.rarity], [T("cardValue", "Kartenwert"), "num", f => f.card], [T("stars", "Sterne"), "", f => f.stars]] : [])
@@ -1443,7 +1456,7 @@ function lkTrophies(q) {
     ${ex ? lkCredit() : ""}`;
   lkCreditBind();
   const inp = $("lkQ"); inp.focus(); inp.setSelectionRange(q.length, q.length);
-  inp.oninput = () => lkTrophies(inp.value);
+  inp.oninput = () => { setFishQ(inp.value); lkTrophies(inp.value); };
   lkSortBind("tro", () => lkTrophies(inp.value));
 }
 const ITEM_KINDS = [["rods", "tabRods", "Ruten"], ["reels", "tabReels", "Rollen"], ["lines", "tabLines", "Schnüre"], ["lures", "tabLures", "Kunstköder"]];
@@ -1479,8 +1492,7 @@ async function lkItems(kind, q) {
 }
 $("logQ").oninput = () => { LOGQ = $("logQ").value.trim(); renderLog(); };
 $("logLake").onchange = () => { LOGLAKE = $("logLake").value; renderLog(); };
-let FQT = 0;
-$("findQ").oninput = () => { FIND.q = $("findQ").value.trim(); if (FDATA) renderFishList(); clearTimeout(FQT); FQT = setTimeout(loadFind, 300); };
+$("findQ").oninput = () => setFishQ($("findQ").value);
 $("winSeg").querySelectorAll("button").forEach(b => b.onclick = () => { FIND.win = b.dataset.w; $("winSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); loadFind(); });
 $("regionSel").onchange = () => { FIND.region = $("regionSel").value; loadFind(); };
 $("tableSel").onchange = () => { FIND.table = $("tableSel").value; loadFind(); };
