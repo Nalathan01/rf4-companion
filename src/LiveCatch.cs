@@ -17,7 +17,7 @@ internal static class LiveCatch
     private static DateTime winAt = DateTime.MinValue;
     private static DateTime lastFull = DateTime.MinValue;
     private static bool cardOpen;
-    private static int cardTries;
+    private static bool cardDone;
     private static volatile string state = "off";
     private static DateTime lastCheck = DateTime.MinValue;
     private static DateTime lastKeepnet = DateTime.MinValue;
@@ -129,9 +129,8 @@ internal static class LiveCatch
             Analyze(st, hg, out card, out menu);
             if (card)
             {
-                if (!cardOpen) { cardOpen = true; cardTries = 0; }
-                if (cardTries >= 4) return;
-                cardTries++;
+                if (!cardOpen) { cardOpen = true; cardDone = false; }
+                if (cardDone) return;
                 Rectangle crop = new Rectangle((int)(w * 0.28), (int)(hg * 0.02), (int)(w * 0.44), (int)(hg * 0.15));
                 string found;
                 using (Bitmap c = full != null ? full.Clone(crop, PixelFormat.Format32bppArgb) : Grab(h, crop))
@@ -139,7 +138,7 @@ internal static class LiveCatch
                 if (found.Length == 0) return;
                 string[] p = found.Split('|');
                 Add(p[0], int.Parse(p[1], CultureInfo.InvariantCulture), DateTime.Now);
-                cardTries = 99;
+                cardDone = true;
                 return;
             }
             cardOpen = false;
@@ -210,21 +209,29 @@ internal static class LiveCatch
             if (r >= 110 && r <= 210 && Math.Abs(r-g) < 14 && Math.Abs(g-b) < 14) gray++;
         }
         menu = gray >= n * 0.85;
-        int y0 = (int)(hg * 0.115), y1 = Math.Min(st.Height-1, (int)(hg * 0.145));
+        int y0 = (int)(hg * 0.115), y1 = Math.Min(st.Height-1, (int)(hg * 0.145)), k = Math.Max(3, (int)(hg * 0.006));
         for (int y = y0; y <= y1 && !card; y++)
         {
-            int cg = 0, co = 0, cb = 0, m = 0;
-            for (int x = 0; x < st.Width; x += 2)
-            {
-                int i = y * d.Stride + x * 4, b = px[i], g = px[i + 1], r = px[i + 2];
-                m++;
-                if (g > 150 && r < 190 && b < 110 && g-r > 30) cg++;
-                else if (r > 200 && g > 120 && g < 200 && b < 80) co++;
-                else if (b > 180 && r < 130 && b-r > 80) cb++;
-            }
-            int big = (cg >= m * 0.04 ? 1 : 0) + (co >= m * 0.04 ? 1 : 0) + (cb >= m * 0.04 ? 1 : 0);
-            card = cg + co + cb >= m * 0.4 && big >= 2;
+            int[] c = Colors(px, d.Stride, st.Width, y);
+            int big = (c[0] >= c[3] * 0.04 ? 1 : 0) + (c[1] >= c[3] * 0.04 ? 1 : 0) + (c[2] >= c[3] * 0.04 ? 1 : 0);
+            if (c[0] + c[1] + c[2] < c[3] * 0.4 || big < 2) continue;
+            int[] up = Colors(px, d.Stride, st.Width, Math.Max(0, y-k)), dn = Colors(px, d.Stride, st.Width, Math.Min(st.Height-1, y + k));
+            card = up[0] + up[1] + up[2] < up[3] * 0.15 && dn[0] + dn[1] + dn[2] < dn[3] * 0.15;
         }
+    }
+
+    private static int[] Colors(byte[] px, int stride, int width, int y)
+    {
+        int cg = 0, co = 0, cb = 0, m = 0;
+        for (int x = 0; x < width; x += 2)
+        {
+            int i = y * stride + x * 4, b = px[i], g = px[i + 1], r = px[i + 2];
+            m++;
+            if (g > 150 && r < 190 && b < 110 && g-r > 30) cg++;
+            else if (r > 200 && g > 120 && g < 200 && b < 80) co++;
+            else if (b > 180 && r < 130 && b-r > 80) cb++;
+        }
+        return new int[] { cg, co, cb, m };
     }
 
     private static void Keepnet(IntPtr h, RECT r)
