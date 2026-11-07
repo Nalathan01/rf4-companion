@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 14;
+    private const int Version = 15;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -157,6 +157,12 @@ internal static class DcFeed
 
     private static void FeedSize(string[] lines, Dictionary<string, object> r)
     {
+        if (lines.Any(l => System.Text.RegularExpressions.Regex.IsMatch(l, "(?i)MENSETZUNG|COMPOSITION|СОСТАВ")))
+            foreach (string line in lines)
+            {
+                System.Text.RegularExpressions.Match v = System.Text.RegularExpressions.Regex.Match(line.Trim(), @"^(\d{2,3})\s*(?:g|г)$");
+                if (v.Success && FeedSizes.Contains(int.Parse(v.Groups[1].Value))) { r["feedG"] = int.Parse(v.Groups[1].Value); return; }
+            }
         foreach (string line in lines)
         {
             if (line.Length > 30) continue;
@@ -197,7 +203,10 @@ internal static class DcFeed
             foreach (string tag in new string[] { "de-DE", "en-US", "en-GB", "ru" })
             {
                 if (!ImageOcr.Available(tag) || (!string.IsNullOrEmpty(latin) && tag != latin && tag != "ru")) continue;
-                OcrRead read = TrackerOcr.Read(tmp, tag, RectangleF.Empty, 1, false);
+                double zoom;
+                using (MemoryStream ms = new MemoryStream(b))
+                using (Image im = Image.FromStream(ms)) zoom = im.Width < 1000 ? 4 : 1;
+                OcrRead read = TrackerOcr.Read(tmp, tag, RectangleF.Empty, zoom, false);
                 string[] lines = read.Lines();
                 if (lines.Length == 0) continue;
                 foreach (string c in tag == "ru" ? new string[] { "ru" } : new string[] { "de", "en", "fr", "pl", "es", "it" })
