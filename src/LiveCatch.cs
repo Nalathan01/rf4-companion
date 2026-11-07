@@ -35,6 +35,8 @@ internal static class LiveCatch
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
     [DllImport("user32.dll")] private static extern bool IsWindow(IntPtr h);
+    [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(POINT p);
+    [DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr h, uint flags);
 
     private static string FilePath { get { return AppEnv.DataPath("live_catches.json"); } }
 
@@ -107,7 +109,7 @@ internal static class LiveCatch
         RECT r;
         if (!GetClientRect(h, out r) || r.Right < 400 || r.Bottom < 300) { state = "minimized"; return; }
         int w = r.Right, hg = r.Bottom;
-        bool fg = GetForegroundWindow() == h;
+        bool fg = GetForegroundWindow() == h || Visible(h, w, hg);
         fast = fg;
         if (!fg && DateTime.Now.Subtract(lastFull).TotalMilliseconds < 750) return;
         Rectangle strip = new Rectangle(0, (int)(hg * 0.05), w, (int)(hg * 0.15));
@@ -158,6 +160,20 @@ internal static class LiveCatch
             if (st != null) st.Dispose();
             if (full != null) full.Dispose();
         }
+    }
+
+    private static bool Visible(IntPtr h, int w, int hg)
+    {
+        foreach (double fx in new double[] { 0.1, 0.5, 0.9 })
+            foreach (double fy in new double[] { 0.04, 0.18 })
+            {
+                POINT p = new POINT();
+                ClientToScreen(h, ref p);
+                p.X += (int)(w * fx);
+                p.Y += (int)(hg * fy);
+                if (GetAncestor(WindowFromPoint(p), 2) != h) return false;
+            }
+        return true;
     }
 
     private static Bitmap Grab(IntPtr h, Rectangle part)
