@@ -73,7 +73,7 @@ internal static class GameData
         lock (keyCache) { string c; if (keyCache.TryGetValue(name, out c)) return c; }
         string k = name;
         string[] words = name.Split(' ');
-        for (int skip = 0; skip <= 3 && skip < words.Length-1 && k == name; skip++)
+        for (int skip = 0; skip <= 3 && (skip == 0 || skip < words.Length-1) && k == name; skip++)
         {
             string part = string.Join(" ", words, skip, words.Length-skip);
             if (skip > 0 && (Names.ContainsKey(part) || HasItem(part))) { k = part; break; }
