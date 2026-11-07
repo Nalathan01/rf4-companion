@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 16;
+    private const int Version = 17;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -66,6 +66,7 @@ internal static class DcFeed
             try { b = Http.GetBytes(imgs[i], 30000); }
             catch (Exception ex) { AppEnv.Log("Discord", "Bild: " + ex.Message); continue; }
             if (b == null) continue;
+            bool setupImg = false;
             try
             {
                 SetupDetails(b, r);
@@ -81,26 +82,28 @@ internal static class DcFeed
                         if (dip.Length > 0) r["dip"] = string.Join(" + ", dip);
                         r["mimg"] = true;
                         r["ms"] = true;
-                        baits = gotBaits = true;
-                        continue;
+                        baits = gotBaits = setupImg = true;
                     }
                 }
-                foreach (TrackItem it in Keepnet(b))
+                if (!setupImg)
                 {
-                    int n;
-                    count.TryGetValue(it.Fish, out n);
-                    count[it.Fish] = n + 1;
-                    if (it.Weight != null && it.Weight.Value > maxW) maxW = it.Weight.Value;
-                }
-                if (!r.ContainsKey("x"))
-                {
-                    int[] pos = HudPos(b, AppEnv.GetString(r, "lake"));
-                    if (pos != null) { r["x"] = pos[0]; r["y"] = pos[1]; r["mpos"] = true; }
-                }
-                if (deg < 0)
-                {
-                    DirResult dr = DirDetect.Detect(b);
-                    if (dr.Ok && dr.Deg >= 0) deg = dr.Deg;
+                    foreach (TrackItem it in Keepnet(b))
+                    {
+                        int n;
+                        count.TryGetValue(it.Fish, out n);
+                        count[it.Fish] = n + 1;
+                        if (it.Weight != null && it.Weight.Value > maxW) maxW = it.Weight.Value;
+                    }
+                    if (!r.ContainsKey("x"))
+                    {
+                        int[] pos = HudPos(b, AppEnv.GetString(r, "lake"));
+                        if (pos != null) { r["x"] = pos[0]; r["y"] = pos[1]; r["mpos"] = true; }
+                    }
+                    if (deg < 0)
+                    {
+                        DirResult dr = DirDetect.Detect(b);
+                        if (dr.Ok && dr.Deg >= 0) deg = dr.Deg;
+                    }
                 }
             }
             catch (Exception ex) { AppEnv.Log("Discord", "Auswertung: " + ex.Message); }
