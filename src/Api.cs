@@ -43,6 +43,7 @@ internal sealed class Api
                 UserStore.Load();
                 Extensions.Load();
                 if (Features.Tracker) Tracker.Start();
+                if (Features.Tracker) Overlay.Start();
                 if (Features.Log) ThreadPool.QueueUserWorkItem(delegate { Fangbuch.CleanExisting(Lang); });
                 Cloud.LoadState();
                 Scans.Load();
@@ -99,6 +100,7 @@ internal sealed class Api
     {
         stopping = true;
         if (timer != null) timer.Dispose();
+        Overlay.Stop();
     }
 
     private void Tick()
@@ -140,6 +142,8 @@ internal sealed class Api
         switch (path)
         {
             case "/api/init": Updater.CheckIfStale(); return Init();
+            case "/api/overlay": if (!Features.Tracker) break; return Overlay.Status();
+            case "/api/overlay/save": if (!Features.Tracker) break; return Overlay.Save(args ?? new Dictionary<string, object>());
             case "/api/lang":
                 UserStore.Set("lang", AppEnv.GetString(args, "lang"));
                 return Init();

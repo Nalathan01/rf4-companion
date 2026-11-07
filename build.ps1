@@ -32,6 +32,7 @@ using System.Reflection;
 
 $resources = @()
 $resources += "/resource:$(Join-Path $PSScriptRoot 'ui\index.html'),ui/index.html"
+$resources += "/resource:$(Join-Path $PSScriptRoot 'ui\overlay.html'),ui/overlay.html"
 $resources += "/resource:$(Join-Path $PSScriptRoot 'lang.json'),data/lang.json"
 foreach ($f in @("gamedata.json", "itemnames.json", "itemcats.json", "dips.json", "marine_rigs.json", "sea_marks.json")) {
     $resources += "/resource:$(Join-Path $PSScriptRoot "data\$f"),data/$f"

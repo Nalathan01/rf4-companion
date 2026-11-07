@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RF4 Companion Overlay</title>
+<style>
+html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+body { font-family: "Segoe UI", system-ui, sans-serif; color: #fff; font-size: calc(18px * var(--s, 1)); padding: 0.5em; }
+.head { font-size: 0.8em; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; margin: 0 0 0.35em 0.2em; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+.list { display: flex; flex-direction: column; gap: 0.3em; }
+.row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.6em; padding: 0.35em 0.7em; border-radius: 0.45em; background: rgba(10, 18, 28, 0.72); border-left: 0.22em solid rgba(255,255,255,0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.row.trophy { border-left-color: #f2c14e; }
+.row.rare { border-left-color: #c78bff; }
+.row.new { animation: pop 0.6s ease-out; }
+.time { font-size: 0.78em; opacity: 0.75; font-variant-numeric: tabular-nums; }
+.fish { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.right { display: flex; align-items: center; gap: 0.45em; white-space: nowrap; }
+.w { font-variant-numeric: tabular-nums; }
+.badge { font-size: 0.68em; font-weight: 700; padding: 0.12em 0.45em; border-radius: 0.3em; color: #1a1300; background: #f2c14e; text-shadow: none; }
+.rare .badge { background: #c78bff; color: #1a0630; }
+.empty { opacity: 0.7; font-size: 0.85em; padding: 0.3em 0.7em; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+@keyframes pop { from { opacity: 0; transform: translateX(-0.8em); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div class="head" id="head"></div>
+<div class="list" id="list"></div>
+<script>
+const P = new URLSearchParams(location.search);
+const size = Math.max(50, Math.min(300, parseInt(P.get("size") || "100", 10) || 100));
+document.body.style.setProperty("--s", size / 100);
+const showTitle = P.get("title") !== "0";
+const q = new URLSearchParams();
+["n", "lang", "trophy"].forEach(k => { if (P.get(k)) q.set(k, P.get(k)); });
+let last = "", known = null;
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+async function load() {
+  try {
+    const r = await fetch("/overlay/data?" + q.toString(), { cache: "no-store" });
+    if (!r.ok) return;
+    const txt = await r.text();
+    if (txt === last) return;
+    last = txt;
+    const d = JSON.parse(txt);
+    document.getElementById("head").textContent = showTitle ? d.labels.title : "";
+    document.getElementById("head").style.display = showTitle ? "" : "none";
+    const ids = new Set(d.items.map(i => i.id));
+    document.getElementById("list").innerHTML = d.items.length ? d.items.map(i =>
+      `<div class="row ${i.level}${known && !known.has(i.id) ? " new" : ""}"><span class="time">${esc(i.time)}</span><span class="fish">${esc(i.fish)}</span><span class="right"><span class="w">${esc(i.weight)}</span>${i.level ? `<span class="badge">${esc(d.labels[i.level])}</span>` : ""}</span></div>`).join("")
+      : `<div class="empty">${esc(d.labels.empty)}</div>`;
+    known = ids;
+  } catch (e) { }
+}
+load();
+setInterval(load, 3000);
+</script>
+</body>
+</html>

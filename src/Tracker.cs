@@ -614,6 +614,15 @@ internal static class Tracker
     private static void HotkeyLoop() { }
 #endif
 
+    public static List<object[]> RecentCatches()
+    {
+        lock (gate)
+        {
+            Load();
+            return L(st, "pending").Select(p => new object[] { S(p, "fish"), p["weight"] == null ? 0 : System.Convert.ToInt32(p["weight"]), Time(p["time"]) }).ToList();
+        }
+    }
+
     public static void SkipBacklog()
     {
         lock (gate) { Load(); st["since"] = Now(); Save(); }
