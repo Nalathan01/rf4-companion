@@ -256,7 +256,8 @@ internal static class Fangbuch
     {
         if (src == null || !src.ContainsKey(key)) return;
         string v = AppEnv.GetString(src, key).Trim();
-        target[key] = translate ? GameData.Untranslate(v, lang) : v;
+        string en = translate ? GameData.Untranslate(v, lang) : v;
+        target[key] = translate && key.StartsWith("bait", StringComparison.Ordinal) ? GameData.ToKey(en) : en;
     }
 
     public static object SaveCatch(Dictionary<string, object> a, string lang)
