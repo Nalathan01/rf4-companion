@@ -390,6 +390,7 @@ async function api(path, body) {
   if (!r.ok) throw new Error(j.error + (j.arg ? ": " + j.arg : ""));
   return j;
 }
+function errText(e) { const c = String(e.message || "").split(":")[0].trim(); return T(c, e.message); }
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 function ago(h) {
   if (h < 1) return T("agoMinutes", "vor {0} Min.").replace("{0}", Math.max(1, Math.round(h * 60)));
@@ -1038,7 +1039,7 @@ function renderImgs(req) {
       const f = inp.files[0]; if (!f) return;
       d.classList.add("busy");
       const r = new FileReader();
-      r.onload = async () => { try { const up = await api("/api/fbimage", { data: r.result }); IMGS[k] = up.name; if (IMG_HOOK) IMG_HOOK(k, up.name, up.analysis); } catch (e) { $("dlgErr").textContent = e.message; } renderImgs(req); };
+      r.onload = async () => { try { const up = await api("/api/fbimage", { data: r.result }); IMGS[k] = up.name; if (IMG_HOOK) IMG_HOOK(k, up.name, up.analysis); } catch (e) { $("dlgErr").textContent = errText(e); } renderImgs(req); };
       r.readAsDataURL(f);
     };
   });
@@ -1250,7 +1251,7 @@ function wizRender() {
     if (err) { $("dlgErr").textContent = err; return; }
     if (!last) { WIZ.i++; wizRender(); return; }
     try { await wizSave(); $("dlg").close(); await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } }
-    catch (e) { $("dlgErr").textContent = e.message; }
+    catch (e) { $("dlgErr").textContent = errText(e); }
   };
 }
 async function wizSave() {
@@ -1307,8 +1308,8 @@ async function catchDialog(c) {
   $("fSpot").onchange = () => { const s = LOG.spots.find(x => x.id === $("fSpot").value); if (s && s.x) { $("fX").value = s.x; $("fY").value = s.y; } };
 }
 $("dlgCancel").onclick = () => $("dlg").close();
-$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (DLG.keep) return; await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = e.message.startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
-$("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = e.message; } };
+$("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (DLG.keep) return; await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = errText(e).startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
+$("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = errText(e); } };
 $("addCatch").onclick = () => catchDialog(null);
 $("addSpotTop").onclick = () => { showView("log"); spotWizard(null); };
 $("addSpotLog").onclick = () => spotWizard(null);
@@ -1369,7 +1370,7 @@ const MENU = {
       async () => { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); },
       null);
     DLG.keep = true;
-    $("dlgForm").querySelectorAll("[data-ocr]").forEach(b => b.onclick = async () => { try { await api("/api/ocrinstall", { tag: b.dataset.ocr }); b.textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); b.disabled = true; } catch (e) { $("dlgErr").textContent = e.message.startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } });
+    $("dlgForm").querySelectorAll("[data-ocr]").forEach(b => b.onclick = async () => { try { await api("/api/ocrinstall", { tag: b.dataset.ocr }); b.textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); b.disabled = true; } catch (e) { $("dlgErr").textContent = errText(e).startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } });
   },
   async about() {
     const a = await api("/api/about", { check: true });
