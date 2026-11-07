@@ -22,7 +22,7 @@ except ImportError:
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
-VERSION = 8
+VERSION = 9
 WORKERS = 3
 BUDGET = 540
 MIRROR = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/spots.json.gz"
@@ -379,7 +379,7 @@ def read_image(data, feed_names, bait_names):
 def read_post(urls, feed_names, bait_names, start):
     if time.time()-start > BUDGET:
         return None
-    res = {"v": VERSION, "f": [], "b": []}
+    res = {"v": VERSION, "f": [], "b": [], "s": []}
     for u in urls:
         data = None
         for attempt in range(3):
@@ -398,6 +398,8 @@ def read_post(urls, feed_names, bait_names, start):
             res["p"] = 1
         res["f"] += [x for x in feed if x not in res["f"]]
         res["b"] += [x for x in baits if x not in res["b"]]
+        if baits and baits not in res["s"]:
+            res["s"].append(baits)
     return res
 
 

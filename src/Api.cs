@@ -464,6 +464,12 @@ internal sealed class Api
             }
             if (detail.ContainsKey("baitDetail") || detail.ContainsKey("groundbait")) detail.Remove("baitRaw");
             bool mixed = mixedRaw || PostText.Mixed(postText);
+            List<object> setups = new List<object>();
+            foreach (Report r in e.Reports)
+            {
+                if (setups.Count > 0) break;
+                foreach (object o in AppEnv.GetList(r.Raw, "setups")) setups.Add(string.Join(" + ", o.ToString().Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries).Select(k => GameData.Translate(k, lang)).ToArray()));
+            }
             List<string> fish = new List<string>();
             Dictionary<string, HashSet<string>> evCc = new Dictionary<string, HashSet<string>>();
             foreach (Report r in e.Reports) foreach (string f in r.Fish) { string n = GameData.Translate(f, lang); if (!fish.Contains(n)) fish.Add(n); AddCc(evCc, n, r.Country); }
@@ -474,7 +480,7 @@ internal sealed class Api
             Dictionary<string, object> eo = AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "fishCc", fish.Select(n => (object)Cc(evCc, n)).ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "postText", StripFooter(postText), "postLang", postLang, "temp", temp, "fromImage", fromImage, "mixed", mixed,
+                "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "setups", setups.ToArray(), "postText", StripFooter(postText), "postLang", postLang, "temp", temp, "fromImage", fromImage, "mixed", mixed,
                 "record", rec == null ? null : AppEnv.Obj("table", GameData.Ui(lang, "table_" + rec.Table, rec.Table), "region", rec.Region, "date", rec.Date));
             events.Add(eo);
             evObjs.Add(eo);

@@ -212,7 +212,7 @@ internal static class Fangbuch
                 "x", xy != null ? xy[0].ToString(CultureInfo.InvariantCulture) : "", "y", xy != null ? xy[1].ToString(CultureInfo.InvariantCulture) : "",
                 "fish", Tr(S(s, "fish"), lang), "bait", Tr(S(s, "bait"), lang), "bait2", Tr(S(s, "bait2"), lang), "dip", Tr(S(s, "dip"), lang),
                 "groundbait", S(s, "groundbait"), "pva", S(s, "pva"), "feedType", S(s, "feedType"), "tech", S(s, "tech"), "dist", S(s, "dist"), "depth", S(s, "depth"), "notes", S(s, "notes"),
-                "clip", S(s, "clip"), "temp", S(s, "temp"), "rig", Tr(S(s, "rig"), lang), "src", S(s, "src"), "images", Images(s),
+                "clip", S(s, "clip"), "temp", S(s, "temp"), "rig", Tr(S(s, "rig"), lang), "rigs", AppEnv.GetList(s, "rigs").Cast<object>().Select(o => { Dictionary<string, object> m = o as Dictionary<string, object>; return (object)AppEnv.Obj("rig", Tr(S(m, "rig"), lang), "bait", Tr(S(m, "bait"), lang), "bait2", Tr(S(m, "bait2"), lang), "dip", Tr(S(m, "dip"), lang)); }).ToArray(), "src", S(s, "src"), "images", Images(s),
                 "count", AppEnv.GetDouble(s, "count", 0), "minutes", AppEnv.GetDouble(s, "minutes", 0), "money", AppEnv.GetDouble(s, "money", 0),
                 "catches", catches.Count(c => S(c, "spotId") == id),
                 "nx", AppEnv.GetDouble(s, "nx", -1), "ny", AppEnv.GetDouble(s, "ny", -1)));
@@ -384,6 +384,17 @@ internal static class Fangbuch
             if (s == null) { s = new Dictionary<string, object>(); s["id"] = NewId(); spots.Add(s); }
             foreach (string k in new string[] { "lake", "name", "groundbait", "pva", "feedType", "tech", "dist", "depth", "notes", "clip", "temp", "src", "count", "minutes", "money" }) Put(s, a, k, false, lang);
             foreach (string k in new string[] { "fish", "bait", "bait2", "dip", "rig" }) Put(s, a, k, true, lang);
+            if (a.ContainsKey("rigs"))
+            {
+                List<object> rigs = new List<object>();
+                foreach (object o in AppEnv.GetList(a, "rigs"))
+                {
+                    Dictionary<string, object> src = o as Dictionary<string, object>, t = new Dictionary<string, object>();
+                    foreach (string k in new string[] { "rig", "bait", "bait2", "dip" }) Put(t, src, k, true, lang);
+                    if (S(t, "bait").Length > 0 || S(t, "rig").Length > 0) rigs.Add(t);
+                }
+                s["rigs"] = rigs;
+            }
             if (S(s, "notes").Length > NotesMax) s["notes"] = S(s, "notes").Substring(0, NotesMax);
             if (a.ContainsKey("images")) s["images"] = Images(a);
             Lake l;

@@ -138,6 +138,8 @@ internal static class Mirror
             if (wb.Length > 0) { raw["baitDetail"] = string.Join(" + ", wb); raw["mimg"] = true; raw["ms"] = true; }
         }
         if (imgFeed.Length > 0) raw["groundbait"] = string.Join(" + ", imgFeed);
+        string[] sets = wd != null ? AppEnv.GetList(wd, "s").Cast<object>().Select(o => string.Join(" + ", (o as System.Collections.IList ?? new object[0]).Cast<object>().Select(x => x.ToString()).ToArray())).Where(x => x.Length > 0).ToArray() : new string[0];
+        if (sets.Length > 1) raw["setups"] = sets;
         return raw;
     }
 
