@@ -13,8 +13,11 @@ internal static class LiveCatch
 {
     private static readonly object gate = new object();
     private static List<Dictionary<string, object>> list;
-    private static string lastKey = "";
-    private static DateTime lastAt = DateTime.MinValue;
+    private static IntPtr win = IntPtr.Zero;
+    private static DateTime winAt = DateTime.MinValue;
+    private static DateTime lastFull = DateTime.MinValue;
+    private static bool cardOpen;
+    private static int cardTries;
     private static volatile string state = "off";
     private static DateTime lastCheck = DateTime.MinValue;
     private static DateTime lastKeepnet = DateTime.MinValue;
@@ -30,6 +33,7 @@ internal static class LiveCatch
     [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr h);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
+    [DllImport("user32.dll")] private static extern bool IsWindow(IntPtr h);
 
     private static string FilePath { get { return AppEnv.DataPath("live_catches.json"); } }
 
@@ -73,21 +77,24 @@ internal static class LiveCatch
     {
         while (true)
         {
-            Thread.Sleep(1500);
-            if (!On) { state = "off"; continue; }
-            try { Tick(); } catch (Exception ex) { state = "error"; AppEnv.Log("Live", ex.Message); }
+            if (!On) { state = "off"; cardOpen = false; Thread.Sleep(1000); continue; }
+            try { Tick(); } catch (Exception ex) { state = "error"; AppEnv.Log("Live", ex.Message); Thread.Sleep(1000); }
+            Thread.Sleep(250);
         }
     }
 
     private static IntPtr GameWindow()
     {
+        if (win != IntPtr.Zero && DateTime.Now.Subtract(winAt).TotalSeconds < 5 && IsWindow(win)) return win;
+        win = IntPtr.Zero;
+        winAt = DateTime.Now;
         foreach (Process p in Process.GetProcessesByName("rf4_x64"))
         {
-            try { if (p.MainWindowHandle != IntPtr.Zero) return p.MainWindowHandle; }
+            try { if (win == IntPtr.Zero && p.MainWindowHandle != IntPtr.Zero) win = p.MainWindowHandle; }
             catch (Exception) { }
             finally { p.Dispose(); }
         }
-        return IntPtr.Zero;
+        return win;
     }
 
     private static void Tick()
@@ -97,32 +104,127 @@ internal static class LiveCatch
         if (IsIconic(h)) { state = "minimized"; return; }
         RECT r;
         if (!GetClientRect(h, out r) || r.Right < 400 || r.Bottom < 300) { state = "minimized"; return; }
-        Rectangle crop = new Rectangle((int)(r.Right * 0.28), (int)(r.Bottom * 0.02), (int)(r.Right * 0.44), (int)(r.Bottom * 0.18));
-        string[] lines = ReadLines(h, r, crop);
-        if (lines == null) { state = "noImage"; return; }
-        state = "watching";
-        lastCheck = DateTime.Now;
-        if (Regex.IsMatch(string.Join(" ", lines), "Setzkescher|Keepnet|Садок|Siatka", RegexOptions.IgnoreCase))
+        int w = r.Right, hg = r.Bottom;
+        bool fg = GetForegroundWindow() == h;
+        if (!fg && DateTime.Now.Subtract(lastFull).TotalMilliseconds < 750) return;
+        Rectangle strip = new Rectangle(0, (int)(hg * 0.05), w, (int)(hg * 0.15));
+        Bitmap full = null, st = null;
+        try
         {
-            if (DateTime.Now.Subtract(lastKeepnet).TotalSeconds >= 8) { lastKeepnet = DateTime.Now; Keepnet(h, r); }
-            return;
+            if (fg)
+            {
+                st = Grab(h, strip);
+                if (Black(st)) { st.Dispose(); st = null; }
+            }
+            if (st == null)
+            {
+                full = Full(h, w, hg);
+                lastFull = DateTime.Now;
+                if (full == null) { state = "noImage"; return; }
+                st = full.Clone(strip, PixelFormat.Format32bppArgb);
+            }
+            state = "watching";
+            lastCheck = DateTime.Now;
+            bool card, menu;
+            Analyze(st, hg, out card, out menu);
+            if (card)
+            {
+                if (!cardOpen) { cardOpen = true; cardTries = 0; }
+                if (cardTries >= 4) return;
+                cardTries++;
+                Rectangle crop = new Rectangle((int)(w * 0.28), (int)(hg * 0.02), (int)(w * 0.44), (int)(hg * 0.15));
+                string found;
+                using (Bitmap c = full != null ? full.Clone(crop, PixelFormat.Format32bppArgb) : Grab(h, crop))
+                    found = Find(TrackerOcr.Read(c, Lang, RectangleF.Empty, 2, false).Lines());
+                if (found.Length == 0) return;
+                string[] p = found.Split('|');
+                Add(p[0], int.Parse(p[1], CultureInfo.InvariantCulture), DateTime.Now);
+                cardTries = 99;
+                return;
+            }
+            cardOpen = false;
+            if (!menu || DateTime.Now.Subtract(lastKeepnet).TotalSeconds < 4) return;
+            lastKeepnet = DateTime.Now;
+            Rectangle title = new Rectangle((int)(w * 0.3), 0, (int)(w * 0.4), (int)(hg * 0.08));
+            string[] lines;
+            using (Bitmap c = full != null ? full.Clone(title, PixelFormat.Format32bppArgb) : Grab(h, title))
+                lines = TrackerOcr.Read(c, Lang, RectangleF.Empty, 2, false).Lines();
+            if (Regex.IsMatch(string.Join(" ", lines), "Setzkescher|Keepnet|Садок|Siatka", RegexOptions.IgnoreCase)) Keepnet(h, r);
         }
-        string found = Find(lines);
-        if (found.Length == 0) return;
-        Thread.Sleep(300);
-        string[] again = ReadLines(h, r, crop);
-        if (again == null || Find(again) != found) return;
-        if (found == lastKey && DateTime.Now.Subtract(lastAt).TotalMinutes < 3) { lastAt = DateTime.Now; return; }
-        lastKey = found;
-        lastAt = DateTime.Now;
-        string[] p = found.Split('|');
-        Add(p[0], int.Parse(p[1], CultureInfo.InvariantCulture), DateTime.Now);
+        finally
+        {
+            if (st != null) st.Dispose();
+            if (full != null) full.Dispose();
+        }
     }
 
-    private static string[] ReadLines(IntPtr h, RECT r, Rectangle crop)
+    private static Bitmap Grab(IntPtr h, Rectangle part)
     {
-        using (Bitmap bmp = Capture(h, r.Right, r.Bottom, crop))
-            return bmp == null ? null : TrackerOcr.Read(bmp, Lang, RectangleF.Empty, 2, false).Lines();
+        Bitmap b = new Bitmap(part.Width, part.Height, PixelFormat.Format32bppArgb);
+        POINT p = new POINT();
+        ClientToScreen(h, ref p);
+        using (Graphics g = Graphics.FromImage(b)) g.CopyFromScreen(p.X + part.X, p.Y + part.Y, 0, 0, part.Size);
+        return b;
+    }
+
+    private static Bitmap Full(IntPtr h, int w, int hg)
+    {
+        Bitmap b = new Bitmap(w, hg, PixelFormat.Format32bppArgb);
+        bool ok;
+        using (Graphics g = Graphics.FromImage(b))
+        {
+            IntPtr dc = g.GetHdc();
+            ok = PrintWindow(h, dc, 3);
+            g.ReleaseHdc(dc);
+        }
+        if (ok && !Black(b)) return b;
+        b.Dispose();
+        return null;
+    }
+
+    private static bool Black(Bitmap b)
+    {
+        for (int i = 1; i < 12; i++)
+            for (int j = 1; j < 4; j++)
+            {
+                Color c = b.GetPixel(b.Width * i / 12, b.Height * j / 4);
+                if (c.R + c.G + c.B > 9) return false;
+            }
+        return true;
+    }
+
+    private static void Analyze(Bitmap st, int hg, out bool card, out bool menu)
+    {
+        card = false;
+        menu = false;
+        Rectangle all = new Rectangle(0, 0, st.Width, st.Height);
+        BitmapData d = st.LockBits(all, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        byte[] px = new byte[d.Stride * d.Height];
+        Marshal.Copy(d.Scan0, px, 0, px.Length);
+        st.UnlockBits(d);
+        int head = Math.Min(st.Height-1, (int)(hg * 0.01)), gray = 0, n = 0;
+        for (int x = 0; x < st.Width; x += 4)
+        {
+            int i = head * d.Stride + x * 4, b = px[i], g = px[i + 1], r = px[i + 2];
+            n++;
+            if (r >= 110 && r <= 210 && Math.Abs(r-g) < 14 && Math.Abs(g-b) < 14) gray++;
+        }
+        menu = gray >= n * 0.85;
+        int y0 = (int)(hg * 0.115), y1 = Math.Min(st.Height-1, (int)(hg * 0.145));
+        for (int y = y0; y <= y1 && !card; y++)
+        {
+            int cg = 0, co = 0, cb = 0, m = 0;
+            for (int x = 0; x < st.Width; x += 2)
+            {
+                int i = y * d.Stride + x * 4, b = px[i], g = px[i + 1], r = px[i + 2];
+                m++;
+                if (g > 150 && r < 190 && b < 110 && g-r > 30) cg++;
+                else if (r > 200 && g > 120 && g < 200 && b < 80) co++;
+                else if (b > 180 && r < 130 && b-r > 80) cb++;
+            }
+            int big = (cg >= m * 0.04 ? 1 : 0) + (co >= m * 0.04 ? 1 : 0) + (cb >= m * 0.04 ? 1 : 0);
+            card = cg + co + cb >= m * 0.4 && big >= 2;
+        }
     }
 
     private static void Keepnet(IntPtr h, RECT r)
@@ -131,7 +233,7 @@ internal static class LiveCatch
         DateTime now = DateTime.Now;
         Dictionary<TrackItem, DateTime> times = new Dictionary<TrackItem, DateTime>();
         List<TrackItem> items;
-        using (Bitmap bmp = Capture(h, r.Right, r.Bottom, new Rectangle(0, 0, r.Right, r.Bottom)))
+        using (Bitmap bmp = Full(h, r.Right, r.Bottom))
         {
             if (bmp == null) return;
             items = TrackerParse.Cards(TrackerOcr.Read(bmp, Lang, new RectangleF(0.14f, 0.11f, 0.845f, 0.86f), 3, false).Boxes, code, now, times);
@@ -167,47 +269,6 @@ internal static class LiveCatch
             Save();
         }
         AppEnv.Log("Live", "Fang " + fish + "|" + grams);
-    }
-
-    private static Bitmap Capture(IntPtr h, int w, int hgt, Rectangle crop)
-    {
-        Bitmap part = new Bitmap(crop.Width, crop.Height, PixelFormat.Format32bppArgb);
-        using (Graphics g = Graphics.FromImage(part))
-        {
-            if (GetForegroundWindow() == h)
-            {
-                POINT p = new POINT();
-                ClientToScreen(h, ref p);
-                g.CopyFromScreen(p.X + crop.X, p.Y + crop.Y, 0, 0, crop.Size);
-                if (!Dark(part)) return part;
-            }
-            using (Bitmap full = new Bitmap(w, hgt, PixelFormat.Format32bppArgb))
-            {
-                using (Graphics fg = Graphics.FromImage(full))
-                {
-                    IntPtr dc = fg.GetHdc();
-                    bool ok = PrintWindow(h, dc, 3);
-                    fg.ReleaseHdc(dc);
-                    if (!ok) { part.Dispose(); return null; }
-                }
-                g.DrawImage(full, new Rectangle(0, 0, crop.Width, crop.Height), crop, GraphicsUnit.Pixel);
-            }
-            if (!Dark(part)) return part;
-        }
-        part.Dispose();
-        return null;
-    }
-
-    private static bool Dark(Bitmap b)
-    {
-        int bright = 0;
-        for (int i = 1; i < 12; i++)
-            for (int j = 1; j < 8; j++)
-            {
-                Color c = b.GetPixel(b.Width * i / 12, b.Height * j / 8);
-                if (c.R + c.G + c.B > 30) bright++;
-            }
-        return bright < 4;
     }
 
     private static string Find(string[] lines)
