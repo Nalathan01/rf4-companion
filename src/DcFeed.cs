@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 9;
+    private const int Version = 10;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -119,6 +119,7 @@ internal static class DcFeed
         }
         if (maxW > 0) r["weight"] = maxW / 1000.0;
         if (deg >= 0) r["mdeg"] = deg;
+        if (r.Remove("combo") && !r.ContainsKey("rig") && AppEnv.GetString(r, "baitDetail").IndexOf("Pop-Up", StringComparison.OrdinalIgnoreCase) < 0) r["rig"] = "Classic hair rig";
         if (urls.Count > 0) r["imgs"] = urls.ToArray();
         return gotBaits;
     }
@@ -182,6 +183,7 @@ internal static class DcFeed
                     TrackRes res = TrackerParse.Parse(lines, read.Boxes, c);
                     if (Known(res.Rig) && !r.ContainsKey("rig")) r["rig"] = GameData.ToKey(res.Rig);
                     if (!r.ContainsKey("feedG")) FeedSize(lines, r);
+                    if (lines.Any(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"(?i)K(ö|o)der\s*kombination|Bait\s*combination|Комбинация\s*наживок"))) r["combo"] = true;
                     if (res.Recipe == null && !r.ContainsKey("groundbait")) BoxMix(lines, c, r);
                     if (res.Recipe == null || r.ContainsKey("groundbait")) continue;
                     List<string> mix = new List<string>();
