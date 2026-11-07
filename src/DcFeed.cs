@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 8;
+    private const int Version = 9;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -132,6 +132,37 @@ internal static class DcFeed
         return GameData.Names.ContainsKey(k) || GameData.HasItem(k);
     }
 
+    private static void FeedSize(string[] lines, Dictionary<string, object> r)
+    {
+        foreach (string line in lines)
+        {
+            if (line.Length > 30) continue;
+            System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(line, @"(?i)(?:wicht|weight|вес|poids|peso|waga)\W*(\d{2,3})\s*(?:g|г)");
+            if (m.Success && FeedSizes.Contains(int.Parse(m.Groups[1].Value))) { r["feedG"] = int.Parse(m.Groups[1].Value); return; }
+        }
+    }
+
+    private static void BoxMix(string[] lines, string code, Dictionary<string, object> r)
+    {
+        int start = Array.FindIndex(lines, l => System.Text.RegularExpressions.Regex.IsMatch(l, "(?i)MENSETZUNG|COMPOSITION|СОСТАВ"));
+        if (start < 0) return;
+        List<string> mix = new List<string>();
+        for (int i = start + 1; i < lines.Length; i++)
+        {
+            if (System.Text.RegularExpressions.Regex.IsMatch(lines[i], "(?i)ZUSTAND|CONDITION|СОСТОЯНИЕ|KATEGORIEN|CATEGOR|verwendet")) break;
+            string[] words = lines[i].Trim().Split(' ');
+            for (int skip = 0; skip < words.Length && skip < 3; skip++)
+            {
+                string part = string.Join(" ", words, skip, words.Length-skip);
+                if (!Known(part)) continue;
+                string k = GameData.ToKey(part);
+                if (!mix.Contains(k)) mix.Add(k);
+                break;
+            }
+        }
+        if (mix.Count > 1) r["groundbait"] = string.Join(" + ", mix.ToArray());
+    }
+
     private static void SetupDetails(byte[] b, Dictionary<string, object> r)
     {
         if (r.ContainsKey("rig") && r.ContainsKey("groundbait")) return;
@@ -150,6 +181,8 @@ internal static class DcFeed
                 {
                     TrackRes res = TrackerParse.Parse(lines, read.Boxes, c);
                     if (Known(res.Rig) && !r.ContainsKey("rig")) r["rig"] = GameData.ToKey(res.Rig);
+                    if (!r.ContainsKey("feedG")) FeedSize(lines, r);
+                    if (res.Recipe == null && !r.ContainsKey("groundbait")) BoxMix(lines, c, r);
                     if (res.Recipe == null || r.ContainsKey("groundbait")) continue;
                     List<string> mix = new List<string>();
                     string basis = AppEnv.GetString(res.Recipe, "base"), aroma = AppEnv.GetString(res.Recipe, "attractant");
@@ -157,11 +190,6 @@ internal static class DcFeed
                     foreach (object o in AppEnv.GetList(res.Recipe, "additives")) if (Known(o.ToString())) mix.Add(GameData.ToKey(o.ToString()));
                     if (Known(aroma)) mix.Add(GameData.ToKey(aroma));
                     if (mix.Count > 0) r["groundbait"] = string.Join(" + ", mix.ToArray());
-                    foreach (string line in lines)
-                    {
-                        System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(line.Trim(), @"(?i)^\W*(?:Gewicht|Weight|Вес|Poids|Peso|Waga)\s*:?\s*(\d{2,3})\s*(?:g|г)\s*$");
-                        if (m.Success && FeedSizes.Contains(int.Parse(m.Groups[1].Value))) { r["feedG"] = int.Parse(m.Groups[1].Value); break; }
-                    }
                 }
             }
         }
