@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 15;
+    private const int Version = 16;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -178,7 +178,7 @@ internal static class DcFeed
         List<string> mix = new List<string>();
         for (int i = start + 1; i < lines.Length; i++)
         {
-            if (System.Text.RegularExpressions.Regex.IsMatch(lines[i], "(?i)ZUSTAND|CONDITION|СОСТОЯНИЕ|KATEGORIEN|CATEGOR|verwendet")) break;
+            if (System.Text.RegularExpressions.Regex.IsMatch(lines[i], "(?i)^(ZUSTAND|CONDITION|СОСТОЯНИЕ|KATEGORIEN|CATEGOR|Handwerk|Crafting|Kann verwendet|Basis|Zusätze|Zusatz|Aroma|Base|Additive|Основа|Добавка)")) continue;
             string[] words = lines[i].Trim().Split(' ');
             for (int skip = 0; skip < words.Length && skip < 3; skip++)
             {
