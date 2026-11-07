@@ -18,6 +18,7 @@ internal static class LiveCatch
     private static DateTime lastFull = DateTime.MinValue;
     private static bool cardOpen;
     private static bool cardDone;
+    private static DateTime cardSince;
     private static volatile bool fast;
     private static volatile string state = "off";
     private static DateTime lastCheck = DateTime.MinValue;
@@ -82,7 +83,7 @@ internal static class LiveCatch
         {
             if (!On) { state = "off"; cardOpen = false; Thread.Sleep(1000); continue; }
             try { Tick(); } catch (Exception ex) { state = "error"; AppEnv.Log("Live", ex.Message); Thread.Sleep(1000); }
-            Thread.Sleep(fast ? 50 : 250);
+            Thread.Sleep(fast ? 30 : 250);
         }
     }
 
@@ -134,8 +135,8 @@ internal static class LiveCatch
             Analyze(st, hg, out card, out menu);
             if (card)
             {
-                if (!cardOpen) { cardOpen = true; cardDone = false; }
-                if (cardDone) return;
+                if (!cardOpen) { cardOpen = true; cardDone = false; cardSince = DateTime.Now; }
+                if (cardDone || DateTime.Now.Subtract(cardSince).TotalSeconds > 4) return;
                 Rectangle crop = new Rectangle((int)(w * 0.28), (int)(hg * 0.02), (int)(w * 0.44), (int)(hg * 0.15));
                 string found;
                 using (Bitmap c = full != null ? full.Clone(crop, PixelFormat.Format32bppArgb) : Grab(h, crop))
@@ -233,7 +234,7 @@ internal static class LiveCatch
         {
             int[] c = Colors(px, d.Stride, st.Width, y);
             int big = (c[0] >= c[3] * 0.04 ? 1 : 0) + (c[1] >= c[3] * 0.04 ? 1 : 0) + (c[2] >= c[3] * 0.04 ? 1 : 0);
-            if (c[0] + c[1] + c[2] < c[3] * 0.4 || big < 2) continue;
+            if (c[0] + c[1] + c[2] < c[3] * 0.33 || big < 2) continue;
             int[] up = Colors(px, d.Stride, st.Width, Math.Max(0, y-k)), dn = Colors(px, d.Stride, st.Width, Math.Min(st.Height-1, y + k));
             card = up[0] + up[1] + up[2] < up[3] * 0.15 && dn[0] + dn[1] + dn[2] < dn[3] * 0.15;
         }
@@ -246,9 +247,9 @@ internal static class LiveCatch
         {
             int i = y * stride + x * 4, b = px[i], g = px[i + 1], r = px[i + 2];
             m++;
-            if (g > 150 && r < 190 && b < 110 && g-r > 30) cg++;
-            else if (r > 200 && g > 120 && g < 200 && b < 80) co++;
-            else if (b > 180 && r < 130 && b-r > 80) cb++;
+            if (g > 125 && b < 120 && g-r > 25) cg++;
+            else if (r > 175 && g > 100 && g < r-20 && b < 90) co++;
+            else if (b > 160 && r < 140 && b-r > 60) cb++;
         }
         return new int[] { cg, co, cb, m };
     }
