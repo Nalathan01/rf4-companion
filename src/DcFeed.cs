@@ -221,7 +221,7 @@ internal static class DcFeed
         using (MemoryStream ms = new MemoryStream(b))
         using (Image src = Image.FromStream(ms))
         {
-            int x0 = (int)(src.Width * 0.14);
+            int x0 = src.Width >= 1000 ? (int)(src.Width * 0.14) : 0;
             int w = src.Width-x0, h = src.Height;
             double s = Math.Min(1.0, 1280.0 / w);
             using (Bitmap dst = new Bitmap((int)(w * s), (int)(h * s)))
