@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 5;
+    private const int Version = 6;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -84,6 +84,7 @@ internal static class DcFeed
                         continue;
                     }
                 }
+                SetupDetails(b, r);
                 foreach (TrackItem it in Keepnet(b))
                 {
                     int n;
@@ -120,6 +121,42 @@ internal static class DcFeed
         if (deg >= 0) r["mdeg"] = deg;
         if (urls.Count > 0) r["imgs"] = urls.ToArray();
         return gotBaits;
+    }
+
+    private static void SetupDetails(byte[] b, Dictionary<string, object> r)
+    {
+        if (r.ContainsKey("rig") && r.ContainsKey("groundbait")) return;
+        string tmp = Path.Combine(Path.GetTempPath(), "rf4dc_" + Guid.NewGuid().ToString("N") + ".png");
+        File.WriteAllBytes(tmp, b);
+        try
+        {
+            string latin = Environment.GetEnvironmentVariable("DC_OCR_LATIN");
+            foreach (string tag in new string[] { "de-DE", "en-US", "en-GB", "ru" })
+            {
+                if (!ImageOcr.Available(tag) || (!string.IsNullOrEmpty(latin) && tag != latin && tag != "ru")) continue;
+                OcrRead read = TrackerOcr.Read(tmp, tag, RectangleF.Empty, 1, false);
+                string[] lines = read.Lines();
+                if (lines.Length == 0) continue;
+                foreach (string c in tag == "ru" ? new string[] { "ru" } : new string[] { "de", "en", "fr", "pl", "es", "it" })
+                {
+                    TrackRes res = TrackerParse.Parse(lines, read.Boxes, c);
+                    if (res.Rig.Length > 0 && !r.ContainsKey("rig")) r["rig"] = res.Rig;
+                    if (res.Recipe == null || r.ContainsKey("groundbait")) continue;
+                    List<string> mix = new List<string>();
+                    string basis = AppEnv.GetString(res.Recipe, "base"), aroma = AppEnv.GetString(res.Recipe, "attractant");
+                    if (basis.Length > 0) mix.Add(basis);
+                    foreach (object o in AppEnv.GetList(res.Recipe, "additives")) mix.Add(o.ToString());
+                    if (aroma.Length > 0) mix.Add(aroma);
+                    if (mix.Count > 0) r["groundbait"] = string.Join(" + ", mix.ToArray());
+                    System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(string.Join(" ", lines), @"(?i)(?:Gewicht|Weight|Вес|Poids|Peso|Waga)\D{0,8}(\d{2,3})\s*(?:g|г)\b");
+                    if (m.Success) r["feedG"] = int.Parse(m.Groups[1].Value);
+                }
+            }
+        }
+        finally
+        {
+            try { File.Delete(tmp); } catch (Exception) { }
+        }
     }
 
     private static List<TrackItem> Keepnet(byte[] b)

@@ -635,7 +635,7 @@ async function loadDetail() {
   });
 }
 const detOrder = k => { const i = Object.keys(DET).indexOf(k); return i < 0 ? 99 : i; };
-const DET = { baitDetail: "bait", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed", baitRaw: "baitOrig" };
+const DET = { feedUse: "feed", baitDetail: "bait", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed", baitRaw: "baitOrig" };
 function showImg(src) { $("lbImg").src = src; $("lightbox").showModal(); }
 $("lightbox").onclick = () => $("lightbox").close();
 (function mapInput() {

@@ -464,6 +464,13 @@ internal sealed class Api
             }
             if (detail.ContainsKey("baitDetail") || detail.ContainsKey("groundbait")) detail.Remove("baitRaw");
             bool mixed = mixedRaw || PostText.Mixed(postText);
+            foreach (Report r in e.Reports)
+            {
+                int feedG = (int)AppEnv.GetDouble(r.Raw, "feedG", 0);
+                if (feedG <= 0) continue;
+                detail["feedUse"] = (feedG >= 70 ? GameData.Ui(lang, "feedRocket", "Rakete") : "PVA") + " " + feedG.ToString(CultureInfo.InvariantCulture) + " g";
+                break;
+            }
             List<object> setups = new List<object>();
             foreach (Report r in e.Reports)
             {
