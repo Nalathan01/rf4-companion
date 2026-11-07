@@ -1001,7 +1001,7 @@ async function recipeDialog(rc) {
   if (!ITEMS) { ITEMS = await api("/api/itemnames"); $("dlItem").innerHTML = ITEMS.map(x => `<option value="${esc(x)}">`).join(""); }
   const v = rc || { type: "pva", additives: [], lakes: [] };
   const lakeId = (INIT.lakes.find(l => v.lakes.includes(l.name)) || {}).id || "";
-  const add = [0, 1, 2, 3].map(i => field("rAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.additives[i] || "", 'list="dlItem"')).join("");
+  const add = [0, 1, 2, 3].map(i => addField("rAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.additives[i])).join("");
   openDlg(rc ? T("logEditRecipe", "Rezept bearbeiten") : T("logAddRecipe", "Rezept anlegen"),
     `${field("rName", T("name", "Name"), v.name, "", true)}
      <label>${esc(T("type", "Art"))}<select id="rType">${feedTypes().map(f => `<option value="${f[0]}" ${f[0] === v.type ? "selected" : ""}>${esc(f[1])}</option>`).join("")}</select></label>
@@ -1011,7 +1011,7 @@ async function recipeDialog(rc) {
      ${add}
      ${field("rNotes", T("notes", "Notiz"), v.notes, "", true)}`,
     async () => {
-      await api("/api/recipe/save", { id: rc ? rc.id : "", name: $("rName").value, type: $("rType").value, lake: $("rLake").value, base: $("rBase").value, attractant: $("rAttr").value, additives: [0, 1, 2, 3].map(i => $("rAdd" + i).value), notes: $("rNotes").value });
+      await api("/api/recipe/save", { id: rc ? rc.id : "", name: $("rName").value, type: $("rType").value, lake: $("rLake").value, base: $("rBase").value, attractant: $("rAttr").value, additives: [0, 1, 2, 3].map(i => addVal("rAdd" + i)), notes: $("rNotes").value });
     },
     rc ? async () => { await api("/api/recipe/delete", { ids: [rc.id] }); } : null);
 }
@@ -1105,10 +1105,10 @@ function wizSteps() {
     { t: T("feed", "Futter"), hint: T("wizFeedHint", "Wie fütterst du an? Ohne Futter einfach leer lassen."),
       f: () => `${feedFields("w", v)}
         ${field("wBase", T("base", "Grundfutter"), v.rBase, 'list="dlItem"')}${field("wAttr", T("attractant", "Lockstoff"), v.rAttr, 'list="dlItem"')}
-        ${[0, 1, 2, 3].map(i => field("wAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.rAdd[i] || "", 'list="dlItem"')).join("")}`,
-      read: () => { v.feedType = $("wFeedT").value; v.pva = $("wPva").value.trim(); v.rBase = $("wBase").value.trim(); v.rAttr = $("wAttr").value.trim(); v.rAdd = [0, 1, 2, 3].map(i => $("wAdd" + i).value.trim()); },
+        ${[0, 1, 2, 3].map(i => addField("wAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.rAdd[i])).join("")}`,
+      read: () => { v.feedType = $("wFeedT").value; v.pva = $("wPva").value.trim(); v.rBase = $("wBase").value.trim(); v.rAttr = $("wAttr").value.trim(); v.rAdd = [0, 1, 2, 3].map(i => addVal("wAdd" + i)); },
       check: () => v.feedType && !v.pva && (v.rBase || v.rAdd.some(Boolean)) ? T("wizNeedRecipe", "Bitte dem Futter einen Namen geben, damit es als Rezept gespeichert wird.") : "",
-      bind: () => { $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => $("wAdd" + i).value = r.additives[i] || ""); }; } },
+      bind: () => { $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => addSet("wAdd" + i, r.additives[i])); }; } },
     { t: T("wizDone", "Abschluss"), hint: T("wizDoneHint", "Name und Kommentar, dann alles prüfen und speichern."),
       f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", !v.notes || ((WIZ.stats || WIZ.highlight) && (v.notes.startsWith(T("fishTime", "Angelzeit") + ":") || v.notes.startsWith(T("highlight", "Highlight") + ":"))) ? wizNote() || v.notes : v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
       read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; },
@@ -1270,6 +1270,14 @@ async function wizSave() {
     count: String(WIZ.stats ? WIZ.stats.count : v.count || ""), minutes: String(WIZ.stats ? WIZ.stats.minutes : v.minutes || ""), money: String(WIZ.stats ? WIZ.stats.money : v.money || "") });
 }
 function lakeOptions(sel) { return INIT.lakes.map(l => `<option value="${l.id}" ${l.id === sel ? "selected" : ""}>${esc(l.name)}</option>`).join(""); }
+function crushMark() { return " (" + T("crushed", "gemahlen") + ")"; }
+function addSplit(val) { const m = crushMark(), x = val || ""; return x.toLowerCase().endsWith(m.toLowerCase()) ? [x.slice(0, -m.length), true] : [x, false]; }
+function addField(id, label, val) {
+  const [name, c] = addSplit(val);
+  return `<label>${esc(label)}<span style="display:flex;gap:8px;align-items:center"><input id="${id}" value="${esc(name)}" list="dlItem" style="flex:1;min-width:0"><span style="display:flex;gap:4px;align-items:center;white-space:nowrap;cursor:pointer" onclick="if (event.target.tagName !== 'INPUT') { const b = $('${id}C'); b.checked = !b.checked; } event.preventDefault && event.target.tagName !== 'INPUT' && event.preventDefault();"><input type="checkbox" id="${id}C" ${c ? "checked" : ""} style="width:auto;margin:0">${esc(T("crushed", "gemahlen"))}</span></span></label>`;
+}
+function addVal(id) { const x = $(id).value.trim(); return x && $(id + "C").checked ? x + crushMark() : x; }
+function addSet(id, val) { const [name, c] = addSplit(val); $(id).value = name; $(id + "C").checked = c; }
 function field(id, label, val, extra, wide) { return `<label class="${wide ? "wide" : ""}">${esc(label)}<input id="${id}" value="${esc(val == null ? "" : val)}" ${extra || ""}></label>`; }
 function spotOptions(lake, sel) { return `<option value=""></option>` + LOG.spots.filter(s => s.lake === lake).map(s => `<option value="${s.id}" ${s.id === sel ? "selected" : ""}>${esc(s.name || s.x + ":" + s.y)}</option>`).join(""); }
 let DLG = null;

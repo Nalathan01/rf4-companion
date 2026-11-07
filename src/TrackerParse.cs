@@ -249,11 +249,13 @@ internal static class TrackerParse
 
     public static string ResolveItem(string text, TrackLists lists)
     {
-        string r = ResolveName(text, lists);
-        if (r != null) return r;
         string cut = Regex.Replace(text ?? "", @"\s*\(.*$", "").Trim();
-        if (cut.Length > 0 && cut != text) r = ResolveName(Regex.Replace(cut, "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists);
-        return r ?? text;
+        if (cut.Length > 0 && cut != text && Match(text, lists.Items, 0.95) == null)
+        {
+            string c = ResolveName(Regex.Replace(cut, "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists);
+            if (c != null) return c + GameData.Crushed;
+        }
+        return ResolveName(text, lists) ?? text;
     }
 
     private static string ResolveName(string text, TrackLists lists)

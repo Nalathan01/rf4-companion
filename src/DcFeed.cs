@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 19;
+    private const int Version = 20;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -229,6 +229,7 @@ internal static class DcFeed
                 if (Known(part)) hit = GameData.ToKey(part);
             }
             if (hit == null) hit = BoxFuzzy(line, code);
+            if (hit != null && line != lines[i].Trim()) hit += GameData.Crushed;
             if (hit != null && !mix.Contains(hit)) mix.Add(hit);
         }
         if (mix.Count > 1) r["groundbait"] = string.Join(" + ", mix.ToArray());
@@ -261,7 +262,12 @@ internal static class DcFeed
                     List<string> mix = new List<string>();
                     string basis = AppEnv.GetString(res.Recipe, "base"), aroma = AppEnv.GetString(res.Recipe, "attractant");
                     if (Known(basis)) mix.Add(GameData.ToKey(basis));
-                    foreach (object o in AppEnv.GetList(res.Recipe, "additives")) if (Known(o.ToString())) mix.Add(GameData.ToKey(o.ToString()));
+                    foreach (object o in AppEnv.GetList(res.Recipe, "additives"))
+                    {
+                        string a = o.ToString(), mark = a.EndsWith(GameData.Crushed, StringComparison.Ordinal) ? GameData.Crushed : "";
+                        a = a.Substring(0, a.Length-mark.Length);
+                        if (Known(a)) mix.Add(GameData.ToKey(a) + mark);
+                    }
                     if (Known(aroma)) mix.Add(GameData.ToKey(aroma));
                     if (mix.Count > 0) r["groundbait"] = string.Join(" + ", mix.ToArray());
                 }

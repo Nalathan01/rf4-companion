@@ -96,6 +96,9 @@ internal static class GameData
     public static string Untranslate(string name, string lang)
     {
         name = (name ?? "").Trim();
+        if (name.EndsWith(Crushed, StringComparison.Ordinal)) return Untranslate(name.Substring(0, name.Length-Crushed.Length), lang) + Crushed;
+        string mark = " (" + Ui(lang, "crushed", "crushed") + ")";
+        if (name.EndsWith(mark, StringComparison.OrdinalIgnoreCase)) return Untranslate(name.Substring(0, name.Length-mark.Length), lang) + Crushed;
         if (name.Length == 0 || Names.ContainsKey(name) || HasItem(name)) return name;
         Dictionary<string, string> m;
         lock (reverse)
@@ -192,9 +195,12 @@ internal static class GameData
         return LakeByName.TryGetValue(name.Trim(), out id) ? id : "";
     }
 
+    public const string Crushed = " (crushed)";
+
     public static string Translate(string en, string lang)
     {
         if (string.IsNullOrEmpty(en)) return "";
+        if (en.EndsWith(Crushed, StringComparison.Ordinal)) return Translate(en.Substring(0, en.Length-Crushed.Length), lang) + " (" + Ui(lang, "crushed", "crushed") + ")";
         Dictionary<string, object> e;
         if (Names.TryGetValue(en, out e))
         {
