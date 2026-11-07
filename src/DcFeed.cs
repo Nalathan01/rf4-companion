@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 6;
+    private const int Version = 7;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -68,6 +68,7 @@ internal static class DcFeed
             if (b == null) continue;
             try
             {
+                SetupDetails(b, r);
                 List<string> found;
                 string used;
                 if (!baits && ImageOcr.ReadSetup(b, out found, out used))
@@ -84,7 +85,6 @@ internal static class DcFeed
                         continue;
                     }
                 }
-                SetupDetails(b, r);
                 foreach (TrackItem it in Keepnet(b))
                 {
                     int n;
