@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -14,10 +15,14 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from PIL import Image, ImageDraw, ImageOps
 from scipy import ndimage
+try:
+    from rapidocr_onnxruntime import RapidOCR
+except ImportError:
+    RapidOCR = None
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAX_NEW = 150
-VERSION = 7
+VERSION = 8
 WORKERS = 3
 BUDGET = 540
 MIRROR = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/mirror/spots.json.gz"
@@ -95,7 +100,7 @@ def form_of(line):
         return "pellets"
     if "小药" in s or "药" in s:
         return "dip"
-    if "成饵" in s or "煮" in s:
+    if "成饵" in s or "煮" in s or "下沉" in s:
         return "boilie"
     return ""
 
@@ -269,8 +274,74 @@ def baits_from_lines(lines, names):
     return baits
 
 
+LOCAL = threading.local()
+
+
+def rapid_items(im):
+    if not hasattr(LOCAL, "engine"):
+        LOCAL.engine = RapidOCR()
+    res, _ = LOCAL.engine(np.asarray(im)[:, :, ::-1])
+    items = []
+    for box, text, _ in res or []:
+        xs, ys = [p[0] for p in box], [p[1] for p in box]
+        items.append((min(ys), min(xs), max(xs), max(ys)-min(ys), text.replace(" ", "")))
+    return sorted(items)
+
+
+def rapid_fix(t):
+    t = re.sub(r"[鲢鲜鮭](?=鱼|$)", "鲑", t)
+    t = re.sub(r"(?<=[一-鿿])[sS]$", "5", t)
+    return CRUSHED.sub("", t.strip("①©®Oo0 ") if re.search(r"[一-鿿]\d+[①©®]$", t) else t)
+
+
+def rapid_feed(items, feed_names):
+    head = next((i for i in items if re.match(r"^(类(?!别).{0,2}[:：]?|基.?料)$", i[4])), None)
+    if not head:
+        return []
+    end = next((i[0] for i in items if i[0] > head[0] and abs(i[1]-head[1]) < head[3] * 3 and re.match(r"^(情况|可以使用|类别)", i[4])), None)
+    feed = []
+    for y, x0, x1, h, text in items:
+        if y < head[0]-head[3] or (end and y >= end) or x0 < head[1] + head[3] * 4:
+            continue
+        en = match_tail(rapid_fix(text), feed_names)
+        if en and en not in feed:
+            feed.append(en)
+    return feed
+
+
+def rapid_baits(items, bait_names):
+    baits = []
+    for k, (y, x0, x1, h, text) in enumerate(items):
+        form = form_of(text)
+        if not form and not re.match(r"^形式.{0,3}饵鱼", text):
+            continue
+        above = [i for i in items[:k] if abs(i[1]-x0) < h * 2 and 0 < y-i[0] < h * 4 and not i[4].startswith("形式")]
+        if not above:
+            continue
+        en = match_tail(rapid_fix(above[-1][4]), bait_names)
+        if en:
+            en = pick_form(en, form)
+            if en not in baits:
+                baits.append(en)
+    return baits
+
+
+def read_rapid(im, feed_names, bait_names):
+    f = 1.0 if im.width >= 1000 else 1000.0 / im.width
+    items = rapid_items(im.resize((int(im.width * f), int(im.height * f)), Image.LANCZOS) if f > 1 else im)
+    feed = rapid_feed(items, feed_names)
+    baits = rapid_baits(items, bait_names)
+    if not baits:
+        baits = baits_from_lines([rapid_fix(i[4]) for i in items], bait_names)
+    return feed, baits
+
+
 def read_image(data, feed_names, bait_names):
     im = Image.open(io.BytesIO(data)).convert("RGB")
+    if RapidOCR is not None:
+        feed, baits = read_rapid(im, feed_names, bait_names)
+        if feed or baits:
+            return feed, baits, False
     feed, baits = [], []
     masked = im.copy()
     draw = ImageDraw.Draw(masked)
