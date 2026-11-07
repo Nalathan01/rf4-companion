@@ -373,6 +373,7 @@ dialog.sheet[open] { display: flex; }
 <div class="menu" id="menu">
   <button data-m="lookup" data-t="tabInfo">Nachschlagen</button>
   <button data-m="web" data-t="tabWeb">Webseiten</button>
+  <button data-m="overlay" data-t="ovHead">OBS Overlay</button>
   <button class="logonly trkonly" data-m="settings" data-t="settings">Einstellungen</button>
   <button data-m="about" data-t="about">Über und Updates</button>
 </div>
@@ -1374,40 +1375,60 @@ const MENU = {
   async settings() {
     const d = TRK || await api("/api/tracker/status");
     const ocr = await api("/api/ocrlangs");
-    const ov = INIT.features.tracker ? await api("/api/overlay") : null;
-    const oo = Object.assign({ n: 5, size: 100, lang: INIT.lang, trophy: false, title: true }, ov ? ov.opts : {});
     openDlg(T("settings", "Einstellungen"),
       `<div class="logonly" style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
        <div class="logonly" style="grid-column:1/3">${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}</div>
        <label class="wide logonly">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
        <div style="grid-column:1/3"><div class="hdr">${esc(T("ocrPacks", "Texterkennung (Sprachpakete)"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("ocrPacksHint", "Für Bilder aus Telegram und für den Tracker braucht Windows die Texterkennung der jeweiligen Sprache. Installieren fragt nach Administratorrechten und lädt das Paket von Microsoft."))}</p>
-       <table class="tbl">${ocr.map(o => `<tr><td>${esc(o.name)}</td><td class="num">${o.installed ? esc(T("installed", "installiert")) : `<button class="btn small" data-ocr="${o.tag}">${esc(T("install", "Installieren"))}</button>`}</td></tr>`).join("")}</table></div>
-       ${ov ? `<div class="trkonly" style="grid-column:1/3"><div class="hdr">${esc(T("ovHead", "OBS Overlay"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("ovHint", "Zeigt deine letzten Fänge aus dem Tracker im Stream. Läuft nur auf deinem PC, solange RF4 Companion offen ist."))}</p></div>
-       ${field("ovPort", T("ovPort", "Port"), ov.port, 'inputmode="numeric"')}
+       <table class="tbl">${ocr.map(o => `<tr><td>${esc(o.name)}</td><td class="num">${o.installed ? esc(T("installed", "installiert")) : `<button class="btn small" data-ocr="${o.tag}">${esc(T("install", "Installieren"))}</button>`}</td></tr>`).join("")}</table></div>`,
+      async () => { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); },
+      null);
+    DLG.keep = true;
+    $("dlgForm").querySelectorAll("[data-ocr]").forEach(b => b.onclick = async () => { try { await api("/api/ocrinstall", { tag: b.dataset.ocr }); b.textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); b.disabled = true; } catch (e) { $("dlgErr").textContent = errText(e).startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } });
+  },
+  async overlay() {
+    const ov = await api("/api/overlay");
+    const lv = ov.live;
+    const oo = Object.assign({ n: 5, size: 100, lang: INIT.lang, trophy: false, title: true }, ov.opts || {});
+    const langs = lv.langs.indexOf(lv.lang) < 0 ? lv.langs.concat([lv.lang]) : lv.langs;
+    const steps = ["In OBS bei Quellen auf Plus klicken und Browser wählen.", "Die Adresse von oben bei URL einfügen.", "Breite 500 und Höhe 600 eintragen, der Hintergrund bleibt durchsichtig.", "RF4 Companion offen lassen. Jeder gefangene Fisch erscheint nach ein bis drei Sekunden."];
+    openDlg(T("ovHead", "OBS Overlay"),
+      `<div style="grid-column:1/3"><p class="sub" style="margin:0 0 8px">${esc(T("ovHint", "Erkennt jeden gefangenen Fisch direkt im Spielbild und zeigt die letzten Fänge im Stream. Alles läuft nur auf deinem PC, es werden keine Bilder gespeichert."))}</p>
+       <label class="chk"><input type="checkbox" id="ovLive" ${lv.on ? "checked" : ""}> ${esc(T("ovLive", "Live-Erkennung einschalten"))}</label>
+       <p class="sub" id="ovState" style="margin:6px 0 0"></p></div>
+       <label>${esc(T("trackerGameLang", "Spielsprache"))}<select id="ovGLang">${langs.map(l => `<option value="${esc(l)}" ${l === lv.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+       <div id="ovOcr" style="align-self:end"></div>
        ${field("ovN", T("ovCount", "Anzahl Einträge"), oo.n, 'type="number" min="1" max="20"')}
        <label>${esc(T("ovSize", "Größe"))}<select id="ovSize">${[75, 100, 125, 150, 200, 250].map(v => `<option value="${v}" ${v == oo.size ? "selected" : ""}>${v} %</option>`).join("")}</select></label>
        <label>${esc(T("language", "Sprache"))}<select id="ovLang">${INIT.langs.map(l => `<option value="${l}" ${l === oo.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("")}</select></label>
+       ${field("ovPort", T("ovPort", "Port"), ov.port, 'inputmode="numeric"')}
        <div style="grid-column:1/3"><label class="chk"><input type="checkbox" id="ovTrophy" ${oo.trophy ? "checked" : ""}> ${esc(T("ovOnlyTrophy", "Nur Trophäen"))}</label> <label class="chk"><input type="checkbox" id="ovTitle" ${oo.title ? "checked" : ""}> ${esc(T("ovShowTitle", "Überschrift zeigen"))}</label></div>
        <label class="wide">${esc(T("ovUrl", "Adresse für OBS"))}<input id="ovUrl" readonly></label>
-       <div style="grid-column:1/3;display:flex;gap:8px"><button type="button" class="btn small" id="ovCopy">${esc(T("ovCopy", "Adresse kopieren"))}</button><button type="button" class="btn small" id="ovOpen">${esc(T("ovPreview", "Vorschau im Browser"))}</button></div>
+       <div style="grid-column:1/3;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn small" id="ovCopy">${esc(T("ovCopy", "Adresse kopieren"))}</button><button type="button" class="btn small" id="ovOpen">${esc(T("ovPreview", "Vorschau im Browser"))}</button><button type="button" class="btn small" id="ovClear">${esc(T("ovClear", "Liste leeren"))}</button></div>
        ${ov.error ? `<p class="sub" style="grid-column:1/3;margin:0;color:var(--hot)">${esc(T("ovPortBusy", "Dieser Port ist belegt. Bitte einen anderen eintragen und speichern."))}</p>` : ""}
-       <div style="grid-column:1/3"><div class="hdr">${esc(T("ovGuideHead", "So kommt es in OBS"))}</div><ol class="sub" style="margin:0;padding-left:18px">${["ovStep1", "ovStep2", "ovStep3", "ovStep4"].map((k, i) => `<li>${esc(T(k, ["In OBS bei Quellen auf Plus klicken und Browser wählen.", "Die Adresse von oben bei URL einfügen.", "Breite 500 und Höhe 600 eintragen, Hintergrund bleibt durchsichtig.", "Fänge erscheinen, sobald der Tracker sie erkennt. RF4 Companion muss dabei offen bleiben."][i]))}</li>`).join("")}</ol></div>` : ""}`,
+       <div style="grid-column:1/3"><div class="hdr">${esc(T("ovGuideHead", "So kommt es in OBS"))}</div><ol class="sub" style="margin:0;padding-left:18px">${steps.map((x, i) => `<li>${esc(T("ovStep" + (i + 1), x))}</li>`).join("")}</ol></div>`,
       async () => {
-        TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker();
-        if (ov) { try { await api("/api/overlay/save", { port: $("ovPort").value.trim(), opts: ovOpts() }); } catch (e) { throw new Error(T("ovBadPort", "Bitte einen Port zwischen 1024 und 65535 eintragen.")); } }
-      },
-      null);
+        try { await api("/api/overlay/save", { port: $("ovPort").value.trim(), opts: ovOpts(), live: $("ovLive").checked, lang: $("ovGLang").value }); }
+        catch (e) { throw new Error(T("ovBadPort", "Bitte einen Port zwischen 1024 und 65535 eintragen.")); }
+      }, null);
     DLG.keep = true;
     const ovOpts = () => ({ n: Math.max(1, Math.min(20, parseInt($("ovN").value, 10) || 5)), size: +$("ovSize").value, lang: $("ovLang").value, trophy: $("ovTrophy").checked, title: $("ovTitle").checked });
     const ovUrl = () => { const o = ovOpts(); return `http://localhost:${parseInt($("ovPort").value, 10) || ov.port}/overlay?n=${o.n}&lang=${o.lang}&size=${o.size}${o.trophy ? "&trophy=1" : ""}${o.title ? "" : "&title=0"}`; };
-    if (ov) {
-      const upd = () => { $("ovUrl").value = ovUrl(); };
-      ["ovPort", "ovN", "ovSize", "ovLang", "ovTrophy", "ovTitle"].forEach(id => { $(id).oninput = upd; $(id).onchange = upd; });
-      upd();
-      $("ovCopy").onclick = async () => { try { await navigator.clipboard.writeText($("ovUrl").value); } catch (e) { $("ovUrl").select(); document.execCommand("copy"); } $("ovCopy").textContent = T("ovCopied", "Kopiert"); };
-      $("ovOpen").onclick = () => api("/api/open", { url: ovUrl() });
-    }
-    $("dlgForm").querySelectorAll("[data-ocr]").forEach(b => b.onclick = async () => { try { await api("/api/ocrinstall", { tag: b.dataset.ocr }); b.textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); b.disabled = true; } catch (e) { $("dlgErr").textContent = errText(e).startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } });
+    const upd = () => { $("ovUrl").value = ovUrl(); };
+    const ocr = () => {
+      const ok = lv.langs.indexOf($("ovGLang").value) >= 0;
+      $("ovOcr").innerHTML = ok ? "" : `<button type="button" class="btn small" id="ovInst">${esc(T("install", "Installieren"))}</button>`;
+      if (!ok) $("ovInst").onclick = async () => { try { await api("/api/ocrinstall", { tag: $("ovGLang").value }); $("ovInst").textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); $("ovInst").disabled = true; } catch (e) { $("dlgErr").textContent = errText(e).startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } };
+    };
+    const stateText = l => !l.on ? T("ovStateOff", "Live-Erkennung ist aus.") : l.state === "noGame" ? T("ovStateNoGame", "Warte auf das Spiel.") : l.state === "minimized" ? T("ovStateMin", "Spiel ist minimiert.") : l.state === "noImage" ? T("ovStateNoImage", "Kein Spielbild. Bitte im Fenstermodus oder randlosen Vollbild spielen.") : l.state === "watching" ? T("ovStateOn", "Läuft, Spielbild wird gelesen.") + " " + l.checked : T("ovStateErr", "Fehler beim Lesen des Spielbilds.");
+    const showState = l => { $("ovState").textContent = stateText(l) + " · " + T("ovStateCount", "Gespeicherte Fänge: {0}").replace("{0}", l.count); };
+    ["ovPort", "ovN", "ovSize", "ovLang", "ovTrophy", "ovTitle"].forEach(id => { $(id).oninput = upd; $(id).onchange = upd; });
+    $("ovGLang").onchange = ocr;
+    upd(); ocr(); showState(lv);
+    const timer = setInterval(async () => { if (!$("ovState") || !$("dlg").open) { clearInterval(timer); return; } try { showState((await api("/api/overlay")).live); } catch (e) { } }, 2000);
+    $("ovCopy").onclick = async () => { try { await navigator.clipboard.writeText($("ovUrl").value); } catch (e) { $("ovUrl").select(); document.execCommand("copy"); } $("ovCopy").textContent = T("ovCopied", "Kopiert"); };
+    $("ovOpen").onclick = () => api("/api/open", { url: ovUrl() });
+    $("ovClear").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; showState((await api("/api/overlay/clear", {})).live); };
   },
   async about() {
     const a = await api("/api/about", { check: true });

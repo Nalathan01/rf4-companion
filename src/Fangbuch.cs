@@ -311,11 +311,6 @@ internal static class Fangbuch
         return List("catches").Where(c => S(c, "session") == session && session.Length > 0).ToList();
     }
 
-    public static List<Dictionary<string, object>> TimedCatches()
-    {
-        return List("catches").Where(c => S(c, "time").Length > 0).ToList();
-    }
-
     public static void AddCatches(List<Dictionary<string, object>> items)
     {
         lock (gate)
