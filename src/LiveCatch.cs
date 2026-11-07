@@ -18,6 +18,9 @@ internal static class LiveCatch
     private static DateTime lastFull = DateTime.MinValue;
     private static bool cardOpen;
     private static bool cardDone;
+    private static long logPos = -1;
+    private static DateTime fastUntil = DateTime.MinValue;
+    private static readonly string GameLog = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @"AppData\LocalLow\Russian Fishing LLC\Russian Fishing 4\Player.log");
     private static volatile string state = "off";
     private static DateTime lastCheck = DateTime.MinValue;
     private static DateTime lastKeepnet = DateTime.MinValue;
@@ -78,9 +81,28 @@ internal static class LiveCatch
         while (true)
         {
             if (!On) { state = "off"; cardOpen = false; Thread.Sleep(1000); continue; }
-            try { Tick(); } catch (Exception ex) { state = "error"; AppEnv.Log("Live", ex.Message); Thread.Sleep(1000); }
-            Thread.Sleep(250);
+            try { WatchGameLog(); Tick(); } catch (Exception ex) { state = "error"; AppEnv.Log("Live", ex.Message); Thread.Sleep(1000); }
+            Thread.Sleep(DateTime.Now < fastUntil ? 40 : 250);
         }
+    }
+
+    private static void WatchGameLog()
+    {
+        System.IO.FileInfo f = new System.IO.FileInfo(GameLog);
+        if (!f.Exists) return;
+        long len = f.Length;
+        if (logPos < 0 || len < logPos) { logPos = len; return; }
+        if (len == logPos) return;
+        long start = Math.Max(logPos, len-65536);
+        byte[] buf = new byte[len-start];
+        using (System.IO.FileStream fs = new System.IO.FileStream(GameLog, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite | System.IO.FileShare.Delete))
+        {
+            fs.Seek(start, System.IO.SeekOrigin.Begin);
+            int got = 0;
+            while (got < buf.Length) { int n = fs.Read(buf, got, buf.Length-got); if (n <= 0) break; got += n; }
+        }
+        logPos = len;
+        if (System.Text.Encoding.UTF8.GetString(buf).IndexOf("Podsak", StringComparison.Ordinal) >= 0) fastUntil = DateTime.Now.AddSeconds(15);
     }
 
     private static IntPtr GameWindow()
