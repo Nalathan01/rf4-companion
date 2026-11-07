@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 11;
+    private const int Version = 12;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -119,7 +119,7 @@ internal static class DcFeed
         }
         if (maxW > 0) r["weight"] = maxW / 1000.0;
         if (deg >= 0) r["mdeg"] = deg;
-        if (!r.ContainsKey("rig") && HairRig(AppEnv.GetString(r, "baitDetail"))) r["rig"] = "Classic hair rig";
+        if (!r.ContainsKey("rig")) { string rig = RigFromBaits(AppEnv.GetString(r, "baitDetail")); if (rig.Length > 0) r["rig"] = rig; }
         if (urls.Count > 0) r["imgs"] = urls.ToArray();
         return gotBaits;
     }
@@ -133,11 +133,23 @@ internal static class DcFeed
         return GameData.Names.ContainsKey(k) || GameData.HasItem(k);
     }
 
-    private static bool HairRig(string baits)
+    private static bool Sinking(string p)
+    {
+        return !PopUp(p) && System.Text.RegularExpressions.Regex.IsMatch(p, @"(Pellets \d+|\d+( Soluble)?)$");
+    }
+
+    private static bool PopUp(string p)
+    {
+        return p.IndexOf("Pop-Up", StringComparison.OrdinalIgnoreCase) >= 0 || p.IndexOf(" Flavor", StringComparison.Ordinal) >= 0 || p == "Spices";
+    }
+
+    private static string RigFromBaits(string baits)
     {
         string[] parts = baits.Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 1 || parts.Length > 2) return false;
-        return parts.All(p => p.IndexOf("Pop-Up", StringComparison.OrdinalIgnoreCase) < 0 && System.Text.RegularExpressions.Regex.IsMatch(p, @"(Pellets \d+|\d+( Soluble)?)$"));
+        if (parts.Length < 1 || parts.Length > 2) return "";
+        if (parts.All(Sinking)) return "Classic hair rig";
+        if (parts.Length == 2 && parts.Count(Sinking) == 1 && parts.Count(PopUp) == 1) return "Snowman rig";
+        return "";
     }
 
     private static void FeedSize(string[] lines, Dictionary<string, object> r)
