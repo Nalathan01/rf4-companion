@@ -648,6 +648,12 @@ internal static class TrackerParse
             string fish = null;
             if (name.Length > 0) { NameHit h = MatchFish(name, lists); if (h != null) fish = h.En; }
             if (fish == null && names.Count > 1) { NameHit h = MatchFish(names[names.Count-1].Text.Trim(), lists); if (h != null) fish = h.En; }
+            if (fish == null)
+            {
+                List<OcrBox> below = g.Where(x => x.Y > w.Y && (x.Y-w.Y) <= w.H * 2.5 && Math.Abs(x.X-w.X) <= tol && !M(x.Text, @"min|%|\d\s*(kg|g)\b|^[\s\d.,e•-]+$")).OrderBy(x => x.Y).Take(2).ToList();
+                string bn = string.Join(" ", below.Select(x => x.Text.Trim()).ToArray()).Trim();
+                if (bn.Length > 0) { NameHit h = MatchFish(bn, lists) ?? (below.Count > 1 ? MatchFish(below[0].Text.Trim(), lists) : null); if (h != null) fish = h.En; }
+            }
             if (fish == null) continue;
             int? age = null;
             double bs = 1e9;
