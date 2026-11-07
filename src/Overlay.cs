@@ -62,7 +62,7 @@ internal static class Overlay
 
     public static object Status()
     {
-        return AppEnv.Obj("port", Port, "running", listener != null, "error", error, "opts", UserStore.Get("overlayOpts") ?? new Dictionary<string, object>());
+        return AppEnv.Obj("port", Port, "running", listener != null, "error", error, "opts", UserStore.Get("overlayOpts") ?? new Dictionary<string, object>(), "live", LiveCatch.Status());
     }
 
     public static object Save(Dictionary<string, object> a)
@@ -71,6 +71,8 @@ internal static class Overlay
         if (!int.TryParse(AppEnv.GetString(a, "port"), NumberStyles.Integer, CultureInfo.InvariantCulture, out p) || p < 1024 || p > 65535) throw new AppError("ovBadPort", null);
         Dictionary<string, object> o = a.ContainsKey("opts") ? a["opts"] as Dictionary<string, object> : null;
         if (o != null) UserStore.Set("overlayOpts", o);
+        if (a.ContainsKey("live")) UserStore.Set("liveOn", AppEnv.GetBool(a, "live"));
+        if (AppEnv.GetString(a, "lang").Length > 0) UserStore.Set("trackerLang", AppEnv.GetString(a, "lang"));
         if (p != Port || listener == null)
         {
             UserStore.Set("overlayPort", p);
@@ -113,17 +115,7 @@ internal static class Overlay
         string lang = q["lang"] ?? "";
         if (Array.IndexOf(GameData.Languages(), lang) < 0) lang = UserStore.Lang;
         bool onlyTrophy = q["trophy"] == "1";
-        List<object[]> all = new List<object[]>();
-        if (Features.Tracker) all.AddRange(Tracker.RecentCatches());
-        if (Features.Log)
-            foreach (Dictionary<string, object> c in Fangbuch.TimedCatches())
-            {
-                DateTime t;
-                if (!DateTime.TryParse(AppEnv.GetString(c, "time"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out t)) continue;
-                all.Add(new object[] { AppEnv.GetString(c, "fish"), (int)AppEnv.GetDouble(c, "weight", 0), t });
-            }
-        List<object> items = all.Where(c => ((string)c[0]).Length > 0)
-            .GroupBy(c => (string)c[0] + "|" + c[1] + "|" + ((DateTime)c[2]).ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture)).Select(g => g.First())
+        List<object> items = LiveCatch.Recent().Where(c => ((string)c[0]).Length > 0)
             .Select(c => new { fish = (string)c[0], grams = (int)c[1], time = (DateTime)c[2], level = Level((string)c[0], (int)c[1]) })
             .Where(c => !onlyTrophy || c.level.Length > 0)
             .OrderByDescending(c => c.time).Take(n)

@@ -33,9 +33,13 @@ internal static class TrackerOcr
 {
     public static OcrRead Read(string path, string lang, RectangleF crop, double maxZoom, bool binarize)
     {
+        using (Bitmap src = LoadBitmap(path)) return Read(src, lang, crop, maxZoom, binarize);
+    }
+
+    public static OcrRead Read(Bitmap src, string lang, RectangleF crop, double maxZoom, bool binarize)
+    {
         byte[] png;
         OcrRead res = new OcrRead();
-        using (Bitmap src = LoadBitmap(path))
         {
             int w = src.Width, h = src.Height;
             res.SrcW = w; res.SrcH = h;
