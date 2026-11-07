@@ -117,7 +117,7 @@ internal static class LiveCatch
         bool fg = GetForegroundWindow() == h || Visible(h, w, hg);
         fast = fg;
         if (!fg && DateTime.Now.Subtract(lastFull).TotalMilliseconds < 750) return;
-        Rectangle strip = new Rectangle(0, (int)(hg * 0.05), w, (int)(hg * 0.15));
+        Rectangle strip = new Rectangle(0, (int)(hg * 0.03), w, (int)(hg * 0.22));
         Bitmap full = null, st = null;
         try
         {
@@ -141,7 +141,7 @@ internal static class LiveCatch
             {
                 if (!cardOpen) { cardOpen = true; cardDone = false; cardSince = DateTime.Now; }
                 if (cardDone || DateTime.Now.Subtract(cardSince).TotalSeconds > 4) return;
-                Rectangle crop = new Rectangle((int)(w * 0.28), (int)(hg * 0.02), (int)(w * 0.44), (int)(hg * 0.15));
+                Rectangle crop = new Rectangle((int)(w * 0.28), 0, (int)(w * 0.44), (int)(hg * 0.2));
                 string found;
                 using (Bitmap c = full != null ? full.Clone(crop, PixelFormat.Format32bppArgb) : Grab(h, crop))
                     found = Find(TrackerOcr.Read(c, Lang, RectangleF.Empty, 2, false).Lines());
@@ -291,7 +291,7 @@ internal static class LiveCatch
         byte[] px = new byte[d.Stride * d.Height];
         Marshal.Copy(d.Scan0, px, 0, px.Length);
         st.UnlockBits(d);
-        int head = Math.Min(st.Height-1, (int)(hg * 0.01)), gray = 0, n = 0;
+        int head = Math.Min(st.Height-1, (int)(hg * 0.03)), gray = 0, n = 0;
         for (int x = 0; x < st.Width; x += 4)
         {
             int i = head * d.Stride + x * 4, b = px[i], g = px[i + 1], r = px[i + 2];
@@ -299,7 +299,7 @@ internal static class LiveCatch
             if (r >= 110 && r <= 210 && Math.Abs(r-g) < 14 && Math.Abs(g-b) < 14) gray++;
         }
         menu = gray >= n * 0.85;
-        int y0 = (int)(hg * 0.115), y1 = Math.Min(st.Height-1, (int)(hg * 0.145)), k = Math.Max(3, (int)(hg * 0.006));
+        int y0 = (int)(hg * 0.135), y1 = Math.Min(st.Height-1, (int)(hg * 0.165)), k = Math.Max(3, (int)(hg * 0.006));
         for (int y = y0; y <= y1 && !card; y++)
         {
             int[] c = Colors(px, d.Stride, st.Width, y);
@@ -308,6 +308,28 @@ internal static class LiveCatch
             int[] up = Colors(px, d.Stride, st.Width, Math.Max(0, y-k)), dn = Colors(px, d.Stride, st.Width, Math.Min(st.Height-1, y + k));
             card = up[0] + up[1] + up[2] < up[3] * 0.15 && dn[0] + dn[1] + dn[2] < dn[3] * 0.15;
         }
+        if (!card) card = Chips(px, d.Stride, st.Width, st.Height, hg);
+    }
+
+    private static bool Chips(byte[] px, int stride, int width, int height, int hg)
+    {
+        int x0 = (int)(width * 0.4), x1 = (int)(width * 0.6), minRun = Math.Max(4, (int)(hg * 0.012)), maxRun = (int)(hg * 0.04), run = 0, white = 0;
+        for (int y = 0; y < height; y++)
+        {
+            int gray = 0, wh = 0, m = 0;
+            for (int x = x0; x < x1; x += 2)
+            {
+                int i = y * stride + x * 4, b = px[i], g = px[i + 1], r = px[i + 2];
+                m++;
+                if (r >= 45 && r <= 85 && Math.Abs(r-g) < 8 && Math.Abs(g-b) < 10) gray++;
+                else if (r > 200 && g > 200 && b > 200) wh++;
+            }
+            if (gray >= m * 0.2) { run++; white += wh; continue; }
+            if (run >= minRun && run <= maxRun && white >= m * 0.02) return true;
+            run = 0;
+            white = 0;
+        }
+        return false;
     }
 
     private static int[] Colors(byte[] px, int stride, int width, int y)
