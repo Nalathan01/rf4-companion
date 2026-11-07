@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 7;
+    private const int Version = 8;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -123,6 +123,15 @@ internal static class DcFeed
         return gotBaits;
     }
 
+    private static readonly int[] FeedSizes = { 10, 20, 50, 70, 100 };
+
+    private static bool Known(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        string k = GameData.ToKey(name);
+        return GameData.Names.ContainsKey(k) || GameData.HasItem(k);
+    }
+
     private static void SetupDetails(byte[] b, Dictionary<string, object> r)
     {
         if (r.ContainsKey("rig") && r.ContainsKey("groundbait")) return;
@@ -140,16 +149,19 @@ internal static class DcFeed
                 foreach (string c in tag == "ru" ? new string[] { "ru" } : new string[] { "de", "en", "fr", "pl", "es", "it" })
                 {
                     TrackRes res = TrackerParse.Parse(lines, read.Boxes, c);
-                    if (res.Rig.Length > 0 && !r.ContainsKey("rig")) r["rig"] = res.Rig;
+                    if (Known(res.Rig) && !r.ContainsKey("rig")) r["rig"] = GameData.ToKey(res.Rig);
                     if (res.Recipe == null || r.ContainsKey("groundbait")) continue;
                     List<string> mix = new List<string>();
                     string basis = AppEnv.GetString(res.Recipe, "base"), aroma = AppEnv.GetString(res.Recipe, "attractant");
-                    if (basis.Length > 0) mix.Add(basis);
-                    foreach (object o in AppEnv.GetList(res.Recipe, "additives")) mix.Add(o.ToString());
-                    if (aroma.Length > 0) mix.Add(aroma);
+                    if (Known(basis)) mix.Add(GameData.ToKey(basis));
+                    foreach (object o in AppEnv.GetList(res.Recipe, "additives")) if (Known(o.ToString())) mix.Add(GameData.ToKey(o.ToString()));
+                    if (Known(aroma)) mix.Add(GameData.ToKey(aroma));
                     if (mix.Count > 0) r["groundbait"] = string.Join(" + ", mix.ToArray());
-                    System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(string.Join(" ", lines), @"(?i)(?:Gewicht|Weight|Вес|Poids|Peso|Waga)\D{0,8}(\d{2,3})\s*(?:g|г)\b");
-                    if (m.Success) r["feedG"] = int.Parse(m.Groups[1].Value);
+                    foreach (string line in lines)
+                    {
+                        System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(line.Trim(), @"(?i)^\W*(?:Gewicht|Weight|Вес|Poids|Peso|Waga)\s*:?\s*(\d{2,3})\s*(?:g|г)\s*$");
+                        if (m.Success && FeedSizes.Contains(int.Parse(m.Groups[1].Value))) { r["feedG"] = int.Parse(m.Groups[1].Value); break; }
+                    }
                 }
             }
         }
