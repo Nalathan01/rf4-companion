@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 18;
+    private const int Version = 19;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -161,17 +161,54 @@ internal static class DcFeed
     private static void FeedSize(string[] lines, Dictionary<string, object> r)
     {
         if (lines.Any(l => System.Text.RegularExpressions.Regex.IsMatch(l, "(?i)MENSETZUNG|COMPOSITION|СОСТАВ")))
-            foreach (string line in lines)
-            {
-                System.Text.RegularExpressions.Match v = System.Text.RegularExpressions.Regex.Match(line.Trim(), @"^(\d{2,3})\s*(?:g|г)$");
-                if (v.Success && FeedSizes.Contains(int.Parse(v.Groups[1].Value))) { r["feedG"] = int.Parse(v.Groups[1].Value); return; }
-            }
+        {
+            for (int pass = 0; pass < 2; pass++)
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (pass == 0 && (i == 0 || !System.Text.RegularExpressions.Regex.IsMatch(lines[i-1].Trim(), @"^\d{1,2}\s*/\s*10$"))) continue;
+                    System.Text.RegularExpressions.Match v = System.Text.RegularExpressions.Regex.Match(lines[i].Trim(), @"^([\dlIoO]{2,3})\s*(?:g|г)$");
+                    int g;
+                    if (!v.Success || !int.TryParse(v.Groups[1].Value.Replace('l', '1').Replace('I', '1').Replace('o', '0').Replace('O', '0'), out g) || !FeedSizes.Contains(g)) continue;
+                    r["feedG"] = g;
+                    return;
+                }
+        }
         foreach (string line in lines)
         {
             if (line.Length > 30) continue;
             System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(line, @"(?i)(?:wicht|weight|вес|poids|peso|waga)\W*(\d{2,3})\s*(?:g|г)");
             if (m.Success && FeedSizes.Contains(int.Parse(m.Groups[1].Value))) { r["feedG"] = int.Parse(m.Groups[1].Value); return; }
         }
+    }
+
+    private static string Digits(string s)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(s ?? "", @"\D", "");
+    }
+
+    private static string BoxFuzzy(string line, string code)
+    {
+        TrackLists lists = TrackerParse.Lists(code);
+        string[] words = line.Split(' ');
+        NameHit best = null;
+        for (int skip = 0; skip < words.Length && skip < 3; skip++)
+        {
+            string part = string.Join(" ", words, skip, words.Length-skip);
+            NameHit h = TrackerParse.Match(part, lists.Items, 0.85);
+            if (h != null && Digits(h.Loc) == Digits(part) && (best == null || h.Score > best.Score)) best = h;
+        }
+        if (best != null) return best.En;
+        string tail = Fuzzy.Norm(words.Length > 1 ? string.Join(" ", words, 1, words.Length-1) : "");
+        if (tail.Length < 6 || Digits(tail).Length == 0) return null;
+        string found = null;
+        for (int i = 0; i < lists.Items.LocNorm.Length; i++)
+        {
+            string n = lists.Items.LocNorm[i];
+            if (n.Length <= tail.Length || !n.EndsWith(tail, StringComparison.Ordinal)) continue;
+            if (found != null && found != lists.Items.En[i]) return null;
+            found = lists.Items.En[i];
+        }
+        return found;
     }
 
     private static void BoxMix(string[] lines, string code, Dictionary<string, object> r)
@@ -182,15 +219,17 @@ internal static class DcFeed
         for (int i = start + 1; i < lines.Length; i++)
         {
             if (System.Text.RegularExpressions.Regex.IsMatch(lines[i], "(?i)^(ZUSTAND|CONDITION|СОСТОЯНИЕ|KATEGORIEN|CATEGOR|Handwerk|Crafting|Kann verwendet|Basis|Zusätze|Zusatz|Aroma|Base|Additive|Основа|Добавка)")) continue;
-            string[] words = lines[i].Trim().Split(' ');
-            for (int skip = 0; skip < words.Length && skip < 3; skip++)
+            if (lines[i].Contains(":") || System.Text.RegularExpressions.Regex.IsMatch(lines[i].Trim(), "(?i)^((Sinkende|Schwimmende|Sinking|Floating|Pop-?Up)\\s+)?(Boilies|Pellets|Boilie)$")) continue;
+            string line = System.Text.RegularExpressions.Regex.Replace(lines[i], @"\s*\(.*$", "").Trim();
+            string[] words = line.Split(' ');
+            string hit = null;
+            for (int skip = 0; skip < words.Length && skip < 3 && hit == null; skip++)
             {
                 string part = string.Join(" ", words, skip, words.Length-skip);
-                if (!Known(part)) continue;
-                string k = GameData.ToKey(part);
-                if (!mix.Contains(k)) mix.Add(k);
-                break;
+                if (Known(part)) hit = GameData.ToKey(part);
             }
+            if (hit == null) hit = BoxFuzzy(line, code);
+            if (hit != null && !mix.Contains(hit)) mix.Add(hit);
         }
         if (mix.Count > 1) r["groundbait"] = string.Join(" + ", mix.ToArray());
     }

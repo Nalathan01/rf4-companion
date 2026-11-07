@@ -242,35 +242,63 @@ internal static class TrackerParse
         return Merge(a, b);
     }
 
-    private static string ResolveItem(string text, TrackLists lists)
+    private static string Digits(string s)
+    {
+        return Regex.Replace(s ?? "", @"\D", "");
+    }
+
+    public static string ResolveItem(string text, TrackLists lists)
+    {
+        string r = ResolveName(text, lists);
+        if (r != null) return r;
+        string cut = Regex.Replace(text ?? "", @"\s*\(.*$", "").Trim();
+        if (cut.Length > 0 && cut != text) r = ResolveName(Regex.Replace(cut, "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists);
+        return r ?? text;
+    }
+
+    private static string ResolveName(string text, TrackLists lists)
     {
         NameHit h = Match(text, lists.Items, 0.75);
-        if (h == null) return text;
-        if (h.Score >= 0.9) return h.En;
-        string q = Regex.Replace(text.ToLowerInvariant(), @"[^\p{L}\p{Nd}]", ""), c = Regex.Replace(h.Loc.ToLowerInvariant(), @"[^\p{L}\p{Nd}]", "");
-        if (q.Length >= 8 && c.EndsWith(q)) return h.En;
-        return text;
+        string d = Digits(text);
+        if (h != null && d != Digits(h.Loc)) h = null;
+        if (h != null && (h.Score >= 0.9 || (h.Score >= 0.8 && d.Length > 0))) return h.En;
+        string q = Fuzzy.Norm(text);
+        if (h != null && q.Length >= 8 && Fuzzy.Norm(h.Loc).EndsWith(q, StringComparison.Ordinal)) return h.En;
+        if (q.Length < 6 || d.Length == 0) return null;
+        string found = null;
+        for (int i = 0; i < lists.Items.LocNorm.Length; i++)
+        {
+            string n = lists.Items.LocNorm[i];
+            if (n.Length <= q.Length || !n.EndsWith(q, StringComparison.Ordinal)) continue;
+            if (found != null && found != lists.Items.En[i]) return null;
+            found = lists.Items.En[i];
+        }
+        return found;
     }
 
     private const string LabRx = "^(Basis|Base|Основа|Zusätze|Zusatze|Zusatz|Additives?|Добавк\\w*|Lebensmittel|Food|Продукт\\w*|Aroma|Aromatizer|Flavor|Ароматизатор)$";
     private const string AromaRx = "^(Aroma|Aromatizer|Flavor|Ароматизатор)$";
+    private const string KindRx = "^(Sinkende|Schwimmende|Sinking|Floating|Pop-?Up)\\s+(Boilies|Pellets|Boilie)$";
+    private const string KindValRx = "^(Sinkende|Schwimmende|Sinking|Floating|Pop-?Up)\\s+(?!(Boilies|Pellets|Boilie)$)(.+)$";
 
     private static object GeoComposition(List<OcrBox> g, TrackLists lists, out List<string> comp, out string aroma)
     {
         comp = new List<string>();
         aroma = "";
-        List<OcrBox> labels = g.Where(e => M(e.Text.Trim(), LabRx)).OrderBy(e => e.Y).ToList();
-        if (labels.Count < 2) return null;
+        List<OcrBox> labels = g.Where(e => M(e.Text.Trim(), LabRx) || M(e.Text.Trim(), KindRx) || M(e.Text.Trim(), KindValRx)).OrderBy(e => e.Y).ToList();
+        if (labels.Count(e => M(e.Text.Trim(), LabRx)) < 2) return null;
         HashSet<OcrBox> used = new HashSet<OcrBox>();
         foreach (OcrBox lb in labels)
         {
+            Match kv = Regex.Match(lb.Text.Trim(), KindValRx, I);
+            if (kv.Success) { comp.Add(ResolveItem(Regex.Replace(kv.Groups[3].Value, "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists)); continue; }
             OcrBox best = null;
             double bestDx = 1e9;
             foreach (OcrBox e in g)
             {
                 if (e == lb || used.Contains(e)) continue;
                 string t = e.Text.Trim();
-                if (M(t, LabRx) || t.Length < 3) continue;
+                if (M(t, LabRx) || M(t, KindRx) || M(t, KindValRx) || t.Length < 3) continue;
                 if (Math.Abs((e.Y + e.H / 2.0)-(lb.Y + lb.H / 2.0)) > lb.H * 0.7) continue;
                 double dx = e.X-(lb.X + lb.W);
                 if (dx < 0 || dx > lb.H * 30) continue;
@@ -305,7 +333,8 @@ internal static class TrackerParse
         int stop = aromaIdx > 0 ? aromaIdx : endIdx;
         for (int i = startIdx + 1; i < stop; i++)
         {
-            string l = Regex.Replace(lines[i].Trim(), @"^(Zusätze|Zusatze|Zusatz|Basis|Additives?|Base|Добавк\w*|Основа)\s+", "", I);
+            if (M(lines[i].Trim(), KindRx)) continue;
+            string l = Regex.Replace(lines[i].Trim(), @"^(Zusätze|Zusatze|Zusatz|Basis|Additives?|Base|Добавк\w*|Основа|Sinkende|Schwimmende|Sinking|Floating|Pop-?Up)\s+", "", I);
             if (l.Length < 3 || M(l, "^(Basis|Zusatz|Zusätze|Base|Additive|Основа|Добавка)$") || M(l, labelRx)) continue;
             l = Regex.Replace(l, "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", "", I);
             l = Regex.Replace(l, @"^[A-Z]{1,2}\W+(?=[a-zäöü])", "", I);
