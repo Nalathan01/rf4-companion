@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 13;
+    private const int Version = 14;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -133,6 +133,8 @@ internal static class DcFeed
         return GameData.Names.ContainsKey(k) || GameData.HasItem(k);
     }
 
+    private static readonly string[] CornNames = { "Spices", "Mulberry Purple", "Mulberry Yellow", "Natural Fluorescent", "Peach Fluorescent", "Peach Yellow", "Squid Yellow", "Tutti Frutti Red", "Tutti Frutti Yellow" };
+
     private static bool Sinking(string p)
     {
         return !PopUp(p) && System.Text.RegularExpressions.Regex.IsMatch(p, @"(Pellets \d+|\d+( Soluble)?)$");
@@ -140,7 +142,7 @@ internal static class DcFeed
 
     private static bool PopUp(string p)
     {
-        return p.IndexOf("Pop-Up", StringComparison.OrdinalIgnoreCase) >= 0 || p.IndexOf(" Flavor", StringComparison.Ordinal) >= 0 || p == "Spices";
+        return p.IndexOf("Pop-Up", StringComparison.OrdinalIgnoreCase) >= 0 || p.IndexOf(" Flavor", StringComparison.Ordinal) >= 0 || CornNames.Contains(p);
     }
 
     private static string RigFromBaits(string baits)
