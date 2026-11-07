@@ -8,7 +8,7 @@ using System.Linq;
 
 internal static class DcFeed
 {
-    private const int Version = 12;
+    private const int Version = 13;
     public const int KeepDays = 30;
     public const string ImgBase = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/dcimg/";
 
@@ -148,6 +148,7 @@ internal static class DcFeed
         string[] parts = baits.Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 1 || parts.Length > 2) return "";
         if (parts.All(Sinking)) return "Classic hair rig";
+        if (parts.All(PopUp)) return "Classic Pop-up rig";
         if (parts.Length == 2 && parts.Count(Sinking) == 1 && parts.Count(PopUp) == 1) return "Snowman rig";
         return "";
     }
