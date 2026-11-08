@@ -96,6 +96,59 @@ internal static class Updater
         });
     }
 
+    private static string Get(string url)
+    {
+        HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
+        req.UserAgent = Agent;
+        req.Accept = "application/vnd.github+json";
+        req.Timeout = 15000;
+        using (WebResponse res = req.GetResponse())
+        using (StreamReader reader = new StreamReader(res.GetResponseStream()))
+            return reader.ReadToEnd();
+    }
+
+    private static bool Take(Dictionary<string, object> rel, string asset, string label)
+    {
+        foreach (object o in AppEnv.GetList(rel, "assets"))
+        {
+            Dictionary<string, object> a = o as Dictionary<string, object>;
+            if (a == null || !string.Equals(AppEnv.GetString(a, "name"), asset, StringComparison.OrdinalIgnoreCase)) continue;
+            string digest = AppEnv.GetString(a, "digest");
+            if (string.IsNullOrEmpty(digest) || !digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)) return false;
+            assetSha = digest.Substring(7).ToLowerInvariant();
+            assetUrl = AppEnv.GetString(a, "browser_download_url");
+            assetApiUrl = AppEnv.GetString(a, "url");
+            notes = AppEnv.GetString(rel, "body");
+            latest = label;
+            AppEnv.Log("Update", "Version " + latest + " verfuegbar");
+            return true;
+        }
+        return false;
+    }
+
+#if TESTCHANNEL
+    private const string TestPrefix = "test-obs-overlay-";
+    private const string TestAsset = "RF4-Companion-OBS-Overlay-Test.exe";
+
+    private static void Check()
+    {
+        IEnumerable list = AppEnv.Json.DeserializeObject(Get("https://api.github.com/repos/" + Repo + "/releases?per_page=30")) as IEnumerable;
+        if (list == null) return;
+        int mine = Assembly.GetExecutingAssembly().GetName().Version.Revision, best = mine;
+        Dictionary<string, object> pick = null;
+        foreach (object o in list)
+        {
+            Dictionary<string, object> rel = o as Dictionary<string, object>;
+            if (rel == null || AppEnv.GetBool(rel, "draft") || !AppEnv.GetBool(rel, "prerelease")) continue;
+            string tag = AppEnv.GetString(rel, "tag_name");
+            int n;
+            if (!tag.StartsWith(TestPrefix, StringComparison.OrdinalIgnoreCase) || !int.TryParse(tag.Substring(TestPrefix.Length), out n)) continue;
+            if (n == mine) currentNotes = AppEnv.GetString(rel, "body");
+            if (n > best) { best = n; pick = rel; }
+        }
+        if (pick != null) Take(pick, TestAsset, "Test " + best.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+#else
     private static void Check()
     {
         HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/releases/latest");
@@ -131,6 +184,7 @@ internal static class Updater
             return;
         }
     }
+#endif
 
     public static void InstallAsync(Action done)
     {
