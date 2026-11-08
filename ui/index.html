@@ -1506,7 +1506,9 @@ const MENU = {
 function relNotes(md, title) {
   const out = [];
   let list = false;
-  (md || "").split(/\r?\n/).forEach(raw => {
+  const parts = (md || "").split(/^\s*#+\s*Deutsch\s*$/m);
+  const body = parts.length > 1 ? (INIT.lang === "de" ? parts[1] : parts[0]) : parts[0];
+  body.split(/\r?\n/).forEach(raw => {
     const l = raw.trim();
     if (!l || /^\*\*Download/i.test(l)) return;
     const html = esc(l.replace(/^(#+|[*-])\s*/, "")).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");

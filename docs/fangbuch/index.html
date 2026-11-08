@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RF4 Companion Fangbuch</title>
+<link rel="icon" href="../discord-bot/avatar.png">
+<style>
+:root{--bg:#161b20;--card:#1f262d;--fg:#e8ecf0;--mut:#8a96a3;--blue:#52aad0;--yel:#f0c428;--line:#2a323a}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 "Segoe UI",system-ui,sans-serif;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;gap:16px;align-items:center;margin-bottom:8px}
+header img{width:72px;height:72px;border-radius:50%}
+h1{font-size:26px;margin:0}h1 span{color:var(--blue)}
+.sub{color:var(--mut);margin:0}
+.lang{margin:16px 0 24px;display:flex;gap:8px}
+.lang button{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font:inherit}
+.lang button.on{border-color:var(--blue);color:var(--blue)}
+h2{font-size:19px;margin:32px 0 10px}
+ul{padding-left:20px;margin:0}li{margin:4px 0}
+.step{background:var(--card);border-radius:10px;padding:16px 18px;margin:12px 0;display:flex;gap:14px}
+.num{flex:none;width:32px;height:32px;border-radius:50%;background:var(--blue);color:var(--bg);font-weight:700;display:flex;align-items:center;justify-content:center}
+.step h3{margin:2px 0 6px;font-size:17px}
+.step p{margin:0 0 6px}
+b.ui{color:var(--yel);font-weight:600}
+a{color:var(--blue)}
+.note{color:var(--mut);font-size:14px;margin-top:28px;border-top:1px solid var(--line);padding-top:14px}
+[data-l]{display:none}
+body.de [data-l=de],body.en [data-l=en]{display:revert}
+</style>
+</head>
+<body class="de">
+<div class="wrap">
+<header>
+<img src="../discord-bot/avatar.png" alt="">
+<div><h1><span>RF4 Companion</span> <span data-l="de" style="color:inherit">Fangbuch</span><span data-l="en" style="color:inherit">Catch log</span></h1><p class="sub" data-l="de">Dein Angeltagebuch für Russian Fishing 4</p><p class="sub" data-l="en">Your fishing diary for Russian Fishing 4</p></div>
+</header>
+<div class="lang"><button class="on" onclick="setL('de',this)">Deutsch</button><button onclick="setL('en',this)">English</button></div>
+
+<div data-l="de">
+<h2>Was das Fangbuch ist</h2>
+<ul>
+<li>Du hältst deine Angelstellen fest, mit Bildern, Fängen, Montage, Ködern und Futter.</li>
+<li>Das Tool liest deine Screenshots selbst aus und füllt fast alles vor. Du prüfst nur noch und speicherst.</li>
+<li>Alles bleibt auf deinem PC. Nichts wird hochgeladen, und in den gespeicherten Bildern ist der Chat verpixelt.</li>
+</ul>
+
+<h2>Eigenen Spot anlegen</h2>
+<p>In <b class="ui">Mein Fangbuch</b> auf <b class="ui">＋ Eigenen Spot</b> klicken. Ein Assistent führt dich durch sechs Schritte.</p>
+<div class="step"><div class="num">1</div><div><h3>Bilder</h3>
+<p>Im Spiel einfach <b class="ui">F12</b> drücken. Das Tool holt neue Screenshots selbst aus dem Ordner <b class="ui">Dokumente\Russian Fishing 4\Screenshots</b> und sagt dir, welches Bild als Nächstes fehlt.</p>
+<ul><li><b>Pflicht:</b> deine Angelstelle mit Koordinaten und Temperatur, der Setzkescher und die Rute im Setup.</li>
+<li><b>Freiwillig:</b> die Futtermischung (Maus im Setup über das Futter halten), die große Karte (Maus auf den grünen Kreis deiner Position) und die Fangkarte einer Trophäe.</li>
+<li>Erkannt werden Fische, Gewässer, Koordinaten, Temperatur, Montage, Köder, Dip und die Futtermischung samt gemahlener Boilies.</li></ul></div></div>
+<div class="step"><div class="num">2</div><div><h3>Wo</h3><p>Gewässer und Koordinaten. Beim Grundangeln ist der Clip Pflicht.</p></div></div>
+<div class="step"><div class="num">3</div><div><h3>Bedingungen</h3><p>Zielfisch, Angelart und Temperatur. An manchen Gewässern wie dem Kupfersee ist die Temperatur Pflicht, bei Pose, Match und Bolognese die Tiefe.</p></div></div>
+<div class="step"><div class="num">4</div><div><h3>Montage und Köder</h3><p>Bis zu drei Montagen, falls du verschiedene Ruten im Wasser hast.</p></div></div>
+<div class="step"><div class="num">5</div><div><h3>Futter</h3><p>Rezept auswählen oder neu anlegen. Bei jedem Zusatz kannst du <b class="ui">gemahlen</b> anhaken. Wer nicht anfüttert, klickt <b class="ui">Ich füttere nicht an</b>.</p></div></div>
+<div class="step"><div class="num">6</div><div><h3>Abschluss</h3><p>Name und Notiz. Angelzeit, Anzahl der Fische und dein bester Fang stehen schon drin.</p></div></div>
+
+<h2>Deine Spots wiederfinden</h2>
+<ul>
+<li>Unter <b class="ui">Aktive Spots</b> den Haken <b class="ui">Eigene Spots</b> setzen. Dann siehst du nur deine eigenen, auf der Karte als blaue Raute.</li>
+<li>Mit <b class="ui">Bearbeiten</b> ergänzt oder korrigierst du einen Spot jederzeit.</li>
+<li>Unter <b class="ui">Meine Rezepte</b> liegen deine Futtermischungen, unter <b class="ui">Statistik</b> deine Fänge nach Fisch.</li>
+</ul>
+
+<h2>Spots vom Admin</h2>
+<p>Spots mit <b class="ui">Nalathan (Admin)</b> unter Aktive Spots habe ich selbst geangelt und geteilt, mit allen Bildern. Fische, Köder und Futter erscheinen in deiner eingestellten Sprache.</p>
+
+<p class="note">Funktioniert etwas nicht oder wird ein Bild falsch erkannt? Melde es bitte auf <a href="https://github.com/Nalathan01/rf4-companion/issues">GitHub</a> oder schreib <b class="ui">Nalathan</b> auf Discord. Ein Screenshot vom betroffenen Bild hilft am meisten.</p>
+</div>
+
+<div data-l="en">
+<h2>What the catch log is</h2>
+<ul>
+<li>You keep track of your fishing spots, with screenshots, catches, rig, baits and groundbait.</li>
+<li>The tool reads your screenshots by itself and fills in almost everything. You only check and save.</li>
+<li>Everything stays on your PC. Nothing is uploaded, and the chat is pixelated in the stored images.</li>
+</ul>
+
+<h2>Add your own spot</h2>
+<p>In <b class="ui">My catch log</b> click <b class="ui">＋ Own spot</b>. A wizard takes you through six steps.</p>
+<div class="step"><div class="num">1</div><div><h3>Images</h3>
+<p>Just press <b class="ui">F12</b> in the game. The tool picks up new screenshots from <b class="ui">Documents\Russian Fishing 4\Screenshots</b> by itself and tells you which image is still missing.</p>
+<ul><li><b>Required:</b> your fishing place with coordinates and temperature, the keepnet and the rod in the setup.</li>
+<li><b>Optional:</b> the groundbait (hover the groundbait in the setup), the big map (hover the green circle of your position) and the catch card of a trophy.</li>
+<li>It recognises fish, waterbody, coordinates, temperature, rig, baits, dip and the groundbait mix including crushed boilies.</li></ul></div></div>
+<div class="step"><div class="num">2</div><div><h3>Where</h3><p>Waterbody and coordinates. Clip is required for bottom fishing.</p></div></div>
+<div class="step"><div class="num">3</div><div><h3>Conditions</h3><p>Target fish, technique and temperature. On some waters like Copper Lake the temperature is required, for float, match and bolognese the depth.</p></div></div>
+<div class="step"><div class="num">4</div><div><h3>Rig and bait</h3><p>Up to three rigs if you fish with different rods.</p></div></div>
+<div class="step"><div class="num">5</div><div><h3>Groundbait</h3><p>Pick a recipe or create a new one. Every additive can be marked as <b class="ui">crushed</b>. If you don't use groundbait, click <b class="ui">I don't use groundbait</b>.</p></div></div>
+<div class="step"><div class="num">6</div><div><h3>Finish</h3><p>Name and note. Fishing time, number of fish and your best catch are already filled in.</p></div></div>
+
+<h2>Find your spots again</h2>
+<ul>
+<li>In <b class="ui">Active spots</b> tick <b class="ui">My spots</b>. You then see only your own, on the map as a blue diamond.</li>
+<li>Use <b class="ui">Edit</b> to complete or correct a spot at any time.</li>
+<li><b class="ui">My recipes</b> keeps your groundbait mixes, <b class="ui">Statistics</b> shows your catches by fish.</li>
+</ul>
+
+<h2>Spots from the admin</h2>
+<p>Spots marked <b class="ui">Nalathan (Admin)</b> in Active spots were fished and shared by me, with all screenshots. Fish, baits and groundbait show up in your own language.</p>
+
+<p class="note">Something not working, or an image read wrong? Please report it on <a href="https://github.com/Nalathan01/rf4-companion/issues">GitHub</a> or message <b class="ui">Nalathan</b> on Discord. A screenshot of the image in question helps most.</p>
+</div>
+</div>
+<script>
+function setL(l,b){document.body.className=l;document.documentElement.lang=l;document.querySelectorAll('.lang button').forEach(x=>x.classList.toggle('on',x===b))}
+if(/^de/i.test(navigator.language||'')===false){setL('en',document.querySelectorAll('.lang button')[1])}
+</script>
+</body>
+</html>
