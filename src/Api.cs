@@ -167,6 +167,7 @@ internal sealed class Api
             case "/api/fbimage": return Fangbuch.SaveImage(args ?? new Dictionary<string, object>(), Lang);
             case "/api/catch/delete": return Fangbuch.Delete("catches", AppEnv.GetList(args, "ids"));
             case "/api/myspot/save": { object res = Fangbuch.SaveSpot(args ?? new Dictionary<string, object>(), Lang); string sid = AppEnv.GetString(res as Dictionary<string, object>, "id"); if (Shared.CanShare) ThreadPool.QueueUserWorkItem(delegate { Shared.Refresh(sid); }); return res; }
+            case "/api/backup/export": return Backup.Export();
             case "/api/sharekey/new": return Shared.NewKey();
             case "/api/sharekey": return args == null ? Shared.KeyStatus() : Shared.SetKey(AppEnv.GetString(args, "key"));
             case "/api/myspot/share": if (!Shared.CanShare) break; return Shared.Set(AppEnv.GetString(args, "id"), AppEnv.GetBool(args, "on"), Lang);

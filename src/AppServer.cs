@@ -253,6 +253,15 @@ internal sealed class AppServer
                 Send(ctx, 200, File.ReadAllBytes(f), "text/javascript; charset=utf-8", false);
                 return;
             }
+            if (path == "/api/backup/import" && req.HasEntityBody)
+            {
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    req.InputStream.CopyTo(ms);
+                    SendJson(ctx, 200, Backup.Import(ms.ToArray()));
+                }
+                return;
+            }
             string body = "";
             if (req.HasEntityBody)
             {

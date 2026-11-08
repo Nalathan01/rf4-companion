@@ -673,7 +673,14 @@
   "shareRequest": "Freischaltung beantragen",
   "shareRequestAgain": "Formular erneut öffnen",
   "shareWaiting": "Wartet auf Freischaltung. Sobald Nalathan zugestimmt hat, hier auf »Prüfen und speichern« klicken.",
-  "shareRequestConfirm": "Das Tool erzeugt jetzt deinen persönlichen Schlüssel und öffnet ein GitHub Formular. Dafür brauchst du ein kostenloses GitHub Konto. Weiter?"
+  "shareRequestConfirm": "Das Tool erzeugt jetzt deinen persönlichen Schlüssel und öffnet ein GitHub Formular. Dafür brauchst du ein kostenloses GitHub Konto. Weiter?",
+  "backupSection": "Daten sichern",
+  "backupHint": "Sichert Fangbuch, Spots, Rezepte, Bilder und Einstellungen in eine Datei. Mit Importieren holst du sie auf einem neuen PC oder Zweitgerät zurück. Vorhandene Einträge bleiben erhalten.",
+  "backupExport": "Exportieren",
+  "backupImport": "Importieren",
+  "backupSaved": "Gespeichert: {0}",
+  "backupImported": "Übernommen: {0} Spots, {1} Fänge, {2} Rezepte.",
+  "backupInvalid": "Diese Datei ist keine RF4 Companion Sicherung."
  },
  "en": {
   "langName": "English",
@@ -1349,7 +1356,14 @@
   "shareRequest": "Request access",
   "shareRequestAgain": "Open the form again",
   "shareWaiting": "Waiting for approval. Once Nalathan has approved, click \"Check and save\" here.",
-  "shareRequestConfirm": "The tool now creates your personal key and opens a GitHub form. You need a free GitHub account for it. Continue?"
+  "shareRequestConfirm": "The tool now creates your personal key and opens a GitHub form. You need a free GitHub account for it. Continue?",
+  "backupSection": "Back up data",
+  "backupHint": "Saves your catch log, spots, recipes, images and settings to one file. Import brings them back on a new PC or second device. Existing entries are kept.",
+  "backupExport": "Export",
+  "backupImport": "Import",
+  "backupSaved": "Saved: {0}",
+  "backupImported": "Imported: {0} spots, {1} catches, {2} recipes.",
+  "backupInvalid": "This file is not an RF4 Companion backup."
  },
  "ru": {
   "langName": "Русский",
@@ -2022,7 +2036,14 @@
   "shareRequest": "Запросить доступ",
   "shareRequestAgain": "Открыть форму снова",
   "shareWaiting": "Ожидает одобрения. После одобрения Nalathan нажми здесь «Проверить и сохранить».",
-  "shareRequestConfirm": "Сейчас будет создан твой личный ключ и откроется форма на GitHub. Для этого нужен бесплатный аккаунт GitHub. Продолжить?"
+  "shareRequestConfirm": "Сейчас будет создан твой личный ключ и откроется форма на GitHub. Для этого нужен бесплатный аккаунт GitHub. Продолжить?",
+  "backupSection": "Резервная копия",
+  "backupHint": "Сохраняет журнал уловов, споты, рецепты, изображения и настройки в один файл. Импорт восстановит их на новом ПК или втором устройстве. Существующие записи сохраняются.",
+  "backupExport": "Экспорт",
+  "backupImport": "Импорт",
+  "backupSaved": "Сохранено: {0}",
+  "backupImported": "Импортировано: спотов {0}, уловов {1}, рецептов {2}.",
+  "backupInvalid": "Этот файл не является резервной копией RF4 Companion."
  },
  "fr": {
   "langName": "Français",
@@ -2695,7 +2716,14 @@
   "shareRequest": "Demander l'accès",
   "shareRequestAgain": "Rouvrir le formulaire",
   "shareWaiting": "En attente de validation. Une fois validé par Nalathan, clique ici sur « Vérifier et enregistrer ».",
-  "shareRequestConfirm": "L'outil crée maintenant ta clé personnelle et ouvre un formulaire GitHub. Il te faut un compte GitHub gratuit. Continuer ?"
+  "shareRequestConfirm": "L'outil crée maintenant ta clé personnelle et ouvre un formulaire GitHub. Il te faut un compte GitHub gratuit. Continuer ?",
+  "backupSection": "Sauvegarder les données",
+  "backupHint": "Enregistre ton carnet, tes spots, recettes, images et réglages dans un fichier. L'import les restaure sur un nouveau PC ou un second appareil. Les entrées existantes sont conservées.",
+  "backupExport": "Exporter",
+  "backupImport": "Importer",
+  "backupSaved": "Enregistré : {0}",
+  "backupImported": "Importé : {0} spots, {1} prises, {2} recettes.",
+  "backupInvalid": "Ce fichier n'est pas une sauvegarde RF4 Companion."
  },
  "es": {
   "langName": "Español",
@@ -3368,7 +3396,14 @@
   "shareRequest": "Solicitar acceso",
   "shareRequestAgain": "Abrir el formulario de nuevo",
   "shareWaiting": "Esperando aprobación. Cuando Nalathan lo apruebe, pulsa aquí «Comprobar y guardar».",
-  "shareRequestConfirm": "La herramienta crea ahora tu clave personal y abre un formulario de GitHub. Necesitas una cuenta gratuita de GitHub. ¿Continuar?"
+  "shareRequestConfirm": "La herramienta crea ahora tu clave personal y abre un formulario de GitHub. Necesitas una cuenta gratuita de GitHub. ¿Continuar?",
+  "backupSection": "Copia de seguridad",
+  "backupHint": "Guarda tu registro, spots, recetas, imágenes y ajustes en un archivo. Importar los recupera en un PC nuevo o un segundo equipo. Las entradas existentes se conservan.",
+  "backupExport": "Exportar",
+  "backupImport": "Importar",
+  "backupSaved": "Guardado: {0}",
+  "backupImported": "Importado: {0} spots, {1} capturas, {2} recetas.",
+  "backupInvalid": "Este archivo no es una copia de RF4 Companion."
  },
  "it": {
   "langName": "Italiano",
@@ -4041,7 +4076,14 @@
   "shareRequest": "Richiedi accesso",
   "shareRequestAgain": "Riapri il modulo",
   "shareWaiting": "In attesa di approvazione. Quando Nalathan approva, clicca qui su «Verifica e salva».",
-  "shareRequestConfirm": "Lo strumento crea ora la tua chiave personale e apre un modulo GitHub. Serve un account GitHub gratuito. Continuare?"
+  "shareRequestConfirm": "Lo strumento crea ora la tua chiave personale e apre un modulo GitHub. Serve un account GitHub gratuito. Continuare?",
+  "backupSection": "Backup dei dati",
+  "backupHint": "Salva registro catture, spot, ricette, immagini e impostazioni in un file. Importa li ripristina su un nuovo PC o un secondo dispositivo. Le voci esistenti restano.",
+  "backupExport": "Esporta",
+  "backupImport": "Importa",
+  "backupSaved": "Salvato: {0}",
+  "backupImported": "Importati: {0} spot, {1} catture, {2} ricette.",
+  "backupInvalid": "Questo file non è un backup di RF4 Companion."
  },
  "pl": {
   "langName": "Polski",
@@ -4714,7 +4756,14 @@
   "shareRequest": "Poproś o dostęp",
   "shareRequestAgain": "Otwórz formularz ponownie",
   "shareWaiting": "Czeka na zatwierdzenie. Gdy Nalathan zatwierdzi, kliknij tutaj „Sprawdź i zapisz”.",
-  "shareRequestConfirm": "Narzędzie utworzy teraz Twój klucz osobisty i otworzy formularz GitHub. Potrzebujesz darmowego konta GitHub. Kontynuować?"
+  "shareRequestConfirm": "Narzędzie utworzy teraz Twój klucz osobisty i otworzy formularz GitHub. Potrzebujesz darmowego konta GitHub. Kontynuować?",
+  "backupSection": "Kopia zapasowa",
+  "backupHint": "Zapisuje dziennik połowów, spoty, przepisy, obrazy i ustawienia w jednym pliku. Import przywraca je na nowym PC lub drugim urządzeniu. Istniejące wpisy zostają.",
+  "backupExport": "Eksportuj",
+  "backupImport": "Importuj",
+  "backupSaved": "Zapisano: {0}",
+  "backupImported": "Zaimportowano: {0} spotów, {1} połowów, {2} przepisów.",
+  "backupInvalid": "Ten plik nie jest kopią RF4 Companion."
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5387,7 +5436,14 @@
   "shareRequest": "Pedir acesso",
   "shareRequestAgain": "Abrir o formulário de novo",
   "shareWaiting": "A aguardar aprovação. Quando o Nalathan aprovar, clica aqui em «Verificar e guardar».",
-  "shareRequestConfirm": "A ferramenta cria agora a tua chave pessoal e abre um formulário do GitHub. Precisas de uma conta GitHub gratuita. Continuar?"
+  "shareRequestConfirm": "A ferramenta cria agora a tua chave pessoal e abre um formulário do GitHub. Precisas de uma conta GitHub gratuita. Continuar?",
+  "backupSection": "Cópia de segurança",
+  "backupHint": "Guarda o registo, spots, receitas, imagens e definições num ficheiro. Importar recupera-os num PC novo ou segundo dispositivo. As entradas existentes mantêm-se.",
+  "backupExport": "Exportar",
+  "backupImport": "Importar",
+  "backupSaved": "Guardado: {0}",
+  "backupImported": "Importado: {0} spots, {1} capturas, {2} receitas.",
+  "backupInvalid": "Este ficheiro não é uma cópia do RF4 Companion."
  },
  "nl": {
   "langName": "Nederlands",
@@ -6060,7 +6116,14 @@
   "shareRequest": "Toegang aanvragen",
   "shareRequestAgain": "Formulier opnieuw openen",
   "shareWaiting": "Wacht op goedkeuring. Klik hier op „Controleren en opslaan” zodra Nalathan heeft goedgekeurd.",
-  "shareRequestConfirm": "De tool maakt nu je persoonlijke sleutel en opent een GitHub formulier. Je hebt een gratis GitHub account nodig. Doorgaan?"
+  "shareRequestConfirm": "De tool maakt nu je persoonlijke sleutel en opent een GitHub formulier. Je hebt een gratis GitHub account nodig. Doorgaan?",
+  "backupSection": "Gegevens back-uppen",
+  "backupHint": "Slaat je vangstlog, stekken, recepten, afbeeldingen en instellingen op in één bestand. Importeren zet ze terug op een nieuwe pc of tweede apparaat. Bestaande items blijven.",
+  "backupExport": "Exporteren",
+  "backupImport": "Importeren",
+  "backupSaved": "Opgeslagen: {0}",
+  "backupImported": "Geïmporteerd: {0} stekken, {1} vangsten, {2} recepten.",
+  "backupInvalid": "Dit bestand is geen RF4 Companion back-up."
  },
  "tr": {
   "langName": "Türkçe",
@@ -6733,7 +6796,14 @@
   "shareRequest": "Erişim iste",
   "shareRequestAgain": "Formu tekrar aç",
   "shareWaiting": "Onay bekleniyor. Nalathan onayladığında burada «Kontrol et ve kaydet»e tıkla.",
-  "shareRequestConfirm": "Araç şimdi kişisel anahtarını oluşturup bir GitHub formu açacak. Ücretsiz bir GitHub hesabı gerekir. Devam edilsin mi?"
+  "shareRequestConfirm": "Araç şimdi kişisel anahtarını oluşturup bir GitHub formu açacak. Ücretsiz bir GitHub hesabı gerekir. Devam edilsin mi?",
+  "backupSection": "Verileri yedekle",
+  "backupHint": "Av günlüğünü, spotları, tarifleri, resimleri ve ayarları tek dosyaya kaydeder. İçe aktarma bunları yeni bir PC'de veya ikinci cihazda geri getirir. Mevcut kayıtlar korunur.",
+  "backupExport": "Dışa aktar",
+  "backupImport": "İçe aktar",
+  "backupSaved": "Kaydedildi: {0}",
+  "backupImported": "İçe aktarıldı: {0} spot, {1} av, {2} tarif.",
+  "backupInvalid": "Bu dosya bir RF4 Companion yedeği değil."
  },
  "ro": {
   "langName": "Română",
@@ -7406,7 +7476,14 @@
   "shareRequest": "Solicită acces",
   "shareRequestAgain": "Deschide din nou formularul",
   "shareWaiting": "Se așteaptă aprobarea. După ce Nalathan aprobă, apasă aici „Verifică și salvează”.",
-  "shareRequestConfirm": "Instrumentul creează acum cheia ta personală și deschide un formular GitHub. Ai nevoie de un cont GitHub gratuit. Continui?"
+  "shareRequestConfirm": "Instrumentul creează acum cheia ta personală și deschide un formular GitHub. Ai nevoie de un cont GitHub gratuit. Continui?",
+  "backupSection": "Copie de siguranță",
+  "backupHint": "Salvează jurnalul, spoturile, rețetele, imaginile și setările într-un fișier. Importul le readuce pe un PC nou sau pe al doilea dispozitiv. Intrările existente rămân.",
+  "backupExport": "Exportă",
+  "backupImport": "Importă",
+  "backupSaved": "Salvat: {0}",
+  "backupImported": "Importat: {0} spoturi, {1} capturi, {2} rețete.",
+  "backupInvalid": "Acest fișier nu este o copie RF4 Companion."
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -8079,7 +8156,14 @@
   "shareRequest": "Minta akses",
   "shareRequestAgain": "Buka formulir lagi",
   "shareWaiting": "Menunggu persetujuan. Setelah Nalathan menyetujui, klik «Periksa dan simpan» di sini.",
-  "shareRequestConfirm": "Alat ini akan membuat kunci pribadimu dan membuka formulir GitHub. Kamu perlu akun GitHub gratis. Lanjutkan?"
+  "shareRequestConfirm": "Alat ini akan membuat kunci pribadimu dan membuka formulir GitHub. Kamu perlu akun GitHub gratis. Lanjutkan?",
+  "backupSection": "Cadangkan data",
+  "backupHint": "Menyimpan catatan, spot, resep, gambar, dan pengaturan ke satu file. Impor mengembalikannya di PC baru atau perangkat kedua. Entri yang ada tetap dipertahankan.",
+  "backupExport": "Ekspor",
+  "backupImport": "Impor",
+  "backupSaved": "Tersimpan: {0}",
+  "backupImported": "Diimpor: {0} spot, {1} tangkapan, {2} resep.",
+  "backupInvalid": "File ini bukan cadangan RF4 Companion."
  },
  "ja": {
   "langName": "日本語",
@@ -8752,7 +8836,14 @@
   "shareRequest": "アクセスを申請",
   "shareRequestAgain": "フォームをもう一度開く",
   "shareWaiting": "承認待ちです。Nalathan が承認したら、ここで「確認して保存」を押してください。",
-  "shareRequestConfirm": "個人キーを作成し、GitHub のフォームを開きます。無料の GitHub アカウントが必要です。続けますか？"
+  "shareRequestConfirm": "個人キーを作成し、GitHub のフォームを開きます。無料の GitHub アカウントが必要です。続けますか？",
+  "backupSection": "データのバックアップ",
+  "backupHint": "釣果記録、スポット、レシピ、画像、設定を1つのファイルに保存します。インポートで新しいPCや2台目に戻せます。既存の項目は残ります。",
+  "backupExport": "エクスポート",
+  "backupImport": "インポート",
+  "backupSaved": "保存しました: {0}",
+  "backupImported": "インポート: スポット {0}、釣果 {1}、レシピ {2}",
+  "backupInvalid": "このファイルは RF4 Companion のバックアップではありません。"
  },
  "ko": {
   "langName": "한국어",
@@ -9425,7 +9516,14 @@
   "shareRequest": "권한 요청",
   "shareRequestAgain": "양식 다시 열기",
   "shareWaiting": "승인 대기 중입니다. Nalathan이 승인하면 여기서 '확인 후 저장'을 누르세요.",
-  "shareRequestConfirm": "이제 개인 키를 만들고 GitHub 양식을 엽니다. 무료 GitHub 계정이 필요합니다. 계속할까요?"
+  "shareRequestConfirm": "이제 개인 키를 만들고 GitHub 양식을 엽니다. 무료 GitHub 계정이 필요합니다. 계속할까요?",
+  "backupSection": "데이터 백업",
+  "backupHint": "조과 기록, 스팟, 레시피, 이미지, 설정을 하나의 파일로 저장합니다. 가져오기로 새 PC나 두 번째 기기에서 복원합니다. 기존 항목은 유지됩니다.",
+  "backupExport": "내보내기",
+  "backupImport": "가져오기",
+  "backupSaved": "저장됨: {0}",
+  "backupImported": "가져옴: 스팟 {0}개, 조과 {1}개, 레시피 {2}개",
+  "backupInvalid": "이 파일은 RF4 Companion 백업이 아닙니다."
  },
  "zh": {
   "langName": "简体中文",
@@ -10098,7 +10196,14 @@
   "shareRequest": "申请权限",
   "shareRequestAgain": "再次打开表单",
   "shareWaiting": "等待批准。Nalathan 批准后，在此点击“检查并保存”。",
-  "shareRequestConfirm": "工具将生成你的个人密钥并打开 GitHub 表单。需要一个免费的 GitHub 账号。继续吗？"
+  "shareRequestConfirm": "工具将生成你的个人密钥并打开 GitHub 表单。需要一个免费的 GitHub 账号。继续吗？",
+  "backupSection": "备份数据",
+  "backupHint": "把渔获记录、钓点、配方、图片和设置保存到一个文件。导入可在新电脑或第二台设备上恢复。已有条目会保留。",
+  "backupExport": "导出",
+  "backupImport": "导入",
+  "backupSaved": "已保存：{0}",
+  "backupImported": "已导入：{0} 个钓点、{1} 条渔获、{2} 个配方。",
+  "backupInvalid": "此文件不是 RF4 Companion 备份。"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10771,6 +10876,13 @@
   "shareRequest": "申請權限",
   "shareRequestAgain": "再次開啟表單",
   "shareWaiting": "等待核准。Nalathan 核准後，在此點擊「檢查並儲存」。",
-  "shareRequestConfirm": "工具將產生你的個人金鑰並開啟 GitHub 表單。需要一個免費的 GitHub 帳號。繼續嗎？"
+  "shareRequestConfirm": "工具將產生你的個人金鑰並開啟 GitHub 表單。需要一個免費的 GitHub 帳號。繼續嗎？",
+  "backupSection": "備份資料",
+  "backupHint": "把漁獲紀錄、釣點、配方、圖片和設定儲存到一個檔案。匯入可在新電腦或第二台裝置上還原。既有項目會保留。",
+  "backupExport": "匯出",
+  "backupImport": "匯入",
+  "backupSaved": "已儲存：{0}",
+  "backupImported": "已匯入：{0} 個釣點、{1} 筆漁獲、{2} 個配方。",
+  "backupInvalid": "此檔案不是 RF4 Companion 備份。"
  }
 }
