@@ -529,7 +529,7 @@ internal static class TrackerParse
             if (!hud && lines.Length <= 14)
                 foreach (string l in lines)
                 {
-                    Match pm = Regex.Match(l, @"^\s*(\d{1,4})\s*[:;]\s*(\d{1,4})\s*$");
+                    Match pm = Regex.Match(l, @"^\s*(\d{1,4})\s*['’`]?\s*[:;.]\s*['’`]?\s*(\d{1,4})\s*$");
                     if (pm.Success) { outR.Kind = "position"; outR.X = int.Parse(pm.Groups[1].Value); outR.Y = int.Parse(pm.Groups[2].Value); return outR; }
                 }
             return outR;

@@ -304,6 +304,20 @@ internal static class Tracker
         OcrRead r0 = Ocr(path, tag, RectangleF.Empty, 1, false);
         string[] lines = r0.Lines();
         TrackRes r = lines.Length > 0 ? TrackerParse.Parse(lines, r0.Boxes, code) : new TrackRes();
+        if (r.Kind.Length == 0 && lines.Length <= 14 && !Regex.IsMatch(string.Join(" ", lines), "Bedienfeld|Hilfe|Chat|Control panel|Help|Меню|Помощь|Чат", RegexOptions.IgnoreCase))
+        {
+            DirResult map = null;
+            try { map = DirDetect.DetectFile(path); } catch (Exception) { }
+            if (map != null && map.MapShot)
+            {
+                r.Kind = "position";
+                foreach (string l in lines)
+                {
+                    Match pm = Regex.Match(l, @"(\d{1,4})\s*['’`]?\s*[:;.]\s*['’`]?\s*(\d{1,4})");
+                    if (pm.Success) { r.X = int.Parse(pm.Groups[1].Value); r.Y = int.Parse(pm.Groups[2].Value); break; }
+                }
+            }
+        }
         List<string> fish = new List<string>();
         int minutes = 0;
         switch (r.Kind)
