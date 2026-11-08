@@ -64,8 +64,16 @@ async function load() {
       `<div class="row ${i.level}${known && !known.has(i.id) ? " new" : ""}"><span class="time">${esc(i.time)}</span><span class="fish">${esc(i.fish)}</span><span class="right"><span class="w">${esc(i.weight)}</span>${i.level ? `<span class="badge">${esc(d.labels[i.level])}</span>` : ""}</span></div>`).join("")
       : `<div class="empty">${esc(d.labels.empty)}</div>`;
     known = ids;
+    fit();
   } catch (e) { }
 }
+function fit() {
+  const list = document.getElementById("list");
+  const rows = [...list.children];
+  rows.forEach(r => r.style.display = "");
+  for (let i = rows.length; i > 1 && document.documentElement.scrollHeight > window.innerHeight; i--) rows[i-1].style.display = "none";
+}
+window.addEventListener("resize", fit);
 load();
 setInterval(load, 1000);
 </script>
