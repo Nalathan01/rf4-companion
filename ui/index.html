@@ -471,6 +471,7 @@ async function ping() {
   } catch (e) {}
 }
 async function loadActive() {
+  if ($("ownChk").checked && !LOG) await loadLog();
   const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + actParams());
   ACTIVE = ownOnly() ? [] : r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
