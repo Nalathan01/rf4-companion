@@ -380,7 +380,7 @@ dialog.sheet[open] { display: flex; }
   <button data-m="lookup" data-t="tabInfo">Nachschlagen</button>
   <button data-m="web" data-t="tabWeb">Webseiten</button>
   <button data-m="overlay" data-t="ovHead" class="ovonly">OBS Overlay</button>
-  <button class="logonly trkonly" data-m="settings" data-t="settings">Einstellungen</button>
+  <button data-m="settings" data-t="settings">Einstellungen</button>
   <button data-m="about" data-t="about">Über und Updates</button>
 </div>
 <dialog id="sheet" class="sheet"><div class="sheet-head"><h3 id="sheetTitle"></h3><button class="icon-btn" id="sheetClose">✕</button></div><div id="sheetBody"></div></dialog>
@@ -1408,17 +1408,29 @@ const MENU = {
     show("lakes");
   },
   async settings() {
-    const d = TRK || await api("/api/tracker/status");
+    const d = INIT.features.tracker ? (TRK || await api("/api/tracker/status")) : null;
     const ocr = await api("/api/ocrlangs");
+    const sk = await api("/api/sharekey");
     openDlg(T("settings", "Einstellungen"),
-      `<div class="logonly" style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
-       <div class="logonly" style="grid-column:1/3">${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}</div>
-       <label class="wide logonly">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+      `${d ? `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
+       <div style="grid-column:1/3">${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}</div>
+       <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>` : ""}
+       <div style="grid-column:1/3"><div class="hdr" style="${d ? "" : "margin-top:0"}">${esc(T("shareSection", "Spots teilen"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("shareKeyHint", "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Den Schlüssel bekommst du von Nalathan."))}</p>
+       <div style="display:flex;gap:8px;align-items:flex-end"><label style="flex:1">${esc(T("shareKeyLabel", "Persönlicher Schlüssel"))}<input id="gKey" value="${esc(sk.key || "")}" placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></label><button class="btn small" id="gKeyBtn">${esc(T("shareKeySave", "Prüfen und speichern"))}</button></div>
+       <div class="sub" id="gKeyState" style="margin-top:6px"></div></div>
        <div style="grid-column:1/3"><div class="hdr">${esc(T("ocrPacks", "Texterkennung (Sprachpakete)"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("ocrPacksHint", "Für Bilder aus Telegram und für den Tracker braucht Windows die Texterkennung der jeweiligen Sprache. Installieren fragt nach Administratorrechten und lädt das Paket von Microsoft."))}</p>
        <table class="tbl">${ocr.map(o => `<tr><td>${esc(o.name)}</td><td class="num">${o.installed ? esc(T("installed", "installiert")) : `<button class="btn small" data-ocr="${o.tag}">${esc(T("install", "Installieren"))}</button>`}</td></tr>`).join("")}</table></div>`,
-      async () => { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); },
+      async () => { if (d) { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); } },
       null);
     DLG.keep = true;
+    const keyState = k => { $("gKeyState").textContent = k.name ? "✓ " + T("shareKeyOk", "Freigeschaltet als {0} ({1})").replace("{0}", k.name).replace("{1}", k.cc) : k.key ? T("shareBadKey", "Schlüssel ungültig oder gesperrt.") : ""; };
+    keyState(sk);
+    $("gKeyBtn").onclick = async () => {
+      $("gKeyBtn").disabled = true;
+      try { const k = await api("/api/sharekey", { key: $("gKey").value.trim().toUpperCase() }); INIT.features.share = !!k.name; keyState(k); }
+      catch (e) { $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
+      $("gKeyBtn").disabled = false;
+    };
     $("dlgForm").querySelectorAll("[data-ocr]").forEach(b => b.onclick = async () => { try { await api("/api/ocrinstall", { tag: b.dataset.ocr }); b.textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); b.disabled = true; } catch (e) { $("dlgErr").textContent = errText(e).startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } });
   },
   async overlay() {

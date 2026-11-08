@@ -662,7 +662,14 @@
   "shareConfirm": "Diesen Spot mit Bildern für alle Nutzer des Tools veröffentlichen?",
   "shareNoSpot": "Spot nicht gefunden.",
   "shareNoToken": "Kein GitHub Zugang gefunden. Ist die GitHub CLI angemeldet?",
-  "shareFailed": "Teilen fehlgeschlagen"
+  "shareFailed": "Teilen fehlgeschlagen",
+  "shareSection": "Spots teilen",
+  "shareKeyHint": "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Den Schlüssel bekommst du von Nalathan.",
+  "shareKeyLabel": "Persönlicher Schlüssel",
+  "shareKeySave": "Prüfen und speichern",
+  "shareKeyOk": "Freigeschaltet als {0} ({1})",
+  "shareBadKey": "Schlüssel ungültig oder gesperrt.",
+  "shareLimit": "Für heute sind genug Spots geteilt. Morgen geht es weiter."
  },
  "en": {
   "langName": "English",
@@ -1327,7 +1334,14 @@
   "shareConfirm": "Publish this spot with its images for all users of the tool?",
   "shareNoSpot": "Spot not found.",
   "shareNoToken": "No GitHub access found. Is the GitHub CLI logged in?",
-  "shareFailed": "Sharing failed"
+  "shareFailed": "Sharing failed",
+  "shareSection": "Share spots",
+  "shareKeyHint": "With a personal key you can share your own spots with all users of the tool. You get the key from Nalathan.",
+  "shareKeyLabel": "Personal key",
+  "shareKeySave": "Check and save",
+  "shareKeyOk": "Enabled as {0} ({1})",
+  "shareBadKey": "Key invalid or blocked.",
+  "shareLimit": "Enough spots shared for today. Try again tomorrow."
  },
  "ru": {
   "langName": "Русский",
@@ -1989,7 +2003,14 @@
   "shareConfirm": "Опубликовать этот спот с фото для всех пользователей?",
   "shareNoSpot": "Спот не найден.",
   "shareNoToken": "Доступ к GitHub не найден. Выполнен ли вход в GitHub CLI?",
-  "shareFailed": "Не удалось поделиться"
+  "shareFailed": "Не удалось поделиться",
+  "shareSection": "Делиться спотами",
+  "shareKeyHint": "С личным ключом ты можешь делиться своими спотами со всеми пользователями. Ключ выдаёт Nalathan.",
+  "shareKeyLabel": "Личный ключ",
+  "shareKeySave": "Проверить и сохранить",
+  "shareKeyOk": "Доступ открыт: {0} ({1})",
+  "shareBadKey": "Ключ недействителен или заблокирован.",
+  "shareLimit": "На сегодня поделено достаточно спотов. Продолжи завтра."
  },
  "fr": {
   "langName": "Français",
@@ -2651,7 +2672,14 @@
   "shareConfirm": "Publier ce spot avec ses images pour tous les utilisateurs ?",
   "shareNoSpot": "Spot introuvable.",
   "shareNoToken": "Aucun accès GitHub trouvé. GitHub CLI est-il connecté ?",
-  "shareFailed": "Échec du partage"
+  "shareFailed": "Échec du partage",
+  "shareSection": "Partager des spots",
+  "shareKeyHint": "Avec une clé personnelle, tu peux partager tes spots avec tous les utilisateurs. La clé est fournie par Nalathan.",
+  "shareKeyLabel": "Clé personnelle",
+  "shareKeySave": "Vérifier et enregistrer",
+  "shareKeyOk": "Activé en tant que {0} ({1})",
+  "shareBadKey": "Clé invalide ou bloquée.",
+  "shareLimit": "Assez de spots partagés pour aujourd'hui. Réessaie demain."
  },
  "es": {
   "langName": "Español",
@@ -3313,7 +3341,14 @@
   "shareConfirm": "¿Publicar este spot con sus imágenes para todos los usuarios?",
   "shareNoSpot": "Spot no encontrado.",
   "shareNoToken": "No se encontró acceso a GitHub. ¿Está GitHub CLI conectado?",
-  "shareFailed": "Error al compartir"
+  "shareFailed": "Error al compartir",
+  "shareSection": "Compartir spots",
+  "shareKeyHint": "Con una clave personal puedes compartir tus spots con todos los usuarios. La clave te la da Nalathan.",
+  "shareKeyLabel": "Clave personal",
+  "shareKeySave": "Comprobar y guardar",
+  "shareKeyOk": "Activado como {0} ({1})",
+  "shareBadKey": "Clave no válida o bloqueada.",
+  "shareLimit": "Ya compartiste suficientes spots hoy. Inténtalo mañana."
  },
  "it": {
   "langName": "Italiano",
@@ -3975,7 +4010,14 @@
   "shareConfirm": "Pubblicare questo spot con le immagini per tutti gli utenti?",
   "shareNoSpot": "Spot non trovato.",
   "shareNoToken": "Nessun accesso GitHub trovato. GitHub CLI è collegato?",
-  "shareFailed": "Condivisione non riuscita"
+  "shareFailed": "Condivisione non riuscita",
+  "shareSection": "Condividi spot",
+  "shareKeyHint": "Con una chiave personale puoi condividere i tuoi spot con tutti gli utenti. La chiave te la dà Nalathan.",
+  "shareKeyLabel": "Chiave personale",
+  "shareKeySave": "Verifica e salva",
+  "shareKeyOk": "Abilitato come {0} ({1})",
+  "shareBadKey": "Chiave non valida o bloccata.",
+  "shareLimit": "Hai condiviso abbastanza spot per oggi. Riprova domani."
  },
  "pl": {
   "langName": "Polski",
@@ -4637,7 +4679,14 @@
   "shareConfirm": "Opublikować ten spot ze zdjęciami dla wszystkich użytkowników?",
   "shareNoSpot": "Nie znaleziono spotu.",
   "shareNoToken": "Nie znaleziono dostępu do GitHub. Czy GitHub CLI jest zalogowany?",
-  "shareFailed": "Udostępnianie nie powiodło się"
+  "shareFailed": "Udostępnianie nie powiodło się",
+  "shareSection": "Udostępnianie spotów",
+  "shareKeyHint": "Z kluczem osobistym możesz udostępniać swoje spoty wszystkim użytkownikom. Klucz otrzymasz od Nalathana.",
+  "shareKeyLabel": "Klucz osobisty",
+  "shareKeySave": "Sprawdź i zapisz",
+  "shareKeyOk": "Aktywny jako {0} ({1})",
+  "shareBadKey": "Klucz nieprawidłowy lub zablokowany.",
+  "shareLimit": "Na dziś udostępniono wystarczająco spotów. Spróbuj jutro."
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5299,7 +5348,14 @@
   "shareConfirm": "Publicar este spot com as imagens para todos os utilizadores?",
   "shareNoSpot": "Spot não encontrado.",
   "shareNoToken": "Nenhum acesso ao GitHub encontrado. O GitHub CLI tem sessão iniciada?",
-  "shareFailed": "Falha ao partilhar"
+  "shareFailed": "Falha ao partilhar",
+  "shareSection": "Partilhar spots",
+  "shareKeyHint": "Com uma chave pessoal podes partilhar os teus spots com todos os utilizadores. A chave é dada pelo Nalathan.",
+  "shareKeyLabel": "Chave pessoal",
+  "shareKeySave": "Verificar e guardar",
+  "shareKeyOk": "Ativado como {0} ({1})",
+  "shareBadKey": "Chave inválida ou bloqueada.",
+  "shareLimit": "Já partilhaste spots suficientes hoje. Tenta amanhã."
  },
  "nl": {
   "langName": "Nederlands",
@@ -5961,7 +6017,14 @@
   "shareConfirm": "Deze spot met afbeeldingen voor alle gebruikers publiceren?",
   "shareNoSpot": "Spot niet gevonden.",
   "shareNoToken": "Geen GitHub toegang gevonden. Is de GitHub CLI aangemeld?",
-  "shareFailed": "Delen mislukt"
+  "shareFailed": "Delen mislukt",
+  "shareSection": "Stekken delen",
+  "shareKeyHint": "Met een persoonlijke sleutel deel je je eigen stekken met alle gebruikers. De sleutel krijg je van Nalathan.",
+  "shareKeyLabel": "Persoonlijke sleutel",
+  "shareKeySave": "Controleren en opslaan",
+  "shareKeyOk": "Vrijgegeven als {0} ({1})",
+  "shareBadKey": "Sleutel ongeldig of geblokkeerd.",
+  "shareLimit": "Genoeg stekken gedeeld voor vandaag. Morgen weer."
  },
  "tr": {
   "langName": "Türkçe",
@@ -6623,7 +6686,14 @@
   "shareConfirm": "Bu spot resimleriyle tüm kullanıcılar için yayınlansın mı?",
   "shareNoSpot": "Spot bulunamadı.",
   "shareNoToken": "GitHub erişimi bulunamadı. GitHub CLI oturumu açık mı?",
-  "shareFailed": "Paylaşım başarısız"
+  "shareFailed": "Paylaşım başarısız",
+  "shareSection": "Spot paylaşma",
+  "shareKeyHint": "Kişisel anahtarla kendi spotlarını tüm kullanıcılarla paylaşabilirsin. Anahtarı Nalathan verir.",
+  "shareKeyLabel": "Kişisel anahtar",
+  "shareKeySave": "Kontrol et ve kaydet",
+  "shareKeyOk": "{0} ({1}) olarak etkin",
+  "shareBadKey": "Anahtar geçersiz veya engellendi.",
+  "shareLimit": "Bugün yeterince spot paylaştın. Yarın tekrar dene."
  },
  "ro": {
   "langName": "Română",
@@ -7285,7 +7355,14 @@
   "shareConfirm": "Publici acest spot cu imagini pentru toți utilizatorii?",
   "shareNoSpot": "Spotul nu a fost găsit.",
   "shareNoToken": "Nu s-a găsit acces GitHub. Este GitHub CLI conectat?",
-  "shareFailed": "Distribuirea a eșuat"
+  "shareFailed": "Distribuirea a eșuat",
+  "shareSection": "Distribuie spoturi",
+  "shareKeyHint": "Cu o cheie personală îți poți distribui spoturile tuturor utilizatorilor. Cheia o primești de la Nalathan.",
+  "shareKeyLabel": "Cheie personală",
+  "shareKeySave": "Verifică și salvează",
+  "shareKeyOk": "Activat ca {0} ({1})",
+  "shareBadKey": "Cheie invalidă sau blocată.",
+  "shareLimit": "Ai distribuit destule spoturi azi. Încearcă mâine."
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7947,7 +8024,14 @@
   "shareConfirm": "Publikasikan spot ini beserta gambarnya untuk semua pengguna?",
   "shareNoSpot": "Spot tidak ditemukan.",
   "shareNoToken": "Akses GitHub tidak ditemukan. Apakah GitHub CLI sudah masuk?",
-  "shareFailed": "Gagal membagikan"
+  "shareFailed": "Gagal membagikan",
+  "shareSection": "Bagikan spot",
+  "shareKeyHint": "Dengan kunci pribadi kamu bisa membagikan spot ke semua pengguna. Kunci didapat dari Nalathan.",
+  "shareKeyLabel": "Kunci pribadi",
+  "shareKeySave": "Periksa dan simpan",
+  "shareKeyOk": "Aktif sebagai {0} ({1})",
+  "shareBadKey": "Kunci tidak valid atau diblokir.",
+  "shareLimit": "Sudah cukup spot dibagikan hari ini. Coba lagi besok."
  },
  "ja": {
   "langName": "日本語",
@@ -8609,7 +8693,14 @@
   "shareConfirm": "このスポットを画像付きで全ユーザーに公開しますか？",
   "shareNoSpot": "スポットが見つかりません。",
   "shareNoToken": "GitHub のアクセスが見つかりません。GitHub CLI にログインしていますか？",
-  "shareFailed": "共有に失敗しました"
+  "shareFailed": "共有に失敗しました",
+  "shareSection": "スポットの共有",
+  "shareKeyHint": "個人キーがあれば自分のスポットを全ユーザーと共有できます。キーは Nalathan から受け取ります。",
+  "shareKeyLabel": "個人キー",
+  "shareKeySave": "確認して保存",
+  "shareKeyOk": "{0}（{1}）として有効",
+  "shareBadKey": "キーが無効か、ブロックされています。",
+  "shareLimit": "今日はこれ以上共有できません。明日また試してください。"
  },
  "ko": {
   "langName": "한국어",
@@ -9271,7 +9362,14 @@
   "shareConfirm": "이 스팟을 이미지와 함께 모든 사용자에게 공개할까요?",
   "shareNoSpot": "스팟을 찾을 수 없습니다.",
   "shareNoToken": "GitHub 접근 권한이 없습니다. GitHub CLI에 로그인되어 있나요?",
-  "shareFailed": "공유 실패"
+  "shareFailed": "공유 실패",
+  "shareSection": "스팟 공유",
+  "shareKeyHint": "개인 키가 있으면 내 스팟을 모든 사용자와 공유할 수 있습니다. 키는 Nalathan에게서 받습니다.",
+  "shareKeyLabel": "개인 키",
+  "shareKeySave": "확인 후 저장",
+  "shareKeyOk": "{0} ({1})(으)로 활성화됨",
+  "shareBadKey": "키가 잘못되었거나 차단되었습니다.",
+  "shareLimit": "오늘은 충분히 공유했습니다. 내일 다시 시도하세요."
  },
  "zh": {
   "langName": "简体中文",
@@ -9933,7 +10031,14 @@
   "shareConfirm": "要将此钓点连同图片发布给所有用户吗？",
   "shareNoSpot": "未找到钓点。",
   "shareNoToken": "未找到 GitHub 访问权限。GitHub CLI 是否已登录？",
-  "shareFailed": "分享失败"
+  "shareFailed": "分享失败",
+  "shareSection": "分享钓点",
+  "shareKeyHint": "有个人密钥即可把自己的钓点分享给所有用户。密钥由 Nalathan 提供。",
+  "shareKeyLabel": "个人密钥",
+  "shareKeySave": "检查并保存",
+  "shareKeyOk": "已启用：{0}（{1}）",
+  "shareBadKey": "密钥无效或已被封禁。",
+  "shareLimit": "今天分享的钓点已达上限，明天再试。"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10595,6 +10700,13 @@
   "shareConfirm": "要將此釣點連同圖片發布給所有使用者嗎？",
   "shareNoSpot": "找不到釣點。",
   "shareNoToken": "找不到 GitHub 存取權限。GitHub CLI 是否已登入？",
-  "shareFailed": "分享失敗"
+  "shareFailed": "分享失敗",
+  "shareSection": "分享釣點",
+  "shareKeyHint": "有個人金鑰即可把自己的釣點分享給所有使用者。金鑰由 Nalathan 提供。",
+  "shareKeyLabel": "個人金鑰",
+  "shareKeySave": "檢查並儲存",
+  "shareKeyOk": "已啟用：{0}（{1}）",
+  "shareBadKey": "金鑰無效或已被封鎖。",
+  "shareLimit": "今天分享的釣點已達上限，明天再試。"
  }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -12,13 +11,12 @@ using System.Text;
 
 internal static class Shared
 {
-    private const string Repo = "Nalathan01/rf4-companion-data";
-    private const string Folder = "shared/admin";
-    private const string Raw = "https://raw.githubusercontent.com/" + Repo + "/main/" + Folder + "/";
-    private const string Author = "Nalathan (Admin)";
-    private const string Country = "DE";
+    private const string Raw = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/main/shared/admin/";
+    private const string Worker = "https://rf4-share.rf4-companion.workers.dev/";
     private static DateTime lastFetch = DateTime.MinValue;
     private static readonly object gate = new object();
+    private static string checkedKey;
+    private static Dictionary<string, object> checkedMe;
 
     public static void Fetch(bool force)
     {
@@ -43,22 +41,92 @@ internal static class Shared
         catch (Exception ex) { AppEnv.Log("Geteilt", ex.Message); }
     }
 
-#if PRIVATE
-    public static bool CanShare { get { return true; } }
+    private static string Key
+    {
+        get { return (UserStore.Get("shareKey") ?? "").ToString().Trim(); }
+    }
+
+    public static bool CanShare
+    {
+        get { return Features.Log && Key.Length > 0; }
+    }
+
+    public static object KeyStatus()
+    {
+        string key = Key;
+        if (key.Length == 0) return AppEnv.Obj("key", "");
+        Dictionary<string, object> me = Me(key);
+        return AppEnv.Obj("key", key, "name", me != null ? AppEnv.GetString(me, "name") : "", "cc", me != null ? AppEnv.GetString(me, "cc") : "");
+    }
+
+    public static object SetKey(string key)
+    {
+        key = (key ?? "").Trim().ToUpperInvariant();
+        if (key.Length == 0) { UserStore.Set("shareKey", ""); return AppEnv.Obj("key", ""); }
+        Dictionary<string, object> me = Me(key);
+        if (me == null) throw new AppError("shareBadKey", null);
+        UserStore.Set("shareKey", key);
+        return AppEnv.Obj("key", key, "name", AppEnv.GetString(me, "name"), "cc", AppEnv.GetString(me, "cc"));
+    }
+
+    private static Dictionary<string, object> Me(string key)
+    {
+        lock (gate) if (checkedKey == key && checkedMe != null) return checkedMe;
+        try
+        {
+            Dictionary<string, object> me = AppEnv.Json.DeserializeObject(Call("me", key, null)) as Dictionary<string, object>;
+            if (me == null || !AppEnv.GetBool(me, "ok")) return null;
+            lock (gate) { checkedKey = key; checkedMe = me; }
+            return me;
+        }
+        catch (AppError e) { if (e.Code == "shareBadKey") return null; throw; }
+    }
+
+    private static string Call(string path, string key, object body)
+    {
+        HttpWebRequest req = (HttpWebRequest)WebRequest.Create(Worker + path);
+        req.Method = body == null ? "GET" : "POST";
+        req.UserAgent = "RF4Companion";
+        req.Headers["x-key"] = key;
+        req.Timeout = 120000;
+        req.ReadWriteTimeout = 120000;
+        if (body != null)
+        {
+            byte[] b = Encoding.UTF8.GetBytes(AppEnv.Json.Serialize(body));
+            req.ContentType = "application/json";
+            req.ContentLength = b.Length;
+            using (Stream st = req.GetRequestStream()) st.Write(b, 0, b.Length);
+        }
+        try
+        {
+            using (WebResponse res = req.GetResponse())
+            using (StreamReader sr = new StreamReader(res.GetResponseStream(), Encoding.UTF8)) return sr.ReadToEnd();
+        }
+        catch (WebException ex)
+        {
+            HttpWebResponse res = ex.Response as HttpWebResponse;
+            string code = "shareFailed";
+            if (res != null)
+                try
+                {
+                    using (StreamReader sr = new StreamReader(res.GetResponseStream(), Encoding.UTF8))
+                        code = AppEnv.GetString(AppEnv.Json.DeserializeObject(sr.ReadToEnd()) as Dictionary<string, object>, "error");
+                }
+                catch (Exception) { }
+            throw new AppError(string.IsNullOrEmpty(code) ? "shareFailed" : code, ex.Message);
+        }
+    }
 
     public static object Set(string spotId, bool on, string lang)
     {
+        string key = Key;
+        if (key.Length == 0) throw new AppError("shareBadKey", null);
         lock (gate)
         {
             Dictionary<string, object> spot = Fangbuch.SpotById(spotId);
             if (spot == null) throw new AppError("shareNoSpot", null);
-            string token = Token();
-            string sha;
-            Dictionary<string, object> file = ReadFile(token, Folder + "/spots.json", out sha);
-            List<object> list = AppEnv.GetList(file, "spots").Cast<object>().Where(o => AppEnv.GetString(o as Dictionary<string, object>, "id") != "adm:" + spotId).ToList();
-            if (on) list.Insert(0, Build(spot, token));
-            Dictionary<string, object> outFile = AppEnv.Obj("v", 1, "author", Author, "cc", Country, "updated", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture), "spots", list.ToArray());
-            Put(token, Folder + "/spots.json", Encoding.UTF8.GetBytes(AppEnv.Json.Serialize(outFile)), sha, (on ? "Share spot " : "Unshare spot ") + spotId);
+            if (on) Call("share", key, AppEnv.Obj("id", spotId, "spot", Build(spot), "images", Images(spot)));
+            else Call("unshare", key, AppEnv.Obj("id", spotId));
             Fangbuch.SetSpotValue(spotId, "shared", on ? DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture) : null);
             lastFetch = DateTime.MinValue;
             Fetch(true);
@@ -69,18 +137,14 @@ internal static class Shared
     public static void Refresh(string spotId)
     {
         Dictionary<string, object> spot = Fangbuch.SpotById(spotId);
-        if (spot == null || AppEnv.GetString(spot, "shared").Length == 0) return;
+        if (spot == null || AppEnv.GetString(spot, "shared").Length == 0 || Key.Length == 0) return;
         try { Set(spotId, true, "en"); }
         catch (Exception ex) { AppEnv.Log("Geteilt", "Aktualisieren: " + ex.Message); }
     }
 
-    private static Dictionary<string, object> Build(Dictionary<string, object> s, string token)
+    private static Dictionary<string, object> Build(Dictionary<string, object> s)
     {
-        string id = AppEnv.GetString(s, "id");
         Dictionary<string, object> r = new Dictionary<string, object>();
-        r["id"] = "adm:" + id;
-        r["author"] = Author;
-        r["cc"] = Country;
         r["lake"] = AppEnv.GetString(s, "lake");
         int[] xy = Fangbuch.SpotPosition(s);
         if (xy != null) { r["x"] = xy[0]; r["y"] = xy[1]; }
@@ -113,26 +177,24 @@ internal static class Shared
         if (AppEnv.GetString(s, "tech").Length > 0) r["method"] = AppEnv.GetString(s, "tech");
         if (AppEnv.GetString(s, "temp").Length > 0) r["ptemp"] = AppEnv.GetString(s, "temp");
         if (AppEnv.GetString(s, "notes").Length > 0) { r["text"] = AppEnv.GetString(s, "notes"); r["textLang"] = "de"; }
-        string first = AppEnv.GetString(s, "shared");
-        r["posted"] = first.Length > 0 ? first : DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-        List<object> urls = new List<object>();
-        Dictionary<string, object> imgs = s.ContainsKey("images") ? s["images"] as Dictionary<string, object> : null;
-        if (imgs != null)
-            foreach (string kind in new string[] { "spot", "net", "setup", "feed", "map", "other" })
-            {
-                object f;
-                if (!imgs.TryGetValue(kind, out f) || f == null) continue;
-                byte[] data;
-                string type;
-                if (!Fangbuch.ImageFile(f.ToString(), out data, out type)) continue;
-                string name = id + "_" + kind + ".jpg";
-                string isha;
-                ReadFile(token, Folder + "/img/" + name, out isha);
-                Put(token, Folder + "/img/" + name, Jpg(data), isha, "Spot image " + name);
-                urls.Add(Raw + "img/" + name);
-            }
-        if (urls.Count > 0) r["imgs"] = urls.ToArray();
         return r;
+    }
+
+    private static object[] Images(Dictionary<string, object> s)
+    {
+        List<object> outL = new List<object>();
+        Dictionary<string, object> imgs = s.ContainsKey("images") ? s["images"] as Dictionary<string, object> : null;
+        if (imgs == null) return outL.ToArray();
+        foreach (string kind in new string[] { "spot", "net", "setup", "feed", "map", "other" })
+        {
+            object f;
+            if (!imgs.TryGetValue(kind, out f) || f == null) continue;
+            byte[] data;
+            string type;
+            if (!Fangbuch.ImageFile(f.ToString(), out data, out type)) continue;
+            outL.Add(AppEnv.Obj("kind", kind, "jpg", Convert.ToBase64String(Jpg(data))));
+        }
+        return outL.ToArray();
     }
 
     private static byte[] Jpg(byte[] b)
@@ -159,85 +221,4 @@ internal static class Shared
             }
         }
     }
-
-    private static string Token()
-    {
-        try
-        {
-            ProcessStartInfo psi = new ProcessStartInfo("gh", "auth token");
-            psi.UseShellExecute = false;
-            psi.RedirectStandardOutput = true;
-            psi.RedirectStandardError = true;
-            psi.CreateNoWindow = true;
-            using (Process p = Process.Start(psi))
-            {
-                string t = p.StandardOutput.ReadToEnd().Trim();
-                p.WaitForExit(15000);
-                if (t.Length > 0) return t;
-            }
-        }
-        catch (Exception) { }
-        throw new AppError("shareNoToken", null);
-    }
-
-    private static HttpWebRequest Gh(string token, string path, string method)
-    {
-        HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/" + Repo + "/contents/" + path);
-        req.Method = method;
-        req.UserAgent = "RF4Companion";
-        req.Accept = "application/vnd.github+json";
-        req.Headers["Authorization"] = "Bearer " + token;
-        req.Timeout = 60000;
-        return req;
-    }
-
-    private static Dictionary<string, object> ReadFile(string token, string path, out string sha)
-    {
-        sha = null;
-        try
-        {
-            using (WebResponse res = Gh(token, path + "?ref=main", "GET").GetResponse())
-            using (StreamReader sr = new StreamReader(res.GetResponseStream()))
-            {
-                Dictionary<string, object> meta = AppEnv.Json.DeserializeObject(sr.ReadToEnd()) as Dictionary<string, object>;
-                sha = AppEnv.GetString(meta, "sha");
-                string content = AppEnv.GetString(meta, "content").Replace("\n", "");
-                if (content.Length == 0 || !path.EndsWith(".json", StringComparison.Ordinal)) return new Dictionary<string, object>();
-                return AppEnv.Json.DeserializeObject(Encoding.UTF8.GetString(Convert.FromBase64String(content))) as Dictionary<string, object> ?? new Dictionary<string, object>();
-            }
-        }
-        catch (WebException ex)
-        {
-            HttpWebResponse res = ex.Response as HttpWebResponse;
-            if (res != null && res.StatusCode == HttpStatusCode.NotFound) return new Dictionary<string, object>();
-            throw new AppError("shareFailed", ex.Message);
-        }
-    }
-
-    private static void Put(string token, string path, byte[] data, string sha, string message)
-    {
-        Dictionary<string, object> who = AppEnv.Obj("name", "Nalathan", "email", "194643374+Nalathan01@users.noreply.github.com");
-        Dictionary<string, object> body = AppEnv.Obj("message", message, "content", Convert.ToBase64String(data), "branch", "main", "committer", who, "author", who);
-        if (!string.IsNullOrEmpty(sha)) body["sha"] = sha;
-        byte[] b = Encoding.UTF8.GetBytes(AppEnv.Json.Serialize(body));
-        HttpWebRequest req = Gh(token, path, "PUT");
-        req.ContentType = "application/json";
-        req.ContentLength = b.Length;
-        try
-        {
-            using (Stream st = req.GetRequestStream()) st.Write(b, 0, b.Length);
-            using (WebResponse res = req.GetResponse()) { }
-        }
-        catch (WebException ex) { throw new AppError("shareFailed", ex.Message); }
-    }
-#else
-    public static bool CanShare { get { return false; } }
-
-    public static object Set(string spotId, bool on, string lang)
-    {
-        throw new AppError("shareNoToken", null);
-    }
-
-    public static void Refresh(string spotId) { }
-#endif
 }
