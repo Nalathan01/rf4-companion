@@ -646,7 +646,13 @@
   "ovTextColor": "Textfarbe",
   "ovFont": "Schriftart",
   "ovRadius": "Eckenrundung",
-  "ovReset": "Design zurücksetzen"
+  "ovReset": "Design zurücksetzen",
+  "ovSecLive": "1. Live-Erkennung",
+  "ovSecContent": "2. Inhalt",
+  "ovSecLook": "3. Aussehen",
+  "ovPreviewHead": "Vorschau",
+  "ovSecObs": "4. In OBS einfügen",
+  "ovAdvanced": "Erweitert"
  },
  "en": {
   "langName": "English",
@@ -1295,7 +1301,13 @@
   "ovTextColor": "Text colour",
   "ovFont": "Font",
   "ovRadius": "Corner radius",
-  "ovReset": "Reset design"
+  "ovReset": "Reset design",
+  "ovSecLive": "1. Live detection",
+  "ovSecContent": "2. Content",
+  "ovSecLook": "3. Look",
+  "ovPreviewHead": "Preview",
+  "ovSecObs": "4. Add to OBS",
+  "ovAdvanced": "Advanced"
  },
  "ru": {
   "langName": "Русский",
@@ -1941,7 +1953,13 @@
   "ovTextColor": "Цвет текста",
   "ovFont": "Шрифт",
   "ovRadius": "Скругление углов",
-  "ovReset": "Сбросить оформление"
+  "ovReset": "Сбросить оформление",
+  "ovSecLive": "1. Распознавание",
+  "ovSecContent": "2. Содержимое",
+  "ovSecLook": "3. Оформление",
+  "ovPreviewHead": "Предпросмотр",
+  "ovSecObs": "4. Добавить в OBS",
+  "ovAdvanced": "Дополнительно"
  },
  "fr": {
   "langName": "Français",
@@ -2587,7 +2605,13 @@
   "ovTextColor": "Couleur du texte",
   "ovFont": "Police",
   "ovRadius": "Arrondi des coins",
-  "ovReset": "Réinitialiser l'apparence"
+  "ovReset": "Réinitialiser l'apparence",
+  "ovSecLive": "1. Détection en direct",
+  "ovSecContent": "2. Contenu",
+  "ovSecLook": "3. Apparence",
+  "ovPreviewHead": "Aperçu",
+  "ovSecObs": "4. Ajouter à OBS",
+  "ovAdvanced": "Avancé"
  },
  "es": {
   "langName": "Español",
@@ -3233,7 +3257,13 @@
   "ovTextColor": "Color del texto",
   "ovFont": "Fuente",
   "ovRadius": "Redondeo de esquinas",
-  "ovReset": "Restablecer diseño"
+  "ovReset": "Restablecer diseño",
+  "ovSecLive": "1. Detección en directo",
+  "ovSecContent": "2. Contenido",
+  "ovSecLook": "3. Aspecto",
+  "ovPreviewHead": "Vista previa",
+  "ovSecObs": "4. Añadir a OBS",
+  "ovAdvanced": "Avanzado"
  },
  "it": {
   "langName": "Italiano",
@@ -3879,7 +3909,13 @@
   "ovTextColor": "Colore del testo",
   "ovFont": "Carattere",
   "ovRadius": "Arrotondamento angoli",
-  "ovReset": "Ripristina aspetto"
+  "ovReset": "Ripristina aspetto",
+  "ovSecLive": "1. Riconoscimento in diretta",
+  "ovSecContent": "2. Contenuto",
+  "ovSecLook": "3. Aspetto",
+  "ovPreviewHead": "Anteprima",
+  "ovSecObs": "4. Aggiungi a OBS",
+  "ovAdvanced": "Avanzate"
  },
  "pl": {
   "langName": "Polski",
@@ -4525,7 +4561,13 @@
   "ovTextColor": "Kolor tekstu",
   "ovFont": "Czcionka",
   "ovRadius": "Zaokrąglenie rogów",
-  "ovReset": "Przywróć wygląd"
+  "ovReset": "Przywróć wygląd",
+  "ovSecLive": "1. Rozpoznawanie na żywo",
+  "ovSecContent": "2. Zawartość",
+  "ovSecLook": "3. Wygląd",
+  "ovPreviewHead": "Podgląd",
+  "ovSecObs": "4. Dodaj do OBS",
+  "ovAdvanced": "Zaawansowane"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5171,7 +5213,13 @@
   "ovTextColor": "Cor do texto",
   "ovFont": "Fonte",
   "ovRadius": "Arredondamento dos cantos",
-  "ovReset": "Restaurar visual"
+  "ovReset": "Restaurar visual",
+  "ovSecLive": "1. Detecção ao vivo",
+  "ovSecContent": "2. Conteúdo",
+  "ovSecLook": "3. Visual",
+  "ovPreviewHead": "Pré-visualização",
+  "ovSecObs": "4. Adicionar ao OBS",
+  "ovAdvanced": "Avançado"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5817,7 +5865,13 @@
   "ovTextColor": "Tekstkleur",
   "ovFont": "Lettertype",
   "ovRadius": "Hoekafronding",
-  "ovReset": "Uiterlijk herstellen"
+  "ovReset": "Uiterlijk herstellen",
+  "ovSecLive": "1. Live herkenning",
+  "ovSecContent": "2. Inhoud",
+  "ovSecLook": "3. Uiterlijk",
+  "ovPreviewHead": "Voorbeeld",
+  "ovSecObs": "4. Toevoegen aan OBS",
+  "ovAdvanced": "Geavanceerd"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6463,7 +6517,13 @@
   "ovTextColor": "Yazı rengi",
   "ovFont": "Yazı tipi",
   "ovRadius": "Köşe yuvarlaklığı",
-  "ovReset": "Görünümü sıfırla"
+  "ovReset": "Görünümü sıfırla",
+  "ovSecLive": "1. Canlı tanıma",
+  "ovSecContent": "2. İçerik",
+  "ovSecLook": "3. Görünüm",
+  "ovPreviewHead": "Önizleme",
+  "ovSecObs": "4. OBS'ye ekle",
+  "ovAdvanced": "Gelişmiş"
  },
  "ro": {
   "langName": "Română",
@@ -7109,7 +7169,13 @@
   "ovTextColor": "Culoare text",
   "ovFont": "Font",
   "ovRadius": "Rotunjire colțuri",
-  "ovReset": "Resetează aspectul"
+  "ovReset": "Resetează aspectul",
+  "ovSecLive": "1. Recunoaștere live",
+  "ovSecContent": "2. Conținut",
+  "ovSecLook": "3. Aspect",
+  "ovPreviewHead": "Previzualizare",
+  "ovSecObs": "4. Adaugă în OBS",
+  "ovAdvanced": "Avansat"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7755,7 +7821,13 @@
   "ovTextColor": "Warna teks",
   "ovFont": "Font",
   "ovRadius": "Kelengkungan sudut",
-  "ovReset": "Atur ulang tampilan"
+  "ovReset": "Atur ulang tampilan",
+  "ovSecLive": "1. Deteksi langsung",
+  "ovSecContent": "2. Isi",
+  "ovSecLook": "3. Tampilan",
+  "ovPreviewHead": "Pratinjau",
+  "ovSecObs": "4. Tambahkan ke OBS",
+  "ovAdvanced": "Lanjutan"
  },
  "ja": {
   "langName": "日本語",
@@ -8401,7 +8473,13 @@
   "ovTextColor": "文字色",
   "ovFont": "フォント",
   "ovRadius": "角の丸み",
-  "ovReset": "デザインをリセット"
+  "ovReset": "デザインをリセット",
+  "ovSecLive": "1. ライブ認識",
+  "ovSecContent": "2. 内容",
+  "ovSecLook": "3. 見た目",
+  "ovPreviewHead": "プレビュー",
+  "ovSecObs": "4. OBS に追加",
+  "ovAdvanced": "詳細設定"
  },
  "ko": {
   "langName": "한국어",
@@ -9047,7 +9125,13 @@
   "ovTextColor": "글자색",
   "ovFont": "글꼴",
   "ovRadius": "모서리 둥글기",
-  "ovReset": "디자인 초기화"
+  "ovReset": "디자인 초기화",
+  "ovSecLive": "1. 실시간 인식",
+  "ovSecContent": "2. 내용",
+  "ovSecLook": "3. 모양",
+  "ovPreviewHead": "미리 보기",
+  "ovSecObs": "4. OBS에 추가",
+  "ovAdvanced": "고급"
  },
  "zh": {
   "langName": "简体中文",
@@ -9693,7 +9777,13 @@
   "ovTextColor": "文字颜色",
   "ovFont": "字体",
   "ovRadius": "圆角",
-  "ovReset": "重置外观"
+  "ovReset": "重置外观",
+  "ovSecLive": "1. 实时识别",
+  "ovSecContent": "2. 内容",
+  "ovSecLook": "3. 外观",
+  "ovPreviewHead": "预览",
+  "ovSecObs": "4. 添加到 OBS",
+  "ovAdvanced": "高级"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10339,6 +10429,12 @@
   "ovTextColor": "文字顏色",
   "ovFont": "字型",
   "ovRadius": "圓角",
-  "ovReset": "重設外觀"
+  "ovReset": "重設外觀",
+  "ovSecLive": "1. 即時辨識",
+  "ovSecContent": "2. 內容",
+  "ovSecLook": "3. 外觀",
+  "ovPreviewHead": "預覽",
+  "ovSecObs": "4. 加入 OBS",
+  "ovAdvanced": "進階"
  }
 }
