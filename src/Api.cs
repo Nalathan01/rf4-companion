@@ -43,8 +43,7 @@ internal sealed class Api
                 UserStore.Load();
                 Extensions.Load();
                 if (Features.Tracker) Tracker.Start();
-                Overlay.Start();
-                LiveCatch.Start();
+                if (Features.Overlay) { Overlay.Start(); LiveCatch.Start(); }
                 if (Features.Log) ThreadPool.QueueUserWorkItem(delegate { Fangbuch.CleanExisting(Lang); });
                 Cloud.LoadState();
                 Scans.Load();
@@ -101,7 +100,7 @@ internal sealed class Api
     {
         stopping = true;
         if (timer != null) timer.Dispose();
-        Overlay.Stop();
+        if (Features.Overlay) Overlay.Stop();
     }
 
     private void Tick()
@@ -143,9 +142,9 @@ internal sealed class Api
         switch (path)
         {
             case "/api/init": Updater.CheckIfStale(); return Init();
-            case "/api/overlay": return Overlay.Status();
-            case "/api/overlay/save": return Overlay.Save(args ?? new Dictionary<string, object>());
-            case "/api/overlay/clear": LiveCatch.Clear(); return Overlay.Status();
+            case "/api/overlay": if (!Features.Overlay) break; return Overlay.Status();
+            case "/api/overlay/save": if (!Features.Overlay) break; return Overlay.Save(args ?? new Dictionary<string, object>());
+            case "/api/overlay/clear": if (!Features.Overlay) break; LiveCatch.Clear(); return Overlay.Status();
             case "/api/lang":
                 UserStore.Set("lang", AppEnv.GetString(args, "lang"));
                 return Init();
@@ -514,7 +513,7 @@ internal sealed class Api
             lakes.Add(AppEnv.Obj("id", l.Id, "name", l.Name(lang), "map", l.HasBounds && l.MapKey.Length > 0 ? "/maps/" + l.MapKey + ".jpg" : "",
                 "b", new double[] { l.XMin, l.XMax, l.YSouth, l.YNorth }));
         }
-        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker, "history", Features.BaitHistory), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
+        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker, "history", Features.BaitHistory, "overlay", Features.Overlay), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
             "reports", Community.Count);
     }
 

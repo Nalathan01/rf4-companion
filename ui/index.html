@@ -257,7 +257,7 @@ dialog.sheet[open] { display: flex; }
 .site:hover { border-color: rgba(79,168,201,0.6); }
 .site small { display: block; color: var(--muted); margin-top: 2px; }
 .star { color: var(--warm); }
-.nolog .logonly, .notrk .trkonly, .nohist .histonly { display: none !important; }
+.nolog .logonly, .notrk .trkonly, .nohist .histonly, .noov .ovonly { display: none !important; }
 .boot { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: grid; place-items: center; transition: opacity .35s; }
 .boot.hide { opacity: 0; pointer-events: none; }
 .boot-box { width: min(420px, 86vw); text-align: center; }
@@ -380,7 +380,7 @@ dialog.sheet[open] { display: flex; }
 <div class="menu" id="menu">
   <button data-m="lookup" data-t="tabInfo">Nachschlagen</button>
   <button data-m="web" data-t="tabWeb">Webseiten</button>
-  <button data-m="overlay" data-t="ovHead">OBS Overlay</button>
+  <button data-m="overlay" data-t="ovHead" class="ovonly">OBS Overlay</button>
   <button class="logonly trkonly" data-m="settings" data-t="settings">Einstellungen</button>
   <button data-m="about" data-t="about">Über und Updates</button>
 </div>
@@ -438,6 +438,7 @@ async function boot() {
   document.documentElement.classList.toggle("nolog", !INIT.features.log);
   document.documentElement.classList.toggle("notrk", !INIT.features.tracker);
   document.documentElement.classList.toggle("nohist", !INIT.features.history);
+  document.documentElement.classList.toggle("noov", !INIT.features.overlay);
   loadLog();
   trk("status");
   loadExtensions();
