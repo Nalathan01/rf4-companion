@@ -654,7 +654,8 @@
   "ovSecObs": "4. In OBS einfügen",
   "ovAdvanced": "Erweitert",
   "ovAuto": "Automatisch (passt sich der Quelle an)",
-  "ownSpotsN": "{0} eigene Spots"
+  "ownSpotsN": "{0} eigene Spots",
+  "wizDepthReq": "Bei Pose, Match und Bolognese ist die Tiefe Pflicht."
  },
  "en": {
   "langName": "English",
@@ -1311,7 +1312,8 @@
   "ovSecObs": "4. Add to OBS",
   "ovAdvanced": "Advanced",
   "ovAuto": "Automatic (fits the source)",
-  "ownSpotsN": "{0} own spots"
+  "ownSpotsN": "{0} own spots",
+  "wizDepthReq": "Depth is required for float, match and bolognese fishing."
  },
  "ru": {
   "langName": "Русский",
@@ -1965,7 +1967,8 @@
   "ovSecObs": "4. Добавить в OBS",
   "ovAdvanced": "Дополнительно",
   "ovAuto": "Автоматически (под размер источника)",
-  "ownSpotsN": "Своих спотов: {0}"
+  "ownSpotsN": "Своих спотов: {0}",
+  "wizDepthReq": "Для поплавочной, матчевой и болонской ловли глубина обязательна."
  },
  "fr": {
   "langName": "Français",
@@ -2619,7 +2622,8 @@
   "ovSecObs": "4. Ajouter à OBS",
   "ovAdvanced": "Avancé",
   "ovAuto": "Automatique (s'adapte à la source)",
-  "ownSpotsN": "{0} spots perso"
+  "ownSpotsN": "{0} spots perso",
+  "wizDepthReq": "La profondeur est obligatoire pour le flotteur, le match et la bolognaise."
  },
  "es": {
   "langName": "Español",
@@ -3273,7 +3277,8 @@
   "ovSecObs": "4. Añadir a OBS",
   "ovAdvanced": "Avanzado",
   "ovAuto": "Automático (se ajusta a la fuente)",
-  "ownSpotsN": "{0} spots propios"
+  "ownSpotsN": "{0} spots propios",
+  "wizDepthReq": "La profundidad es obligatoria para pesca con flotador, match y boloñesa."
  },
  "it": {
   "langName": "Italiano",
@@ -3927,7 +3932,8 @@
   "ovSecObs": "4. Aggiungi a OBS",
   "ovAdvanced": "Avanzate",
   "ovAuto": "Automatico (si adatta alla fonte)",
-  "ownSpotsN": "{0} spot propri"
+  "ownSpotsN": "{0} spot propri",
+  "wizDepthReq": "La profondità è obbligatoria per galleggiante, match e bolognese."
  },
  "pl": {
   "langName": "Polski",
@@ -4581,7 +4587,8 @@
   "ovSecObs": "4. Dodaj do OBS",
   "ovAdvanced": "Zaawansowane",
   "ovAuto": "Automatycznie (dopasowuje się do źródła)",
-  "ownSpotsN": "Własne spoty: {0}"
+  "ownSpotsN": "Własne spoty: {0}",
+  "wizDepthReq": "Głębokość jest wymagana przy spławiku, odległościówce i bolońce."
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5235,7 +5242,8 @@
   "ovSecObs": "4. Adicionar ao OBS",
   "ovAdvanced": "Avançado",
   "ovAuto": "Automático (ajusta-se à fonte)",
-  "ownSpotsN": "{0} spots próprios"
+  "ownSpotsN": "{0} spots próprios",
+  "wizDepthReq": "A profundidade é obrigatória para boia, match e bolonhesa."
  },
  "nl": {
   "langName": "Nederlands",
@@ -5889,7 +5897,8 @@
   "ovSecObs": "4. Toevoegen aan OBS",
   "ovAdvanced": "Geavanceerd",
   "ovAuto": "Automatisch (past zich aan de bron aan)",
-  "ownSpotsN": "{0} eigen spots"
+  "ownSpotsN": "{0} eigen spots",
+  "wizDepthReq": "Diepte is verplicht bij dobber, match en bolognese."
  },
  "tr": {
   "langName": "Türkçe",
@@ -6543,7 +6552,8 @@
   "ovSecObs": "4. OBS'ye ekle",
   "ovAdvanced": "Gelişmiş",
   "ovAuto": "Otomatik (kaynağa uyar)",
-  "ownSpotsN": "{0} kendi spot"
+  "ownSpotsN": "{0} kendi spot",
+  "wizDepthReq": "Şamandıra, match ve bolonez avında derinlik zorunludur."
  },
  "ro": {
   "langName": "Română",
@@ -7197,7 +7207,8 @@
   "ovSecObs": "4. Adaugă în OBS",
   "ovAdvanced": "Avansat",
   "ovAuto": "Automat (se potrivește sursei)",
-  "ownSpotsN": "{0} spoturi proprii"
+  "ownSpotsN": "{0} spoturi proprii",
+  "wizDepthReq": "Adâncimea este obligatorie la plută, match și bologneză."
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7851,7 +7862,8 @@
   "ovSecObs": "4. Tambahkan ke OBS",
   "ovAdvanced": "Lanjutan",
   "ovAuto": "Otomatis (menyesuaikan sumber)",
-  "ownSpotsN": "{0} spot sendiri"
+  "ownSpotsN": "{0} spot sendiri",
+  "wizDepthReq": "Kedalaman wajib untuk pelampung, match, dan bolognese."
  },
  "ja": {
   "langName": "日本語",
@@ -8505,7 +8517,8 @@
   "ovSecObs": "4. OBS に追加",
   "ovAdvanced": "詳細設定",
   "ovAuto": "自動 (ソースに合わせる)",
-  "ownSpotsN": "自分のスポット {0} 件"
+  "ownSpotsN": "自分のスポット {0} 件",
+  "wizDepthReq": "ウキ、マッチ、ボロネーゼ釣りでは水深が必須です。"
  },
  "ko": {
   "langName": "한국어",
@@ -9159,7 +9172,8 @@
   "ovSecObs": "4. OBS에 추가",
   "ovAdvanced": "고급",
   "ovAuto": "자동 (소스에 맞춤)",
-  "ownSpotsN": "내 스팟 {0}개"
+  "ownSpotsN": "내 스팟 {0}개",
+  "wizDepthReq": "찌, 매치, 볼로네제 낚시는 수심이 필수입니다."
  },
  "zh": {
   "langName": "简体中文",
@@ -9813,7 +9827,8 @@
   "ovSecObs": "4. 添加到 OBS",
   "ovAdvanced": "高级",
   "ovAuto": "自动 (适应来源大小)",
-  "ownSpotsN": "{0} 个自己的钓点"
+  "ownSpotsN": "{0} 个自己的钓点",
+  "wizDepthReq": "浮漂、竞技和博洛尼亚钓法必须填写水深。"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10467,6 +10482,7 @@
   "ovSecObs": "4. 加入 OBS",
   "ovAdvanced": "進階",
   "ovAuto": "自動 (配合來源大小)",
-  "ownSpotsN": "{0} 個自己的釣點"
+  "ownSpotsN": "{0} 個自己的釣點",
+  "wizDepthReq": "浮標、競技和博洛尼亞釣法必須填寫水深。"
  }
 }

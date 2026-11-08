@@ -1120,9 +1120,11 @@ function wizSteps() {
       check: () => !(v.lake && /^\d+$/.test(v.x) && /^\d+$/.test(v.y)) ? T("wizNeedWhere", "Bitte Gewässer und beide Koordinaten angeben.") : v.tech === "bottom" && !v.clip ? T("wizClipReq", "Beim Grundangeln ist der Clip Pflicht.") : "" },
     { t: T("wizCond", "Bedingungen"), hint: TEMP_LAKES.includes(v.lake) ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : T("wizCondHint", "Was beißt hier und wie angelst du?"),
       f: () => `${field("wFish", T("fish", "Zielfisch") + " (" + T("optional", "optional") + ")", v.fish, 'list="dlFish"')}${techField("wTech", v.tech)}
-        ${tempField("wTemp", v.temp, TEMP_LAKES.includes(v.lake))}`,
-      read: () => { if ($("wFish").value.trim() !== v.fish) v.fishAuto = false; v.fish = $("wFish").value.trim(); v.tech = $("wTech").value; v.temp = $("wTemp").value.trim(); },
-      check: () => !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : v.tech === "bottom" && !v.clip ? T("wizClipBack", "Beim Grundangeln ist der Clip Pflicht. Bitte im Schritt »Wo« eintragen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
+        ${tempField("wTemp", v.temp, TEMP_LAKES.includes(v.lake))}
+        ${field("wDepth", T("depth", "Tiefe") + " (m)" + (v.tech === "float" ? " *" : ""), v.depth, 'inputmode="decimal"')}`,
+      bind: () => { $("wTech").addEventListener("change", () => { const l = $("wDepth").closest("label"); if (l && l.firstChild) l.firstChild.textContent = T("depth", "Tiefe") + " (m)" + ($("wTech").value === "float" ? " *" : ""); }); },
+      read: () => { if ($("wFish").value.trim() !== v.fish) v.fishAuto = false; v.fish = $("wFish").value.trim(); v.tech = $("wTech").value; v.temp = $("wTemp").value.trim(); v.depth = $("wDepth").value.trim(); },
+      check: () => !v.tech ? T("wizNeedTech", "Bitte die Angelart wählen.") : v.tech === "float" && !v.depth ? T("wizDepthReq", "Bei Pose, Match und Bolognese ist die Tiefe Pflicht.") : v.tech === "bottom" && !v.clip ? T("wizClipBack", "Beim Grundangeln ist der Clip Pflicht. Bitte im Schritt »Wo« eintragen.") : TEMP_LAKES.includes(v.lake) && !v.temp ? T("wizTempReq", "An diesem Gewässer ist die Temperatur Pflicht.") : "" },
     { t: T("wizRig", "Montage und Köder"), hint: T("wizRigHint", "Was hängt an der Rute? Bei mehreren gleichen Ruten reicht eine."),
       f: () => `${field("wRig", T("rigL", "Montage"), v.rig, 'list="dlRig"', true)}
         ${field("wBait", T("bait", "Köder"), v.bait, 'list="dlBait"')}${field("wBait2", T("bait2", "Köder 2"), v.bait2, 'list="dlBait"')}
