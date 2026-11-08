@@ -607,6 +607,10 @@ function mapLabel(g, x, y, t) {
 function rigRows(o) {
   return (o.rigs || []).map((r, i) => [T("rigL", "Montage") + " " + (i + 2), [r.rig, [r.bait, r.bait2].filter(Boolean).join(" + "), r.dip].filter(Boolean).join(" · ")]);
 }
+function ownMix(o) {
+  const r = (LOG.recipes || []).find(x => x.name === o.pva);
+  return r ? [r.base, ...r.additives, r.attractant].filter(Boolean).join(" + ") : o.pva;
+}
 async function shareSpot(o) {
   const on = !o.shared;
   if (on && !confirm(T("shareConfirm", "Diesen Spot mit Bildern für alle Nutzer des Tools veröffentlichen?"))) return;
@@ -621,7 +625,7 @@ async function shareSpot(o) {
 function ownDetail(o) {
   const st = LOG.catches.filter(c => c.spotId === o.id);
   const fc = {}; st.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
-  const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], ...rigRows(o), [(Object.fromEntries(feedTypes())[feedType(o)] || T("feed", "Futter")), o.pva], [T("technique", "Angelart"), o.tech ? T("tech_" + o.tech, o.tech) : ""], ["Clip", o.clip || o.dist], [T("temperature", "Temperatur"), o.temp ? T("temp_" + o.temp, o.temp) : ""], [T("rigL", "Montage"), o.rig], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
+  const rows = [[T("fish", "Fisch"), o.fish], [T("bait", "Köder"), [o.bait, o.bait2].filter(Boolean).join(" + ")], ["Dip", o.dip], ...rigRows(o), [T("groundbait", "Futtermischung"), ownMix(o)], ["Clip", o.clip || o.dist], [T("rigL", "Montage"), o.rig], [T("depth", "Tiefe"), o.depth], [T("notes", "Notiz"), o.notes]].filter(x => x[1]);
   $("detail").innerHTML = `<div class="d-head"><h3>${esc(o.lakeName)} · ${esc(o.name || o.x + ":" + o.y)}</h3><span class="d-sum">${esc(T("ownSpot", "Eigener Spot"))}</span></div>
     <div class="ev">${rows.map(x => `<div class="ev-det"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}
       ${st.length ? `<div class="line" style="margin-top:8px">${Object.entries(fc).sort((a, b) => b[1]-a[1]).map(([f, n]) => `<span class="tag">${n}× ${esc(f)}</span>`).join("")}</div>` : ""}
