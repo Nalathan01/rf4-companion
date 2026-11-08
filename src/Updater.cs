@@ -138,8 +138,7 @@ internal static class Updater
         Task.Factory.StartNew(() =>
         {
             try { Install(); Progress = 100; done(); }
-            catch (AppError e) { InstallError = e.Code; Progress = -1; }
-            catch (Exception e) { InstallError = e.Message; Progress = -1; }
+            catch (Exception e) { InstallError = e.Message; Progress = -1; AppEnv.Log("Update", "Fehlgeschlagen in " + Path.GetDirectoryName(ExePath) + ": " + e.Message); }
         });
     }
 
