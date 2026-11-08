@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Management;
 using System.Net;
 using System.Net.Sockets;
@@ -16,6 +17,8 @@ internal sealed class AppServer
     private readonly string token = Guid.NewGuid().ToString("N");
     private DateTime lastPing = DateTime.Now;
     private bool firstPingSeen;
+    private readonly Dictionary<string, DateTime> pages = new Dictionary<string, DateTime>(StringComparer.Ordinal);
+    private DateTime byeAt = DateTime.MinValue;
     private bool running = true;
     private Process window;
     private DateTime windowStart;
@@ -65,6 +68,7 @@ internal sealed class AppServer
                 }
                 double idle = DateTime.Now.Subtract(lastPing).TotalSeconds;
                 if ((firstPingSeen && idle > 90) || (!firstPingSeen && idle > 180)) { running = false; break; }
+                if (AllPagesGone()) { running = false; break; }
             }
             if (!running) break;
             HttpListenerContext ctx = task.Result;
@@ -89,6 +93,27 @@ internal sealed class AppServer
             keep.Add("\"" + a[i].Replace("\"", "") + "\"");
         }
         return string.Join(" ", keep.ToArray());
+    }
+
+    private bool AllPagesGone()
+    {
+        lock (pages)
+        {
+            if (byeAt == DateTime.MinValue || DateTime.Now.Subtract(byeAt).TotalSeconds < 4) return false;
+            foreach (string k in pages.Where(kv => DateTime.Now.Subtract(kv.Value).TotalSeconds > 90).Select(kv => kv.Key).ToList()) pages.Remove(k);
+            if (pages.Count > 0) { byeAt = DateTime.MinValue; return false; }
+            return true;
+        }
+    }
+
+    private void Seen(string page, bool bye)
+    {
+        if (string.IsNullOrEmpty(page)) return;
+        lock (pages)
+        {
+            if (bye) { pages.Remove(page); byeAt = DateTime.Now; }
+            else pages[page] = DateTime.Now;
+        }
     }
 
     public void Quit(bool restartAfter)
@@ -209,6 +234,8 @@ internal sealed class AppServer
             if (string.IsNullOrEmpty(given) && req.Cookies[cookieName] != null) given = req.Cookies[cookieName].Value;
             if (given != token) { SendJson(ctx, 403, AppEnv.Obj("error", "forbidden")); return; }
             if (path == "/api/alive") { SendJson(ctx, 200, AppEnv.Obj("ok", true)); return; }
+            if (path == "/api/bye") { Seen(req.QueryString["pg"], true); SendJson(ctx, 200, AppEnv.Obj("ok", true)); return; }
+            Seen(req.QueryString["pg"], false);
             lastPing = DateTime.Now;
             if (path == "/api/ping") firstPingSeen = true;
             if (path.StartsWith("/img/"))
