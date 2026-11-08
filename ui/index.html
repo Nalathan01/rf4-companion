@@ -1446,7 +1446,8 @@ const MENU = {
     const ovOpts = () => ({ n: Math.max(1, Math.min(20, parseInt($("ovN").value, 10) || 5)), size: $("ovSize").value === "auto" ? "auto" : +$("ovSize").value, lang: $("ovLang").value, trophy: $("ovTrophy").checked, title: $("ovTitle").checked, cover: $("ovCover").checked, bg: $("ovBgC").value.slice(1), op: +$("ovOp").value, fg: $("ovFg").value.slice(1), tc: $("ovTc").value.slice(1), rc: $("ovRc").value.slice(1), r: +$("ovR").value, font: $("ovFont").value });
     const ovUrl = () => { const o = ovOpts(); return `http://localhost:${parseInt($("ovPort").value, 10) || ov.port}/overlay?n=${o.n}&lang=${o.lang}${o.size === "auto" ? "" : "&size=" + o.size}${o.trophy ? "&trophy=1" : ""}${o.title ? "" : "&title=0"}${o.cover ? "&cover=1" : ""}${["bg", "op", "fg", "tc", "rc", "r", "font"].filter(k => String(o[k]).toLowerCase() !== String(OVD[k])).map(k => "&" + k + "=" + encodeURIComponent(o[k])).join("")}`; };
     let frameT = null;
-    const upd = () => { $("ovUrl").value = ovUrl(); $("ovOpV").textContent = $("ovOp").value + " %"; clearTimeout(frameT); frameT = setTimeout(() => { if ($("ovFrame")) $("ovFrame").src = ovUrl(); }, 350); };
+    let saveT = null;
+    const upd = () => { $("ovUrl").value = `http://localhost:${parseInt($("ovPort").value, 10) || ov.port}/overlay`; $("ovOpV").textContent = $("ovOp").value + " %"; clearTimeout(frameT); frameT = setTimeout(() => { if ($("ovFrame")) $("ovFrame").src = ovUrl(); }, 350); clearTimeout(saveT); saveT = setTimeout(() => { api("/api/overlay/save", { port: String(ov.port), opts: ovOpts() }).catch(() => {}); }, 500); };
     const ocr = () => {
       const ok = lv.langs.indexOf($("ovGLang").value) >= 0;
       $("ovOcr").innerHTML = ok ? "" : `<button type="button" class="btn small" id="ovInst">${esc(T("install", "Installieren"))}</button>`;
