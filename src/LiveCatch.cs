@@ -18,10 +18,6 @@ internal static class LiveCatch
     private static DateTime lastFull = DateTime.MinValue;
     private static bool cardOpen;
     private static bool cardDone;
-    private static DateTime lastChat = DateTime.MinValue;
-    private static string chatSig = "";
-    private static HashSet<string> chatSeen;
-    private static string chatCand = "";
     private static DateTime cardSince;
     private static volatile bool fast;
     private static volatile string state = "off";
@@ -152,20 +148,9 @@ internal static class LiveCatch
                 return;
             }
             cardOpen = false;
-            if (!menu)
-            {
-                if (DateTime.Now.Subtract(lastChat).TotalMilliseconds >= 500) { lastChat = DateTime.Now; Chat(h, w, hg, full); }
-                return;
-            }
+            if (!menu) return;
             if (DateTime.Now.Subtract(lastKeepnet).TotalSeconds < 4) return;
             lastKeepnet = DateTime.Now;
-            if (OwnName.Length == 0)
-            {
-                Rectangle head = new Rectangle((int)(w * 0.035), 0, (int)(w * 0.12), (int)(hg * 0.07));
-                using (Bitmap c = full != null ? full.Clone(head, PixelFormat.Format32bppArgb) : Grab(h, head))
-                    foreach (string l in TrackerOcr.Read(c, Lang, RectangleF.Empty, 3, false).Lines())
-                        if (Regex.IsMatch(l.Trim(), @"^[\p{L}][\p{L}\d_.\- ]{2,23}$")) { UserStore.Set("rf4Name", l.Trim()); break; }
-            }
             Rectangle title = new Rectangle((int)(w * 0.3), 0, (int)(w * 0.4), (int)(hg * 0.08));
             string[] lines;
             using (Bitmap c = full != null ? full.Clone(title, PixelFormat.Format32bppArgb) : Grab(h, title))
@@ -176,67 +161,6 @@ internal static class LiveCatch
         {
             if (st != null) st.Dispose();
             if (full != null) full.Dispose();
-        }
-    }
-
-    private static string OwnName { get { return (UserStore.Get("rf4Name") ?? "").ToString(); } }
-
-    private static string Norm(string t)
-    {
-        return Regex.Replace(t.ToLowerInvariant().Replace('|', 'l').Replace('i', 'l').Replace('o', '0'), @"[^\p{L}\d]", "");
-    }
-
-    private static void Chat(IntPtr h, int w, int hg, Bitmap full)
-    {
-        string me = Norm(OwnName);
-        Rectangle area = new Rectangle(0, (int)(hg * 0.5), (int)(w * 0.2), (int)(hg * 0.4));
-        using (Bitmap c = full != null ? full.Clone(area, PixelFormat.Format32bppArgb) : Grab(h, area))
-        {
-            System.Text.StringBuilder sig = new System.Text.StringBuilder();
-            for (int i = 1; i < 24; i++)
-                for (int j = 1; j < 32; j++)
-                {
-                    Color px = c.GetPixel(c.Width * i / 24, c.Height * j / 32);
-                    sig.Append((char)('a' + (px.R + px.G + px.B) / 48));
-                }
-            string sg = sig.ToString();
-            if (sg == chatSig) return;
-            chatSig = sg;
-            string[] raw = TrackerOcr.Read(c, Lang, RectangleF.Empty, 2, false).Lines();
-            List<string> rows = new List<string>();
-            foreach (string l in raw)
-            {
-                string t = l.Trim();
-                if (rows.Count > 0 && (rows[rows.Count-1].EndsWith(",") || Regex.IsMatch(t, @"^(\d[\d.,]*\s*)?(kg|g|кг|г|lb|lbs)$", RegexOptions.IgnoreCase))) rows[rows.Count-1] += " " + t;
-                else rows.Add(t);
-            }
-            TrackLists lists = TrackerParse.Lists(TrackerParse.Code(Lang));
-            List<KeyValuePair<string, string>> all = new List<KeyValuePair<string, string>>();
-            foreach (string row in rows)
-            {
-                Match m = Regex.Match(row, @"^(\S+)\s+(.+?),\s*(\d[\d.,]*)\s*(kg|g|кг|г|lb|lbs)$", RegexOptions.IgnoreCase);
-                if (!m.Success) continue;
-                int? gr = TrackerParse.Weight(m.Groups[3].Value, m.Groups[4].Value);
-                NameHit f = TrackerParse.MatchFish(m.Groups[2].Value.Trim(), lists);
-                if (gr == null || gr.Value <= 0 || f == null || Impossible(f.En, gr.Value)) continue;
-                all.Add(new KeyValuePair<string, string>(m.Groups[1].Value, f.En + "|" + gr.Value.ToString(CultureInfo.InvariantCulture)));
-            }
-            if (me.Length < 3)
-            {
-                HashSet<string> mine = new HashSet<string>(Recent().Where(x => DateTime.Now.Subtract((DateTime)x[2]).TotalMinutes < 30).Select(x => (string)x[0] + "|" + ((int)x[1]).ToString(CultureInfo.InvariantCulture)));
-                foreach (KeyValuePair<string, string> e in all)
-                    if (mine.Contains(e.Value) && Norm(e.Key).Length >= 3) { UserStore.Set("rf4Name", e.Key); me = Norm(e.Key); break; }
-                if (me.Length < 3) return;
-            }
-            List<string> now = all.Where(e => Norm(e.Key) == me).Select(e => e.Value).ToList();
-            string last = now.Count > 0 ? now[now.Count-1] : "";
-            if (chatSeen == null) { chatSeen = new HashSet<string>(now); return; }
-            if (last.Length == 0 || chatSeen.Contains(last)) { chatCand = ""; return; }
-            if (last != chatCand) { chatCand = last; chatSig = ""; return; }
-            chatCand = "";
-            chatSeen.Add(last);
-            string[] p = last.Split('|');
-            Add(p[0], int.Parse(p[1], CultureInfo.InvariantCulture), DateTime.Now);
         }
     }
 
@@ -394,7 +318,6 @@ internal static class LiveCatch
             if (list.Count > 100) list.RemoveRange(0, list.Count-100);
             Save();
         }
-        chatSig = "";
         AppEnv.Log("Live", "Fang " + fish + "|" + grams);
     }
 
