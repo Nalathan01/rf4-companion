@@ -56,6 +56,7 @@ internal sealed class Api
                 ready = true;
                 Step("bootSync", 15);
                 bool mirrored = Mirror.Fetch(true);
+                Shared.Fetch(true);
                 if (!mirrored && (Community.Count == 0 || DateTime.UtcNow.Subtract(Community.Synced).TotalMinutes >= 30))
                 {
                     Step("bootSync", 15);
@@ -108,6 +109,7 @@ internal sealed class Api
         if (stopping) return;
         DateTime sy = Community.Synced;
         bool mirrored = Mirror.Fetch(false);
+        Shared.Fetch(false);
         if (!mirrored && !Community.Syncing && (sy == DateTime.MinValue || DateTime.UtcNow.Subtract(sy).TotalMinutes >= 30)) Community.Sync(false);
         Cloud.Sync(false);
         if (!mirrored) TgDirect.Sync(false);
@@ -164,7 +166,8 @@ internal sealed class Api
             case "/api/fbanalyze": return Fangbuch.Analyze(args ?? new Dictionary<string, object>(), Lang);
             case "/api/fbimage": return Fangbuch.SaveImage(args ?? new Dictionary<string, object>(), Lang);
             case "/api/catch/delete": return Fangbuch.Delete("catches", AppEnv.GetList(args, "ids"));
-            case "/api/myspot/save": return Fangbuch.SaveSpot(args ?? new Dictionary<string, object>(), Lang);
+            case "/api/myspot/save": { object res = Fangbuch.SaveSpot(args ?? new Dictionary<string, object>(), Lang); string sid = AppEnv.GetString(res as Dictionary<string, object>, "id"); if (Shared.CanShare) ThreadPool.QueueUserWorkItem(delegate { Shared.Refresh(sid); }); return res; }
+            case "/api/myspot/share": if (!Shared.CanShare) break; return Shared.Set(AppEnv.GetString(args, "id"), AppEnv.GetBool(args, "on"), Lang);
             case "/api/myspot/delete": return Fangbuch.Delete("spots", AppEnv.GetList(args, "ids"));
             case "/api/recipe/save": return Fangbuch.SaveRecipe(args ?? new Dictionary<string, object>(), Lang);
             case "/api/recipe/delete": return Fangbuch.Delete("recipes", AppEnv.GetList(args, "ids"));
@@ -513,7 +516,7 @@ internal sealed class Api
             lakes.Add(AppEnv.Obj("id", l.Id, "name", l.Name(lang), "map", l.HasBounds && l.MapKey.Length > 0 ? "/maps/" + l.MapKey + ".jpg" : "",
                 "b", new double[] { l.XMin, l.XMax, l.YSouth, l.YNorth }));
         }
-        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker, "history", Features.BaitHistory, "overlay", Features.Overlay), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
+        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker, "history", Features.BaitHistory, "overlay", Features.Overlay, "share", Shared.CanShare), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
             "reports", Community.Count);
     }
 

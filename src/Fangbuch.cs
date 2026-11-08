@@ -153,6 +153,33 @@ internal static class Fangbuch
         return GameData.LakeById.TryGetValue(id, out l) ? l.Name(lang) : id;
     }
 
+    public static Dictionary<string, object> SpotById(string id)
+    {
+        lock (gate) return List("spots").FirstOrDefault(x => S(x, "id") == id && id.Length > 0);
+    }
+
+    public static Dictionary<string, object> RecipeByName(string name)
+    {
+        lock (gate) return name.Length == 0 ? null : List("recipes").FirstOrDefault(x => S(x, "name") == name);
+    }
+
+    public static void SetSpotValue(string id, string key, object value)
+    {
+        lock (gate)
+        {
+            List<Dictionary<string, object>> spots = List("spots");
+            Dictionary<string, object> s = spots.FirstOrDefault(x => S(x, "id") == id);
+            if (s == null) return;
+            if (value == null) s.Remove(key); else s[key] = value;
+            UserStore.Set("spots", spots);
+        }
+    }
+
+    public static int[] SpotPosition(Dictionary<string, object> s)
+    {
+        return SpotXY(s);
+    }
+
     private static int[] SpotXY(Dictionary<string, object> s)
     {
         Lake l;
@@ -214,7 +241,7 @@ internal static class Fangbuch
                 "groundbait", S(s, "groundbait"), "pva", S(s, "pva"), "feedType", S(s, "feedType"), "tech", S(s, "tech"), "dist", S(s, "dist"), "depth", S(s, "depth"), "notes", S(s, "notes"),
                 "clip", S(s, "clip"), "temp", S(s, "temp"), "rig", Tr(S(s, "rig"), lang), "rigs", AppEnv.GetList(s, "rigs").Cast<object>().Select(o => { Dictionary<string, object> m = o as Dictionary<string, object>; return (object)AppEnv.Obj("rig", Tr(S(m, "rig"), lang), "bait", Tr(S(m, "bait"), lang), "bait2", Tr(S(m, "bait2"), lang), "dip", Tr(S(m, "dip"), lang)); }).ToArray(), "src", S(s, "src"), "images", Images(s),
                 "count", AppEnv.GetDouble(s, "count", 0), "minutes", AppEnv.GetDouble(s, "minutes", 0), "money", AppEnv.GetDouble(s, "money", 0),
-                "catches", catches.Count(c => S(c, "spotId") == id),
+                "catches", catches.Count(c => S(c, "spotId") == id), "shared", S(s, "shared").Length > 0,
                 "nx", AppEnv.GetDouble(s, "nx", -1), "ny", AppEnv.GetDouble(s, "ny", -1)));
         }
 

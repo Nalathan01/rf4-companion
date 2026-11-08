@@ -655,7 +655,14 @@
   "ovAdvanced": "Erweitert",
   "ovAuto": "Automatisch (passt sich der Quelle an)",
   "ownSpotsN": "{0} eigene Spots",
-  "wizDepthReq": "Bei Pose, Match und Bolognese ist die Tiefe Pflicht."
+  "wizDepthReq": "Bei Pose, Match und Bolognese ist die Tiefe Pflicht.",
+  "shareSpot": "Teilen",
+  "unshareSpot": "Nicht mehr teilen",
+  "sharedBadge": "Geteilt",
+  "shareConfirm": "Diesen Spot mit Bildern für alle Nutzer des Tools veröffentlichen?",
+  "shareNoSpot": "Spot nicht gefunden.",
+  "shareNoToken": "Kein GitHub Zugang gefunden. Ist die GitHub CLI angemeldet?",
+  "shareFailed": "Teilen fehlgeschlagen"
  },
  "en": {
   "langName": "English",
@@ -1313,7 +1320,14 @@
   "ovAdvanced": "Advanced",
   "ovAuto": "Automatic (fits the source)",
   "ownSpotsN": "{0} own spots",
-  "wizDepthReq": "Depth is required for float, match and bolognese fishing."
+  "wizDepthReq": "Depth is required for float, match and bolognese fishing.",
+  "shareSpot": "Share",
+  "unshareSpot": "Stop sharing",
+  "sharedBadge": "Shared",
+  "shareConfirm": "Publish this spot with its images for all users of the tool?",
+  "shareNoSpot": "Spot not found.",
+  "shareNoToken": "No GitHub access found. Is the GitHub CLI logged in?",
+  "shareFailed": "Sharing failed"
  },
  "ru": {
   "langName": "Русский",
@@ -1968,7 +1982,14 @@
   "ovAdvanced": "Дополнительно",
   "ovAuto": "Автоматически (под размер источника)",
   "ownSpotsN": "Своих спотов: {0}",
-  "wizDepthReq": "Для поплавочной, матчевой и болонской ловли глубина обязательна."
+  "wizDepthReq": "Для поплавочной, матчевой и болонской ловли глубина обязательна.",
+  "shareSpot": "Поделиться",
+  "unshareSpot": "Больше не делиться",
+  "sharedBadge": "Опубликовано",
+  "shareConfirm": "Опубликовать этот спот с фото для всех пользователей?",
+  "shareNoSpot": "Спот не найден.",
+  "shareNoToken": "Доступ к GitHub не найден. Выполнен ли вход в GitHub CLI?",
+  "shareFailed": "Не удалось поделиться"
  },
  "fr": {
   "langName": "Français",
@@ -2623,7 +2644,14 @@
   "ovAdvanced": "Avancé",
   "ovAuto": "Automatique (s'adapte à la source)",
   "ownSpotsN": "{0} spots perso",
-  "wizDepthReq": "La profondeur est obligatoire pour le flotteur, le match et la bolognaise."
+  "wizDepthReq": "La profondeur est obligatoire pour le flotteur, le match et la bolognaise.",
+  "shareSpot": "Partager",
+  "unshareSpot": "Ne plus partager",
+  "sharedBadge": "Partagé",
+  "shareConfirm": "Publier ce spot avec ses images pour tous les utilisateurs ?",
+  "shareNoSpot": "Spot introuvable.",
+  "shareNoToken": "Aucun accès GitHub trouvé. GitHub CLI est-il connecté ?",
+  "shareFailed": "Échec du partage"
  },
  "es": {
   "langName": "Español",
@@ -3278,7 +3306,14 @@
   "ovAdvanced": "Avanzado",
   "ovAuto": "Automático (se ajusta a la fuente)",
   "ownSpotsN": "{0} spots propios",
-  "wizDepthReq": "La profundidad es obligatoria para pesca con flotador, match y boloñesa."
+  "wizDepthReq": "La profundidad es obligatoria para pesca con flotador, match y boloñesa.",
+  "shareSpot": "Compartir",
+  "unshareSpot": "Dejar de compartir",
+  "sharedBadge": "Compartido",
+  "shareConfirm": "¿Publicar este spot con sus imágenes para todos los usuarios?",
+  "shareNoSpot": "Spot no encontrado.",
+  "shareNoToken": "No se encontró acceso a GitHub. ¿Está GitHub CLI conectado?",
+  "shareFailed": "Error al compartir"
  },
  "it": {
   "langName": "Italiano",
@@ -3933,7 +3968,14 @@
   "ovAdvanced": "Avanzate",
   "ovAuto": "Automatico (si adatta alla fonte)",
   "ownSpotsN": "{0} spot propri",
-  "wizDepthReq": "La profondità è obbligatoria per galleggiante, match e bolognese."
+  "wizDepthReq": "La profondità è obbligatoria per galleggiante, match e bolognese.",
+  "shareSpot": "Condividi",
+  "unshareSpot": "Non condividere più",
+  "sharedBadge": "Condiviso",
+  "shareConfirm": "Pubblicare questo spot con le immagini per tutti gli utenti?",
+  "shareNoSpot": "Spot non trovato.",
+  "shareNoToken": "Nessun accesso GitHub trovato. GitHub CLI è collegato?",
+  "shareFailed": "Condivisione non riuscita"
  },
  "pl": {
   "langName": "Polski",
@@ -4588,7 +4630,14 @@
   "ovAdvanced": "Zaawansowane",
   "ovAuto": "Automatycznie (dopasowuje się do źródła)",
   "ownSpotsN": "Własne spoty: {0}",
-  "wizDepthReq": "Głębokość jest wymagana przy spławiku, odległościówce i bolońce."
+  "wizDepthReq": "Głębokość jest wymagana przy spławiku, odległościówce i bolońce.",
+  "shareSpot": "Udostępnij",
+  "unshareSpot": "Przestań udostępniać",
+  "sharedBadge": "Udostępniony",
+  "shareConfirm": "Opublikować ten spot ze zdjęciami dla wszystkich użytkowników?",
+  "shareNoSpot": "Nie znaleziono spotu.",
+  "shareNoToken": "Nie znaleziono dostępu do GitHub. Czy GitHub CLI jest zalogowany?",
+  "shareFailed": "Udostępnianie nie powiodło się"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5243,7 +5292,14 @@
   "ovAdvanced": "Avançado",
   "ovAuto": "Automático (ajusta-se à fonte)",
   "ownSpotsN": "{0} spots próprios",
-  "wizDepthReq": "A profundidade é obrigatória para boia, match e bolonhesa."
+  "wizDepthReq": "A profundidade é obrigatória para boia, match e bolonhesa.",
+  "shareSpot": "Partilhar",
+  "unshareSpot": "Deixar de partilhar",
+  "sharedBadge": "Partilhado",
+  "shareConfirm": "Publicar este spot com as imagens para todos os utilizadores?",
+  "shareNoSpot": "Spot não encontrado.",
+  "shareNoToken": "Nenhum acesso ao GitHub encontrado. O GitHub CLI tem sessão iniciada?",
+  "shareFailed": "Falha ao partilhar"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5898,7 +5954,14 @@
   "ovAdvanced": "Geavanceerd",
   "ovAuto": "Automatisch (past zich aan de bron aan)",
   "ownSpotsN": "{0} eigen spots",
-  "wizDepthReq": "Diepte is verplicht bij dobber, match en bolognese."
+  "wizDepthReq": "Diepte is verplicht bij dobber, match en bolognese.",
+  "shareSpot": "Delen",
+  "unshareSpot": "Niet meer delen",
+  "sharedBadge": "Gedeeld",
+  "shareConfirm": "Deze spot met afbeeldingen voor alle gebruikers publiceren?",
+  "shareNoSpot": "Spot niet gevonden.",
+  "shareNoToken": "Geen GitHub toegang gevonden. Is de GitHub CLI aangemeld?",
+  "shareFailed": "Delen mislukt"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6553,7 +6616,14 @@
   "ovAdvanced": "Gelişmiş",
   "ovAuto": "Otomatik (kaynağa uyar)",
   "ownSpotsN": "{0} kendi spot",
-  "wizDepthReq": "Şamandıra, match ve bolonez avında derinlik zorunludur."
+  "wizDepthReq": "Şamandıra, match ve bolonez avında derinlik zorunludur.",
+  "shareSpot": "Paylaş",
+  "unshareSpot": "Paylaşmayı durdur",
+  "sharedBadge": "Paylaşıldı",
+  "shareConfirm": "Bu spot resimleriyle tüm kullanıcılar için yayınlansın mı?",
+  "shareNoSpot": "Spot bulunamadı.",
+  "shareNoToken": "GitHub erişimi bulunamadı. GitHub CLI oturumu açık mı?",
+  "shareFailed": "Paylaşım başarısız"
  },
  "ro": {
   "langName": "Română",
@@ -7208,7 +7278,14 @@
   "ovAdvanced": "Avansat",
   "ovAuto": "Automat (se potrivește sursei)",
   "ownSpotsN": "{0} spoturi proprii",
-  "wizDepthReq": "Adâncimea este obligatorie la plută, match și bologneză."
+  "wizDepthReq": "Adâncimea este obligatorie la plută, match și bologneză.",
+  "shareSpot": "Distribuie",
+  "unshareSpot": "Nu mai distribui",
+  "sharedBadge": "Distribuit",
+  "shareConfirm": "Publici acest spot cu imagini pentru toți utilizatorii?",
+  "shareNoSpot": "Spotul nu a fost găsit.",
+  "shareNoToken": "Nu s-a găsit acces GitHub. Este GitHub CLI conectat?",
+  "shareFailed": "Distribuirea a eșuat"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7863,7 +7940,14 @@
   "ovAdvanced": "Lanjutan",
   "ovAuto": "Otomatis (menyesuaikan sumber)",
   "ownSpotsN": "{0} spot sendiri",
-  "wizDepthReq": "Kedalaman wajib untuk pelampung, match, dan bolognese."
+  "wizDepthReq": "Kedalaman wajib untuk pelampung, match, dan bolognese.",
+  "shareSpot": "Bagikan",
+  "unshareSpot": "Berhenti membagikan",
+  "sharedBadge": "Dibagikan",
+  "shareConfirm": "Publikasikan spot ini beserta gambarnya untuk semua pengguna?",
+  "shareNoSpot": "Spot tidak ditemukan.",
+  "shareNoToken": "Akses GitHub tidak ditemukan. Apakah GitHub CLI sudah masuk?",
+  "shareFailed": "Gagal membagikan"
  },
  "ja": {
   "langName": "日本語",
@@ -8518,7 +8602,14 @@
   "ovAdvanced": "詳細設定",
   "ovAuto": "自動 (ソースに合わせる)",
   "ownSpotsN": "自分のスポット {0} 件",
-  "wizDepthReq": "ウキ、マッチ、ボロネーゼ釣りでは水深が必須です。"
+  "wizDepthReq": "ウキ、マッチ、ボロネーゼ釣りでは水深が必須です。",
+  "shareSpot": "共有",
+  "unshareSpot": "共有をやめる",
+  "sharedBadge": "共有中",
+  "shareConfirm": "このスポットを画像付きで全ユーザーに公開しますか？",
+  "shareNoSpot": "スポットが見つかりません。",
+  "shareNoToken": "GitHub のアクセスが見つかりません。GitHub CLI にログインしていますか？",
+  "shareFailed": "共有に失敗しました"
  },
  "ko": {
   "langName": "한국어",
@@ -9173,7 +9264,14 @@
   "ovAdvanced": "고급",
   "ovAuto": "자동 (소스에 맞춤)",
   "ownSpotsN": "내 스팟 {0}개",
-  "wizDepthReq": "찌, 매치, 볼로네제 낚시는 수심이 필수입니다."
+  "wizDepthReq": "찌, 매치, 볼로네제 낚시는 수심이 필수입니다.",
+  "shareSpot": "공유",
+  "unshareSpot": "공유 중지",
+  "sharedBadge": "공유됨",
+  "shareConfirm": "이 스팟을 이미지와 함께 모든 사용자에게 공개할까요?",
+  "shareNoSpot": "스팟을 찾을 수 없습니다.",
+  "shareNoToken": "GitHub 접근 권한이 없습니다. GitHub CLI에 로그인되어 있나요?",
+  "shareFailed": "공유 실패"
  },
  "zh": {
   "langName": "简体中文",
@@ -9828,7 +9926,14 @@
   "ovAdvanced": "高级",
   "ovAuto": "自动 (适应来源大小)",
   "ownSpotsN": "{0} 个自己的钓点",
-  "wizDepthReq": "浮漂、竞技和博洛尼亚钓法必须填写水深。"
+  "wizDepthReq": "浮漂、竞技和博洛尼亚钓法必须填写水深。",
+  "shareSpot": "分享",
+  "unshareSpot": "停止分享",
+  "sharedBadge": "已分享",
+  "shareConfirm": "要将此钓点连同图片发布给所有用户吗？",
+  "shareNoSpot": "未找到钓点。",
+  "shareNoToken": "未找到 GitHub 访问权限。GitHub CLI 是否已登录？",
+  "shareFailed": "分享失败"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10483,6 +10588,13 @@
   "ovAdvanced": "進階",
   "ovAuto": "自動 (配合來源大小)",
   "ownSpotsN": "{0} 個自己的釣點",
-  "wizDepthReq": "浮標、競技和博洛尼亞釣法必須填寫水深。"
+  "wizDepthReq": "浮標、競技和博洛尼亞釣法必須填寫水深。",
+  "shareSpot": "分享",
+  "unshareSpot": "停止分享",
+  "sharedBadge": "已分享",
+  "shareConfirm": "要將此釣點連同圖片發布給所有使用者嗎？",
+  "shareNoSpot": "找不到釣點。",
+  "shareNoToken": "找不到 GitHub 存取權限。GitHub CLI 是否已登入？",
+  "shareFailed": "分享失敗"
  }
 }

@@ -167,6 +167,7 @@ internal static class Community
         if (m.Success) { r.SourceKey = "vk:" + m.Groups[1].Value; r.SourceLabel = "VK"; r.Linkable = true; r.Country = "RU"; return; }
         m = Dc.Match(u);
         if (m.Success) { r.SourceKey = "dc:" + m.Groups[2].Value; r.SourceLabel = "Discord"; r.Linkable = false; r.Guild = m.Groups[1].Value; r.Country = DiscordInfo.Country(r.Guild); if (r.Country.Length == 0) r.Country = AppEnv.GetString(r.Raw, "cc"); return; }
+        if (r.Id.StartsWith("adm:", StringComparison.Ordinal)) { r.SourceKey = "adm"; r.SourceLabel = AppEnv.GetString(r.Raw, "author"); if (r.SourceLabel.Length == 0) r.SourceLabel = "Admin"; r.Linkable = false; r.Country = AppEnv.GetString(r.Raw, "cc"); return; }
         if (r.Id.StartsWith("wx:", StringComparison.Ordinal)) { r.SourceKey = "wx"; r.SourceLabel = "WeChat · rf4.fish"; r.Linkable = true; r.Country = "CN"; return; }
         if (u.Length == 0) { r.SourceKey = "companion:" + r.Id; r.SourceLabel = "RF4 Companion"; r.Linkable = false; return; }
         r.SourceKey = "web:" + u; r.SourceLabel = "Web"; r.Linkable = true;
@@ -318,6 +319,25 @@ internal static class Community
         }
         if (n > 0) { Api.ClearBaitMemo(); Save(); }
         return n;
+    }
+
+    public static int ReplacePrefix(string prefix, List<Dictionary<string, object>> raws)
+    {
+        HashSet<string> keep = new HashSet<string>(raws.Select(x => AppEnv.GetString(x, "id")), StringComparer.Ordinal);
+        int removed = 0;
+        lock (gate)
+        {
+            foreach (Report old in reports.Where(x => x.Id.StartsWith(prefix, StringComparison.Ordinal) && !keep.Contains(x.Id)).ToList())
+            {
+                reports.Remove(old);
+                byId.Remove(old.Id);
+                removed++;
+            }
+            if (removed > 0) { spots = null; spotsAll = null; Version++; }
+        }
+        int n = raws.Count > 0 ? ApplyMirror(raws, DateTime.MinValue) : 0;
+        if (removed > 0 && n == 0) { Api.ClearBaitMemo(); Save(); }
+        return n + removed;
     }
 
     public static Report Get(string id)

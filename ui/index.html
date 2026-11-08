@@ -607,6 +607,17 @@ function mapLabel(g, x, y, t) {
 function rigRows(o) {
   return (o.rigs || []).map((r, i) => [T("rigL", "Montage") + " " + (i + 2), [r.rig, [r.bait, r.bait2].filter(Boolean).join(" + "), r.dip].filter(Boolean).join(" · ")]);
 }
+async function shareSpot(o) {
+  const on = !o.shared;
+  if (on && !confirm(T("shareConfirm", "Diesen Spot mit Bildern für alle Nutzer des Tools veröffentlichen?"))) return;
+  const b = $("ownShare");
+  if (b) { b.disabled = true; b.textContent = "…"; }
+  try { await api("/api/myspot/share", { id: o.id, on }); }
+  catch (e) { alert(T("shareFailed", "Teilen fehlgeschlagen") + ": " + errText(e)); }
+  LOG = null;
+  await loadLog();
+  if ($("ownChk").checked) loadActive(); else loadDetail();
+}
 function ownDetail(o) {
   const st = LOG.catches.filter(c => c.spotId === o.id);
   const fc = {}; st.forEach(c => fc[c.fish] = (fc[c.fish] || 0) + 1);
@@ -615,9 +626,10 @@ function ownDetail(o) {
     <div class="ev">${rows.map(x => `<div class="ev-det"><b>${esc(x[0])}:</b> ${esc(x[1])}</div>`).join("")}
       ${st.length ? `<div class="line" style="margin-top:8px">${Object.entries(fc).sort((a, b) => b[1]-a[1]).map(([f, n]) => `<span class="tag">${n}× ${esc(f)}</span>`).join("")}</div>` : ""}
       ${Object.keys(o.images || {}).length ? `<div class="thumbs own">${IMGK.filter(k => o.images[k[0]]).map(k => `<img src="/img/fb/${esc(o.images[k[0]])}?t=${TOKEN}" title="${esc(T(k[1], k[2]))}">`).join("")}</div>` : ""}
-      <div class="ev-src" style="margin-top:10px"><button class="src" id="ownEdit">${esc(T("edit", "Bearbeiten"))}</button></div>
+      <div class="ev-src" style="margin-top:10px"><button class="src" id="ownEdit">${esc(T("edit", "Bearbeiten"))}</button>${INIT.features.share ? ` <button class="src" id="ownShare">${o.shared ? "✓ " + esc(T("sharedBadge", "Geteilt")) + " · " + esc(T("unshareSpot", "Nicht mehr teilen")) : esc(T("shareSpot", "Teilen"))}</button>` : ""}</div>
     </div>`;
   $("ownEdit").onclick = () => spotWizard(null, o);
+  if ($("ownShare")) $("ownShare").onclick = () => shareSpot(o);
   document.querySelectorAll("#detail .thumbs.own img").forEach(im => im.onclick = () => { showImg(im.src); });
 }
 function openSpotKey(k) { SEL = k; renderCards(); drawMap(); loadDetail(); }
