@@ -287,7 +287,6 @@ dialog.sheet[open] { display: flex; }
     <button class="nav-btn logonly" data-view="log" data-t="navLog">Mein Fangbuch</button>
   </nav>
   <div class="head-acts">
-    <button class="btn primary big logonly" id="addSpotTop">＋ <span data-t="wizTitle">Spot merken</span></button>
     <div class="upd" id="upd"><span id="updText"></span><button class="btn small primary" id="updBtn" data-t="updateNow">Aktualisieren</button></div>
     <select id="browserSel" style="min-width:0;max-width:220px"></select>
     <select id="lang" style="min-width:0"></select>
@@ -657,12 +656,11 @@ async function loadDetail() {
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
       ${(e.setups || []).length > 1 ? e.setups.map((s, n) => `<div class="ev-det"><b>${esc(T("rigL", "Montage"))} ${n + 1}:</b> ${esc(s)} ${e.fromImage ? `<span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}</div>`).join("") : ""}
       ${Object.keys(e.detail).filter(k => k !== "feedUse" && k !== "rig" && !(k === "baitDetail" && (e.setups || []).length > 1)).sort((x, y) => detOrder(x)-detOrder(y)).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
-      <div class="ev-src"><button class="src logonly adopt" data-adopt="${i}">＋ ${esc(T("wizTitle", "Spot merken"))}</button>${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
+      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
       ${e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="${esc(e.postLang || "ru")}" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : e.imgs && e.imgs.length ? `<div class="thumbs web">${e.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}
     </div>`).join("");
   document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
-  document.querySelectorAll("#detail [data-adopt]").forEach(b => b.onclick = () => spotWizard(spotFromEvent(d, d.events[+b.dataset.adopt])));
   document.querySelectorAll("#detail .thumbs.web img").forEach(im => {
     im.onerror = () => im.remove();
     im.onclick = () => { showImg(im.src); };
@@ -1096,12 +1094,6 @@ const TEMP_LAKES = ["bear_lake", "the_amber_lake", "copper_lake"];
 const IMG_REQ = ["spot", "net", "setup"];
 let WIZ = null;
 function techOf(m) { m = String(m || "").toLowerCase(); return /troll/.test(m) ? "trolling" : /sea|marine|meer/.test(m) ? "marine" : /spin|cast/.test(m) ? "spin" : /float|match|bolo|pose/.test(m) ? "float" : /bottom|feeder|grund|carp/.test(m) ? "bottom" : ""; }
-function spotFromEvent(d, e) {
-  const det = e.detail || {}, baits = String(det.baitDetail || "").split(" + ").filter(Boolean);
-  const feed = det.pva ? ["pva", det.pva] : det.groundbait ? ["groundbait", det.groundbait] : ["", ""];
-  return { lake: d.lake, x: String(d.x), y: String(d.y), clip: e.clip || "", depth: e.depth || "", fish: (e.fish || [])[0] || "", tech: techOf(e.method), temp: ["cold", "normal", "warm"].find(k => String(e.temp || "").toLowerCase().includes(k) || String(e.temp || "") === T("temp_" + k)) || "",
-    bait: baits[0] || "", bait2: baits[1] || "", dip: det.dip || "", rig: det.rig || "", feedType: feed[0], pva: feed[1], src: (e.sources.find(s => s.url) || {}).url || "", images: {} };
-}
 function recipeOf(name) { return LOG && name ? LOG.recipes.find(r => r.name === name) : null; }
 async function spotWizard(pre, existing) {
   if (!LOG) await loadLog();
@@ -1370,7 +1362,6 @@ $("dlgCancel").onclick = () => $("dlg").close();
 $("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (DLG.keep) return; await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = errText(e).startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = errText(e); } };
 $("addCatch").onclick = () => catchDialog(null);
-$("addSpotTop").onclick = () => { showView("log"); spotWizard(null); };
 $("addSpotLog").onclick = () => spotWizard(null);
 $("addSpot").onclick = () => spotWizard(null);
 $("addRecipe").onclick = () => recipeDialog(null);
