@@ -15,6 +15,7 @@ internal static class Updater
 
     private static string latest;
     private static string assetUrl;
+    private static string assetApiUrl;
     private static string assetSha;
     private static string notes;
     private static string currentNotes;
@@ -123,6 +124,7 @@ internal static class Updater
             if (string.IsNullOrEmpty(digest) || !digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)) return;
             assetSha = digest.Substring(7).ToLowerInvariant();
             assetUrl = AppEnv.GetString(a, "browser_download_url");
+            assetApiUrl = AppEnv.GetString(a, "url");
             notes = AppEnv.GetString(rel, "body");
             latest = v.ToString();
             AppEnv.Log("Update", "Version " + latest + " verfuegbar");
@@ -142,6 +144,30 @@ internal static class Updater
         });
     }
 
+    private static void Download(string url, string accept, string tmp)
+    {
+        Progress = 0;
+        HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
+        req.UserAgent = Agent;
+        if (accept != null) req.Accept = accept;
+        req.Timeout = 30000;
+        req.ReadWriteTimeout = 60000;
+        using (WebResponse res = req.GetResponse())
+        using (Stream src = res.GetResponseStream())
+        using (FileStream dst = File.Create(tmp))
+        {
+            long total = res.ContentLength, got = 0;
+            byte[] buf = new byte[81920];
+            int n;
+            while ((n = src.Read(buf, 0, buf.Length)) > 0)
+            {
+                dst.Write(buf, 0, n);
+                got += n;
+                if (total > 0) Progress = (int)Math.Min(99, got * 100 / total);
+            }
+        }
+    }
+
     public static void Install()
     {
         if (Available == null) throw new AppError("updateNone", null);
@@ -150,23 +176,15 @@ internal static class Updater
         string old = exe + ".old";
         try
         {
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(assetUrl);
-            req.UserAgent = Agent;
-            req.Timeout = 30000;
-            req.ReadWriteTimeout = 60000;
-            using (WebResponse res = req.GetResponse())
-            using (Stream src = res.GetResponseStream())
-            using (FileStream dst = File.Create(tmp))
+            try
             {
-                long total = res.ContentLength, got = 0;
-                byte[] buf = new byte[81920];
-                int n;
-                while ((n = src.Read(buf, 0, buf.Length)) > 0)
-                {
-                    dst.Write(buf, 0, n);
-                    got += n;
-                    if (total > 0) Progress = (int)Math.Min(99, got * 100 / total);
-                }
+                if (string.IsNullOrEmpty(assetApiUrl)) throw new WebException("no api url");
+                Download(assetApiUrl, "application/octet-stream", tmp);
+            }
+            catch (Exception ex)
+            {
+                AppEnv.Log("Update", "Download ueber API fehlgeschlagen, nehme Direktlink: " + ex.Message);
+                Download(assetUrl, null, tmp);
             }
             string hash;
             using (SHA256 sha = SHA256.Create())
