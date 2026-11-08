@@ -109,12 +109,14 @@ internal static class Overlay
 
     private static object Data(NameValueCollection q)
     {
+        Dictionary<string, object> opts = UserStore.Get("overlayOpts") as Dictionary<string, object> ?? new Dictionary<string, object>();
+        Func<string, string> opt = k => q[k] ?? (opts.ContainsKey(k) && opts[k] != null ? Convert.ToString(opts[k], CultureInfo.InvariantCulture) : "");
         int n;
-        if (!int.TryParse(q["n"] ?? "", NumberStyles.Integer, CultureInfo.InvariantCulture, out n)) n = 5;
+        if (!int.TryParse(opt("n"), NumberStyles.Integer, CultureInfo.InvariantCulture, out n)) n = 5;
         n = Math.Max(1, Math.Min(20, n));
-        string lang = q["lang"] ?? "";
+        string lang = opt("lang");
         if (Array.IndexOf(GameData.Languages(), lang) < 0) lang = UserStore.Lang;
-        bool onlyTrophy = q["trophy"] == "1";
+        bool onlyTrophy = opt("trophy") == "1" || opt("trophy") == "True";
         List<object> items = LiveCatch.Recent().Where(c => ((string)c[0]).Length > 0)
             .Select(c => new { fish = (string)c[0], grams = (int)c[1], time = (DateTime)c[2], level = Level((string)c[0], (int)c[1]) })
             .Where(c => !onlyTrophy || c.level.Length > 0)
@@ -122,7 +124,7 @@ internal static class Overlay
             .Select(c => (object)AppEnv.Obj("fish", GameData.Translate(c.fish, lang), "weight", c.grams > 0 ? GameData.FormatWeight(c.grams, lang) : "", "level", c.level,
                 "time", c.time.ToString("HH:mm", CultureInfo.InvariantCulture), "id", c.fish + c.grams + c.time.Ticks))
             .ToList();
-        return AppEnv.Obj("items", items, "labels", AppEnv.Obj("trophy", GameData.Ui(lang, "trophy", "Trophy"), "rare", GameData.Ui(lang, "rare", "Rare trophy"),
+        return AppEnv.Obj("opts", opts, "items", items, "labels", AppEnv.Obj("trophy", GameData.Ui(lang, "trophy", "Trophy"), "rare", GameData.Ui(lang, "rare", "Rare trophy"),
             "title", GameData.Ui(lang, "ovTitle", "Last catches"), "empty", GameData.Ui(lang, "ovEmpty", "No catches yet")));
     }
 

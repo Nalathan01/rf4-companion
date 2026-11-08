@@ -30,22 +30,29 @@ body { --bg: 10, 18, 28; --op: 0.72; --fg: #ffffff; --tc: #f2c14e; --rc: #c78bff
 <div class="list" id="list"></div>
 <script>
 const P = new URLSearchParams(location.search);
-const auto = !P.get("size") || P.get("size") === "auto";
-const want = Math.max(1, Math.min(20, parseInt(P.get("n") || "5", 10) || 5));
-if (!auto) document.body.style.setProperty("--s", Math.max(50, Math.min(300, parseInt(P.get("size"), 10) || 100)) / 100);
-const showTitle = P.get("title") !== "0";
-if (P.get("cover") === "1") document.documentElement.classList.add("cover");
-const hex = k => /^[0-9a-f]{6}$/i.test(P.get(k) || "") ? P.get(k) : null;
-const num = (k, a, b) => { const v = parseInt(P.get(k), 10); return isNaN(v) ? null : Math.max(a, Math.min(b, v)); };
 const FONTS = { segoe: '"Segoe UI", sans-serif', arial: "Arial, sans-serif", verdana: "Verdana, sans-serif", tahoma: "Tahoma, sans-serif", georgia: "Georgia, serif", trebuchet: '"Trebuchet MS", sans-serif', consolas: "Consolas, monospace", impact: "Impact, sans-serif" };
-const st = document.body.style;
-if (hex("bg")) st.setProperty("--bg", [0, 2, 4].map(i => parseInt(hex("bg").substr(i, 2), 16)).join(", "));
-if (num("op", 0, 100) !== null) st.setProperty("--op", num("op", 0, 100) / 100);
-if (hex("fg")) st.setProperty("--fg", "#" + hex("fg"));
-if (hex("tc")) st.setProperty("--tc", "#" + hex("tc"));
-if (hex("rc")) st.setProperty("--rc", "#" + hex("rc"));
-if (num("r", 0, 30) !== null) st.setProperty("--r", (num("r", 0, 30) / 20) + "em");
-if (FONTS[P.get("font")]) st.setProperty("--font", FONTS[P.get("font")]);
+let O = {}, auto = true, want = 5, showTitle = true;
+const cfg = k => P.get(k) !== null ? P.get(k) : (O[k] === undefined || O[k] === null ? null : String(O[k]));
+function apply(opts) {
+  O = opts || {};
+  const st = document.body.style;
+  ["--s", "--bg", "--op", "--fg", "--tc", "--rc", "--r", "--font"].forEach(v => st.removeProperty(v));
+  const size = cfg("size");
+  auto = !size || size === "auto";
+  if (!auto) st.setProperty("--s", Math.max(50, Math.min(300, parseInt(size, 10) || 100)) / 100);
+  want = Math.max(1, Math.min(20, parseInt(cfg("n") || "5", 10) || 5));
+  showTitle = !["0", "false"].includes(cfg("title"));
+  document.documentElement.classList.toggle("cover", ["1", "true"].includes(cfg("cover")));
+  const hex = k => /^[0-9a-f]{6}$/i.test(cfg(k) || "") ? cfg(k) : null;
+  const num = (k, lo, hi) => { const v = parseInt(cfg(k), 10); return isNaN(v) ? null : Math.max(lo, Math.min(hi, v)); };
+  if (hex("bg")) st.setProperty("--bg", [0, 2, 4].map(i => parseInt(hex("bg").substr(i, 2), 16)).join(", "));
+  if (num("op", 0, 100) !== null) st.setProperty("--op", num("op", 0, 100) / 100);
+  if (hex("fg")) st.setProperty("--fg", "#" + hex("fg"));
+  if (hex("tc")) st.setProperty("--tc", "#" + hex("tc"));
+  if (hex("rc")) st.setProperty("--rc", "#" + hex("rc"));
+  if (num("r", 0, 30) !== null) st.setProperty("--r", (num("r", 0, 30) / 20) + "em");
+  if (FONTS[cfg("font")]) st.setProperty("--font", FONTS[cfg("font")]);
+}
 const q = new URLSearchParams();
 ["n", "lang", "trophy"].forEach(k => { if (P.get(k)) q.set(k, P.get(k)); });
 let last = "", known = null;
@@ -58,6 +65,7 @@ async function load() {
     if (txt === last) return;
     last = txt;
     const d = JSON.parse(txt);
+    apply(d.opts);
     document.getElementById("head").textContent = showTitle ? d.labels.title : "";
     document.getElementById("head").style.display = showTitle ? "" : "none";
     const ids = new Set(d.items.map(i => i.id));
