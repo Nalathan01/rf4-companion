@@ -19,7 +19,7 @@ body { --bg: 10, 18, 28; --op: 0.72; --fg: #ffffff; --tc: #f2c14e; --rc: #c78bff
 .fish { flex: 1 1 6em; min-width: 0; font-weight: 600; line-height: 1.2; overflow-wrap: break-word; }
 .right { margin-left: auto; display: flex; align-items: center; gap: 0.45em; white-space: nowrap; }
 .w { font-variant-numeric: tabular-nums; }
-.badge { font-size: 0.9em; line-height: 1; color: var(--tc); }
+.badge { margin-right: 0.3em; font-size: 0.9em; line-height: 1; color: var(--tc); }
 .rare .badge { color: var(--rc); }
 .empty { opacity: 0.7; font-size: 0.85em; padding: 0.3em 0.7em; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
 @keyframes pop { from { opacity: 0; transform: translateX(-0.8em); } to { opacity: 1; transform: none; } }
@@ -61,7 +61,7 @@ async function load() {
     document.getElementById("head").style.display = showTitle ? "" : "none";
     const ids = new Set(d.items.map(i => i.id));
     document.getElementById("list").innerHTML = d.items.length ? d.items.map(i =>
-      `<div class="row ${i.level}${known && !known.has(i.id) ? " new" : ""}"><span class="time">${esc(i.time)}</span><span class="fish">${esc(i.fish)}</span><span class="right"><span class="w">${esc(i.weight)}</span>${i.level ? `<span class="badge" title="${esc(d.labels[i.level])}">${i.level === "rare" ? "★★" : "★"}</span>` : ""}</span></div>`).join("")
+      `<div class="row ${i.level}${known && !known.has(i.id) ? " new" : ""}"><span class="time">${esc(i.time)}</span><span class="fish">${i.level ? `<span class="badge" title="${esc(d.labels[i.level])}">${i.level === "rare" ? "★★" : "★"}</span>` : ""}${esc(i.fish)}</span><span class="right"><span class="w">${esc(i.weight)}</span></span></div>`).join("")
       : `<div class="empty">${esc(d.labels.empty)}</div>`;
     known = ids;
     fit();
