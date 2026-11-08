@@ -1093,7 +1093,6 @@ function renderImgs(req) {
 const TEMP_LAKES = ["bear_lake", "the_amber_lake", "copper_lake"];
 const IMG_REQ = ["spot", "net", "setup"];
 let WIZ = null;
-function techOf(m) { m = String(m || "").toLowerCase(); return /troll/.test(m) ? "trolling" : /sea|marine|meer/.test(m) ? "marine" : /spin|cast/.test(m) ? "spin" : /float|match|bolo|pose/.test(m) ? "float" : /bottom|feeder|grund|carp/.test(m) ? "bottom" : ""; }
 function recipeOf(name) { return LOG && name ? LOG.recipes.find(r => r.name === name) : null; }
 async function spotWizard(pre, existing) {
   if (!LOG) await loadLog();
