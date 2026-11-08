@@ -664,12 +664,16 @@
   "shareNoToken": "Kein GitHub Zugang gefunden. Ist die GitHub CLI angemeldet?",
   "shareFailed": "Teilen fehlgeschlagen",
   "shareSection": "Spots teilen",
-  "shareKeyHint": "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Den Schlüssel bekommst du von Nalathan.",
+  "shareKeyHint": "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Beantrage ihn mit dem Knopf unten, Nalathan schaltet dich dann frei.",
   "shareKeyLabel": "Persönlicher Schlüssel",
   "shareKeySave": "Prüfen und speichern",
   "shareKeyOk": "Freigeschaltet als {0} ({1})",
   "shareBadKey": "Schlüssel ungültig oder gesperrt.",
-  "shareLimit": "Für heute sind genug Spots geteilt. Morgen geht es weiter."
+  "shareLimit": "Für heute sind genug Spots geteilt. Morgen geht es weiter.",
+  "shareRequest": "Freischaltung beantragen",
+  "shareRequestAgain": "Formular erneut öffnen",
+  "shareWaiting": "Wartet auf Freischaltung. Sobald Nalathan zugestimmt hat, hier auf »Prüfen und speichern« klicken.",
+  "shareRequestConfirm": "Das Tool erzeugt jetzt deinen persönlichen Schlüssel und öffnet ein GitHub Formular. Dafür brauchst du ein kostenloses GitHub Konto. Weiter?"
  },
  "en": {
   "langName": "English",
@@ -1336,12 +1340,16 @@
   "shareNoToken": "No GitHub access found. Is the GitHub CLI logged in?",
   "shareFailed": "Sharing failed",
   "shareSection": "Share spots",
-  "shareKeyHint": "With a personal key you can share your own spots with all users of the tool. You get the key from Nalathan.",
+  "shareKeyHint": "With a personal key you can share your own spots with all users of the tool. Request it with the button below, Nalathan then enables you.",
   "shareKeyLabel": "Personal key",
   "shareKeySave": "Check and save",
   "shareKeyOk": "Enabled as {0} ({1})",
   "shareBadKey": "Key invalid or blocked.",
-  "shareLimit": "Enough spots shared for today. Try again tomorrow."
+  "shareLimit": "Enough spots shared for today. Try again tomorrow.",
+  "shareRequest": "Request access",
+  "shareRequestAgain": "Open the form again",
+  "shareWaiting": "Waiting for approval. Once Nalathan has approved, click \"Check and save\" here.",
+  "shareRequestConfirm": "The tool now creates your personal key and opens a GitHub form. You need a free GitHub account for it. Continue?"
  },
  "ru": {
   "langName": "Русский",
@@ -2010,7 +2018,11 @@
   "shareKeySave": "Проверить и сохранить",
   "shareKeyOk": "Доступ открыт: {0} ({1})",
   "shareBadKey": "Ключ недействителен или заблокирован.",
-  "shareLimit": "На сегодня поделено достаточно спотов. Продолжи завтра."
+  "shareLimit": "На сегодня поделено достаточно спотов. Продолжи завтра.",
+  "shareRequest": "Запросить доступ",
+  "shareRequestAgain": "Открыть форму снова",
+  "shareWaiting": "Ожидает одобрения. После одобрения Nalathan нажми здесь «Проверить и сохранить».",
+  "shareRequestConfirm": "Сейчас будет создан твой личный ключ и откроется форма на GitHub. Для этого нужен бесплатный аккаунт GitHub. Продолжить?"
  },
  "fr": {
   "langName": "Français",
@@ -2679,7 +2691,11 @@
   "shareKeySave": "Vérifier et enregistrer",
   "shareKeyOk": "Activé en tant que {0} ({1})",
   "shareBadKey": "Clé invalide ou bloquée.",
-  "shareLimit": "Assez de spots partagés pour aujourd'hui. Réessaie demain."
+  "shareLimit": "Assez de spots partagés pour aujourd'hui. Réessaie demain.",
+  "shareRequest": "Demander l'accès",
+  "shareRequestAgain": "Rouvrir le formulaire",
+  "shareWaiting": "En attente de validation. Une fois validé par Nalathan, clique ici sur « Vérifier et enregistrer ».",
+  "shareRequestConfirm": "L'outil crée maintenant ta clé personnelle et ouvre un formulaire GitHub. Il te faut un compte GitHub gratuit. Continuer ?"
  },
  "es": {
   "langName": "Español",
@@ -3348,7 +3364,11 @@
   "shareKeySave": "Comprobar y guardar",
   "shareKeyOk": "Activado como {0} ({1})",
   "shareBadKey": "Clave no válida o bloqueada.",
-  "shareLimit": "Ya compartiste suficientes spots hoy. Inténtalo mañana."
+  "shareLimit": "Ya compartiste suficientes spots hoy. Inténtalo mañana.",
+  "shareRequest": "Solicitar acceso",
+  "shareRequestAgain": "Abrir el formulario de nuevo",
+  "shareWaiting": "Esperando aprobación. Cuando Nalathan lo apruebe, pulsa aquí «Comprobar y guardar».",
+  "shareRequestConfirm": "La herramienta crea ahora tu clave personal y abre un formulario de GitHub. Necesitas una cuenta gratuita de GitHub. ¿Continuar?"
  },
  "it": {
   "langName": "Italiano",
@@ -4017,7 +4037,11 @@
   "shareKeySave": "Verifica e salva",
   "shareKeyOk": "Abilitato come {0} ({1})",
   "shareBadKey": "Chiave non valida o bloccata.",
-  "shareLimit": "Hai condiviso abbastanza spot per oggi. Riprova domani."
+  "shareLimit": "Hai condiviso abbastanza spot per oggi. Riprova domani.",
+  "shareRequest": "Richiedi accesso",
+  "shareRequestAgain": "Riapri il modulo",
+  "shareWaiting": "In attesa di approvazione. Quando Nalathan approva, clicca qui su «Verifica e salva».",
+  "shareRequestConfirm": "Lo strumento crea ora la tua chiave personale e apre un modulo GitHub. Serve un account GitHub gratuito. Continuare?"
  },
  "pl": {
   "langName": "Polski",
@@ -4686,7 +4710,11 @@
   "shareKeySave": "Sprawdź i zapisz",
   "shareKeyOk": "Aktywny jako {0} ({1})",
   "shareBadKey": "Klucz nieprawidłowy lub zablokowany.",
-  "shareLimit": "Na dziś udostępniono wystarczająco spotów. Spróbuj jutro."
+  "shareLimit": "Na dziś udostępniono wystarczająco spotów. Spróbuj jutro.",
+  "shareRequest": "Poproś o dostęp",
+  "shareRequestAgain": "Otwórz formularz ponownie",
+  "shareWaiting": "Czeka na zatwierdzenie. Gdy Nalathan zatwierdzi, kliknij tutaj „Sprawdź i zapisz”.",
+  "shareRequestConfirm": "Narzędzie utworzy teraz Twój klucz osobisty i otworzy formularz GitHub. Potrzebujesz darmowego konta GitHub. Kontynuować?"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5355,7 +5383,11 @@
   "shareKeySave": "Verificar e guardar",
   "shareKeyOk": "Ativado como {0} ({1})",
   "shareBadKey": "Chave inválida ou bloqueada.",
-  "shareLimit": "Já partilhaste spots suficientes hoje. Tenta amanhã."
+  "shareLimit": "Já partilhaste spots suficientes hoje. Tenta amanhã.",
+  "shareRequest": "Pedir acesso",
+  "shareRequestAgain": "Abrir o formulário de novo",
+  "shareWaiting": "A aguardar aprovação. Quando o Nalathan aprovar, clica aqui em «Verificar e guardar».",
+  "shareRequestConfirm": "A ferramenta cria agora a tua chave pessoal e abre um formulário do GitHub. Precisas de uma conta GitHub gratuita. Continuar?"
  },
  "nl": {
   "langName": "Nederlands",
@@ -6024,7 +6056,11 @@
   "shareKeySave": "Controleren en opslaan",
   "shareKeyOk": "Vrijgegeven als {0} ({1})",
   "shareBadKey": "Sleutel ongeldig of geblokkeerd.",
-  "shareLimit": "Genoeg stekken gedeeld voor vandaag. Morgen weer."
+  "shareLimit": "Genoeg stekken gedeeld voor vandaag. Morgen weer.",
+  "shareRequest": "Toegang aanvragen",
+  "shareRequestAgain": "Formulier opnieuw openen",
+  "shareWaiting": "Wacht op goedkeuring. Klik hier op „Controleren en opslaan” zodra Nalathan heeft goedgekeurd.",
+  "shareRequestConfirm": "De tool maakt nu je persoonlijke sleutel en opent een GitHub formulier. Je hebt een gratis GitHub account nodig. Doorgaan?"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6693,7 +6729,11 @@
   "shareKeySave": "Kontrol et ve kaydet",
   "shareKeyOk": "{0} ({1}) olarak etkin",
   "shareBadKey": "Anahtar geçersiz veya engellendi.",
-  "shareLimit": "Bugün yeterince spot paylaştın. Yarın tekrar dene."
+  "shareLimit": "Bugün yeterince spot paylaştın. Yarın tekrar dene.",
+  "shareRequest": "Erişim iste",
+  "shareRequestAgain": "Formu tekrar aç",
+  "shareWaiting": "Onay bekleniyor. Nalathan onayladığında burada «Kontrol et ve kaydet»e tıkla.",
+  "shareRequestConfirm": "Araç şimdi kişisel anahtarını oluşturup bir GitHub formu açacak. Ücretsiz bir GitHub hesabı gerekir. Devam edilsin mi?"
  },
  "ro": {
   "langName": "Română",
@@ -7362,7 +7402,11 @@
   "shareKeySave": "Verifică și salvează",
   "shareKeyOk": "Activat ca {0} ({1})",
   "shareBadKey": "Cheie invalidă sau blocată.",
-  "shareLimit": "Ai distribuit destule spoturi azi. Încearcă mâine."
+  "shareLimit": "Ai distribuit destule spoturi azi. Încearcă mâine.",
+  "shareRequest": "Solicită acces",
+  "shareRequestAgain": "Deschide din nou formularul",
+  "shareWaiting": "Se așteaptă aprobarea. După ce Nalathan aprobă, apasă aici „Verifică și salvează”.",
+  "shareRequestConfirm": "Instrumentul creează acum cheia ta personală și deschide un formular GitHub. Ai nevoie de un cont GitHub gratuit. Continui?"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -8031,7 +8075,11 @@
   "shareKeySave": "Periksa dan simpan",
   "shareKeyOk": "Aktif sebagai {0} ({1})",
   "shareBadKey": "Kunci tidak valid atau diblokir.",
-  "shareLimit": "Sudah cukup spot dibagikan hari ini. Coba lagi besok."
+  "shareLimit": "Sudah cukup spot dibagikan hari ini. Coba lagi besok.",
+  "shareRequest": "Minta akses",
+  "shareRequestAgain": "Buka formulir lagi",
+  "shareWaiting": "Menunggu persetujuan. Setelah Nalathan menyetujui, klik «Periksa dan simpan» di sini.",
+  "shareRequestConfirm": "Alat ini akan membuat kunci pribadimu dan membuka formulir GitHub. Kamu perlu akun GitHub gratis. Lanjutkan?"
  },
  "ja": {
   "langName": "日本語",
@@ -8700,7 +8748,11 @@
   "shareKeySave": "確認して保存",
   "shareKeyOk": "{0}（{1}）として有効",
   "shareBadKey": "キーが無効か、ブロックされています。",
-  "shareLimit": "今日はこれ以上共有できません。明日また試してください。"
+  "shareLimit": "今日はこれ以上共有できません。明日また試してください。",
+  "shareRequest": "アクセスを申請",
+  "shareRequestAgain": "フォームをもう一度開く",
+  "shareWaiting": "承認待ちです。Nalathan が承認したら、ここで「確認して保存」を押してください。",
+  "shareRequestConfirm": "個人キーを作成し、GitHub のフォームを開きます。無料の GitHub アカウントが必要です。続けますか？"
  },
  "ko": {
   "langName": "한국어",
@@ -9369,7 +9421,11 @@
   "shareKeySave": "확인 후 저장",
   "shareKeyOk": "{0} ({1})(으)로 활성화됨",
   "shareBadKey": "키가 잘못되었거나 차단되었습니다.",
-  "shareLimit": "오늘은 충분히 공유했습니다. 내일 다시 시도하세요."
+  "shareLimit": "오늘은 충분히 공유했습니다. 내일 다시 시도하세요.",
+  "shareRequest": "권한 요청",
+  "shareRequestAgain": "양식 다시 열기",
+  "shareWaiting": "승인 대기 중입니다. Nalathan이 승인하면 여기서 '확인 후 저장'을 누르세요.",
+  "shareRequestConfirm": "이제 개인 키를 만들고 GitHub 양식을 엽니다. 무료 GitHub 계정이 필요합니다. 계속할까요?"
  },
  "zh": {
   "langName": "简体中文",
@@ -10038,7 +10094,11 @@
   "shareKeySave": "检查并保存",
   "shareKeyOk": "已启用：{0}（{1}）",
   "shareBadKey": "密钥无效或已被封禁。",
-  "shareLimit": "今天分享的钓点已达上限，明天再试。"
+  "shareLimit": "今天分享的钓点已达上限，明天再试。",
+  "shareRequest": "申请权限",
+  "shareRequestAgain": "再次打开表单",
+  "shareWaiting": "等待批准。Nalathan 批准后，在此点击“检查并保存”。",
+  "shareRequestConfirm": "工具将生成你的个人密钥并打开 GitHub 表单。需要一个免费的 GitHub 账号。继续吗？"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10707,6 +10767,10 @@
   "shareKeySave": "檢查並儲存",
   "shareKeyOk": "已啟用：{0}（{1}）",
   "shareBadKey": "金鑰無效或已被封鎖。",
-  "shareLimit": "今天分享的釣點已達上限，明天再試。"
+  "shareLimit": "今天分享的釣點已達上限，明天再試。",
+  "shareRequest": "申請權限",
+  "shareRequestAgain": "再次開啟表單",
+  "shareWaiting": "等待核准。Nalathan 核准後，在此點擊「檢查並儲存」。",
+  "shareRequestConfirm": "工具將產生你的個人金鑰並開啟 GitHub 表單。需要一個免費的 GitHub 帳號。繼續嗎？"
  }
 }

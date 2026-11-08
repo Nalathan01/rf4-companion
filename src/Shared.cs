@@ -51,22 +51,49 @@ internal static class Shared
         get { return Features.Log && Key.Length > 0; }
     }
 
+    private const string Form = "https://github.com/Nalathan01/rf4-companion/issues/new?template=share-key.yml&code=";
+
+    private static string Code(string key)
+    {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(key, "^[A-Z0-9]{4}(-[A-Z0-9]{4}){4}$")) return "";
+        using (System.Security.Cryptography.SHA256 sha = System.Security.Cryptography.SHA256.Create())
+            return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(key)), 0, 16).Replace("-", "").ToLowerInvariant();
+    }
+
+    private static object Status(string key, Dictionary<string, object> me)
+    {
+        string code = Code(key);
+        return AppEnv.Obj("key", key, "name", me != null ? AppEnv.GetString(me, "name") : "", "cc", me != null ? AppEnv.GetString(me, "cc") : "", "code", code, "url", code.Length > 0 ? Form + code : "");
+    }
+
     public static object KeyStatus()
     {
         string key = Key;
         if (key.Length == 0) return AppEnv.Obj("key", "");
-        Dictionary<string, object> me = Me(key);
-        return AppEnv.Obj("key", key, "name", me != null ? AppEnv.GetString(me, "name") : "", "cc", me != null ? AppEnv.GetString(me, "cc") : "");
+        return Status(key, Me(key));
+    }
+
+    public static object NewKey()
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        byte[] b = new byte[20];
+        using (System.Security.Cryptography.RandomNumberGenerator rng = System.Security.Cryptography.RandomNumberGenerator.Create()) rng.GetBytes(b);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < b.Length; i++) { if (i > 0 && i % 4 == 0) sb.Append('-'); sb.Append(chars[b[i] % chars.Length]); }
+        UserStore.Set("shareKey", sb.ToString());
+        lock (gate) { checkedKey = null; checkedMe = null; }
+        return Status(sb.ToString(), null);
     }
 
     public static object SetKey(string key)
     {
         key = (key ?? "").Trim().ToUpperInvariant();
         if (key.Length == 0) { UserStore.Set("shareKey", ""); return AppEnv.Obj("key", ""); }
+        lock (gate) { checkedKey = null; checkedMe = null; }
         Dictionary<string, object> me = Me(key);
-        if (me == null) throw new AppError("shareBadKey", null);
+        if (me == null && Code(key).Length == 0) throw new AppError("shareBadKey", null);
         UserStore.Set("shareKey", key);
-        return AppEnv.Obj("key", key, "name", AppEnv.GetString(me, "name"), "cc", AppEnv.GetString(me, "cc"));
+        return Status(key, me);
     }
 
     private static Dictionary<string, object> Me(string key)

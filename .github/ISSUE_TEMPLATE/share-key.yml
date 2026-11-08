@@ -1,0 +1,45 @@
+name: Spots teilen freischalten / Unlock spot sharing
+description: Freischaltung zum Teilen eigener Spots im RF4 Companion. Request permission to share your own spots in RF4 Companion.
+title: "Spots teilen: "
+labels: ["spot-key"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dieses Formular öffnet sich aus dem RF4 Companion (Einstellungen, Spots teilen). Der Anfrage Code steht schon drin, dein Schlüssel bleibt auf deinem PC.
+        This form opens from RF4 Companion (Settings, Share spots). The request code is filled in already, your key stays on your PC.
+  - type: input
+    id: code
+    attributes:
+      label: Anfrage Code / Request code
+      description: Nicht ändern. Do not change.
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Anzeigename / Display name
+      description: So erscheinen deine Spots bei allen, höchstens 24 Zeichen. This is how your spots appear to everyone, 24 characters at most.
+    validations:
+      required: true
+  - type: dropdown
+    id: country
+    attributes:
+      label: Land / Country
+      options: [DE, AT, CH, NL, BE, LU, FR, IT, ES, PT, PL, CZ, SK, HU, RO, BG, GR, TR, UA, RU, BY, KZ, LT, LV, EE, FI, SE, NO, DK, GB, IE, US, CA, BR, CN, TW, JP, KR, ID, OTHER]
+    validations:
+      required: true
+  - type: input
+    id: discord
+    attributes:
+      label: Discord (optional)
+      description: Falls ich dich bei Fragen erreichen soll. In case I need to reach you.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Regeln / Rules
+      options:
+        - label: Ich teile nur Spots, die ich selbst geangelt habe, mit eigenen Screenshots. I only share spots I fished myself, with my own screenshots.
+          required: true
+        - label: Geteilte Spots und Bilder sind für alle Nutzer sichtbar. Shared spots and images are visible to all users.
+          required: true

@@ -1417,14 +1417,26 @@ const MENU = {
        <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>` : ""}
        <div style="grid-column:1/3"><div class="hdr" style="${d ? "" : "margin-top:0"}">${esc(T("shareSection", "Spots teilen"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("shareKeyHint", "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Den Schlüssel bekommst du von Nalathan."))}</p>
        <div style="display:flex;gap:8px;align-items:flex-end"><label style="flex:1">${esc(T("shareKeyLabel", "Persönlicher Schlüssel"))}<input id="gKey" value="${esc(sk.key || "")}" placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></label><button class="btn small" id="gKeyBtn">${esc(T("shareKeySave", "Prüfen und speichern"))}</button></div>
-       <div class="sub" id="gKeyState" style="margin-top:6px"></div></div>
+       <div class="sub" id="gKeyState" style="margin-top:6px"></div><button class="btn small" id="gKeyReq" style="margin-top:6px">${esc(T("shareRequest", "Freischaltung beantragen"))}</button></div>
        <div style="grid-column:1/3"><div class="hdr">${esc(T("ocrPacks", "Texterkennung (Sprachpakete)"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("ocrPacksHint", "Für Bilder aus Telegram und für den Tracker braucht Windows die Texterkennung der jeweiligen Sprache. Installieren fragt nach Administratorrechten und lädt das Paket von Microsoft."))}</p>
        <table class="tbl">${ocr.map(o => `<tr><td>${esc(o.name)}</td><td class="num">${o.installed ? esc(T("installed", "installiert")) : `<button class="btn small" data-ocr="${o.tag}">${esc(T("install", "Installieren"))}</button>`}</td></tr>`).join("")}</table></div>`,
       async () => { if (d) { TRK = await api("/api/tracker/settings", { dir: $("gDir").value, lang: $("gLang").value }); renderTracker(); } },
       null);
     DLG.keep = true;
-    const keyState = k => { $("gKeyState").textContent = k.name ? "✓ " + T("shareKeyOk", "Freigeschaltet als {0} ({1})").replace("{0}", k.name).replace("{1}", k.cc) : k.key ? T("shareBadKey", "Schlüssel ungültig oder gesperrt.") : ""; };
+    let cur = sk;
+    const keyState = k => {
+      cur = k;
+      $("gKeyState").textContent = k.name ? "✓ " + T("shareKeyOk", "Freigeschaltet als {0} ({1})").replace("{0}", k.name).replace("{1}", k.cc) : k.code ? T("shareWaiting", "Wartet auf Freischaltung. Sobald Nalathan zugestimmt hat, hier auf »Prüfen und speichern« klicken.") : k.key ? T("shareBadKey", "Schlüssel ungültig oder gesperrt.") : "";
+      $("gKeyReq").style.display = k.name ? "none" : "";
+      $("gKeyReq").textContent = k.code ? T("shareRequestAgain", "Formular erneut öffnen") : T("shareRequest", "Freischaltung beantragen");
+      if (k.key !== undefined) $("gKey").value = k.key || "";
+    };
     keyState(sk);
+    $("gKeyReq").onclick = async () => {
+      let k = cur;
+      if (!k.code) { if (!confirm(T("shareRequestConfirm", "Das Tool erzeugt jetzt deinen persönlichen Schlüssel und öffnet ein GitHub Formular. Dafür brauchst du ein kostenloses GitHub Konto. Weiter?"))) return; k = await api("/api/sharekey/new", {}); keyState(k); }
+      if (k.url) api("/api/open", { url: k.url });
+    };
     $("gKeyBtn").onclick = async () => {
       $("gKeyBtn").disabled = true;
       try { const k = await api("/api/sharekey", { key: $("gKey").value.trim().toUpperCase() }); INIT.features.share = !!k.name; keyState(k); }
