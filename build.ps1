@@ -3,7 +3,8 @@ param(
     [string]$Version = "2.0.0.0",
     [switch]$Private,
     [switch]$Fangbuch,
-    [switch]$Overlay
+    [switch]$Overlay,
+    [switch]$TestChannel
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,6 +55,7 @@ $cscArgs = @("/nologo", "/target:winexe", "/optimize+", "/platform:anycpu", "/ou
 if ($Private) { $cscArgs += "/define:PRIVATE" }
 elseif ($Fangbuch) { $cscArgs += "/define:FANGBUCH" }
 if ($Overlay -and -not $Private) { $cscArgs += "/define:OVERLAY" }
+if ($TestChannel -and -not $Private) { $cscArgs += "/define:OVERLAY"; $cscArgs += "/define:TESTCHANNEL" }
 $cscArgs += $references | ForEach-Object { "/reference:$_" }
 $cscArgs += $resources
 $cscArgs += @(Get-ChildItem (Join-Path $PSScriptRoot "src") -Filter *.cs | ForEach-Object { $_.FullName })
