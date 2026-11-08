@@ -55,12 +55,25 @@ internal static class Updater
 
     public static void CleanUp()
     {
+        string dir = Path.GetDirectoryName(ExePath), name = Path.GetFileName(ExePath);
         try
         {
-            string old = ExePath + ".old";
-            if (File.Exists(old)) File.Delete(old);
+            foreach (string f in Directory.GetFiles(dir, name + "*.old"))
+            {
+                try { File.Delete(f); } catch (Exception) { }
+            }
         }
         catch (Exception) { }
+    }
+
+    private static void MoveAside(string exe, string old)
+    {
+        if (File.Exists(old))
+        {
+            try { File.Delete(old); }
+            catch (Exception) { File.Move(old, exe + "." + DateTime.UtcNow.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".old"); }
+        }
+        File.Move(exe, old);
     }
 
     public static void CheckIfStale()
@@ -163,8 +176,7 @@ internal static class Updater
                 hash = BitConverter.ToString(sha.ComputeHash(fs)).Replace("-", "").ToLowerInvariant();
             }
             if (hash != assetSha) throw new AppError("updateHash", null);
-            if (File.Exists(old)) File.Delete(old);
-            File.Move(exe, old);
+            MoveAside(exe, old);
             try { File.Move(tmp, exe); }
             catch (Exception)
             {
