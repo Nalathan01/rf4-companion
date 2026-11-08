@@ -6,6 +6,8 @@
 <title>RF4 Companion Overlay</title>
 <style>
 html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+html.cover, html.cover body { background: #0e1620; height: 100%; }
+html.cover .row { background: rgba(255, 255, 255, 0.06); }
 body { font-family: "Segoe UI", system-ui, sans-serif; color: #fff; font-size: calc(18px * var(--s, 1)); padding: 0.5em; }
 .head { font-size: 0.8em; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; margin: 0 0 0.35em 0.2em; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
 .list { display: flex; flex-direction: column; gap: 0.3em; }
@@ -31,6 +33,7 @@ const P = new URLSearchParams(location.search);
 const size = Math.max(50, Math.min(300, parseInt(P.get("size") || "100", 10) || 100));
 document.body.style.setProperty("--s", size / 100);
 const showTitle = P.get("title") !== "0";
+if (P.get("cover") === "1") document.documentElement.classList.add("cover");
 const q = new URLSearchParams();
 ["n", "lang", "trophy"].forEach(k => { if (P.get(k)) q.set(k, P.get(k)); });
 let last = "", known = null;
