@@ -341,7 +341,7 @@ dialog.sheet[open] { display: flex; }
           <input class="search" id="actQ" type="search" autocomplete="off" style="flex:1;min-width:140px;margin:0">
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
           <label class="chk"><input type="checkbox" id="dcChk"> <span data-t="onlyDiscordBot">Nur Discord-Community</span></label>
-          <label class="chk logonly"><input type="checkbox" id="ownChk" checked> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
+          <label class="chk logonly"><input type="checkbox" id="ownChk"> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
         </div>
         <div class="cards" id="cards"></div>
       </div>
@@ -472,9 +472,10 @@ async function ping() {
 }
 async function loadActive() {
   const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + actParams());
-  ACTIVE = r.spots;
+  ACTIVE = ownOnly() ? [] : r.spots;
   $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
-  if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
+  if (ownOnly()) { const mine = ownList(); if (!ownSel()) SEL = mine.length ? "own:" + mine[0].id : null; }
+  else if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
   renderCards();
   drawMap();
   DETAIL_KEY = null;
@@ -482,7 +483,21 @@ async function loadActive() {
 }
 function CC(cc) { return cc && cc.length ? ` <span class="cc">${esc(cc.join("/"))}</span>` : ""; }
 function heat(s) { return s.hoursAgo < 6 ? "hot" : (s.hoursAgo < 24 ? "warm" : ""); }
+function ownOnly() { return !!($("ownChk").checked && LOG); }
+function ownList() { return LOG ? LOG.spots.filter(o => !LAKE || o.lake === LAKE) : []; }
 function renderCards() {
+  if (ownOnly()) {
+    const mine = ownList();
+    $("cards").innerHTML = mine.length ? mine.map(o => `
+    <div class="card ${"own:" + o.id === SEL ? "sel" : ""}" data-key="own:${esc(o.id)}">
+      <div class="dot"></div>
+      <div class="where">${esc((INIT.lakes.find(l => l.id === o.lake) || {}).name || o.lake)}<small>${esc(o.name || (o.x ? o.x + ":" + o.y : ""))}</small></div>
+      <div class="ago"></div>
+      <div class="line">${String(o.fish || "").split(",").map(f => f.trim()).filter(Boolean).map(f => `<span class="tag">${esc(f)}</span>`).join("")}${[o.bait, o.bait2].filter(Boolean).map(b => `<span class="tag b">${esc(b)}</span>`).join("")}</div>
+    </div>`).join("") : `<div class="empty">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
+    document.querySelectorAll(".card").forEach(c => c.onclick = () => { SEL = c.dataset.key; renderCards(); drawMap(); loadDetail(); });
+    return;
+  }
   if (!ACTIVE.length) { $("cards").innerHTML = `<div class="empty">${esc(T("activeEmpty", "Keine Meldungen in diesem Zeitraum."))}</div>`; return; }
   $("cards").innerHTML = ACTIVE.map(s => `
     <div class="card ${s.key === SEL ? "sel" : ""}" data-key="${esc(s.key)}">
@@ -693,7 +708,7 @@ function tempVis() { $("tempSel").style.display = tempOn() ? "" : "none"; }
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; tempVis(); loadActive(); };
 $("tempSel").onchange = () => { DETAIL_KEY = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
-$("dcChk").onchange = () => { DETAIL_KEY = null; loadActive(); };
+$("dcChk").onchange = () => { if ($("dcChk").checked) $("ownChk").checked = false; DETAIL_KEY = null; loadActive(); };
 function actParams() {
   const q = $("actQ").value.trim();
   return ($("dcChk").checked ? "&dc=1" : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + (q.length >= 2 ? "&fish=" + encodeURIComponent(q) : "");
@@ -709,7 +724,7 @@ function setFishQ(raw) {
   FISHQ_T = setTimeout(() => { DETAIL_KEY = null; loadActive(); loadFind(); }, 350);
 }
 $("actQ").oninput = () => setFishQ($("actQ").value);
-$("ownChk").onchange = () => drawMap();
+$("ownChk").onchange = () => { if ($("ownChk").checked) $("dcChk").checked = false; loadActive(); };
 $("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 async function loadBrowsers() {
   try {
