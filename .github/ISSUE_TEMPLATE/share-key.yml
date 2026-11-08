@@ -8,6 +8,8 @@ body:
       value: |
         Dieses Formular öffnet sich aus dem RF4 Companion (Einstellungen, Spots teilen). Der Anfrage Code steht schon drin, dein Schlüssel bleibt auf deinem PC.
         This form opens from RF4 Companion (Settings, Share spots). The request code is filled in already, your key stays on your PC.
+
+        **Alles, was du hier einträgst, ist öffentlich sichtbar.** **Everything you enter here is public.**
   - type: input
     id: code
     attributes:
