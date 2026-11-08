@@ -48,8 +48,20 @@ internal static class Shared
 
     public static bool CanShare
     {
-        get { return Features.Log && Key.Length > 0; }
+        get
+        {
+            string key = Key;
+            if (!Features.Log || key.Length == 0) return false;
+            lock (gate) if (checkedKey == key) return checkedMe != null;
+            lock (gate) if (failedKey == key && DateTime.UtcNow.Subtract(failedAt).TotalMinutes < 10) return false;
+            try { if (Me(key) != null) return true; } catch (Exception) { }
+            lock (gate) { failedKey = key; failedAt = DateTime.UtcNow; }
+            return false;
+        }
     }
+
+    private static string failedKey;
+    private static DateTime failedAt;
 
     private const string Form = "https://github.com/Nalathan01/rf4-companion/issues/new?template=share-key.yml&code=";
 
@@ -81,7 +93,7 @@ internal static class Shared
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < b.Length; i++) { if (i > 0 && i % 4 == 0) sb.Append('-'); sb.Append(chars[b[i] % chars.Length]); }
         UserStore.Set("shareKey", sb.ToString());
-        lock (gate) { checkedKey = null; checkedMe = null; }
+        lock (gate) { checkedKey = null; checkedMe = null; failedKey = null; }
         return Status(sb.ToString(), null);
     }
 
@@ -89,7 +101,7 @@ internal static class Shared
     {
         key = (key ?? "").Trim().ToUpperInvariant();
         if (key.Length == 0) { UserStore.Set("shareKey", ""); return AppEnv.Obj("key", ""); }
-        lock (gate) { checkedKey = null; checkedMe = null; }
+        lock (gate) { checkedKey = null; checkedMe = null; failedKey = null; }
         Dictionary<string, object> me = Me(key);
         if (me == null && Code(key).Length == 0) throw new AppError("shareBadKey", null);
         UserStore.Set("shareKey", key);
