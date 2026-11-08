@@ -398,7 +398,24 @@ internal static class Fangbuch
 
     public static object ItemNames(string lang)
     {
-        return GameData.ItemRows().Select(r => GameData.Translate(r[0], lang)).Distinct().OrderBy(x => x).ToArray();
+        HashSet<string> keys = new HashSet<string>(StringComparer.Ordinal);
+        Action<string> add = t =>
+        {
+            foreach (string part in (t ?? "").Split(new string[] { " + ", ", " }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string k = GameData.ToKey(part.Trim());
+                if (k.EndsWith(GameData.Crushed, StringComparison.Ordinal)) k = k.Substring(0, k.Length-GameData.Crushed.Length);
+                if (k.Length > 0 && (GameData.HasItem(k) || GameData.Names.ContainsKey(k))) keys.Add(k);
+            }
+        };
+        foreach (Report r in Community.All()) { add(r.S("groundbait")); add(r.S("dryMix")); }
+        foreach (Dictionary<string, object> rc in List("recipes"))
+        {
+            add(S(rc, "base"));
+            add(S(rc, "attractant"));
+            foreach (object o in AppEnv.GetList(rc, "additives")) add((o ?? "").ToString());
+        }
+        return keys.Select(k => GameData.Translate(k, lang)).Distinct().OrderBy(x => x).ToArray();
     }
 
     public static object SaveSpot(Dictionary<string, object> a, string lang)

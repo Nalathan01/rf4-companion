@@ -353,7 +353,7 @@ dialog.sheet[open] { display: flex; }
   <section class="view" id="view-log">
     <div class="split log-split">
       <div class="col">
-        <div class="title-row"><h2 data-t="navLog">Mein Fangbuch</h2><div><button class="btn" id="addCatch">＋ <span data-t="logAdd">Fang eintragen</span></button> <button class="btn primary big" id="addSpotLog">＋ <span data-t="wizTitle">Spot merken</span></button></div></div>
+        <div class="title-row"><h2 data-t="navLog">Mein Fangbuch</h2><div><button class="btn primary big" id="addSpotLog">＋ <span data-t="wizTitle">Spot merken</span></button></div></div>
         <p class="sub" id="logSub"></p>
         <div class="trk trkonly" id="trk"></div>
         <div class="filters">
@@ -1360,7 +1360,6 @@ async function catchDialog(c) {
 $("dlgCancel").onclick = () => $("dlg").close();
 $("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (DLG.keep) return; await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = errText(e).startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = errText(e); } };
-$("addCatch").onclick = () => catchDialog(null);
 $("addSpotLog").onclick = () => spotWizard(null);
 $("addSpot").onclick = () => spotWizard(null);
 $("addRecipe").onclick = () => recipeDialog(null);
