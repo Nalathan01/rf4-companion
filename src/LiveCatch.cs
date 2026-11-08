@@ -189,7 +189,6 @@ internal static class LiveCatch
     private static void Chat(IntPtr h, int w, int hg, Bitmap full)
     {
         string me = Norm(OwnName);
-        if (me.Length < 3) return;
         Rectangle area = new Rectangle(0, (int)(hg * 0.5), (int)(w * 0.2), (int)(hg * 0.4));
         using (Bitmap c = full != null ? full.Clone(area, PixelFormat.Format32bppArgb) : Grab(h, area))
         {
@@ -212,16 +211,24 @@ internal static class LiveCatch
                 else rows.Add(t);
             }
             TrackLists lists = TrackerParse.Lists(TrackerParse.Code(Lang));
-            List<string> now = new List<string>();
+            List<KeyValuePair<string, string>> all = new List<KeyValuePair<string, string>>();
             foreach (string row in rows)
             {
                 Match m = Regex.Match(row, @"^(\S+)\s+(.+?),\s*(\d[\d.,]*)\s*(kg|g|кг|г|lb|lbs)$", RegexOptions.IgnoreCase);
-                if (!m.Success || Norm(m.Groups[1].Value) != me) continue;
+                if (!m.Success) continue;
                 int? gr = TrackerParse.Weight(m.Groups[3].Value, m.Groups[4].Value);
                 NameHit f = TrackerParse.MatchFish(m.Groups[2].Value.Trim(), lists);
                 if (gr == null || gr.Value <= 0 || f == null || Impossible(f.En, gr.Value)) continue;
-                now.Add(f.En + "|" + gr.Value.ToString(CultureInfo.InvariantCulture));
+                all.Add(new KeyValuePair<string, string>(m.Groups[1].Value, f.En + "|" + gr.Value.ToString(CultureInfo.InvariantCulture)));
             }
+            if (me.Length < 3)
+            {
+                HashSet<string> mine = new HashSet<string>(Recent().Where(x => DateTime.Now.Subtract((DateTime)x[2]).TotalMinutes < 30).Select(x => (string)x[0] + "|" + ((int)x[1]).ToString(CultureInfo.InvariantCulture)));
+                foreach (KeyValuePair<string, string> e in all)
+                    if (mine.Contains(e.Value) && Norm(e.Key).Length >= 3) { UserStore.Set("rf4Name", e.Key); me = Norm(e.Key); break; }
+                if (me.Length < 3) return;
+            }
+            List<string> now = all.Where(e => Norm(e.Key) == me).Select(e => e.Value).ToList();
             string last = now.Count > 0 ? now[now.Count-1] : "";
             if (chatSeen == null) { chatSeen = new HashSet<string>(now); return; }
             if (last.Length == 0 || chatSeen.Contains(last)) { chatCand = ""; return; }
@@ -387,6 +394,7 @@ internal static class LiveCatch
             if (list.Count > 100) list.RemoveRange(0, list.Count-100);
             Save();
         }
+        chatSig = "";
         AppEnv.Log("Live", "Fang " + fish + "|" + grams);
     }
 
