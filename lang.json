@@ -639,7 +639,14 @@
   "ovStateOn": "Läuft, Spielbild wird gelesen.",
   "ovStateErr": "Fehler beim Lesen des Spielbilds.",
   "ovStateCount": "Gespeicherte Fänge: {0}",
-  "ovCover": "Fester Hintergrund, um den Ingame-Chat zu überdecken"
+  "ovCover": "Fester Hintergrund, um den Ingame-Chat zu überdecken",
+  "ovDesign": "Design",
+  "ovBg": "Hintergrundfarbe",
+  "ovOpacity": "Deckkraft",
+  "ovTextColor": "Textfarbe",
+  "ovFont": "Schriftart",
+  "ovRadius": "Eckenrundung",
+  "ovReset": "Design zurücksetzen"
  },
  "en": {
   "langName": "English",
@@ -1281,7 +1288,14 @@
   "ovStateOn": "Running, reading the game picture.",
   "ovStateErr": "Error while reading the game picture.",
   "ovStateCount": "Saved catches: {0}",
-  "ovCover": "Solid background to cover the in-game chat"
+  "ovCover": "Solid background to cover the in-game chat",
+  "ovDesign": "Design",
+  "ovBg": "Background colour",
+  "ovOpacity": "Opacity",
+  "ovTextColor": "Text colour",
+  "ovFont": "Font",
+  "ovRadius": "Corner radius",
+  "ovReset": "Reset design"
  },
  "ru": {
   "langName": "Русский",
@@ -1920,7 +1934,14 @@
   "ovStateOn": "Работает, изображение игры считывается.",
   "ovStateErr": "Ошибка при чтении изображения игры.",
   "ovStateCount": "Сохранено поимок: {0}",
-  "ovCover": "Сплошной фон, чтобы закрыть игровой чат"
+  "ovCover": "Сплошной фон, чтобы закрыть игровой чат",
+  "ovDesign": "Оформление",
+  "ovBg": "Цвет фона",
+  "ovOpacity": "Непрозрачность",
+  "ovTextColor": "Цвет текста",
+  "ovFont": "Шрифт",
+  "ovRadius": "Скругление углов",
+  "ovReset": "Сбросить оформление"
  },
  "fr": {
   "langName": "Français",
@@ -2559,7 +2580,14 @@
   "ovStateOn": "En cours, lecture de l'image du jeu.",
   "ovStateErr": "Erreur lors de la lecture de l'image du jeu.",
   "ovStateCount": "Prises enregistrées : {0}",
-  "ovCover": "Fond opaque pour masquer le chat du jeu"
+  "ovCover": "Fond opaque pour masquer le chat du jeu",
+  "ovDesign": "Apparence",
+  "ovBg": "Couleur de fond",
+  "ovOpacity": "Opacité",
+  "ovTextColor": "Couleur du texte",
+  "ovFont": "Police",
+  "ovRadius": "Arrondi des coins",
+  "ovReset": "Réinitialiser l'apparence"
  },
  "es": {
   "langName": "Español",
@@ -3198,7 +3226,14 @@
   "ovStateOn": "Activa, leyendo la imagen del juego.",
   "ovStateErr": "Error al leer la imagen del juego.",
   "ovStateCount": "Capturas guardadas: {0}",
-  "ovCover": "Fondo sólido para tapar el chat del juego"
+  "ovCover": "Fondo sólido para tapar el chat del juego",
+  "ovDesign": "Diseño",
+  "ovBg": "Color de fondo",
+  "ovOpacity": "Opacidad",
+  "ovTextColor": "Color del texto",
+  "ovFont": "Fuente",
+  "ovRadius": "Redondeo de esquinas",
+  "ovReset": "Restablecer diseño"
  },
  "it": {
   "langName": "Italiano",
@@ -3837,7 +3872,14 @@
   "ovStateOn": "Attivo, lettura dell'immagine del gioco.",
   "ovStateErr": "Errore nella lettura dell'immagine del gioco.",
   "ovStateCount": "Catture salvate: {0}",
-  "ovCover": "Sfondo pieno per coprire la chat di gioco"
+  "ovCover": "Sfondo pieno per coprire la chat di gioco",
+  "ovDesign": "Aspetto",
+  "ovBg": "Colore di sfondo",
+  "ovOpacity": "Opacità",
+  "ovTextColor": "Colore del testo",
+  "ovFont": "Carattere",
+  "ovRadius": "Arrotondamento angoli",
+  "ovReset": "Ripristina aspetto"
  },
  "pl": {
   "langName": "Polski",
@@ -4476,7 +4518,14 @@
   "ovStateOn": "Działa, obraz gry jest odczytywany.",
   "ovStateErr": "Błąd odczytu obrazu gry.",
   "ovStateCount": "Zapisane połowy: {0}",
-  "ovCover": "Pełne tło, aby zasłonić czat w grze"
+  "ovCover": "Pełne tło, aby zasłonić czat w grze",
+  "ovDesign": "Wygląd",
+  "ovBg": "Kolor tła",
+  "ovOpacity": "Krycie",
+  "ovTextColor": "Kolor tekstu",
+  "ovFont": "Czcionka",
+  "ovRadius": "Zaokrąglenie rogów",
+  "ovReset": "Przywróć wygląd"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5115,7 +5164,14 @@
   "ovStateOn": "Ativo, lendo a imagem do jogo.",
   "ovStateErr": "Erro ao ler a imagem do jogo.",
   "ovStateCount": "Capturas salvas: {0}",
-  "ovCover": "Fundo sólido para cobrir o chat do jogo"
+  "ovCover": "Fundo sólido para cobrir o chat do jogo",
+  "ovDesign": "Visual",
+  "ovBg": "Cor de fundo",
+  "ovOpacity": "Opacidade",
+  "ovTextColor": "Cor do texto",
+  "ovFont": "Fonte",
+  "ovRadius": "Arredondamento dos cantos",
+  "ovReset": "Restaurar visual"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5754,7 +5810,14 @@
   "ovStateOn": "Actief, spelbeeld wordt gelezen.",
   "ovStateErr": "Fout bij het lezen van het spelbeeld.",
   "ovStateCount": "Opgeslagen vangsten: {0}",
-  "ovCover": "Effen achtergrond om de chat in het spel te bedekken"
+  "ovCover": "Effen achtergrond om de chat in het spel te bedekken",
+  "ovDesign": "Uiterlijk",
+  "ovBg": "Achtergrondkleur",
+  "ovOpacity": "Dekking",
+  "ovTextColor": "Tekstkleur",
+  "ovFont": "Lettertype",
+  "ovRadius": "Hoekafronding",
+  "ovReset": "Uiterlijk herstellen"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6393,7 +6456,14 @@
   "ovStateOn": "Çalışıyor, oyun görüntüsü okunuyor.",
   "ovStateErr": "Oyun görüntüsü okunurken hata.",
   "ovStateCount": "Kayıtlı avlar: {0}",
-  "ovCover": "Oyun içi sohbeti örtmek için düz arka plan"
+  "ovCover": "Oyun içi sohbeti örtmek için düz arka plan",
+  "ovDesign": "Görünüm",
+  "ovBg": "Arka plan rengi",
+  "ovOpacity": "Opaklık",
+  "ovTextColor": "Yazı rengi",
+  "ovFont": "Yazı tipi",
+  "ovRadius": "Köşe yuvarlaklığı",
+  "ovReset": "Görünümü sıfırla"
  },
  "ro": {
   "langName": "Română",
@@ -7032,7 +7102,14 @@
   "ovStateOn": "Rulează, imaginea jocului este citită.",
   "ovStateErr": "Eroare la citirea imaginii jocului.",
   "ovStateCount": "Capturi salvate: {0}",
-  "ovCover": "Fundal opac pentru a acoperi chatul din joc"
+  "ovCover": "Fundal opac pentru a acoperi chatul din joc",
+  "ovDesign": "Aspect",
+  "ovBg": "Culoare fundal",
+  "ovOpacity": "Opacitate",
+  "ovTextColor": "Culoare text",
+  "ovFont": "Font",
+  "ovRadius": "Rotunjire colțuri",
+  "ovReset": "Resetează aspectul"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7671,7 +7748,14 @@
   "ovStateOn": "Berjalan, gambar game sedang dibaca.",
   "ovStateErr": "Gagal membaca gambar game.",
   "ovStateCount": "Tangkapan tersimpan: {0}",
-  "ovCover": "Latar belakang penuh untuk menutupi chat dalam game"
+  "ovCover": "Latar belakang penuh untuk menutupi chat dalam game",
+  "ovDesign": "Tampilan",
+  "ovBg": "Warna latar",
+  "ovOpacity": "Opasitas",
+  "ovTextColor": "Warna teks",
+  "ovFont": "Font",
+  "ovRadius": "Kelengkungan sudut",
+  "ovReset": "Atur ulang tampilan"
  },
  "ja": {
   "langName": "日本語",
@@ -8310,7 +8394,14 @@
   "ovStateOn": "動作中、ゲーム画面を読み取っています。",
   "ovStateErr": "ゲーム画面の読み取りエラー。",
   "ovStateCount": "保存された釣果: {0}",
-  "ovCover": "ゲーム内チャットを隠すための不透明な背景"
+  "ovCover": "ゲーム内チャットを隠すための不透明な背景",
+  "ovDesign": "デザイン",
+  "ovBg": "背景色",
+  "ovOpacity": "不透明度",
+  "ovTextColor": "文字色",
+  "ovFont": "フォント",
+  "ovRadius": "角の丸み",
+  "ovReset": "デザインをリセット"
  },
  "ko": {
   "langName": "한국어",
@@ -8949,7 +9040,14 @@
   "ovStateOn": "실행 중, 게임 화면을 읽고 있습니다.",
   "ovStateErr": "게임 화면을 읽는 중 오류가 발생했습니다.",
   "ovStateCount": "저장된 조과: {0}",
-  "ovCover": "게임 내 채팅을 가리는 불투명 배경"
+  "ovCover": "게임 내 채팅을 가리는 불투명 배경",
+  "ovDesign": "디자인",
+  "ovBg": "배경색",
+  "ovOpacity": "불투명도",
+  "ovTextColor": "글자색",
+  "ovFont": "글꼴",
+  "ovRadius": "모서리 둥글기",
+  "ovReset": "디자인 초기화"
  },
  "zh": {
   "langName": "简体中文",
@@ -9588,7 +9686,14 @@
   "ovStateOn": "运行中，正在读取游戏画面。",
   "ovStateErr": "读取游戏画面时出错。",
   "ovStateCount": "已保存渔获：{0}",
-  "ovCover": "使用不透明背景遮住游戏内聊天"
+  "ovCover": "使用不透明背景遮住游戏内聊天",
+  "ovDesign": "外观",
+  "ovBg": "背景颜色",
+  "ovOpacity": "不透明度",
+  "ovTextColor": "文字颜色",
+  "ovFont": "字体",
+  "ovRadius": "圆角",
+  "ovReset": "重置外观"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10227,6 +10332,13 @@
   "ovStateOn": "執行中，正在讀取遊戲畫面。",
   "ovStateErr": "讀取遊戲畫面時發生錯誤。",
   "ovStateCount": "已儲存漁獲：{0}",
-  "ovCover": "使用不透明背景遮住遊戲內聊天"
+  "ovCover": "使用不透明背景遮住遊戲內聊天",
+  "ovDesign": "外觀",
+  "ovBg": "背景顏色",
+  "ovOpacity": "不透明度",
+  "ovTextColor": "文字顏色",
+  "ovFont": "字型",
+  "ovRadius": "圓角",
+  "ovReset": "重設外觀"
  }
 }

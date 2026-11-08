@@ -1389,7 +1389,9 @@ const MENU = {
   async overlay() {
     const ov = await api("/api/overlay");
     const lv = ov.live;
-    const oo = Object.assign({ n: 5, size: 100, lang: INIT.lang, trophy: false, title: true, cover: false }, ov.opts || {});
+    const OVD = { bg: "0a121c", op: 72, fg: "ffffff", tc: "f2c14e", rc: "c78bff", r: 9, font: "segoe" };
+    const oo = Object.assign({ n: 5, size: 100, lang: INIT.lang, trophy: false, title: true, cover: false }, OVD, ov.opts || {});
+    const FONTS = [["segoe", "Segoe UI"], ["arial", "Arial"], ["verdana", "Verdana"], ["tahoma", "Tahoma"], ["georgia", "Georgia"], ["trebuchet", "Trebuchet MS"], ["consolas", "Consolas"], ["impact", "Impact"]];
     const langs = lv.langs.indexOf(lv.lang) < 0 ? lv.langs.concat([lv.lang]) : lv.langs;
     const steps = ["In OBS bei Quellen auf Plus klicken und Browser wählen.", "Die Adresse von oben bei URL einfügen.", "Breite 500 und Höhe 600 eintragen, der Hintergrund bleibt durchsichtig.", "RF4 Companion offen lassen. Jeder gefangene Fisch erscheint nach ein bis drei Sekunden."];
     openDlg(T("ovHead", "OBS Overlay"),
@@ -1403,6 +1405,15 @@ const MENU = {
        <label>${esc(T("language", "Sprache"))}<select id="ovLang">${INIT.langs.map(l => `<option value="${l}" ${l === oo.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("")}</select></label>
        ${field("ovPort", T("ovPort", "Port"), ov.port, 'inputmode="numeric"')}
        <div style="grid-column:1/3"><label class="chk"><input type="checkbox" id="ovTrophy" ${oo.trophy ? "checked" : ""}> ${esc(T("ovOnlyTrophy", "Nur Trophäen"))}</label> <label class="chk"><input type="checkbox" id="ovTitle" ${oo.title ? "checked" : ""}> ${esc(T("ovShowTitle", "Überschrift zeigen"))}</label> <label class="chk"><input type="checkbox" id="ovCover" ${oo.cover ? "checked" : ""}> ${esc(T("ovCover", "Fester Hintergrund, um den Ingame-Chat zu überdecken"))}</label></div>
+       <div style="grid-column:1/3"><div class="hdr">${esc(T("ovDesign", "Design"))}</div></div>
+       <label>${esc(T("ovBg", "Hintergrundfarbe"))}<input type="color" id="ovBgC" value="#${esc(oo.bg)}"></label>
+       <label>${esc(T("ovOpacity", "Deckkraft"))} <span id="ovOpV">${oo.op} %</span><input type="range" id="ovOp" min="0" max="100" value="${oo.op}"></label>
+       <label>${esc(T("ovTextColor", "Textfarbe"))}<input type="color" id="ovFg" value="#${esc(oo.fg)}"></label>
+       <label>${esc(T("ovFont", "Schriftart"))}<select id="ovFont">${FONTS.map(f => `<option value="${f[0]}" ${f[0] === oo.font ? "selected" : ""}>${f[1]}</option>`).join("")}</select></label>
+       <label>${esc(T("trophy", "Trophäe"))}<input type="color" id="ovTc" value="#${esc(oo.tc)}"></label>
+       <label>${esc(T("rare", "Seltene Trophäe"))}<input type="color" id="ovRc" value="#${esc(oo.rc)}"></label>
+       <label>${esc(T("ovRadius", "Eckenrundung"))}<input type="range" id="ovR" min="0" max="30" value="${oo.r}"></label>
+       <div style="align-self:end"><button type="button" class="btn small" id="ovReset">${esc(T("ovReset", "Design zurücksetzen"))}</button></div>
        <label class="wide">${esc(T("ovUrl", "Adresse für OBS"))}<input id="ovUrl" readonly></label>
        <div style="grid-column:1/3;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn small" id="ovCopy">${esc(T("ovCopy", "Adresse kopieren"))}</button><button type="button" class="btn small" id="ovOpen">${esc(T("ovPreview", "Vorschau im Browser"))}</button><button type="button" class="btn small" id="ovClear">${esc(T("ovClear", "Liste leeren"))}</button></div>
        ${ov.error ? `<p class="sub" style="grid-column:1/3;margin:0;color:var(--hot)">${esc(T("ovPortBusy", "Dieser Port ist belegt. Bitte einen anderen eintragen und speichern."))}</p>` : ""}
@@ -1412,9 +1423,9 @@ const MENU = {
         catch (e) { throw new Error(T("ovBadPort", "Bitte einen Port zwischen 1024 und 65535 eintragen.")); }
       }, null);
     DLG.keep = true;
-    const ovOpts = () => ({ n: Math.max(1, Math.min(20, parseInt($("ovN").value, 10) || 5)), size: +$("ovSize").value, lang: $("ovLang").value, trophy: $("ovTrophy").checked, title: $("ovTitle").checked, cover: $("ovCover").checked });
-    const ovUrl = () => { const o = ovOpts(); return `http://localhost:${parseInt($("ovPort").value, 10) || ov.port}/overlay?n=${o.n}&lang=${o.lang}&size=${o.size}${o.trophy ? "&trophy=1" : ""}${o.title ? "" : "&title=0"}${o.cover ? "&cover=1" : ""}`; };
-    const upd = () => { $("ovUrl").value = ovUrl(); };
+    const ovOpts = () => ({ n: Math.max(1, Math.min(20, parseInt($("ovN").value, 10) || 5)), size: +$("ovSize").value, lang: $("ovLang").value, trophy: $("ovTrophy").checked, title: $("ovTitle").checked, cover: $("ovCover").checked, bg: $("ovBgC").value.slice(1), op: +$("ovOp").value, fg: $("ovFg").value.slice(1), tc: $("ovTc").value.slice(1), rc: $("ovRc").value.slice(1), r: +$("ovR").value, font: $("ovFont").value });
+    const ovUrl = () => { const o = ovOpts(); return `http://localhost:${parseInt($("ovPort").value, 10) || ov.port}/overlay?n=${o.n}&lang=${o.lang}&size=${o.size}${o.trophy ? "&trophy=1" : ""}${o.title ? "" : "&title=0"}${o.cover ? "&cover=1" : ""}${["bg", "op", "fg", "tc", "rc", "r", "font"].filter(k => String(o[k]).toLowerCase() !== String(OVD[k])).map(k => "&" + k + "=" + encodeURIComponent(o[k])).join("")}`; };
+    const upd = () => { $("ovUrl").value = ovUrl(); $("ovOpV").textContent = $("ovOp").value + " %"; };
     const ocr = () => {
       const ok = lv.langs.indexOf($("ovGLang").value) >= 0;
       $("ovOcr").innerHTML = ok ? "" : `<button type="button" class="btn small" id="ovInst">${esc(T("install", "Installieren"))}</button>`;
@@ -1422,7 +1433,8 @@ const MENU = {
     };
     const stateText = l => !l.on ? T("ovStateOff", "Live-Erkennung ist aus.") : l.state === "noGame" ? T("ovStateNoGame", "Warte auf das Spiel.") : l.state === "minimized" ? T("ovStateMin", "Spiel ist minimiert.") : l.state === "noImage" ? T("ovStateNoImage", "Kein Spielbild. Bitte im Fenstermodus oder randlosen Vollbild spielen.") : l.state === "watching" ? T("ovStateOn", "Läuft, Spielbild wird gelesen.") + " " + l.checked : T("ovStateErr", "Fehler beim Lesen des Spielbilds.");
     const showState = l => { $("ovState").textContent = stateText(l) + " · " + T("ovStateCount", "Gespeicherte Fänge: {0}").replace("{0}", l.count); };
-    ["ovPort", "ovN", "ovSize", "ovLang", "ovTrophy", "ovTitle", "ovCover"].forEach(id => { $(id).oninput = upd; $(id).onchange = upd; });
+    ["ovPort", "ovN", "ovSize", "ovLang", "ovTrophy", "ovTitle", "ovCover", "ovBgC", "ovOp", "ovFg", "ovTc", "ovRc", "ovR", "ovFont"].forEach(id => { $(id).oninput = upd; $(id).onchange = upd; });
+    $("ovReset").onclick = () => { $("ovBgC").value = "#" + OVD.bg; $("ovOp").value = OVD.op; $("ovFg").value = "#" + OVD.fg; $("ovTc").value = "#" + OVD.tc; $("ovRc").value = "#" + OVD.rc; $("ovR").value = OVD.r; $("ovFont").value = OVD.font; upd(); };
     $("ovGLang").onchange = ocr;
     upd(); ocr(); showState(lv);
     const timer = setInterval(async () => { if (!$("ovState") || !$("dlg").open) { clearInterval(timer); return; } try { showState((await api("/api/overlay")).live); } catch (e) { } }, 2000);
