@@ -1400,7 +1400,7 @@ const MENU = {
     const ov = await api("/api/overlay");
     const lv = ov.live;
     const OVD = { bg: "0a121c", op: 72, fg: "ffffff", tc: "f2c14e", rc: "c78bff", r: 9, font: "segoe" };
-    const oo = Object.assign({ n: 5, size: 100, lang: INIT.lang, trophy: false, title: true, cover: false }, OVD, ov.opts || {});
+    const oo = Object.assign({ n: 5, size: "auto", lang: INIT.lang, trophy: false, title: true, cover: false }, OVD, ov.opts || {});
     const FONTS = [["segoe", "Segoe UI"], ["arial", "Arial"], ["verdana", "Verdana"], ["tahoma", "Tahoma"], ["georgia", "Georgia"], ["trebuchet", "Trebuchet MS"], ["consolas", "Consolas"], ["impact", "Impact"]];
     const langs = lv.langs.indexOf(lv.lang) < 0 ? lv.langs.concat([lv.lang]) : lv.langs;
     const steps = ["In OBS bei Quellen auf Plus klicken und Browser wählen.", "Die Adresse von oben bei URL einfügen.", "Breite 500 und Höhe 600 eintragen, der Hintergrund bleibt durchsichtig.", "RF4 Companion offen lassen. Jeder gefangene Fisch erscheint nach ein bis drei Sekunden."];
@@ -1413,7 +1413,7 @@ const MENU = {
        <div id="ovOcr" style="align-self:end"></div>
        <div class="ovsec">${esc(T("ovSecContent", "2. Inhalt"))}</div>
        ${field("ovN", T("ovCount", "Anzahl Einträge"), oo.n, 'type="number" min="1" max="20"')}
-       <label>${esc(T("ovSize", "Größe"))}<select id="ovSize">${[75, 90, 100, 125, 150, 200, 250].map(v => `<option value="${v}" ${v == oo.size ? "selected" : ""}>${v} %</option>`).join("")}</select></label>
+       <label>${esc(T("ovSize", "Größe"))}<select id="ovSize">${["auto", 75, 90, 100, 125, 150, 200, 250].map(v => `<option value="${v}" ${v == oo.size ? "selected" : ""}>${v === "auto" ? esc(T("ovAuto", "Automatisch (passt sich der Quelle an)")) : v + " %"}</option>`).join("")}</select></label>
        <label>${esc(T("language", "Sprache"))}<select id="ovLang">${INIT.langs.map(l => `<option value="${l}" ${l === oo.lang ? "selected" : ""}>${l.toUpperCase()}</option>`).join("")}</select></label>
        <div></div>
        <label class="chk ovrow"><input type="checkbox" id="ovTrophy" ${oo.trophy ? "checked" : ""}> ${esc(T("ovOnlyTrophy", "Nur Trophäen"))}</label>
@@ -1443,8 +1443,8 @@ const MENU = {
         catch (e) { throw new Error(T("ovBadPort", "Bitte einen Port zwischen 1024 und 65535 eintragen.")); }
       }, null);
     DLG.keep = true;
-    const ovOpts = () => ({ n: Math.max(1, Math.min(20, parseInt($("ovN").value, 10) || 5)), size: +$("ovSize").value, lang: $("ovLang").value, trophy: $("ovTrophy").checked, title: $("ovTitle").checked, cover: $("ovCover").checked, bg: $("ovBgC").value.slice(1), op: +$("ovOp").value, fg: $("ovFg").value.slice(1), tc: $("ovTc").value.slice(1), rc: $("ovRc").value.slice(1), r: +$("ovR").value, font: $("ovFont").value });
-    const ovUrl = () => { const o = ovOpts(); return `http://localhost:${parseInt($("ovPort").value, 10) || ov.port}/overlay?n=${o.n}&lang=${o.lang}&size=${o.size}${o.trophy ? "&trophy=1" : ""}${o.title ? "" : "&title=0"}${o.cover ? "&cover=1" : ""}${["bg", "op", "fg", "tc", "rc", "r", "font"].filter(k => String(o[k]).toLowerCase() !== String(OVD[k])).map(k => "&" + k + "=" + encodeURIComponent(o[k])).join("")}`; };
+    const ovOpts = () => ({ n: Math.max(1, Math.min(20, parseInt($("ovN").value, 10) || 5)), size: $("ovSize").value === "auto" ? "auto" : +$("ovSize").value, lang: $("ovLang").value, trophy: $("ovTrophy").checked, title: $("ovTitle").checked, cover: $("ovCover").checked, bg: $("ovBgC").value.slice(1), op: +$("ovOp").value, fg: $("ovFg").value.slice(1), tc: $("ovTc").value.slice(1), rc: $("ovRc").value.slice(1), r: +$("ovR").value, font: $("ovFont").value });
+    const ovUrl = () => { const o = ovOpts(); return `http://localhost:${parseInt($("ovPort").value, 10) || ov.port}/overlay?n=${o.n}&lang=${o.lang}${o.size === "auto" ? "" : "&size=" + o.size}${o.trophy ? "&trophy=1" : ""}${o.title ? "" : "&title=0"}${o.cover ? "&cover=1" : ""}${["bg", "op", "fg", "tc", "rc", "r", "font"].filter(k => String(o[k]).toLowerCase() !== String(OVD[k])).map(k => "&" + k + "=" + encodeURIComponent(o[k])).join("")}`; };
     let frameT = null;
     const upd = () => { $("ovUrl").value = ovUrl(); $("ovOpV").textContent = $("ovOp").value + " %"; clearTimeout(frameT); frameT = setTimeout(() => { if ($("ovFrame")) $("ovFrame").src = ovUrl(); }, 350); };
     const ocr = () => {
