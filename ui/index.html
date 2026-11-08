@@ -474,7 +474,8 @@ async function loadActive() {
   if ($("ownChk").checked && !LOG) await loadLog();
   const r = await api("/api/active?hours=" + HOURS + "&lake=" + encodeURIComponent(LAKE) + ($("allChk").checked ? "&all=1" : "") + actParams());
   ACTIVE = ownOnly() ? [] : r.spots;
-  $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
+  if (ownOnly()) $("activeSub").textContent = T("ownSpotsN", "{0} eigene Spots").replace("{0}", ownList().length);
+  else $("activeSub").textContent = T("activeSub", "{0} Spots mit Meldungen in diesem Zeitraum").replace("{0}", ACTIVE.length) + (r.synced ? " · " + T("lastSync", "Stand") + " " + new Date(r.synced).toLocaleTimeString(INIT.lang, { hour: "2-digit", minute: "2-digit" }) : "");
   if (ownOnly()) { const mine = ownList(); if (!ownSel()) SEL = mine.length ? "own:" + mine[0].id : null; }
   else if (!SEL || (!ACTIVE.find(s => s.key === SEL) && !ownSel())) SEL = ACTIVE.length ? ACTIVE[0].key : null;
   renderCards();
@@ -485,7 +486,7 @@ async function loadActive() {
 function CC(cc) { return cc && cc.length ? ` <span class="cc">${esc(cc.join("/"))}</span>` : ""; }
 function heat(s) { return s.hoursAgo < 6 ? "hot" : (s.hoursAgo < 24 ? "warm" : ""); }
 function ownOnly() { return !!($("ownChk").checked && LOG); }
-function ownList() { return LOG ? LOG.spots.filter(o => !LAKE || o.lake === LAKE) : []; }
+function ownList() { return LOG ? LOG.spots.filter(o => !LAKE || o.lake === LAKE).slice().reverse() : []; }
 function renderCards() {
   if (ownOnly()) {
     const mine = ownList();

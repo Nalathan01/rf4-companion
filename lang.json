@@ -653,7 +653,8 @@
   "ovPreviewHead": "Vorschau",
   "ovSecObs": "4. In OBS einfügen",
   "ovAdvanced": "Erweitert",
-  "ovAuto": "Automatisch (passt sich der Quelle an)"
+  "ovAuto": "Automatisch (passt sich der Quelle an)",
+  "ownSpotsN": "{0} eigene Spots"
  },
  "en": {
   "langName": "English",
@@ -1309,7 +1310,8 @@
   "ovPreviewHead": "Preview",
   "ovSecObs": "4. Add to OBS",
   "ovAdvanced": "Advanced",
-  "ovAuto": "Automatic (fits the source)"
+  "ovAuto": "Automatic (fits the source)",
+  "ownSpotsN": "{0} own spots"
  },
  "ru": {
   "langName": "Русский",
@@ -1962,7 +1964,8 @@
   "ovPreviewHead": "Предпросмотр",
   "ovSecObs": "4. Добавить в OBS",
   "ovAdvanced": "Дополнительно",
-  "ovAuto": "Автоматически (под размер источника)"
+  "ovAuto": "Автоматически (под размер источника)",
+  "ownSpotsN": "Своих спотов: {0}"
  },
  "fr": {
   "langName": "Français",
@@ -2615,7 +2618,8 @@
   "ovPreviewHead": "Aperçu",
   "ovSecObs": "4. Ajouter à OBS",
   "ovAdvanced": "Avancé",
-  "ovAuto": "Automatique (s'adapte à la source)"
+  "ovAuto": "Automatique (s'adapte à la source)",
+  "ownSpotsN": "{0} spots perso"
  },
  "es": {
   "langName": "Español",
@@ -3268,7 +3272,8 @@
   "ovPreviewHead": "Vista previa",
   "ovSecObs": "4. Añadir a OBS",
   "ovAdvanced": "Avanzado",
-  "ovAuto": "Automático (se ajusta a la fuente)"
+  "ovAuto": "Automático (se ajusta a la fuente)",
+  "ownSpotsN": "{0} spots propios"
  },
  "it": {
   "langName": "Italiano",
@@ -3921,7 +3926,8 @@
   "ovPreviewHead": "Anteprima",
   "ovSecObs": "4. Aggiungi a OBS",
   "ovAdvanced": "Avanzate",
-  "ovAuto": "Automatico (si adatta alla fonte)"
+  "ovAuto": "Automatico (si adatta alla fonte)",
+  "ownSpotsN": "{0} spot propri"
  },
  "pl": {
   "langName": "Polski",
@@ -4574,7 +4580,8 @@
   "ovPreviewHead": "Podgląd",
   "ovSecObs": "4. Dodaj do OBS",
   "ovAdvanced": "Zaawansowane",
-  "ovAuto": "Automatycznie (dopasowuje się do źródła)"
+  "ovAuto": "Automatycznie (dopasowuje się do źródła)",
+  "ownSpotsN": "Własne spoty: {0}"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5227,7 +5234,8 @@
   "ovPreviewHead": "Pré-visualização",
   "ovSecObs": "4. Adicionar ao OBS",
   "ovAdvanced": "Avançado",
-  "ovAuto": "Automático (ajusta-se à fonte)"
+  "ovAuto": "Automático (ajusta-se à fonte)",
+  "ownSpotsN": "{0} spots próprios"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5880,7 +5888,8 @@
   "ovPreviewHead": "Voorbeeld",
   "ovSecObs": "4. Toevoegen aan OBS",
   "ovAdvanced": "Geavanceerd",
-  "ovAuto": "Automatisch (past zich aan de bron aan)"
+  "ovAuto": "Automatisch (past zich aan de bron aan)",
+  "ownSpotsN": "{0} eigen spots"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6533,7 +6542,8 @@
   "ovPreviewHead": "Önizleme",
   "ovSecObs": "4. OBS'ye ekle",
   "ovAdvanced": "Gelişmiş",
-  "ovAuto": "Otomatik (kaynağa uyar)"
+  "ovAuto": "Otomatik (kaynağa uyar)",
+  "ownSpotsN": "{0} kendi spot"
  },
  "ro": {
   "langName": "Română",
@@ -7186,7 +7196,8 @@
   "ovPreviewHead": "Previzualizare",
   "ovSecObs": "4. Adaugă în OBS",
   "ovAdvanced": "Avansat",
-  "ovAuto": "Automat (se potrivește sursei)"
+  "ovAuto": "Automat (se potrivește sursei)",
+  "ownSpotsN": "{0} spoturi proprii"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7839,7 +7850,8 @@
   "ovPreviewHead": "Pratinjau",
   "ovSecObs": "4. Tambahkan ke OBS",
   "ovAdvanced": "Lanjutan",
-  "ovAuto": "Otomatis (menyesuaikan sumber)"
+  "ovAuto": "Otomatis (menyesuaikan sumber)",
+  "ownSpotsN": "{0} spot sendiri"
  },
  "ja": {
   "langName": "日本語",
@@ -8492,7 +8504,8 @@
   "ovPreviewHead": "プレビュー",
   "ovSecObs": "4. OBS に追加",
   "ovAdvanced": "詳細設定",
-  "ovAuto": "自動 (ソースに合わせる)"
+  "ovAuto": "自動 (ソースに合わせる)",
+  "ownSpotsN": "自分のスポット {0} 件"
  },
  "ko": {
   "langName": "한국어",
@@ -9145,7 +9158,8 @@
   "ovPreviewHead": "미리 보기",
   "ovSecObs": "4. OBS에 추가",
   "ovAdvanced": "고급",
-  "ovAuto": "자동 (소스에 맞춤)"
+  "ovAuto": "자동 (소스에 맞춤)",
+  "ownSpotsN": "내 스팟 {0}개"
  },
  "zh": {
   "langName": "简体中文",
@@ -9798,7 +9812,8 @@
   "ovPreviewHead": "预览",
   "ovSecObs": "4. 添加到 OBS",
   "ovAdvanced": "高级",
-  "ovAuto": "自动 (适应来源大小)"
+  "ovAuto": "自动 (适应来源大小)",
+  "ownSpotsN": "{0} 个自己的钓点"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10451,6 +10466,7 @@
   "ovPreviewHead": "預覽",
   "ovSecObs": "4. 加入 OBS",
   "ovAdvanced": "進階",
-  "ovAuto": "自動 (配合來源大小)"
+  "ovAuto": "自動 (配合來源大小)",
+  "ownSpotsN": "{0} 個自己的釣點"
  }
 }
