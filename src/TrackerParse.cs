@@ -424,6 +424,41 @@ internal static class TrackerParse
         return o;
     }
 
+    private static string RodHead(string[] lines, int upto)
+    {
+        int from = Array.FindIndex(lines, l => M(l, "EIGENSCHAFTEN|PROPERTIES|ХАРАКТЕРИСТИКИ|WŁAŚCIWOŚCI"));
+        return string.Join(" ", lines.Skip(Math.Max(0, Math.Min(from, upto))).Take(upto + 1-Math.Max(0, Math.Min(from, upto))).Where(l => !M(l, "Meister|Master|Мастер|Rang|Rank|Ранг")).ToArray());
+    }
+
+    private static TrackRes SingleBaitSetup(string[] lines, TrackLists lists, string allText)
+    {
+        int rigIdx = Array.FindIndex(lines, l => M(l.Trim(), @"^(Angelmontage|Rig|Монтаж|Zestaw)(\s+(Ändern|Change|Изменить)\W*)?$"));
+        if (rigIdx < 0 || !M(allText, "EIGENSCHAFTEN|PROPERTIES|ХАРАКТЕРИСТИКИ|WŁAŚCIWOŚCI")) return null;
+        TrackRes o = new TrackRes();
+        if (rigIdx + 1 < lines.Length && !M(lines[rigIdx + 1], "Ändern|Change|Изменить")) o.Rig = lines[rigIdx + 1].Trim();
+        else if (rigIdx + 2 < lines.Length) o.Rig = lines[rigIdx + 2].Trim();
+        Regex end = new Regex(@"\s[O0o©®]\s*$", I);
+        for (int i = rigIdx + 1; i < lines.Length; i++)
+        {
+            if (!end.IsMatch(lines[i])) continue;
+            string[] words = end.Replace(lines[i], "").Trim().Split(' ');
+            NameHit h = null;
+            for (int skip = 0; skip < words.Length && skip < 3 && h == null; skip++) h = Match(string.Join(" ", words, skip, words.Length-skip), lists.Items, 0.85);
+            if (h == null) continue;
+            string next = i + 1 < lines.Length ? lines[i + 1] : "";
+            if (M(next, @"^(Typ|Type|Тип)\s*:\s*D") || M(next, @"\bDip\b|Дип")) o.Dip = h.En;
+            else if (GameData.IsBait(h.En) && o.Baits.Count < 2) o.Baits.Add(h.En);
+        }
+        if (o.Baits.Count == 0) return null;
+        string head = RodHead(lines, rigIdx);
+        if (M(head, "Spinn|Spinning|Спиннинг|Baitcast|Jerk")) o.Tech = "spin";
+        else if (M(head, "Feeder|Karpfen|Carp|Grund|Bottom|Picker|Фидер|Карпов|Донн")) o.Tech = "bottom";
+        else if (M(head, "Match|Bolo|Pose|Float|Telesk|Stipp|Поплав|Махов|Матч")) o.Tech = "float";
+        else if (M(head, "Meer|Marine|Sea|Морск")) o.Tech = "marine";
+        o.Kind = "setup";
+        return o;
+    }
+
     public static TrackRes Parse(string[] lines, List<OcrBox> geo, string code)
     {
         TrackLists lists = Lists(code);
@@ -488,6 +523,8 @@ internal static class TrackerParse
         for (int i = 0; i < lines.Length; i++) if (M(lines[i], @"Köder\s*Kombination|Bait\s*combination|Комбинация\s*наживок|Kombinacja\s*przyn")) { start = i; break; }
         if (start < 0)
         {
+            TrackRes single = SingleBaitSetup(lines, lists, allText);
+            if (single != null) return single;
             bool hud = M(allText, "Bedienfeld|Esc|Chat|Hilfe|Rute aufnehmen|Menu|Меню");
             if (!hud && lines.Length <= 14)
                 foreach (string l in lines)
@@ -514,7 +551,7 @@ internal static class TrackerParse
             else baits.Add(val);
         }
         outR.Baits = baits.Take(2).ToList();
-        string head = string.Join(" ", lines.Take(start + 1).ToArray());
+        string head = RodHead(lines, start);
         if (M(head, "Spinn|Spinning|Спиннинг|Baitcast|Jerk")) outR.Tech = "spin";
         else if (M(head, "Feeder|Karpfen|Carp|Grund|Bottom|Picker|Фидер|Карпов|Донн")) outR.Tech = "bottom";
         else if (M(head, "Match|Bolo|Pose|Float|Telesk|Поплав|Махов|Матч")) outR.Tech = "float";
