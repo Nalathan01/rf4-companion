@@ -638,7 +638,8 @@
   "ovStateNoImage": "Kein Spielbild. Bitte im Fenstermodus oder randlosen Vollbild spielen.",
   "ovStateOn": "Läuft, Spielbild wird gelesen.",
   "ovStateErr": "Fehler beim Lesen des Spielbilds.",
-  "ovStateCount": "Gespeicherte Fänge: {0}"
+  "ovStateCount": "Gespeicherte Fänge: {0}",
+  "ovCover": "Fester Hintergrund, um den Ingame-Chat zu überdecken"
  },
  "en": {
   "langName": "English",
@@ -1279,7 +1280,8 @@
   "ovStateNoImage": "No game picture. Please play in windowed or borderless fullscreen mode.",
   "ovStateOn": "Running, reading the game picture.",
   "ovStateErr": "Error while reading the game picture.",
-  "ovStateCount": "Saved catches: {0}"
+  "ovStateCount": "Saved catches: {0}",
+  "ovCover": "Solid background to cover the in-game chat"
  },
  "ru": {
   "langName": "Русский",
@@ -1917,7 +1919,8 @@
   "ovStateNoImage": "Нет изображения игры. Играйте в оконном режиме или в полноэкранном режиме без рамки.",
   "ovStateOn": "Работает, изображение игры считывается.",
   "ovStateErr": "Ошибка при чтении изображения игры.",
-  "ovStateCount": "Сохранено поимок: {0}"
+  "ovStateCount": "Сохранено поимок: {0}",
+  "ovCover": "Сплошной фон, чтобы закрыть игровой чат"
  },
  "fr": {
   "langName": "Français",
@@ -2555,7 +2558,8 @@
   "ovStateNoImage": "Pas d'image du jeu. Joue en mode fenêtré ou plein écran sans bordure.",
   "ovStateOn": "En cours, lecture de l'image du jeu.",
   "ovStateErr": "Erreur lors de la lecture de l'image du jeu.",
-  "ovStateCount": "Prises enregistrées : {0}"
+  "ovStateCount": "Prises enregistrées : {0}",
+  "ovCover": "Fond opaque pour masquer le chat du jeu"
  },
  "es": {
   "langName": "Español",
@@ -3193,7 +3197,8 @@
   "ovStateNoImage": "No hay imagen del juego. Juega en modo ventana o pantalla completa sin bordes.",
   "ovStateOn": "Activa, leyendo la imagen del juego.",
   "ovStateErr": "Error al leer la imagen del juego.",
-  "ovStateCount": "Capturas guardadas: {0}"
+  "ovStateCount": "Capturas guardadas: {0}",
+  "ovCover": "Fondo sólido para tapar el chat del juego"
  },
  "it": {
   "langName": "Italiano",
@@ -3831,7 +3836,8 @@
   "ovStateNoImage": "Nessuna immagine del gioco. Gioca in finestra o a schermo intero senza bordi.",
   "ovStateOn": "Attivo, lettura dell'immagine del gioco.",
   "ovStateErr": "Errore nella lettura dell'immagine del gioco.",
-  "ovStateCount": "Catture salvate: {0}"
+  "ovStateCount": "Catture salvate: {0}",
+  "ovCover": "Sfondo pieno per coprire la chat di gioco"
  },
  "pl": {
   "langName": "Polski",
@@ -4469,7 +4475,8 @@
   "ovStateNoImage": "Brak obrazu gry. Graj w oknie lub w pełnym ekranie bez ramki.",
   "ovStateOn": "Działa, obraz gry jest odczytywany.",
   "ovStateErr": "Błąd odczytu obrazu gry.",
-  "ovStateCount": "Zapisane połowy: {0}"
+  "ovStateCount": "Zapisane połowy: {0}",
+  "ovCover": "Pełne tło, aby zasłonić czat w grze"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5107,7 +5114,8 @@
   "ovStateNoImage": "Sem imagem do jogo. Jogue em modo janela ou tela cheia sem bordas.",
   "ovStateOn": "Ativo, lendo a imagem do jogo.",
   "ovStateErr": "Erro ao ler a imagem do jogo.",
-  "ovStateCount": "Capturas salvas: {0}"
+  "ovStateCount": "Capturas salvas: {0}",
+  "ovCover": "Fundo sólido para cobrir o chat do jogo"
  },
  "nl": {
   "langName": "Nederlands",
@@ -5745,7 +5753,8 @@
   "ovStateNoImage": "Geen spelbeeld. Speel in venstermodus of randloos volledig scherm.",
   "ovStateOn": "Actief, spelbeeld wordt gelezen.",
   "ovStateErr": "Fout bij het lezen van het spelbeeld.",
-  "ovStateCount": "Opgeslagen vangsten: {0}"
+  "ovStateCount": "Opgeslagen vangsten: {0}",
+  "ovCover": "Effen achtergrond om de chat in het spel te bedekken"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6383,7 +6392,8 @@
   "ovStateNoImage": "Oyun görüntüsü yok. Lütfen pencere modunda veya kenarlıksız tam ekranda oyna.",
   "ovStateOn": "Çalışıyor, oyun görüntüsü okunuyor.",
   "ovStateErr": "Oyun görüntüsü okunurken hata.",
-  "ovStateCount": "Kayıtlı avlar: {0}"
+  "ovStateCount": "Kayıtlı avlar: {0}",
+  "ovCover": "Oyun içi sohbeti örtmek için düz arka plan"
  },
  "ro": {
   "langName": "Română",
@@ -7021,7 +7031,8 @@
   "ovStateNoImage": "Nicio imagine din joc. Joacă în fereastră sau ecran complet fără margini.",
   "ovStateOn": "Rulează, imaginea jocului este citită.",
   "ovStateErr": "Eroare la citirea imaginii jocului.",
-  "ovStateCount": "Capturi salvate: {0}"
+  "ovStateCount": "Capturi salvate: {0}",
+  "ovCover": "Fundal opac pentru a acoperi chatul din joc"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -7659,7 +7670,8 @@
   "ovStateNoImage": "Tidak ada gambar game. Mainkan dalam mode jendela atau layar penuh tanpa bingkai.",
   "ovStateOn": "Berjalan, gambar game sedang dibaca.",
   "ovStateErr": "Gagal membaca gambar game.",
-  "ovStateCount": "Tangkapan tersimpan: {0}"
+  "ovStateCount": "Tangkapan tersimpan: {0}",
+  "ovCover": "Latar belakang penuh untuk menutupi chat dalam game"
  },
  "ja": {
   "langName": "日本語",
@@ -8297,7 +8309,8 @@
   "ovStateNoImage": "ゲーム画面を取得できません。ウィンドウモードまたはボーダーレス全画面でプレイしてください。",
   "ovStateOn": "動作中、ゲーム画面を読み取っています。",
   "ovStateErr": "ゲーム画面の読み取りエラー。",
-  "ovStateCount": "保存された釣果: {0}"
+  "ovStateCount": "保存された釣果: {0}",
+  "ovCover": "ゲーム内チャットを隠すための不透明な背景"
  },
  "ko": {
   "langName": "한국어",
@@ -8935,7 +8948,8 @@
   "ovStateNoImage": "게임 화면이 없습니다. 창 모드나 테두리 없는 전체 화면으로 플레이하세요.",
   "ovStateOn": "실행 중, 게임 화면을 읽고 있습니다.",
   "ovStateErr": "게임 화면을 읽는 중 오류가 발생했습니다.",
-  "ovStateCount": "저장된 조과: {0}"
+  "ovStateCount": "저장된 조과: {0}",
+  "ovCover": "게임 내 채팅을 가리는 불투명 배경"
  },
  "zh": {
   "langName": "简体中文",
@@ -9573,7 +9587,8 @@
   "ovStateNoImage": "无法获取游戏画面。请使用窗口模式或无边框全屏。",
   "ovStateOn": "运行中，正在读取游戏画面。",
   "ovStateErr": "读取游戏画面时出错。",
-  "ovStateCount": "已保存渔获：{0}"
+  "ovStateCount": "已保存渔获：{0}",
+  "ovCover": "使用不透明背景遮住游戏内聊天"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10211,6 +10226,7 @@
   "ovStateNoImage": "無法取得遊戲畫面。請使用視窗模式或無邊框全螢幕。",
   "ovStateOn": "執行中，正在讀取遊戲畫面。",
   "ovStateErr": "讀取遊戲畫面時發生錯誤。",
-  "ovStateCount": "已儲存漁獲：{0}"
+  "ovStateCount": "已儲存漁獲：{0}",
+  "ovCover": "使用不透明背景遮住遊戲內聊天"
  }
 }
