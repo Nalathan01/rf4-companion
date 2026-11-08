@@ -30,8 +30,9 @@ body { --bg: 10, 18, 28; --op: 0.72; --fg: #ffffff; --tc: #f2c14e; --rc: #c78bff
 <div class="list" id="list"></div>
 <script>
 const P = new URLSearchParams(location.search);
-const size = Math.max(50, Math.min(300, parseInt(P.get("size") || "100", 10) || 100));
-document.body.style.setProperty("--s", size / 100);
+const auto = !P.get("size") || P.get("size") === "auto";
+const want = Math.max(1, Math.min(20, parseInt(P.get("n") || "5", 10) || 5));
+if (!auto) document.body.style.setProperty("--s", Math.max(50, Math.min(300, parseInt(P.get("size"), 10) || 100)) / 100);
 const showTitle = P.get("title") !== "0";
 if (P.get("cover") === "1") document.documentElement.classList.add("cover");
 const hex = k => /^[0-9a-f]{6}$/i.test(P.get(k) || "") ? P.get(k) : null;
@@ -67,10 +68,24 @@ async function load() {
     fit();
   } catch (e) { }
 }
+function fits(rows, single) {
+  const list = document.getElementById("list");
+  const top = list.getBoundingClientRect().top, h = list.getBoundingClientRect().bottom - top;
+  const bottom = top + h * Math.max(1, want / Math.max(1, rows.length));
+  if (bottom > window.innerHeight - 2 || document.documentElement.scrollWidth > window.innerWidth) return false;
+  return !single || rows.every(r => { const f = r.querySelector(".fish"); return !f || f.getBoundingClientRect().height < parseFloat(getComputedStyle(f).fontSize) * 1.9; });
+}
+function scale(rows, single) {
+  let lo = 0.4, hi = 4;
+  for (let k = 0; k < 14; k++) { const m = (lo + hi) / 2; document.body.style.setProperty("--s", m); if (fits(rows, single)) lo = m; else hi = m; }
+  document.body.style.setProperty("--s", lo);
+  return lo;
+}
 function fit() {
   const list = document.getElementById("list");
   const rows = [...list.children];
   rows.forEach(r => r.style.display = "");
+  if (auto && scale(rows, true) < 0.7) scale(rows, false);
   for (let i = rows.length; i > 1 && list.getBoundingClientRect().bottom > window.innerHeight; i--) rows[i-1].style.display = "none";
 }
 window.addEventListener("resize", fit);
