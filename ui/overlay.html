@@ -11,7 +11,7 @@ html.cover .row { background: rgba(255, 255, 255, 0.06); }
 body { --bg: 10, 18, 28; --op: 0.72; --fg: #ffffff; --tc: #f2c14e; --rc: #c78bff; --r: 0.45em; font-family: var(--font, "Segoe UI", system-ui, sans-serif); color: var(--fg); font-size: calc(18px * var(--s, 1)); padding: 0.5em; }
 .head { font-size: 0.8em; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; margin: 0 0 0.35em 0.2em; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
 .list { display: flex; flex-direction: column; gap: 0.3em; }
-.row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.15em 0.6em; padding: 0.35em 0.7em; border-radius: var(--r); background: rgba(var(--bg), var(--op)); border-left: 0.22em solid rgba(255,255,255,0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.15em 0.5em; padding: 0.35em 0.6em; border-radius: var(--r); background: rgba(var(--bg), var(--op)); border-left: 0.22em solid rgba(255,255,255,0.35); text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
 .row.trophy { border-left-color: var(--tc); }
 .row.rare { border-left-color: var(--rc); }
 .row.new { animation: pop 0.6s ease-out; }
@@ -19,8 +19,8 @@ body { --bg: 10, 18, 28; --op: 0.72; --fg: #ffffff; --tc: #f2c14e; --rc: #c78bff
 .fish { flex: 1 1 6em; min-width: 0; font-weight: 600; line-height: 1.2; overflow-wrap: break-word; }
 .right { margin-left: auto; display: flex; align-items: center; gap: 0.45em; white-space: nowrap; }
 .w { font-variant-numeric: tabular-nums; }
-.badge { font-size: 0.68em; font-weight: 700; padding: 0.12em 0.45em; border-radius: 0.3em; color: #111; background: var(--tc); text-shadow: none; }
-.rare .badge { background: var(--rc); color: #111; }
+.badge { font-size: 0.9em; line-height: 1; color: var(--tc); }
+.rare .badge { color: var(--rc); }
 .empty { opacity: 0.7; font-size: 0.85em; padding: 0.3em 0.7em; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
 @keyframes pop { from { opacity: 0; transform: translateX(-0.8em); } to { opacity: 1; transform: none; } }
 </style>
@@ -61,7 +61,7 @@ async function load() {
     document.getElementById("head").style.display = showTitle ? "" : "none";
     const ids = new Set(d.items.map(i => i.id));
     document.getElementById("list").innerHTML = d.items.length ? d.items.map(i =>
-      `<div class="row ${i.level}${known && !known.has(i.id) ? " new" : ""}"><span class="time">${esc(i.time)}</span><span class="fish">${esc(i.fish)}</span><span class="right"><span class="w">${esc(i.weight)}</span>${i.level ? `<span class="badge">${esc(d.labels[i.level])}</span>` : ""}</span></div>`).join("")
+      `<div class="row ${i.level}${known && !known.has(i.id) ? " new" : ""}"><span class="time">${esc(i.time)}</span><span class="fish">${esc(i.fish)}</span><span class="right"><span class="w">${esc(i.weight)}</span>${i.level ? `<span class="badge" title="${esc(d.labels[i.level])}">${i.level === "rare" ? "★★" : "★"}</span>` : ""}</span></div>`).join("")
       : `<div class="empty">${esc(d.labels.empty)}</div>`;
     known = ids;
     fit();
@@ -71,7 +71,7 @@ function fit() {
   const list = document.getElementById("list");
   const rows = [...list.children];
   rows.forEach(r => r.style.display = "");
-  for (let i = rows.length; i > 1 && document.documentElement.scrollHeight > window.innerHeight; i--) rows[i-1].style.display = "none";
+  for (let i = rows.length; i > 1 && list.getBoundingClientRect().bottom > window.innerHeight; i--) rows[i-1].style.display = "none";
 }
 window.addEventListener("resize", fit);
 load();
