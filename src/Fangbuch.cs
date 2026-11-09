@@ -408,6 +408,9 @@ internal static class Fangbuch
                 if (k.Length > 0 && (GameData.HasItem(k) || GameData.Names.ContainsKey(k))) keys.Add(k);
             }
         };
+        foreach (string b in GameData.Baits) if (Regex.IsMatch(b, @"\d+( Pop-Up| Soluble)?$")) keys.Add(b);
+        Regex feedItem = new Regex(@"(?i)feed pellets|flour|bran|cake|peas|seeds?$|crumbs|crackers|biscuit|groundbait|semolina|millet|oatmeal|hemp|sauce|oil$|syrup|molasses|milk powder|egg");
+        foreach (string[] row in GameData.ItemRows()) if (feedItem.IsMatch(row[0])) keys.Add(row[0]);
         foreach (Report r in Community.All()) { add(r.S("groundbait")); add(r.S("dryMix")); }
         foreach (Dictionary<string, object> rc in List("recipes"))
         {
@@ -415,7 +418,8 @@ internal static class Fangbuch
             add(S(rc, "attractant"));
             foreach (object o in AppEnv.GetList(rc, "additives")) add((o ?? "").ToString());
         }
-        return keys.Select(k => GameData.Translate(k, lang)).Distinct().OrderBy(x => x).ToArray();
+        HashSet<string> dips = new HashSet<string>(GameData.DipKeys, StringComparer.Ordinal);
+        return keys.Where(k => !dips.Contains(k) && !GameData.Trophies.ContainsKey(k) && !Regex.IsMatch(k, @"(?i)\breel\b|\bdip\b")).Select(k => GameData.Translate(k, lang)).Distinct().OrderBy(x => x).ToArray();
     }
 
     public static object SaveSpot(Dictionary<string, object> a, string lang)

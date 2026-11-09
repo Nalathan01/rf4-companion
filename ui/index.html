@@ -1311,7 +1311,7 @@ function crushMark() { return " (" + T("crushed", "gemahlen") + ")"; }
 function addSplit(val) { const m = crushMark(), x = val || ""; return x.toLowerCase().endsWith(m.toLowerCase()) ? [x.slice(0, -m.length), true] : [x, false]; }
 function addField(id, label, val) {
   const [name, c] = addSplit(val);
-  return `<label>${esc(label)}<span style="display:flex;gap:8px;align-items:center"><input id="${id}" value="${esc(name)}" list="dlItem" style="flex:1;min-width:0"><span style="display:flex;gap:4px;align-items:center;white-space:nowrap;cursor:pointer" onclick="if (event.target.tagName !== 'INPUT') { const b = $('${id}C'); b.checked = !b.checked; } event.preventDefault && event.target.tagName !== 'INPUT' && event.preventDefault();"><input type="checkbox" id="${id}C" ${c ? "checked" : ""} style="width:auto;margin:0">${esc(T("crushed", "gemahlen"))}</span></span></label>`;
+  return `<label class="wide">${esc(label)}<span style="display:flex;gap:8px;align-items:center"><input id="${id}" value="${esc(name)}" list="dlItem" style="flex:1;min-width:0"><span style="display:flex;gap:4px;align-items:center;white-space:nowrap;cursor:pointer" onclick="if (event.target.tagName !== 'INPUT') { const b = $('${id}C'); b.checked = !b.checked; } event.preventDefault && event.target.tagName !== 'INPUT' && event.preventDefault();"><input type="checkbox" id="${id}C" ${c ? "checked" : ""} style="width:auto;margin:0">${esc(T("crushed", "gemahlen"))}</span></span></label>`;
 }
 function addVal(id) { const x = $(id).value.trim(); return x && $(id + "C").checked ? x + crushMark() : x; }
 function addSet(id, val) { const [name, c] = addSplit(val); $(id).value = name; $(id + "C").checked = c; }
