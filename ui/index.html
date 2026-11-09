@@ -1255,7 +1255,7 @@ function spotStats(s) {
   const p = [];
   if (s.count) p.push(T("fishTotal", "{0} Fische gesamt").replace("{0}", s.count));
   if (s.minutes) p.push(fmtMinutes(s.minutes));
-  if (s.money) p.push(s.money.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (s.minutes ? " · " + (s.money * 60 / s.minutes).toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + T("perHour", "pro Stunde") : ""));
+  if (s.money) p.push(s.money.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   if (s.catches) p.push(T("catchesN", "{0} Fänge").replace("{0}", s.catches));
   return p.join(" · ");
 }
@@ -1266,7 +1266,7 @@ function wizNote() {
   if (st) parts.push(T("fishTime", "Angelzeit") + ": " + fmtMinutes(st.minutes), T("fishTotal", "{0} Fische gesamt").replace("{0}", st.count));
   if (WIZ.highlight) parts.push(T("highlight", "Highlight") + ": " + WIZ.highlight);
   const fmt = n => n.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (st && st.money) parts.push(T("revenue", "Erlös") + ": " + fmt(st.money) + " · " + fmt(st.money * 60 / Math.max(1, st.minutes)) + " " + T("perHour", "pro Stunde"));
+  if (st && st.money) parts.push(T("revenue", "Erlös") + ": " + fmt(st.money));
   return parts.join(" · ");
 }
 function wizSummary() {

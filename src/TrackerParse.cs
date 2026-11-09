@@ -311,6 +311,17 @@ internal static class TrackerParse
             string v = ResolveItem(Regex.Replace(best.Text.Trim(), "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists);
             if (M(lb.Text.Trim(), AromaRx)) aroma = v; else comp.Add(v);
         }
+        foreach (OcrBox e in g.Where(e => !used.Contains(e) && !labels.Contains(e) && Regex.IsMatch(e.Text ?? "", @"\((gemah|crush|zerkl|измельч|дробл)", RegexOptions.IgnoreCase)))
+        {
+            string[] words = Regex.Replace(e.Text.Trim(), "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", "").Split(' ');
+            for (int skip = 0; skip < words.Length && skip < 3; skip++)
+            {
+                string v = ResolveItem(string.Join(" ", words, skip, words.Length-skip), lists);
+                if (!v.EndsWith(GameData.Crushed, StringComparison.Ordinal)) continue;
+                if (!comp.Contains(v)) comp.Insert(Math.Min(1, comp.Count), v);
+                break;
+            }
+        }
         return comp.Count == 0 ? null : "ok";
     }
 

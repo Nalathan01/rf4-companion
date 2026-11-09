@@ -372,7 +372,7 @@ internal static class Tracker
         string[] lakes = lake.Length > 0 ? new string[] { lake } : fk.Count > 0 || x > 0 ? cand.Select(l => l.Id).ToArray() : new string[0];
         Func<string, string> tr = k => string.IsNullOrEmpty(k) ? "" : GameData.Translate(k, lang);
         TrackLists tl = TrackerParse.Lists(code);
-        Func<string, string> item = k => { if (string.IsNullOrEmpty(k)) return ""; NameHit h = TrackerParse.Match(k, tl.Items, 0.75); return tr(h != null ? h.En : k); };
+        Func<string, string> item = k => { if (string.IsNullOrEmpty(k)) return ""; if (k.EndsWith(GameData.Crushed, StringComparison.Ordinal)) return tr(k); NameHit h = TrackerParse.Match(k, tl.Items, 0.75); return tr(h != null ? h.En : k); };
         Dictionary<string, object> rc = null;
         if (r.Recipe != null)
             rc = AppEnv.Obj("name", S(r.Recipe, "name"), "type", S(r.Recipe, "type"), "base", item(S(r.Recipe, "base")), "attractant", item(S(r.Recipe, "attractant")),
