@@ -17,7 +17,7 @@ internal static class Privacy
     {
         List<Rectangle> rects = new List<Rectangle>();
         int w, h;
-        bool hud = analysis != null && AppEnv.GetBool(analysis, "hud");
+        bool hud = (analysis != null && AppEnv.GetBool(analysis, "hud")) || HudHint(path, lang);
         using (Bitmap src = Load(path))
         {
             w = src.Width;
@@ -50,6 +50,16 @@ internal static class Privacy
         }
         File.Delete(path);
         File.Move(tmp, path);
+    }
+
+    private static bool HudHint(string path, string lang)
+    {
+        try
+        {
+            string top = string.Join(" ", TrackerOcr.Read(path, lang, new RectangleF(0f, 0f, 0.3f, 0.1f), 2, false).Lines());
+            return Regex.IsMatch(top, "Bedienfeld|Hilfe|Chat|Control panel|Help|Esc|Меню|Помощь|Чат", RegexOptions.IgnoreCase);
+        }
+        catch (Exception) { return false; }
     }
 
     private static Bitmap Load(string path)
