@@ -1161,10 +1161,26 @@ function wizSteps() {
     { t: T("feed", "Futter"), hint: T("wizFeedHint", "Wie fütterst du an? Ohne Futter einfach leer lassen."),
       f: () => `${feedFields("w", v)}
         ${field("wBase", T("base", "Grundfutter"), v.rBase, 'list="dlItem"', true)}${field("wAttr", T("attractant", "Lockstoff"), v.rAttr, 'list="dlItem"', true)}
-        ${[0, 1, 2, 3].map(i => addField("wAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.rAdd[i])).join("")}`,
+        ${[0, 1, 2, 3].map(i => addField("wAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.rAdd[i])).join("")}
+        ${(v.images || {}).feed ? `<div class="wide" style="grid-column:1/3"><button class="btn small" id="wReread">${esc(T("wizRereadFeed", "Aus Futterbild neu lesen"))}</button> <span class="sub" id="wRereadState"></span></div>` : ""}`,
       read: () => { v.feedType = $("wFeedT").value; v.pva = $("wPva").value.trim(); v.rBase = $("wBase").value.trim(); v.rAttr = $("wAttr").value.trim(); v.rAdd = [0, 1, 2, 3].map(i => addVal("wAdd" + i)); },
       check: () => v.feedType && !v.pva && (v.rBase || v.rAdd.some(Boolean)) ? T("wizNeedRecipe", "Bitte dem Futter einen Namen geben, damit es als Rezept gespeichert wird.") : "",
-      bind: () => { $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => addSet("wAdd" + i, r.additives[i])); }; } },
+      bind: () => {
+        $("wPva").onchange = () => { const r = recipeOf($("wPva").value.trim()); if (!r) return; $("wFeedT").value = r.type || $("wFeedT").value; $("wBase").value = r.base; $("wAttr").value = r.attractant; [0, 1, 2, 3].forEach(i => addSet("wAdd" + i, r.additives[i])); };
+        if ($("wReread")) $("wReread").onclick = async () => {
+          $("wReread").disabled = true; $("wRereadState").textContent = T("wizReading", "Bilder werden gelesen …");
+          let a = null;
+          try { a = await api("/api/fbanalyze", { name: v.images.feed }); } catch (e) { }
+          $("wReread").disabled = false;
+          if (!a || !a.recipe) { $("wRereadState").textContent = T("wizReadNone", "nichts erkannt"); return; }
+          const r = a.recipe;
+          if (r.type) $("wFeedT").value = r.type;
+          if (!$("wPva").value.trim() && r.name) $("wPva").value = r.name;
+          $("wBase").value = r.base || ""; $("wAttr").value = r.attractant || "";
+          [0, 1, 2, 3].forEach(i => addSet("wAdd" + i, r.additives[i]));
+          $("wRereadState").textContent = "✓";
+        };
+      } },
     { t: T("wizDone", "Abschluss"), hint: T("wizDoneHint", "Name und Kommentar, dann alles prüfen und speichern."),
       f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", !v.notes || ((WIZ.stats || WIZ.highlight) && (v.notes.startsWith(T("fishTime", "Angelzeit") + ":") || v.notes.startsWith(T("highlight", "Highlight") + ":"))) ? wizNote() || v.notes : v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
       read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; },

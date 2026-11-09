@@ -680,7 +680,8 @@
   "backupImport": "Importieren",
   "backupSaved": "Gespeichert: {0}",
   "backupImported": "Übernommen: {0} Spots, {1} Fänge, {2} Rezepte.",
-  "backupInvalid": "Diese Datei ist keine RF4 Companion Sicherung."
+  "backupInvalid": "Diese Datei ist keine RF4 Companion Sicherung.",
+  "wizRereadFeed": "Aus Futterbild neu lesen"
  },
  "en": {
   "langName": "English",
@@ -1363,7 +1364,8 @@
   "backupImport": "Import",
   "backupSaved": "Saved: {0}",
   "backupImported": "Imported: {0} spots, {1} catches, {2} recipes.",
-  "backupInvalid": "This file is not an RF4 Companion backup."
+  "backupInvalid": "This file is not an RF4 Companion backup.",
+  "wizRereadFeed": "Read again from the groundbait image"
  },
  "ru": {
   "langName": "Русский",
@@ -2043,7 +2045,8 @@
   "backupImport": "Импорт",
   "backupSaved": "Сохранено: {0}",
   "backupImported": "Импортировано: спотов {0}, уловов {1}, рецептов {2}.",
-  "backupInvalid": "Этот файл не является резервной копией RF4 Companion."
+  "backupInvalid": "Этот файл не является резервной копией RF4 Companion.",
+  "wizRereadFeed": "Заново прочитать со снимка прикормки"
  },
  "fr": {
   "langName": "Français",
@@ -2723,7 +2726,8 @@
   "backupImport": "Importer",
   "backupSaved": "Enregistré : {0}",
   "backupImported": "Importé : {0} spots, {1} prises, {2} recettes.",
-  "backupInvalid": "Ce fichier n'est pas une sauvegarde RF4 Companion."
+  "backupInvalid": "Ce fichier n'est pas une sauvegarde RF4 Companion.",
+  "wizRereadFeed": "Relire depuis l'image de l'amorce"
  },
  "es": {
   "langName": "Español",
@@ -3403,7 +3407,8 @@
   "backupImport": "Importar",
   "backupSaved": "Guardado: {0}",
   "backupImported": "Importado: {0} spots, {1} capturas, {2} recetas.",
-  "backupInvalid": "Este archivo no es una copia de RF4 Companion."
+  "backupInvalid": "Este archivo no es una copia de RF4 Companion.",
+  "wizRereadFeed": "Volver a leer de la imagen del cebo"
  },
  "it": {
   "langName": "Italiano",
@@ -4083,7 +4088,8 @@
   "backupImport": "Importa",
   "backupSaved": "Salvato: {0}",
   "backupImported": "Importati: {0} spot, {1} catture, {2} ricette.",
-  "backupInvalid": "Questo file non è un backup di RF4 Companion."
+  "backupInvalid": "Questo file non è un backup di RF4 Companion.",
+  "wizRereadFeed": "Rileggi dall'immagine della pastura"
  },
  "pl": {
   "langName": "Polski",
@@ -4763,7 +4769,8 @@
   "backupImport": "Importuj",
   "backupSaved": "Zapisano: {0}",
   "backupImported": "Zaimportowano: {0} spotów, {1} połowów, {2} przepisów.",
-  "backupInvalid": "Ten plik nie jest kopią RF4 Companion."
+  "backupInvalid": "Ten plik nie jest kopią RF4 Companion.",
+  "wizRereadFeed": "Odczytaj ponownie z obrazu zanęty"
  },
  "pt": {
   "langName": "Português (BR)",
@@ -5443,7 +5450,8 @@
   "backupImport": "Importar",
   "backupSaved": "Guardado: {0}",
   "backupImported": "Importado: {0} spots, {1} capturas, {2} receitas.",
-  "backupInvalid": "Este ficheiro não é uma cópia do RF4 Companion."
+  "backupInvalid": "Este ficheiro não é uma cópia do RF4 Companion.",
+  "wizRereadFeed": "Ler de novo da imagem do engodo"
  },
  "nl": {
   "langName": "Nederlands",
@@ -6123,7 +6131,8 @@
   "backupImport": "Importeren",
   "backupSaved": "Opgeslagen: {0}",
   "backupImported": "Geïmporteerd: {0} stekken, {1} vangsten, {2} recepten.",
-  "backupInvalid": "Dit bestand is geen RF4 Companion back-up."
+  "backupInvalid": "Dit bestand is geen RF4 Companion back-up.",
+  "wizRereadFeed": "Opnieuw lezen uit voerafbeelding"
  },
  "tr": {
   "langName": "Türkçe",
@@ -6803,7 +6812,8 @@
   "backupImport": "İçe aktar",
   "backupSaved": "Kaydedildi: {0}",
   "backupImported": "İçe aktarıldı: {0} spot, {1} av, {2} tarif.",
-  "backupInvalid": "Bu dosya bir RF4 Companion yedeği değil."
+  "backupInvalid": "Bu dosya bir RF4 Companion yedeği değil.",
+  "wizRereadFeed": "Yem görüntüsünden yeniden oku"
  },
  "ro": {
   "langName": "Română",
@@ -7483,7 +7493,8 @@
   "backupImport": "Importă",
   "backupSaved": "Salvat: {0}",
   "backupImported": "Importat: {0} spoturi, {1} capturi, {2} rețete.",
-  "backupInvalid": "Acest fișier nu este o copie RF4 Companion."
+  "backupInvalid": "Acest fișier nu este o copie RF4 Companion.",
+  "wizRereadFeed": "Citește din nou din imaginea nadei"
  },
  "id": {
   "langName": "Bahasa Indonesia",
@@ -8163,7 +8174,8 @@
   "backupImport": "Impor",
   "backupSaved": "Tersimpan: {0}",
   "backupImported": "Diimpor: {0} spot, {1} tangkapan, {2} resep.",
-  "backupInvalid": "File ini bukan cadangan RF4 Companion."
+  "backupInvalid": "File ini bukan cadangan RF4 Companion.",
+  "wizRereadFeed": "Baca ulang dari gambar umpan tabur"
  },
  "ja": {
   "langName": "日本語",
@@ -8843,7 +8855,8 @@
   "backupImport": "インポート",
   "backupSaved": "保存しました: {0}",
   "backupImported": "インポート: スポット {0}、釣果 {1}、レシピ {2}",
-  "backupInvalid": "このファイルは RF4 Companion のバックアップではありません。"
+  "backupInvalid": "このファイルは RF4 Companion のバックアップではありません。",
+  "wizRereadFeed": "撒き餌の画像から読み直す"
  },
  "ko": {
   "langName": "한국어",
@@ -9523,7 +9536,8 @@
   "backupImport": "가져오기",
   "backupSaved": "저장됨: {0}",
   "backupImported": "가져옴: 스팟 {0}개, 조과 {1}개, 레시피 {2}개",
-  "backupInvalid": "이 파일은 RF4 Companion 백업이 아닙니다."
+  "backupInvalid": "이 파일은 RF4 Companion 백업이 아닙니다.",
+  "wizRereadFeed": "밑밥 이미지에서 다시 읽기"
  },
  "zh": {
   "langName": "简体中文",
@@ -10203,7 +10217,8 @@
   "backupImport": "导入",
   "backupSaved": "已保存：{0}",
   "backupImported": "已导入：{0} 个钓点、{1} 条渔获、{2} 个配方。",
-  "backupInvalid": "此文件不是 RF4 Companion 备份。"
+  "backupInvalid": "此文件不是 RF4 Companion 备份。",
+  "wizRereadFeed": "从窝料图片重新读取"
  },
  "zh-TW": {
   "langName": "繁體中文",
@@ -10883,6 +10898,7 @@
   "backupImport": "匯入",
   "backupSaved": "已儲存：{0}",
   "backupImported": "已匯入：{0} 個釣點、{1} 筆漁獲、{2} 個配方。",
-  "backupInvalid": "此檔案不是 RF4 Companion 備份。"
+  "backupInvalid": "此檔案不是 RF4 Companion 備份。",
+  "wizRereadFeed": "從窩料圖片重新讀取"
  }
 }
