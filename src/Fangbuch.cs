@@ -398,7 +398,7 @@ internal static class Fangbuch
 
     private static readonly HashSet<string> BaseItems = new HashSet<string>(new string[] {
         "Ground Crackers", "Corn flour", "Hempseed flour", "Ground peas", "Oat flakes", "Wheat bran", "Rye bran", "Feed", "Breadcrumbs",
-        "Bread crumbs", "Press cake" }, StringComparer.Ordinal);
+        "Bread crumbs" }, StringComparer.Ordinal);
     private static readonly HashSet<string> AromaItems = new HashSet<string>(new string[] {
         "Honey", "Hempseed Oil", "Linseed Oil", "Anise Oil", "Fish Oil", "Vanilla", "Coriander", "Cinnamon", "Fennel", "Garlic", "Caramel",
         "Sunflower Oil", "Strawberry", "Salmon", "Caviar smell", "Black pepper", "Crab and mussels", "Bitter almond", "Nut mixture", "Cream",
@@ -446,7 +446,7 @@ internal static class Fangbuch
         HashSet<string> fishNames = new HashSet<string>(fish.Select(f => GameData.Translate(f, lang)), StringComparer.OrdinalIgnoreCase);
         foreach (string k in all)
         {
-            if (dips.Contains(k) || fish.Contains(k) || fishNames.Contains(GameData.Translate(k, lang)) || Regex.IsMatch(k, @"(?i)\breel\b|\bdip\b|^(groundbait|dry mix|ready-made groundbait|bream mix)$|\(large bag\)")) continue;
+            if (dips.Contains(k) || fish.Contains(k) || fishNames.Contains(GameData.Translate(k, lang)) || Regex.IsMatch(k, @"(?i)\breel\b|\bdip\b|^(groundbait|dry mix|ready-made groundbait|bream mix|press cake)$|\(large bag\)")) continue;
             int slot;
             if (BaseItems.Contains(k)) slot = 0;
             else if (AromaItems.Contains(k)) slot = 2;
