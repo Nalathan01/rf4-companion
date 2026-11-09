@@ -280,13 +280,20 @@ internal static class TrackerParse
 
     private const string LabRx = "^(Basis|Base|Основа|Zusätze|Zusatze|Zusatz|Additives?|Добавк\\w*|Lebensmittel|Food|Продукт\\w*|Aroma|Aromatizer|Flavor|Ароматизатор)$";
     private const string AromaRx = "^(Aroma|Aromatizer|Flavor|Ароматизатор)$";
-    private const string KindRx = "^(Sinkende|Schwimmende|Sinking|Floating|Pop-?Up)\\s+(Boilies|Pellets|Boilie)$";
+    private const string KindRx = "^(Sinkende|Schwimmende|Sinking|Floating|Pop-?Up)[\\s-]+(Boilies|Pellets|Boilie)$";
     private const string KindValRx = "^(Sinkende|Schwimmende|Sinking|Floating|Pop-?Up)\\s+(?!(Boilies|Pellets|Boilie)$)(.+)$";
 
     private static object GeoComposition(List<OcrBox> g, TrackLists lists, out List<string> comp, out string aroma)
     {
         comp = new List<string>();
         aroma = "";
+        OcrBox head = g.Where(e => M(e.Text ?? "", "MENSETZUNG|COMPOSITION|СОСТАВ")).OrderByDescending(e => e.Y).FirstOrDefault();
+        if (head != null)
+        {
+            OcrBox end = g.Where(e => e.Y > head.Y && M((e.Text ?? "").Trim(), "^(ZUSTAND|CONDITION|СОСТОЯНИЕ|KATEGORIEN|CATEGOR)")).OrderBy(e => e.Y).FirstOrDefault();
+            int bottom = end != null ? end.Y : head.Y + head.H * 14;
+            g = g.Where(e => e.Y > head.Y && e.Y < bottom && e.X >= head.X-head.H * 2).ToList();
+        }
         List<OcrBox> labels = g.Where(e => M(e.Text.Trim(), LabRx) || M(e.Text.Trim(), KindRx) || M(e.Text.Trim(), KindValRx)).OrderBy(e => e.Y).ToList();
         if (labels.Count(e => M(e.Text.Trim(), LabRx)) < 2) return null;
         HashSet<OcrBox> used = new HashSet<OcrBox>();
