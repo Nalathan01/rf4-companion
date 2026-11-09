@@ -685,7 +685,8 @@ let AC = null;
 function acClose() { if (AC) { AC.box.remove(); AC = null; } }
 function acShow(inp) {
   const q = inp.value.trim().toLowerCase();
-  const list = (ITEMS || []).filter(x => !q || x.toLowerCase().includes(q)).slice(0, 80);
+  const kind = /Base$/.test(inp.id) ? "base" : /Attr$/.test(inp.id) ? "aroma" : "add";
+  const list = ((ITEMS || {})[kind] || []).filter(x => !q || x.toLowerCase().includes(q)).slice(0, 80);
   acClose();
   if (!list.length || (list.length === 1 && list[0].toLowerCase() === q)) return;
   const box = document.createElement("div");
@@ -1105,7 +1106,7 @@ function renderLog() {
 }
 let ITEMS = null;
 async function recipeDialog(rc) {
-  if (!ITEMS) { ITEMS = await api("/api/itemnames"); $("dlItem").innerHTML = ITEMS.map(x => `<option value="${esc(x)}">`).join(""); }
+  if (!ITEMS) ITEMS = await api("/api/itemnames");
   const v = rc || { type: "pva", additives: [], lakes: [] };
   const lakeId = (INIT.lakes.find(l => v.lakes.includes(l.name)) || {}).id || "";
   const add = [0, 1, 2, 3].map(i => addField("rAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.additives[i])).join("");
@@ -1162,7 +1163,7 @@ function recipeOf(name) { return LOG && name ? LOG.recipes.find(r => r.name === 
 async function spotWizard(pre, existing) {
   if (!LOG) await loadLog();
   if (!LOG) return;
-  if (!ITEMS) { ITEMS = await api("/api/itemnames"); $("dlItem").innerHTML = ITEMS.map(x => `<option value="${esc(x)}">`).join(""); }
+  if (!ITEMS) ITEMS = await api("/api/itemnames");
   const v = Object.assign({ lake: "", images: {} }, existing || pre || {});
   v.images = Object.assign({}, v.images || {});
   if (!v.clip && v.dist) v.clip = v.dist;

@@ -396,37 +396,72 @@ internal static class Fangbuch
         }
     }
 
+    private static readonly HashSet<string> BaseItems = new HashSet<string>(new string[] {
+        "Ground Crackers", "Corn flour", "Hempseed flour", "Ground peas", "Oat flakes", "Wheat bran", "Rye bran", "Feed", "Breadcrumbs",
+        "Bread crumbs", "Corn Flour (Large Bag)", "Wheat Flour (Large Bag)", "Bream mix", "Press cake" }, StringComparer.Ordinal);
+    private static readonly HashSet<string> AromaItems = new HashSet<string>(new string[] {
+        "Honey", "Hempseed Oil", "Linseed Oil", "Anise Oil", "Fish Oil", "Vanilla", "Coriander", "Cinnamon", "Fennel", "Garlic", "Caramel",
+        "Sunflower Oil", "Strawberry", "Salmon", "Caviar smell", "Black pepper", "Crab and mussels", "Bitter almond", "Nut mixture", "Cream",
+        "Banana", "Mint", "White chocolate", "Coconut", "Red plum", "Apricot", "Squid", "Freshly cut grass", "Corn liquor", "Bloodworm Extract",
+        "Earthworm extract", "Ripe pear", "Tutti Frutti", "Citrus Mix", "Mango", "Pineapple", "Atlantic tuna", "Halibut oil", "Mussel sauce",
+        "Red krill", "Smoked sausages", "Blackberry jam", "Mulberry", "Raspberry", "Cranberry & Spices", "Cherry Liquor", "Black currant",
+        "Amino acids", "Tiger nut extract", "Coconut cream", "Caramel peach", "Salmon oil", "Strawberry and spice", "Vanilla cream", "Spicy garlic",
+        "Allspice", "Amino acid", "Tuna oil" }, StringComparer.Ordinal);
+    private static readonly HashSet<string> AddItems = new HashSet<string>(new string[] {
+        "Flaxseed", "Sunflower seed", "Casters", "Maggots", "Corn", "Clay", "Peas", "Chopped worm", "Millet Porridge", "Pellets", "Biscuit",
+        "Cookies", "Zebra mussels", "Pumpkin seed", "Rape Seed", "Dried Krill", "Wheat Grains", "Chicken egg", "Rice", "Powdered milk",
+        "Condensed milk", "Hemp seeds", "Corn seeds", "Wheat seeds", "Shelled peas" }, StringComparer.Ordinal);
+
     public static object ItemNames(string lang)
     {
-        HashSet<string> keys = new HashSet<string>(StringComparer.Ordinal);
-        Action<string> add = t =>
+        Dictionary<string, int[]> seen = new Dictionary<string, int[]>(StringComparer.Ordinal);
+        Func<string, string> key = t =>
         {
-            foreach (string part in (t ?? "").Split(new string[] { " + ", ", " }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                string k = GameData.ToKey(part.Trim());
-                if (k.EndsWith(GameData.Crushed, StringComparison.Ordinal)) k = k.Substring(0, k.Length-GameData.Crushed.Length);
-                if (k.Length > 0 && (GameData.HasItem(k) || GameData.Names.ContainsKey(k))) keys.Add(k);
-            }
+            string k = GameData.ToKey((t ?? "").Trim());
+            if (k.EndsWith(GameData.Crushed, StringComparison.Ordinal)) k = k.Substring(0, k.Length-GameData.Crushed.Length);
+            return k.Length > 0 && (GameData.HasItem(k) || GameData.Names.ContainsKey(k)) ? k : "";
         };
-        foreach (string b in GameData.Baits) if (Regex.IsMatch(b, @"\d+( Pop-Up| Soluble)?$")) keys.Add(b);
-        HashSet<string> feedBase = new HashSet<string>(new string[] {
-            "Corn seeds", "Press cake", "Semolina", "Wheat seeds", "Hempseed Oil", "Linseed Oil", "Anise Oil", "Fish Oil", "Sunflower Oil", "Ground Crackers",
-            "Corn flour", "Hempseed flour", "Ground peas", "Wheat bran", "Flaxseed", "Sunflower seed", "Peas", "Biscuit", "Pumpkin seed", "Breadcrumbs",
-            "Bread crumbs", "Wheat flour", "Flour", "Rye bran", "Rape Seed", "Hercules Oatmeal", "Oatmeal", "Shelled peas", "Halibut oil", "Mussel sauce",
-            "Salmon oil", "Hemp seeds", "Tuna oil", "Beet molasses", "Corn syrup", "Wheat Flour (Large Bag)", "Corn Flour (Large Bag)" }, StringComparer.Ordinal);
-        foreach (string[] row in GameData.ItemRows()) if (feedBase.Contains(row[0]) || row[0].Contains("Feed Pellets")) keys.Add(row[0]);
-        foreach (Report r in Community.All()) { add(r.S("groundbait")); add(r.S("dryMix")); }
+        Action<string, int, int> count = (k, slot, n) => { if (k.Length == 0) return; int[] c; if (!seen.TryGetValue(k, out c)) seen[k] = c = new int[3]; c[slot] += n; };
+        foreach (Report r in Community.All())
+        {
+            if (!Regex.IsMatch(r.Id, "^(wx|dcd|adm):")) continue;
+            string[] parts = r.S("groundbait").Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries).Select(key).ToArray();
+            if (parts.Length < 3) continue;
+            count(parts[0], 0, 1);
+            count(parts[parts.Length-1], 2, 1);
+            for (int i = 1; i < parts.Length-1; i++) count(parts[i], 1, 1);
+        }
         foreach (Dictionary<string, object> rc in List("recipes"))
         {
-            add(S(rc, "base"));
-            add(S(rc, "attractant"));
-            foreach (object o in AppEnv.GetList(rc, "additives")) add((o ?? "").ToString());
+            count(key(S(rc, "base")), 0, 3);
+            count(key(S(rc, "attractant")), 2, 3);
+            foreach (object o in AppEnv.GetList(rc, "additives")) count(key((o ?? "").ToString()), 1, 3);
         }
+        List<string>[] lists = { new List<string>(), new List<string>(), new List<string>() };
+        HashSet<string> all = new HashSet<string>(seen.Keys, StringComparer.Ordinal);
+        foreach (string b in GameData.Baits) if (Regex.IsMatch(b, @"\d+( Pop-Up| Soluble)?$")) all.Add(b);
+        foreach (string[] row in GameData.ItemRows()) if (BaseItems.Contains(row[0]) || AromaItems.Contains(row[0]) || AddItems.Contains(row[0]) || row[0].Contains("Feed Pellets")) all.Add(row[0]);
         HashSet<string> dips = new HashSet<string>(GameData.DipKeys, StringComparer.Ordinal);
-        HashSet<string> fish = new HashSet<string>(GameData.Lakes.SelectMany(l => l.Fish), StringComparer.Ordinal);
-        HashSet<string> fishNames = new HashSet<string>(GameData.Trophies.Keys.Concat(fish).Select(f => GameData.Translate(f, lang)), StringComparer.OrdinalIgnoreCase);
-        keys.RemoveWhere(k => fishNames.Contains(GameData.Translate(k, lang)));
-        return keys.Where(k => !dips.Contains(k) && !fish.Contains(k) && !GameData.Trophies.ContainsKey(k) && !Regex.IsMatch(k, @"(?i)\breel\b|\bdip\b|^(pellets|groundbait|dry mix|ready-made groundbait)$")).Select(k => GameData.Translate(k, lang)).Distinct().OrderBy(x => x).ToArray();
+        HashSet<string> fish = new HashSet<string>(GameData.Lakes.SelectMany(l => l.Fish).Concat(GameData.Trophies.Keys), StringComparer.Ordinal);
+        HashSet<string> fishNames = new HashSet<string>(fish.Select(f => GameData.Translate(f, lang)), StringComparer.OrdinalIgnoreCase);
+        foreach (string k in all)
+        {
+            if (dips.Contains(k) || fish.Contains(k) || fishNames.Contains(GameData.Translate(k, lang)) || Regex.IsMatch(k, @"(?i)\breel\b|\bdip\b|^(groundbait|dry mix|ready-made groundbait)$")) continue;
+            int slot;
+            if (BaseItems.Contains(k)) slot = 0;
+            else if (AromaItems.Contains(k)) slot = 2;
+            else if (AddItems.Contains(k) || k.Contains("Feed Pellets") || Regex.IsMatch(k, @"\d+( Pop-Up| Soluble)?$")) slot = 1;
+            else
+            {
+                int[] c;
+                if (!seen.TryGetValue(k, out c) || c.Sum() < 1) continue;
+                slot = c[2] > c[1] ? 2 : 1;
+            }
+            lists[slot].Add(GameData.Translate(k, lang));
+        }
+        Func<List<string>, string[]> sorted = l => l.Distinct().OrderBy(x => x).ToArray();
+        string[] bases = sorted(lists[0]), aromas = sorted(lists[2]).Where(x => !bases.Contains(x)).ToArray();
+        return AppEnv.Obj("base", bases, "add", sorted(lists[1]).Where(x => !bases.Contains(x) && !aromas.Contains(x)).ToArray(), "aroma", aromas);
     }
 
     public static object SaveSpot(Dictionary<string, object> a, string lang)
