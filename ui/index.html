@@ -147,7 +147,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .lightbox { padding: 0; border: 0; background: transparent; width: 100vw; height: 100vh; max-width: none; max-height: none; cursor: zoom-out; }
 .lightbox[open] { display: grid; place-items: center; }
 .lightbox::backdrop { background: rgba(0,0,0,0.85); }
-.lightbox img { max-width: 94vw; max-height: 92vh; border-radius: 10px; }
+.lightbox img { width: 94vw; height: 92vh; object-fit: contain; border-radius: 10px; transform-origin: center; cursor: grab; user-select: none; -webkit-user-drag: none; }
 .fbimg img { cursor: zoom-in; }
 .fbimg .rp { position: absolute; top: 2px; left: 2px; background: rgba(0,0,0,0.6); border: 0; border-radius: 6px; color: var(--ink); cursor: pointer; font-size: 11px; padding: 1px 5px; }
 .mini .thumbs img { height: 46px; }
@@ -678,8 +678,27 @@ async function loadDetail() {
 }
 const detOrder = k => { const i = Object.keys(DET).indexOf(k); return i < 0 ? 99 : i; };
 const DET = { feedUse: "feed", baitDetail: "bait", lure: "lureDetail", rig: "rigL", dip: "dipL", groundbait: "groundbaitMix", dryMix: "dryMix", pva: "pvaL", reelSpeed: "reelSpeed", baitRaw: "baitOrig" };
-function showImg(src) { $("lbImg").src = src; $("lightbox").showModal(); }
-$("lightbox").onclick = () => $("lightbox").close();
+let LB = { z: 1, x: 0, y: 0, drag: null, moved: false };
+function lbApply() { $("lbImg").style.transform = `translate(${LB.x}px, ${LB.y}px) scale(${LB.z})`; }
+function showImg(src) { LB = { z: 1, x: 0, y: 0, drag: null, moved: false }; lbApply(); $("lbImg").src = src; $("lightbox").showModal(); }
+$("lightbox").onclick = () => { if (LB.moved) { LB.moved = false; return; } $("lightbox").close(); };
+$("lightbox").addEventListener("wheel", e => {
+  e.preventDefault();
+  const nz = Math.max(1, Math.min(8, LB.z * (e.deltaY < 0 ? 1.25 : 1 / 1.25)));
+  const px = e.clientX-innerWidth / 2, py = e.clientY-innerHeight / 2;
+  LB.x = nz === 1 ? 0 : px-(px-LB.x) * nz / LB.z;
+  LB.y = nz === 1 ? 0 : py-(py-LB.y) * nz / LB.z;
+  LB.z = nz;
+  lbApply();
+}, { passive: false });
+$("lbImg").addEventListener("mousedown", e => { e.preventDefault(); LB.drag = { mx: e.clientX, my: e.clientY, x: LB.x, y: LB.y }; LB.moved = false; });
+window.addEventListener("mousemove", e => {
+  if (!LB.drag) return;
+  const dx = e.clientX-LB.drag.mx, dy = e.clientY-LB.drag.my;
+  if (Math.abs(dx) + Math.abs(dy) > 4) LB.moved = true;
+  if (LB.z > 1) { LB.x = LB.drag.x + dx; LB.y = LB.drag.y + dy; lbApply(); }
+});
+window.addEventListener("mouseup", () => { LB.drag = null; });
 (function mapInput() {
   const cv = $("map"); let drag = null;
   cv.addEventListener("wheel", e => { e.preventDefault(); const f = e.deltaY < 0 ? 1.2 : 1 / 1.2; VIEW.zoom = Math.max(1, Math.min(8, VIEW.zoom * f)); drawMap(); }, { passive: false });
@@ -1048,8 +1067,8 @@ async function recipeDialog(rc) {
     `${field("rName", T("name", "Name"), v.name, "", true)}
      <label>${esc(T("type", "Art"))}<select id="rType">${feedTypes().map(f => `<option value="${f[0]}" ${f[0] === v.type ? "selected" : ""}>${esc(f[1])}</option>`).join("")}</select></label>
      <label>${esc(T("lake", "Gewässer"))}<select id="rLake"><option value=""></option>${lakeOptions(lakeId)}</select></label>
-     ${field("rBase", T("base", "Grundfutter"), v.base, 'list="dlItem"')}
-     ${field("rAttr", T("attractant", "Lockstoff"), v.attractant, 'list="dlItem"')}
+     ${field("rBase", T("base", "Grundfutter"), v.base, 'list="dlItem"', true)}
+     ${field("rAttr", T("attractant", "Lockstoff"), v.attractant, 'list="dlItem"', true)}
      ${add}
      ${field("rNotes", T("notes", "Notiz"), v.notes, "", true)}`,
     async () => {
@@ -1141,7 +1160,7 @@ function wizSteps() {
       check: () => v.bait ? "" : T("wizNeedBait", "Bitte mindestens einen Köder angeben.") },
     { t: T("feed", "Futter"), hint: T("wizFeedHint", "Wie fütterst du an? Ohne Futter einfach leer lassen."),
       f: () => `${feedFields("w", v)}
-        ${field("wBase", T("base", "Grundfutter"), v.rBase, 'list="dlItem"')}${field("wAttr", T("attractant", "Lockstoff"), v.rAttr, 'list="dlItem"')}
+        ${field("wBase", T("base", "Grundfutter"), v.rBase, 'list="dlItem"', true)}${field("wAttr", T("attractant", "Lockstoff"), v.rAttr, 'list="dlItem"', true)}
         ${[0, 1, 2, 3].map(i => addField("wAdd" + i, T("additive", "Zusatz") + " " + (i + 1), v.rAdd[i])).join("")}`,
       read: () => { v.feedType = $("wFeedT").value; v.pva = $("wPva").value.trim(); v.rBase = $("wBase").value.trim(); v.rAttr = $("wAttr").value.trim(); v.rAdd = [0, 1, 2, 3].map(i => addVal("wAdd" + i)); },
       check: () => v.feedType && !v.pva && (v.rBase || v.rAdd.some(Boolean)) ? T("wizNeedRecipe", "Bitte dem Futter einen Namen geben, damit es als Rezept gespeichert wird.") : "",
