@@ -1261,7 +1261,7 @@ function wizApply(kind, a) {
     const top = a.fish.slice(0, 3), total = a.fish.reduce((n, f) => n + f.n, 0);
     if (!v.fish || v.fishAuto !== false) { v.fish = top.map(f => f.name).join(", "); v.fishAuto = true; }
     got.push(top.map(f => (f.n > 1 ? f.n + "× " : "") + f.name).join(", ") + (a.fish.length > 3 ? " · " + T("fishTotal", "{0} Fische gesamt").replace("{0}", total) : ""));
-    if (a.minutes) { const o = /^net/.test(kind) && WIZ.stats || {}; WIZ.stats = { minutes: Math.max(a.minutes, o.minutes || 0), count: Math.max(total, o.count || 0), money: Math.max(a.money || 0, o.money || 0) }; got.push(T("fishTime", "Angelzeit") + " " + fmtMinutes(a.minutes)); }
+    if (a.minutes) { const o = /^net/.test(kind) && WIZ.stats || {}; WIZ.stats = { minutes: Math.max(a.minutes, o.minutes || 0), count: Math.max(total, a.total || 0, o.count || 0), money: Math.max(a.money || 0, o.money || 0) }; got.push(T("fishTime", "Angelzeit") + " " + fmtMinutes(a.minutes)); }
     if (a.money) got.push(T("revenue", "Erlös") + " " + a.money.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   }
   if (a.x && a.y) { if (!v.x) { v.x = a.x; v.y = a.y; } got.push(a.x + ":" + a.y); }

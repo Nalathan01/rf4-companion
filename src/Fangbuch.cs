@@ -202,31 +202,41 @@ internal static class Fangbuch
         Dictionary<string, object> im = Images(s);
         List<string> files = NetKinds.Where(k => im.ContainsKey(k)).Select(k => im[k].ToString()).ToList();
         string net = string.Join(",", files.ToArray());
-        if (s.ContainsKey("net") && S(s, "netImg") == net) return false;
-        Dictionary<string, int> seen = new Dictionary<string, int>(StringComparer.Ordinal);
+        if (s.ContainsKey("net") && S(s, "netImg") == net && S(s, "netV") == "2") return false;
+        List<TrackItem> all = new List<TrackItem>();
+        Dictionary<TrackItem, DateTime> when = new Dictionary<TrackItem, DateTime>();
+        int total = 0;
         foreach (string name in files)
         {
             string f = Path.Combine(ImgDir, name);
             if (!File.Exists(f)) continue;
-            try
-            {
-                foreach (IGrouping<string, TrackItem> g in Tracker.NetItems(f).GroupBy(i => i.Fish + "|" + (i.Weight ?? -1).ToString(CultureInfo.InvariantCulture)))
-                {
-                    int had;
-                    seen.TryGetValue(g.Key, out had);
-                    seen[g.Key] = Math.Max(had, g.Count());
-                }
-            }
+            Dictionary<TrackItem, DateTime> times = new Dictionary<TrackItem, DateTime>();
+            List<TrackItem> items;
+            int t;
+            try { items = Tracker.NetItems(f, times, out t); }
             catch (Exception ex) { AppEnv.Log("Fangbuch", "Kescherbild " + name + ": " + ex.Message); return false; }
+            total = Math.Max(total, t);
+            HashSet<TrackItem> taken = new HashSet<TrackItem>();
+            foreach (TrackItem it in items)
+            {
+                DateTime ti;
+                bool hasT = times.TryGetValue(it, out ti);
+                TrackItem same = all.Where(x => !taken.Contains(x) && x.Fish == it.Fish && x.Weight == it.Weight)
+                    .OrderBy(x => hasT && when.ContainsKey(x) ? Math.Abs(when[x].Subtract(ti).TotalMinutes) : 1000)
+                    .FirstOrDefault(x => !hasT || !when.ContainsKey(x) || Math.Abs(when[x].Subtract(ti).TotalMinutes) <= 3);
+                if (same != null) { taken.Add(same); if (hasT && !when.ContainsKey(same)) when[same] = ti; continue; }
+                all.Add(it);
+                taken.Add(it);
+                if (hasT) when[it] = ti;
+            }
         }
         List<object> o = new List<object>();
-        foreach (IGrouping<string, KeyValuePair<string, int>> g in seen.GroupBy(p => p.Key.Substring(0, p.Key.LastIndexOf('|'))))
-        {
-            int max = g.Select(p => int.Parse(p.Key.Substring(p.Key.LastIndexOf('|') + 1), CultureInfo.InvariantCulture)).Where(w => w > 0 && GameData.Plausible(g.Key, w)).DefaultIfEmpty(0).Max();
-            o.Add(AppEnv.Obj("fish", g.Key, "n", g.Sum(p => p.Value), "max", max));
-        }
+        foreach (IGrouping<string, TrackItem> g in all.GroupBy(i => i.Fish))
+            o.Add(AppEnv.Obj("fish", g.Key, "n", g.Count(), "max", g.Select(i => i.Weight ?? 0).Where(w => w > 0 && GameData.Plausible(g.Key, w)).DefaultIfEmpty(0).Max()));
+        if (total > AppEnv.GetDouble(s, "count", 0)) s["count"] = total.ToString(CultureInfo.InvariantCulture);
         s["net"] = o.ToArray();
         s["netImg"] = net;
+        s["netV"] = "2";
         return true;
     }
 

@@ -298,12 +298,11 @@ internal static class Tracker
         else Say(T("trackerUnknown", "Screenshot ohne Fang oder Setup"));
     }
 
-    private static List<TrackItem> NetCards(string path, string tag, string code, TrackRes r, out int minutes)
+    private static List<TrackItem> NetCards(string path, string tag, string code, TrackRes r, out int minutes, Dictionary<TrackItem, DateTime> times)
     {
         minutes = 0;
-        OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.86f), 100, false);
+        OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.89f), 100, false);
         DateTime shot = File.GetLastWriteTime(path);
-        Dictionary<TrackItem, DateTime> times = new Dictionary<TrackItem, DateTime>();
         List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, shot, times);
         if (times.Count > 0) minutes = (int)Math.Round(shot.Subtract(times.Values.Min()).TotalMinutes);
         minutes = Math.Max(minutes, r2.Lines().Select(l => TrackerParse.AgeMin(l) ?? 0).DefaultIfEmpty(0).Max());
@@ -311,15 +310,17 @@ internal static class Tracker
         return items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).ToList();
     }
 
-    public static List<TrackItem> NetItems(string path)
+    public static List<TrackItem> NetItems(string path, Dictionary<TrackItem, DateTime> times, out int total)
     {
+        total = 0;
         string tag = LangTag, code = TrackerParse.Code(tag);
         OcrRead r0 = Ocr(path, tag, RectangleF.Empty, 1, false);
         string[] lines = r0.Lines();
         TrackRes r = lines.Length > 0 ? TrackerParse.Parse(lines, r0.Boxes, code) : new TrackRes();
         if (r.Kind != "keepnet") return new List<TrackItem>();
+        total = r.Total ?? 0;
         int minutes;
-        return NetCards(path, tag, code, r, out minutes);
+        return NetCards(path, tag, code, r, out minutes, times);
     }
 
     public static object Analyze(string path, string lang)
@@ -357,7 +358,7 @@ internal static class Tracker
                 if (r.Fish.Length > 0) fish.Add(r.Fish);
                 break;
             case "keepnet":
-                fish.AddRange(NetCards(path, tag, code, r, out minutes).Select(i => i.Fish));
+                fish.AddRange(NetCards(path, tag, code, r, out minutes, new Dictionary<TrackItem, DateTime>()).Select(i => i.Fish));
                 break;
         }
         int x = r.Kind == "position" ? r.X : 0, y = r.Kind == "position" ? r.Y : 0;
@@ -420,7 +421,7 @@ internal static class Tracker
         if (mm.Success) money = Money(mm.Groups[2].Value);
         return AppEnv.Obj("kind", r.Kind, "fish", fish.GroupBy(f => f).OrderByDescending(g => g.Count()).Select(g => (object)AppEnv.Obj("name", tr(g.Key), "n", g.Count())).ToArray(),
             "baits", r.Baits.Select(tr).ToArray(), "dip", tr(r.Dip), "pva", r.Pva, "rig", tr(r.Rig), "tech", r.Tech, "lake", lake, "lakes", lakes,
-            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud, "minutes", minutes, "money", money, "catch", catchInfo);
+            "x", x > 0 ? x.ToString(CultureInfo.InvariantCulture) : "", "y", y > 0 ? y.ToString(CultureInfo.InvariantCulture) : "", "temp", temp, "recipe", rc, "hud", hud, "minutes", minutes, "money", money, "total", r.Kind == "keepnet" ? r.Total ?? 0 : 0, "catch", catchInfo);
     }
 
     private static double Money(string s)
