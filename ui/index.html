@@ -1225,8 +1225,8 @@ function wizSteps() {
         };
       } },
     { t: T("wizDone", "Abschluss"), hint: T("wizDoneHint", "Name und Kommentar, dann alles prüfen und speichern."),
-      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", !v.notes || ((WIZ.stats || WIZ.highlight) && (v.notes.startsWith(T("fishTime", "Angelzeit") + ":") || v.notes.startsWith(T("highlight", "Highlight") + ":"))) ? wizNote() || v.notes : v.notes)}<div class="wiz-sum">${wizSummary()}</div>`,
-      read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; },
+      f: () => `${field("wName", T("name", "Name"), v.name || "", "", true)}${notesField("wNotes", !v.notes || ((WIZ.stats || WIZ.highlight) && (v.notes.startsWith(T("fishTime", "Angelzeit") + ":") || v.notes.startsWith(T("highlight", "Highlight") + ":"))) ? wizNote() || v.notes : v.notes)}<div class="wiz-sum">${wizSummary()}</div>${INIT.features.share ? `<label class="chk" style="margin-top:12px"><input type="checkbox" id="wShare" ${(v.share !== undefined ? v.share : !!(WIZ.existing && WIZ.existing.shared)) ? "checked" : ""}> <b>${esc(T("shareSpot", "Teilen"))}</b> <small style="color:var(--muted)">${esc(T("shareConfirm", "Diesen Spot mit Bildern für alle Nutzer des Tools veröffentlichen?"))}</small></label>` : ""}`,
+      read: () => { v.name = $("wName").value.trim(); v.notes = $("wNotes").value; if ($("wShare")) v.share = $("wShare").checked; },
       check: () => "", bind: () => bindNotes("wNotes") }
   ];
 }
@@ -1380,9 +1380,13 @@ async function wizSave() {
     const r = recipeOf(v.pva);
     await api("/api/recipe/save", { id: r ? r.id : "", name: v.pva, type: v.feedType, lake: v.lake, base: v.rBase, attractant: v.rAttr, additives: v.rAdd, notes: r ? r.notes : "" });
   }
-  await api("/api/myspot/save", { id: WIZ.existing ? WIZ.existing.id : "", name: v.name, lake: v.lake, x: v.x, y: v.y, clip: v.clip, depth: v.depth, fish: v.fish, tech: v.tech, temp: v.temp,
+  const saved = await api("/api/myspot/save", { id: WIZ.existing ? WIZ.existing.id : "", name: v.name, lake: v.lake, x: v.x, y: v.y, clip: v.clip, depth: v.depth, fish: v.fish, tech: v.tech, temp: v.temp,
     rig: v.rig, bait: v.bait, bait2: v.bait2, dip: v.dip, rigs: v.rigs || [], feedType: v.feedType, pva: v.pva, images: v.images, notes: v.notes, src: v.src || "",
     count: String(WIZ.stats ? WIZ.stats.count : v.count || ""), minutes: String(WIZ.stats ? WIZ.stats.minutes : v.minutes || ""), money: String(WIZ.stats ? WIZ.stats.money : v.money || "") });
+  if (INIT.features.share && v.share !== undefined && v.share !== !!(WIZ.existing && WIZ.existing.shared)) {
+    try { await api("/api/myspot/share", { id: saved.id, on: v.share }); }
+    catch (e) { alert(T("shareFailed", "Teilen fehlgeschlagen") + ": " + errText(e)); }
+  }
 }
 function lakeOptions(sel) { return INIT.lakes.map(l => `<option value="${l.id}" ${l.id === sel ? "selected" : ""}>${esc(l.name)}</option>`).join(""); }
 function crushMark() { return " (" + T("crushed", "gemahlen") + ")"; }
