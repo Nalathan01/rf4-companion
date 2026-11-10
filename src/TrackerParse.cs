@@ -266,12 +266,18 @@ internal static class TrackerParse
         if (h != null && (h.Score >= 0.9 || (h.Score >= 0.8 && d.Length > 0))) return h.En;
         string q = Fuzzy.Norm(text);
         if (h != null && q.Length >= 8 && Fuzzy.Norm(h.Loc).EndsWith(q, StringComparison.Ordinal)) return h.En;
-        if (q.Length < 6 || d.Length == 0) return null;
+        if (d.Length == 0) return null;
+        return SuffixName(q, lists);
+    }
+
+    private static string SuffixName(string q, TrackLists lists)
+    {
+        if (q.Length < 6) return null;
         string found = null;
         for (int i = 0; i < lists.Items.LocNorm.Length; i++)
         {
             string n = lists.Items.LocNorm[i];
-            if (n.Length <= q.Length || !n.EndsWith(q, StringComparison.Ordinal)) continue;
+            if (n.Length < q.Length || !n.EndsWith(q, StringComparison.Ordinal)) continue;
             if (found != null && found != lists.Items.En[i]) return null;
             found = lists.Items.En[i];
         }
@@ -297,10 +303,11 @@ internal static class TrackerParse
         List<OcrBox> labels = g.Where(e => M(e.Text.Trim(), LabRx) || M(e.Text.Trim(), KindRx) || M(e.Text.Trim(), KindValRx)).OrderBy(e => e.Y).ToList();
         if (labels.Count(e => M(e.Text.Trim(), LabRx)) < 2) return null;
         HashSet<OcrBox> used = new HashSet<OcrBox>();
+        List<KeyValuePair<int, string>> parts = new List<KeyValuePair<int, string>>();
         foreach (OcrBox lb in labels)
         {
             Match kv = Regex.Match(lb.Text.Trim(), KindValRx, I);
-            if (kv.Success) { comp.Add(ResolveItem(Regex.Replace(kv.Groups[3].Value, "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists)); continue; }
+            if (kv.Success) { parts.Add(new KeyValuePair<int, string>(lb.Y, ResolveItem(Regex.Replace(kv.Groups[3].Value, "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists))); continue; }
             OcrBox best = null;
             double bestDx = 1e9;
             foreach (OcrBox e in g)
@@ -316,8 +323,29 @@ internal static class TrackerParse
             if (best == null) return "incomplete";
             used.Add(best);
             string v = ResolveItem(Regex.Replace(best.Text.Trim(), "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", ""), lists);
-            if (M(lb.Text.Trim(), AromaRx)) aroma = v; else comp.Add(v);
+            if (M(lb.Text.Trim(), AromaRx)) aroma = v; else parts.Add(new KeyValuePair<int, string>(lb.Y, v));
         }
+        OcrBox aromaLb = labels.FirstOrDefault(e => M(e.Text.Trim(), AromaRx));
+        int right = used.Count > 0 ? used.Max(e => e.X + e.W) : 0;
+        int top = labels[0].Y, low = aromaLb != null ? aromaLb.Y : int.MaxValue;
+        foreach (OcrBox e in g.Where(e => right > 0 && !used.Contains(e) && !labels.Contains(e) && e.Y > top && e.Y < low && Math.Abs(e.X + e.W-right) <= e.H * 2).OrderBy(e => e.Y))
+        {
+            string[] words = Regex.Replace(e.Text.Trim(), "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", "").Split(' ');
+            string tail = null;
+            for (int skip = 0; skip < words.Length-1 && skip < 3 && tail == null; skip++)
+                if (Digits(words[words.Length-1]).Length > 0) tail = SuffixName(Fuzzy.Norm(string.Join(" ", words, skip, words.Length-skip)), lists);
+            if (tail != null) { used.Add(e); parts.Add(new KeyValuePair<int, string>(e.Y, tail)); continue; }
+            for (int skip = 0; skip < words.Length-1 && skip < 3; skip++)
+            {
+                string s = string.Join(" ", words, skip, words.Length-skip);
+                string v = ResolveItem(s, lists);
+                if (v == s && ResolveName(s, lists) == null) continue;
+                used.Add(e);
+                parts.Add(new KeyValuePair<int, string>(e.Y, v));
+                break;
+            }
+        }
+        comp.AddRange(parts.OrderBy(p => p.Key).Select(p => p.Value));
         foreach (OcrBox e in g.Where(e => !used.Contains(e) && !labels.Contains(e) && Regex.IsMatch(e.Text ?? "", @"\((gemah|crush|zerkl|измельч|дробл)", RegexOptions.IgnoreCase)))
         {
             string[] words = Regex.Replace(e.Text.Trim(), "^[^A-Za-zÄÖÜäöüА-Яа-я0-9]+", "").Split(' ');
