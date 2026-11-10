@@ -269,6 +269,10 @@ dialog.sheet[open] { display: flex; }
 .boot-bar { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
 .boot-bar div { height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .4s; }
 .boot-step { margin-top: 12px; color: var(--muted); font-size: 13.5px; min-height: 1.4em; }
+.busy-ov { position: absolute; inset: 0; z-index: 5; background: var(--surface); border-radius: inherit; display: grid; place-items: center; }
+.busy-ov .boot-bar div { transition: width .6s; }
+.busy-ov.indef .boot-bar div { width: 35% !important; animation: busyrun 1.2s ease-in-out infinite; }
+@keyframes busyrun { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
 </style>
 </head>
 <body>
@@ -617,8 +621,10 @@ async function shareSpot(o) {
   if (on && !confirm(T("shareConfirm", "Diesen Spot mit Bildern für alle Nutzer des Tools veröffentlichen?"))) return;
   const b = $("ownShare");
   if (b) { b.disabled = true; b.textContent = "…"; }
+  busyOv(-1, on ? T("busyShare", "Spot wird geteilt und die Bilder hochgeladen. Das kann bis zu einer Minute dauern …") : T("busyUnshare", "Teilen wird beendet …"));
   try { await api("/api/myspot/share", { id: o.id, on }); }
   catch (e) { alert(T("shareFailed", "Teilen fehlgeschlagen") + ": " + errText(e)); }
+  busyOv(null);
   LOG = null;
   await loadLog();
   if ($("ownChk").checked) loadActive(); else loadDetail();
@@ -824,6 +830,15 @@ $("browserSel").onchange = async () => {
   catch (e) { sel.value = sel.dataset.current; alert(e.message); }
 };
 $("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); histStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); if (HDATA) loadHist(); };
+function busyOv(pct, text) {
+  const host = $("dlg").open ? $("dlg") : document.body;
+  let o = $("busyOv");
+  if (pct === null) { if (o) o.remove(); return; }
+  if (!o || o.parentElement !== host) { if (o) o.remove(); o = document.createElement("div"); o.id = "busyOv"; o.className = "busy-ov"; o.innerHTML = '<div class="boot-box"><div class="boot-bar"><div id="busyBar"></div></div><div class="boot-step" id="busyStep"></div></div>'; if (host === document.body) { o.style.position = "fixed"; o.style.zIndex = "100"; } host.appendChild(o); }
+  o.classList.toggle("indef", pct < 0);
+  $("busyBar").style.width = Math.max(0, pct) + "%";
+  $("busyStep").textContent = text;
+}
 function updOverlay(pct, text) {
   let o = $("updOv");
   if (!o) { o = document.createElement("div"); o.id = "updOv"; o.className = "boot"; o.innerHTML = '<div class="boot-box"><h2>RF4 Companion</h2><div class="boot-bar"><div id="updOvBar"></div></div><div class="boot-step" id="updOvStep"></div></div>'; document.body.appendChild(o); }
@@ -1370,20 +1385,23 @@ function wizRender() {
     const err = s.check();
     if (err) { $("dlgErr").textContent = err; return; }
     if (!last) { WIZ.i++; wizRender(); return; }
-    try { await wizSave(); $("dlg").close(); await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } }
-    catch (e) { $("dlgErr").textContent = errText(e); }
+    try { await wizSave(); busyOv(95, T("busyRefresh", "Fangbuch wird aktualisiert …")); await loadLog(); busyOv(null); $("dlg").close(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } }
+    catch (e) { busyOv(null); $("dlgErr").textContent = errText(e); }
   };
 }
 async function wizSave() {
   const v = WIZ.v;
   if (v.feedType && v.pva && (v.rBase || v.rAttr || v.rAdd.some(Boolean))) {
+    busyOv(10, T("busyRecipe", "Rezept wird gespeichert …"));
     const r = recipeOf(v.pva);
     await api("/api/recipe/save", { id: r ? r.id : "", name: v.pva, type: v.feedType, lake: v.lake, base: v.rBase, attractant: v.rAttr, additives: v.rAdd, notes: r ? r.notes : "" });
   }
+  busyOv(30, T("busySpot", "Spot wird gespeichert …"));
   const saved = await api("/api/myspot/save", { id: WIZ.existing ? WIZ.existing.id : "", name: v.name, lake: v.lake, x: v.x, y: v.y, clip: v.clip, depth: v.depth, fish: v.fish, tech: v.tech, temp: v.temp,
     rig: v.rig, bait: v.bait, bait2: v.bait2, dip: v.dip, rigs: v.rigs || [], feedType: v.feedType, pva: v.pva, images: v.images, notes: v.notes, src: v.src || "",
     count: String(WIZ.stats ? WIZ.stats.count : v.count || ""), minutes: String(WIZ.stats ? WIZ.stats.minutes : v.minutes || ""), money: String(WIZ.stats ? WIZ.stats.money : v.money || "") });
   if (INIT.features.share && v.share !== undefined && v.share !== !!(WIZ.existing && WIZ.existing.shared)) {
+    busyOv(-1, v.share ? T("busyShare", "Spot wird geteilt und die Bilder hochgeladen. Das kann bis zu einer Minute dauern …") : T("busyUnshare", "Teilen wird beendet …"));
     try { await api("/api/myspot/share", { id: saved.id, on: v.share }); }
     catch (e) { alert(T("shareFailed", "Teilen fehlgeschlagen") + ": " + errText(e)); }
   }
