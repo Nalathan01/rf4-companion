@@ -336,7 +336,7 @@ dialog.sheet[open] { display: flex; }
   <section class="view active" id="view-active">
     <div class="split">
       <div class="col">
-        <div class="title-row"><h2 data-t="activeTitle">Aktive Spots</h2><button class="btn small" id="syncBtn" data-t="refresh">Aktualisieren</button></div>
+        <div class="title-row"><h2 data-t="activeTitle">Aktive Spots</h2><div><button class="btn small" id="repBtn" style="display:none"></button> <button class="btn small" id="syncBtn" data-t="refresh">Aktualisieren</button></div></div>
         <p class="sub" id="activeSub"></p>
         <div class="filters">
           <div class="seg" id="hoursSeg">
@@ -351,6 +351,7 @@ dialog.sheet[open] { display: flex; }
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
           <label class="chk"><input type="checkbox" id="dcChk"> <span data-t="onlyDiscordBot">Nur Discord-Community</span></label>
           <label class="chk logonly"><input type="checkbox" id="ownChk"> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
+          <label class="chk"><input type="checkbox" id="shChk"> <span data-t="sharedOnly">Geteilte Spots</span></label>
         </div>
         <div class="cards" id="cards"></div>
       </div>
@@ -445,6 +446,7 @@ async function boot() {
   histStatic();
   await loadActive();
   loadFind();
+  loadReports();
   document.documentElement.classList.toggle("nolog", !INIT.features.log);
   document.documentElement.classList.toggle("notrk", !INIT.features.tracker);
   document.documentElement.classList.toggle("nohist", !INIT.features.history);
@@ -673,15 +675,27 @@ async function loadDetail() {
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
       ${(e.setups || []).length > 1 ? e.setups.map((s, n) => `<div class="ev-det"><b>${esc(T("rigL", "Montage"))} ${n + 1}:</b> ${esc(s)} ${e.fromImage ? `<span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}</div>`).join("") : ""}
       ${Object.keys(e.detail).filter(k => k !== "feedUse" && k !== "rig" && !(k === "baitDetail" && (e.setups || []).length > 1)).sort((x, y) => detOrder(x)-detOrder(y)).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
-      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}${INIT.features.admin ? e.sources.filter(s => s.block).map(s => `<button class="src" data-block="${esc(s.block)}" data-name="${esc(s.label)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>`).join("") : ""}</div>
+      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}${e.sources.filter(s => s.sid).map(s => INIT.features.admin ? `<button class="src" data-remove="${esc(s.sid)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${s.block ? `<button class="src" data-block="${esc(s.block)}" data-name="${esc(s.label)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}` : `<button class="src" data-report="${esc(s.sid)}" ${wasReported(s.sid) ? "disabled" : ""}>⚑ ${esc(wasReported(s.sid) ? T("reported", "Gemeldet") : T("reportSpot", "Melden"))}</button>`).join("")}</div>
       ${e.postText && e.shared ? `<div class="ev-det"><b>${esc(T("notes", "Notiz"))}:</b> ${esc(e.postText)}</div>` : e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="${esc(e.postLang || "ru")}" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : e.imgs && e.imgs.length ? `<div class="thumbs web">${e.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}
     </div>`).join("");
   document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
+  document.querySelectorAll("#detail .src[data-report]").forEach(b => b.onclick = async () => {
+    if (!confirm(T("reportConfirm", "Diesen Spot als falsch oder unpassend melden?"))) return;
+    b.disabled = true;
+    try { await api("/api/share/report", { id: b.dataset.report }); markReported(b.dataset.report); b.textContent = "⚑ " + T("reported", "Gemeldet"); alert(T("reportDone", "Danke, der Spot wurde gemeldet.")); }
+    catch (e) { b.disabled = false; alert(errText(e)); }
+  });
+  document.querySelectorAll("#detail .src[data-remove]").forEach(b => b.onclick = async () => {
+    if (!confirm(T("removeConfirm", "Diesen geteilten Spot für alle löschen?"))) return;
+    busyOv(-1, T("removeSpot", "Spot löschen") + " …");
+    try { await api("/api/share/remove", { id: b.dataset.remove }); busyOv(null); DETAIL_KEY = null; loadActive(); loadReports(); }
+    catch (e) { busyOv(null); alert(errText(e)); }
+  });
   document.querySelectorAll("#detail .src[data-block]").forEach(b => b.onclick = async () => {
     if (!confirm(T("blockConfirm", "{0} sperren und alle geteilten Spots dieses Nutzers entfernen?").replace("{0}", b.dataset.name))) return;
     busyOv(-1, T("blocking", "Nutzer wird gesperrt …"));
-    try { const r = await api("/api/share/block", { id: b.dataset.block }); busyOv(null); alert(T("blockDone", "{0} gesperrt, {1} Spots entfernt.").replace("{0}", r.name || b.dataset.name).replace("{1}", r.removed)); DETAIL_KEY = null; loadActive(); }
+    try { const r = await api("/api/share/block", { id: b.dataset.block }); busyOv(null); loadReports(); alert(T("blockDone", "{0} gesperrt, {1} Spots entfernt.").replace("{0}", r.name || b.dataset.name).replace("{1}", r.removed)); DETAIL_KEY = null; loadActive(); }
     catch (e) { busyOv(null); alert(errText(e)); }
   });
   document.querySelectorAll("#detail .thumbs.web img").forEach(im => {
@@ -811,10 +825,11 @@ $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; tempVis()
 $("tempSel").onchange = () => { DETAIL_KEY = null; loadActive(); };
 $("actRegion").onchange = () => { DETAIL_KEY = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
-$("dcChk").onchange = () => { if ($("dcChk").checked) $("ownChk").checked = false; DETAIL_KEY = null; loadActive(); };
+$("dcChk").onchange = () => { if ($("dcChk").checked) { $("ownChk").checked = false; $("shChk").checked = false; } DETAIL_KEY = null; loadActive(); };
+$("shChk").onchange = () => { if ($("shChk").checked) $("dcChk").checked = false; DETAIL_KEY = null; loadActive(); };
 function actParams() {
   const q = $("actQ").value.trim();
-  return ($("dcChk").checked ? "&dc=1" : "") + ($("actRegion").value ? "&region=" + $("actRegion").value : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + (q.length >= 2 ? "&fish=" + encodeURIComponent(q) : "");
+  return ($("dcChk").checked ? "&dc=1" : "") + ($("shChk").checked ? "&sh=1" : "") + ($("actRegion").value ? "&region=" + $("actRegion").value : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + (q.length >= 2 ? "&fish=" + encodeURIComponent(q) : "");
 }
 let FISHQ_T = 0;
 function setFishQ(raw) {
@@ -846,6 +861,31 @@ $("browserSel").onchange = async () => {
   catch (e) { sel.value = sel.dataset.current; alert(e.message); }
 };
 $("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); histStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); if (HDATA) loadHist(); };
+function wasReported(id) { try { return (JSON.parse(localStorage.getItem("reported") || "[]")).includes(id); } catch (e) { return false; } }
+function markReported(id) { try { const l = JSON.parse(localStorage.getItem("reported") || "[]"); if (!l.includes(id)) l.push(id); localStorage.setItem("reported", JSON.stringify(l.slice(-300))); } catch (e) { } }
+let REPORTS = [];
+async function loadReports() {
+  const b = $("repBtn");
+  if (!INIT.features.admin) { b.style.display = "none"; return; }
+  try { REPORTS = (await api("/api/share/reports")).items || []; } catch (e) { REPORTS = []; }
+  b.textContent = "⚑ " + T("reportedSpots", "Gemeldete Spots") + (REPORTS.length ? " (" + REPORTS.length + ")" : "");
+  b.style.display = "";
+}
+function reportsSheet() {
+  const lakeName = id => (INIT.lakes.find(l => l.id === id) || {}).name || id;
+  openSheet(T("reportedSpots", "Gemeldete Spots"), REPORTS.length ? `<table class="tbl" id="repTbl">${REPORTS.map(r => `<tr><td><b>${esc(r.author)}</b> ${esc(r.cc)}<small>${esc(lakeName(r.lake) + " · " + r.x + ":" + r.y + (r.fish.length ? " · " + r.fish.join(", ") : ""))}</small>${r.text ? `<small>${esc(r.text)}</small>` : ""}</td><td>${esc(T("reportsN", "{0} Meldungen").replace("{0}", r.n))}${r.hidden ? " · " + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-rr="${esc(r.id)}">${esc(T("restoreSpot", "Wieder einblenden"))}</button> <button class="btn small" data-rd="${esc(r.id)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${r.id.includes("_") ? ` <button class="btn small" data-rb="${esc(r.id)}" data-name="${esc(r.author)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
+  const act = async (path, id, ask) => {
+    if (ask && !confirm(ask)) return;
+    busyOv(-1, "…");
+    try { await api(path, { id }); } catch (e) { alert(errText(e)); }
+    busyOv(null);
+    await loadReports(); DETAIL_KEY = null; loadActive(); reportsSheet();
+  };
+  $("sheetBody").querySelectorAll("[data-rr]").forEach(b => b.onclick = () => act("/api/share/restore", b.dataset.rr));
+  $("sheetBody").querySelectorAll("[data-rd]").forEach(b => b.onclick = () => act("/api/share/remove", b.dataset.rd, T("removeConfirm", "Diesen geteilten Spot für alle löschen?")));
+  $("sheetBody").querySelectorAll("[data-rb]").forEach(b => b.onclick = () => act("/api/share/block", b.dataset.rb, T("blockConfirm", "{0} sperren und alle geteilten Spots dieses Nutzers entfernen?").replace("{0}", b.dataset.name)));
+}
+$("repBtn").onclick = reportsSheet;
 const SHARE_CC = ["DE", "AT", "CH", "PL", "FR", "BE", "NL", "GB", "IE", "IT", "ES", "PT", "CZ", "SK", "HU", "RO", "SE", "NO", "DK", "FI", "US", "CA", "BR", "RU", "UA", "BY", "KZ", "CN", "TW", "JP", "KR", "ID", "TR"];
 function ccName(c) { try { return new Intl.DisplayNames([INIT.lang], { type: "region" }).of(c); } catch (e) { return c; } }
 function busyOv(pct, text) {
@@ -1543,7 +1583,7 @@ const MENU = {
     };
     $("gRegBtn").onclick = async () => {
       $("gRegBtn").disabled = true;
-      try { const k = await api("/api/sharekey/register", { name: $("gRegName").value.trim(), cc: $("gRegCc").value }); INIT.features.share = !!k.name; INIT.features.admin = !!k.admin; keyState(k); }
+      try { const k = await api("/api/sharekey/register", { name: $("gRegName").value.trim(), cc: $("gRegCc").value }); INIT.features.share = !!k.name; INIT.features.admin = !!k.admin; keyState(k); loadReports(); }
       catch (e) { $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
       $("gRegBtn").disabled = false;
     };

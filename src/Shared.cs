@@ -28,7 +28,7 @@ internal static class Shared
             string json = Http.GetString(Raw + "spots.json?t=" + DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture), 30000);
             Dictionary<string, object> d = AppEnv.Json.DeserializeObject(json) as Dictionary<string, object>;
             if (d == null) return;
-            List<Dictionary<string, object>> raws = AppEnv.GetList(d, "spots").Cast<object>().Select(o => o as Dictionary<string, object>).Where(o => o != null && AppEnv.GetString(o, "id").StartsWith("adm:", StringComparison.Ordinal)).ToList();
+            List<Dictionary<string, object>> raws = AppEnv.GetList(d, "spots").Cast<object>().Select(o => o as Dictionary<string, object>).Where(o => o != null && AppEnv.GetString(o, "id").StartsWith("adm:", StringComparison.Ordinal) && !AppEnv.GetBool(o, "hidden")).ToList();
             int n = Community.ReplacePrefix("adm:", raws);
             if (n > 0) AppEnv.Log("Geteilt", raws.Count + " Spots, geaendert: " + n);
         }
@@ -123,6 +123,32 @@ internal static class Shared
         lastFetch = DateTime.MinValue;
         Fetch(true);
         return r;
+    }
+
+    public static object Report(string reportId)
+    {
+        return AppEnv.Json.DeserializeObject(Call("report", Key, AppEnv.Obj("id", reportId ?? "")));
+    }
+
+    public static object Remove(string reportId)
+    {
+        object r = AppEnv.Json.DeserializeObject(Call("remove", Key, AppEnv.Obj("id", reportId ?? "")));
+        lastFetch = DateTime.MinValue;
+        Fetch(true);
+        return r;
+    }
+
+    public static object Restore(string reportId)
+    {
+        object r = AppEnv.Json.DeserializeObject(Call("restore", Key, AppEnv.Obj("id", reportId ?? "")));
+        lastFetch = DateTime.MinValue;
+        Fetch(true);
+        return r;
+    }
+
+    public static object Reports()
+    {
+        return AppEnv.Json.DeserializeObject(Call("reports", Key, null));
     }
 
     public static object SetKey(string key)

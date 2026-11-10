@@ -170,6 +170,10 @@ internal sealed class Api
             case "/api/backup/export": return Backup.Export();
             case "/api/sharekey/register": return Shared.Register(AppEnv.GetString(args, "name"), AppEnv.GetString(args, "cc"));
             case "/api/share/block": return Shared.Block(AppEnv.GetString(args, "id"));
+            case "/api/share/report": return Shared.Report(AppEnv.GetString(args, "id"));
+            case "/api/share/remove": return Shared.Remove(AppEnv.GetString(args, "id"));
+            case "/api/share/restore": return Shared.Restore(AppEnv.GetString(args, "id"));
+            case "/api/share/reports": return Shared.Reports();
             case "/api/sharekey": return args == null ? Shared.KeyStatus() : Shared.SetKey(AppEnv.GetString(args, "key"));
             case "/api/myspot/share": if (!Shared.CanShare) break; return Shared.Set(AppEnv.GetString(args, "id"), AppEnv.GetBool(args, "on"), Lang);
             case "/api/myspot/delete": return Fangbuch.Delete("spots", AppEnv.GetList(args, "ids"));
@@ -187,7 +191,7 @@ internal sealed class Api
                     Tracker.Process(q["file"], null);
                     return Tracker.Command("status", new Dictionary<string, object>());
                 }
-            case "/api/spot": return SpotDetail(q["key"] ?? "", q["dc"] == "1", q["temp"] ?? "", q["fish"] ?? "", q["region"] ?? "");
+            case "/api/spot": return SpotDetail(q["key"] ?? "", q["dc"] == "1", q["temp"] ?? "", q["fish"] ?? "", q["region"] ?? "", q["sh"] == "1");
             case "/api/devocr":
                 {
                     if (AppEnv.DevRoot == null) throw new AppError("unknown", path);
@@ -331,6 +335,11 @@ internal sealed class Api
         return string.Join(((char)10).ToString(), keep.ToArray()).Trim();
     }
 
+    private static bool IsShared(Report r)
+    {
+        return r.Id.StartsWith("adm:", StringComparison.Ordinal);
+    }
+
     private static bool IsDc(Report r)
     {
         return r.Id.StartsWith("dcd:", StringComparison.Ordinal);
@@ -364,7 +373,7 @@ internal sealed class Api
         return r.Fish.Any(f => f.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || GameData.Translate(f, lang).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
-    private object SpotDetail(string key, bool dcOnly, string tempSel, string fishQ, string region)
+    private object SpotDetail(string key, bool dcOnly, string tempSel, string fishQ, string region, bool shOnly)
     {
         string lang = Lang;
         Dictionary<string, object> strings = GameData.Strings(lang);
@@ -378,8 +387,8 @@ internal sealed class Api
         List<SpotEvent> evList = new List<SpotEvent>();
         int fetched = 0;
         Dictionary<string, int> dirs = new Dictionary<string, int>();
-        bool filtered = dcOnly || tempSel.Length > 0 || fishQ.Length > 0 || region.Length > 0;
-        List<SpotEvent> spotEvents = filtered ? FilterEvents(s.Events, r => (!dcOnly || IsDc(r)) && RegionHit(r, region) && (tempSel.Length == 0 || ReportTemp(r) == tempSel) && (fishQ.Length == 0 || FishHit(r, fishQ, lang))) : s.Events;
+        bool filtered = dcOnly || shOnly || tempSel.Length > 0 || fishQ.Length > 0 || region.Length > 0;
+        List<SpotEvent> spotEvents = filtered ? FilterEvents(s.Events, r => (!dcOnly || IsDc(r)) && (!shOnly || IsShared(r)) && RegionHit(r, region) && (tempSel.Length == 0 || ReportTemp(r) == tempSel) && (fishQ.Length == 0 || FishHit(r, fishQ, lang))) : s.Events;
         foreach (SpotEvent e in spotEvents.OrderByDescending(x => x.Last).Take(60))
         {
             List<object> src = new List<object>();
@@ -397,7 +406,7 @@ internal sealed class Api
                 if (seenSrc.Add(r.SourceKey))
                 {
                     string[] dc = r.Guild.Length > 0 ? DiscordInfo.ForReport(r) : null;
-                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"), "block", r.Id.StartsWith("adm:", StringComparison.Ordinal) && r.Id.Contains("_") ? r.Id : "",
+                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"), "block", r.Id.StartsWith("adm:", StringComparison.Ordinal) && r.Id.Contains("_") ? r.Id : "", "sid", r.Id.StartsWith("adm:", StringComparison.Ordinal) ? r.Id : "",
                         "invite", dc != null && dc.Length > 1 ? dc[1] : ""));
                 }
                 string pk = Scans.PostKey(r.Url);
@@ -537,7 +546,8 @@ internal sealed class Api
         bool dc = q["dc"] == "1";
         string tempF = q["temp"] ?? "";
         string region = q["region"] ?? "";
-        bool filtered = dc || tempF.Length > 0 || (q["fish"] ?? "").Length > 0 || region.Length > 0;
+        bool sh = q["sh"] == "1";
+        bool filtered = dc || sh || tempF.Length > 0 || (q["fish"] ?? "").Length > 0 || region.Length > 0;
         DateTime now = DateTime.UtcNow;
         DateTime since = now.AddHours(-hours);
         List<object> rows = new List<object>();
@@ -545,7 +555,7 @@ internal sealed class Api
         {
             if (s.Last < since) continue;
             if (lakeFilter.Length > 0 && !string.Equals(s.Lake, lakeFilter, StringComparison.OrdinalIgnoreCase)) continue;
-            List<SpotEvent> recent = (filtered ? FilterEvents(s.Events, r => (!dc || IsDc(r)) && RegionHit(r, region) && (tempF.Length == 0 || ReportTemp(r) == tempF) && (fishFilter.Length == 0 || FishHit(r, fishFilter, lang))) : s.Events).Where(e => e.Last >= since).ToList();
+            List<SpotEvent> recent = (filtered ? FilterEvents(s.Events, r => (!dc || IsDc(r)) && (!sh || IsShared(r)) && RegionHit(r, region) && (tempF.Length == 0 || ReportTemp(r) == tempF) && (fishFilter.Length == 0 || FishHit(r, fishFilter, lang))) : s.Events).Where(e => e.Last >= since).ToList();
             if (recent.Count == 0) continue;
             List<Report> rr = recent.SelectMany(e => e.Reports).ToList();
             Dictionary<string, int> fish = new Dictionary<string, int>();
