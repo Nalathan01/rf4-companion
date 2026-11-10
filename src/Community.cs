@@ -107,21 +107,19 @@ internal static class Community
     {
         if (!SeaMarks.IsSea(r.Lake) || r.X <= 0) return;
         string xs = r.X.ToString(CultureInfo.InvariantCulture), c = AppEnv.GetString(raw, "clip");
-        SeaMark near = SeaMarks.Nearest(r.Lake, r.X, r.Y);
-        if (near != null)
+        if (r.X <= 300 && (r.X == r.Y || c == xs))
         {
-            if (c.Length > 0 && c == near.Depth.ToString(CultureInfo.InvariantCulture)) raw["clip"] = null;
+            SeaMark pit = SeaMarks.Pit(r.X);
+            if (pit == null) { r.X = -1; r.Y = -1; return; }
+            r.X = (int)Math.Round(pit.X);
+            r.Y = (int)Math.Round(pit.Y);
+            raw["x"] = r.X;
+            raw["y"] = r.Y;
+            if (c == xs) raw["clip"] = null;
             return;
         }
-        if (r.X > 300) return;
-        if (r.X != r.Y && c != xs) return;
-        SeaMark pit = SeaMarks.Pit(r.X);
-        if (pit == null) { r.X = -1; r.Y = -1; return; }
-        r.X = (int)Math.Round(pit.X);
-        r.Y = (int)Math.Round(pit.Y);
-        raw["x"] = r.X;
-        raw["y"] = r.Y;
-        if (c == xs) raw["clip"] = null;
+        SeaMark near = SeaMarks.Nearest(r.Lake, r.X, r.Y);
+        if (near != null && c.Length > 0 && c == near.Depth.ToString(CultureInfo.InvariantCulture)) raw["clip"] = null;
     }
 
     private static bool MisreadSea(Report r)
