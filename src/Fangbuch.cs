@@ -196,9 +196,43 @@ internal static class Fangbuch
         return string.Join(" + ", p.ToArray());
     }
 
+    private static bool FillNet(Dictionary<string, object> s)
+    {
+        object nv;
+        Images(s).TryGetValue("net", out nv);
+        string net = (nv ?? "").ToString();
+        if (s.ContainsKey("net") && S(s, "netImg") == net) return false;
+        List<object> o = new List<object>();
+        string f = Path.Combine(ImgDir, net);
+        if (net.Length > 0 && File.Exists(f))
+        {
+            try
+            {
+                foreach (IGrouping<string, TrackItem> g in Tracker.NetItems(f).GroupBy(i => i.Fish))
+                    o.Add(AppEnv.Obj("fish", g.Key, "n", g.Count(), "max", g.Select(i => i.Weight ?? 0).Where(w => GameData.Plausible(g.Key, w)).DefaultIfEmpty(0).Max()));
+            }
+            catch (Exception ex) { AppEnv.Log("Fangbuch", "Kescherbild " + net + ": " + ex.Message); return false; }
+        }
+        s["net"] = o.ToArray();
+        s["netImg"] = net;
+        return true;
+    }
+
+    private static List<Dictionary<string, object>> NetList(Dictionary<string, object> s)
+    {
+        return AppEnv.GetList(s, "net").Cast<object>().OfType<Dictionary<string, object>>().ToList();
+    }
+
     public static object Log(string lang)
     {
-        List<Dictionary<string, object>> catches = List("catches"), spots = List("spots");
+        List<Dictionary<string, object>> catches = List("catches"), spots;
+        lock (gate)
+        {
+            spots = List("spots");
+            bool changed = false;
+            foreach (Dictionary<string, object> s in spots) changed |= FillNet(s);
+            if (changed) UserStore.Set("spots", spots);
+        }
         Dictionary<string, Dictionary<string, object>> spotById = new Dictionary<string, Dictionary<string, object>>(StringComparer.Ordinal);
         foreach (Dictionary<string, object> s in spots) spotById[S(s, "id")] = s;
 
@@ -221,13 +255,6 @@ internal static class Fangbuch
         }
 
         List<object> stats = new List<object>();
-        foreach (IGrouping<string, Dictionary<string, object>> g in catches.GroupBy(c => S(c, "fish")).OrderByDescending(g => g.Count()))
-        {
-            if (g.Key.Length == 0) continue;
-            double max = g.Select(c => AppEnv.GetDouble(c, "weight", 0)).Where(w => GameData.Plausible(g.Key, w)).DefaultIfEmpty(0).Max();
-            string top = g.GroupBy(c => BaitCombo(c, lang)).Where(b => b.Key.Length > 0).OrderByDescending(b => b.Count()).Select(b => b.Key).FirstOrDefault() ?? "";
-            stats.Add(AppEnv.Obj("fish", Tr(g.Key, lang), "n", g.Count(), "max", max > 0 ? GameData.FormatWeight(max, lang) : "", "bait", top));
-        }
 
         List<object> outSpots = new List<object>();
         foreach (Dictionary<string, object> s in spots)
@@ -242,7 +269,8 @@ internal static class Fangbuch
                 "clip", S(s, "clip"), "temp", S(s, "temp"), "rig", Tr(S(s, "rig"), lang), "rigs", AppEnv.GetList(s, "rigs").Cast<object>().Select(o => { Dictionary<string, object> m = o as Dictionary<string, object>; return (object)AppEnv.Obj("rig", Tr(S(m, "rig"), lang), "bait", Tr(S(m, "bait"), lang), "bait2", Tr(S(m, "bait2"), lang), "dip", Tr(S(m, "dip"), lang)); }).ToArray(), "src", S(s, "src"), "images", Images(s),
                 "count", AppEnv.GetDouble(s, "count", 0), "minutes", AppEnv.GetDouble(s, "minutes", 0), "money", AppEnv.GetDouble(s, "money", 0),
                 "catches", catches.Count(c => S(c, "spotId") == id), "shared", S(s, "shared").Length > 0,
-                "nx", AppEnv.GetDouble(s, "nx", -1), "ny", AppEnv.GetDouble(s, "ny", -1)));
+                "nx", AppEnv.GetDouble(s, "nx", -1), "ny", AppEnv.GetDouble(s, "ny", -1),
+                "net", NetList(s).Select(n => { double mx = AppEnv.GetDouble(n, "max", 0); return (object)AppEnv.Obj("fish", Tr(S(n, "fish"), lang), "n", (int)AppEnv.GetDouble(n, "n", 0), "max", mx, "maxText", mx > 0 ? GameData.FormatWeight(mx, lang) : ""); }).ToArray()));
         }
 
         List<object> outRecipes = new List<object>();
@@ -259,7 +287,7 @@ internal static class Fangbuch
                 "base", Tr(S(rc, "base"), lang), "attractant", Tr(S(rc, "attractant"), lang),
                 "additives", AppEnv.GetList(rc, "additives").Cast<object>().Select(o => Tr((o ?? "").ToString().Trim(), lang)).Where(x => x.Length > 0).ToArray(),
                 "lakes", lakes.ToArray(), "notes", S(rc, "notes") == "Tracker" ? "" : S(rc, "notes"),
-                "uses", catches.Count(c => S(c, "pva") == S(rc, "name") && S(rc, "name").Length > 0)));
+                "uses", S(rc, "name").Length == 0 ? 0 : spots.Where(s => S(s, "pva") == S(rc, "name")).Sum(s => NetList(s).Sum(n => (int)AppEnv.GetDouble(n, "n", 0)))));
         }
 
         return AppEnv.Obj("catches", outCatches, "stats", stats, "spots", outSpots, "recipes", outRecipes,

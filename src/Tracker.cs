@@ -298,6 +298,30 @@ internal static class Tracker
         else Say(T("trackerUnknown", "Screenshot ohne Fang oder Setup"));
     }
 
+    private static List<TrackItem> NetCards(string path, string tag, string code, TrackRes r, out int minutes)
+    {
+        minutes = 0;
+        OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.86f), 100, false);
+        DateTime shot = File.GetLastWriteTime(path);
+        Dictionary<TrackItem, DateTime> times = new Dictionary<TrackItem, DateTime>();
+        List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, shot, times);
+        if (times.Count > 0) minutes = (int)Math.Round(shot.Subtract(times.Values.Min()).TotalMinutes);
+        minutes = Math.Max(minutes, r2.Lines().Select(l => TrackerParse.AgeMin(l) ?? 0).DefaultIfEmpty(0).Max());
+        if (items.Count == 0) items = TrackerParse.Merge(r.Items, TrackerParse.KeepnetItems(r2.Lines(), r2.Boxes, TrackerParse.Lists(code)));
+        return items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).ToList();
+    }
+
+    public static List<TrackItem> NetItems(string path)
+    {
+        string tag = LangTag, code = TrackerParse.Code(tag);
+        OcrRead r0 = Ocr(path, tag, RectangleF.Empty, 1, false);
+        string[] lines = r0.Lines();
+        TrackRes r = lines.Length > 0 ? TrackerParse.Parse(lines, r0.Boxes, code) : new TrackRes();
+        if (r.Kind != "keepnet") return new List<TrackItem>();
+        int minutes;
+        return NetCards(path, tag, code, r, out minutes);
+    }
+
     public static object Analyze(string path, string lang)
     {
         string tag = LangTag, code = TrackerParse.Code(tag);
@@ -333,17 +357,8 @@ internal static class Tracker
                 if (r.Fish.Length > 0) fish.Add(r.Fish);
                 break;
             case "keepnet":
-                {
-                    OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.86f), 100, false);
-                    DateTime shot = File.GetLastWriteTime(path);
-                    Dictionary<TrackItem, DateTime> times = new Dictionary<TrackItem, DateTime>();
-                    List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, shot, times);
-                    if (times.Count > 0) minutes = (int)Math.Round(shot.Subtract(times.Values.Min()).TotalMinutes);
-                    minutes = Math.Max(minutes, r2.Lines().Select(l => TrackerParse.AgeMin(l) ?? 0).DefaultIfEmpty(0).Max());
-                    if (items.Count == 0) items = TrackerParse.Merge(r.Items, TrackerParse.KeepnetItems(r2.Lines(), r2.Boxes, TrackerParse.Lists(code)));
-                    fish.AddRange(items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).Select(i => i.Fish));
-                    break;
-                }
+                fish.AddRange(NetCards(path, tag, code, r, out minutes).Select(i => i.Fish));
+                break;
         }
         int x = r.Kind == "position" ? r.X : 0, y = r.Kind == "position" ? r.Y : 0;
         if (x == 0)
