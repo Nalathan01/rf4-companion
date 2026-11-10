@@ -240,6 +240,50 @@ internal static class Fangbuch
         return true;
     }
 
+    private static volatile bool netBusy;
+
+    private static string NetSig(Dictionary<string, object> s)
+    {
+        Dictionary<string, object> im = Images(s);
+        return string.Join(",", NetKinds.Where(k => im.ContainsKey(k)).Select(k => im[k].ToString()).ToArray());
+    }
+
+    private static bool NeedsNet(Dictionary<string, object> s)
+    {
+        return !s.ContainsKey("net") || S(s, "netImg") != NetSig(s) || S(s, "netV") != "2";
+    }
+
+    private static void FillAllNets()
+    {
+        try
+        {
+            while (true)
+            {
+                Dictionary<string, object> copy;
+                lock (gate)
+                {
+                    Dictionary<string, object> next = List("spots").FirstOrDefault(NeedsNet);
+                    if (next == null) return;
+                    copy = new Dictionary<string, object>(next);
+                }
+                if (!FillNet(copy)) { copy["net"] = new object[0]; copy["netImg"] = NetSig(copy); copy["netV"] = "2"; }
+                lock (gate)
+                {
+                    List<Dictionary<string, object>> spots = List("spots");
+                    Dictionary<string, object> cur = spots.FirstOrDefault(x => S(x, "id") == S(copy, "id"));
+                    if (cur == null || NetSig(cur) != S(copy, "netImg")) continue;
+                    cur["net"] = copy["net"];
+                    cur["netImg"] = copy["netImg"];
+                    cur["netV"] = copy["netV"];
+                    if (AppEnv.GetDouble(copy, "count", 0) > AppEnv.GetDouble(cur, "count", 0)) cur["count"] = copy["count"];
+                    UserStore.Set("spots", spots);
+                }
+            }
+        }
+        catch (Exception ex) { AppEnv.Log("Fangbuch", "Kescherbilder: " + ex.Message); }
+        finally { netBusy = false; }
+    }
+
     private static List<Dictionary<string, object>> NetList(Dictionary<string, object> s)
     {
         return AppEnv.GetList(s, "net").Cast<object>().OfType<Dictionary<string, object>>().ToList();
@@ -248,12 +292,16 @@ internal static class Fangbuch
     public static object Log(string lang)
     {
         List<Dictionary<string, object>> catches = List("catches"), spots;
+        bool pending;
         lock (gate)
         {
             spots = List("spots");
-            bool changed = false;
-            foreach (Dictionary<string, object> s in spots) changed |= FillNet(s);
-            if (changed) UserStore.Set("spots", spots);
+            pending = spots.Any(NeedsNet);
+            if (pending && !netBusy)
+            {
+                netBusy = true;
+                System.Threading.Tasks.Task.Factory.StartNew(FillAllNets);
+            }
         }
         Dictionary<string, Dictionary<string, object>> spotById = new Dictionary<string, Dictionary<string, object>>(StringComparer.Ordinal);
         foreach (Dictionary<string, object> s in spots) spotById[S(s, "id")] = s;
@@ -312,7 +360,7 @@ internal static class Fangbuch
                 "uses", S(rc, "name").Length == 0 ? 0 : spots.Where(s => S(s, "pva") == S(rc, "name")).Sum(s => NetList(s).Sum(n => (int)AppEnv.GetDouble(n, "n", 0)))));
         }
 
-        return AppEnv.Obj("catches", outCatches, "stats", stats, "spots", outSpots, "recipes", outRecipes,
+        return AppEnv.Obj("netPending", pending, "catches", outCatches, "stats", stats, "spots", outSpots, "recipes", outRecipes,
             "days", catches.Select(c => S(c, "date")).Distinct().Count());
     }
 

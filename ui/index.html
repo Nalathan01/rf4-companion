@@ -1059,6 +1059,8 @@ async function loadLog() {
   if (!INIT.features.log) return;
   try { LOG = await api("/api/log"); } catch (e) { return; }
   renderLog();
+  clearTimeout(loadLog.timer);
+  if (LOG.netPending) loadLog.timer = setTimeout(loadLog, 3000);
 }
 function renderLog() {
   const L = LOG;
