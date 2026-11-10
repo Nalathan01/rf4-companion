@@ -56,6 +56,7 @@ nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
 
 .btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 14px; cursor: pointer; font-weight: 600; }
 .btn.alert { background: #c0392b; border-color: #c0392b; color: #fff; }
+#gBackupState:empty { display: none; }
 .rate-bar { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
 .rate-bar .btn.on { background: var(--accent); border-color: var(--accent); color: #111; }
 .rate-bar .btn span { opacity: 0.8; margin-left: 2px; }
@@ -463,6 +464,7 @@ async function boot() {
   loadExtensions();
   const hv = location.hash.slice(1).split("=");
   if (hv[0] === "find" || hv[0] === "log" || (hv[0] === "hist" && INIT.features.history)) { showView(hv[0]); if (hv[0] === "find" && hv[1]) { FIND.fish = decodeURIComponent(hv[1]); loadFind(); } }
+  if (hv[0] === "menu" && MENU[hv[1]]) MENU[hv[1]]();
   $("boot").classList.add("hide");
   setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);
