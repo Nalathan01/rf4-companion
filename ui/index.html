@@ -1564,10 +1564,11 @@ const MENU = {
       `${d ? `<div style="grid-column:1/3"><div class="hdr" style="margin-top:0">Tracker</div></div>
        <div style="grid-column:1/3">${field("gDir", T("trkFolder", "Screenshot-Ordner von RF4"), d.dir, "", true)}</div>
        <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>` : ""}
-       <div style="grid-column:1/3"><div class="hdr" style="${d ? "" : "margin-top:0"}">${esc(T("shareSection", "Spots teilen"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("shareKeyHint", "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Den Schlüssel bekommst du von Nalathan."))}</p>
-       <div style="display:flex;gap:8px;align-items:flex-end"><label style="flex:1">${esc(T("shareKeyLabel", "Persönlicher Schlüssel"))}<input id="gKey" value="${esc(sk.key || "")}" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></label><button class="btn small" id="gKeyBtn">${esc(T("shareKeySave", "Prüfen und speichern"))}</button></div>
-       <div class="sub" id="gKeyState" style="margin-top:6px"></div>
-       <div id="gReg" style="display:flex;gap:8px;align-items:flex-end;margin-top:8px"><label style="flex:1">${esc(T("shareName", "Dein Name für geteilte Spots"))}<input id="gRegName" maxlength="24" autocomplete="off"></label><label>${esc(T("shareCountry", "Land"))}<select id="gRegCc">${SHARE_CC.map(c => `<option value="${c}" ${c === (sk.cc || "DE") ? "selected" : ""}>${esc(ccName(c))}</option>`).join("")}</select></label><button class="btn small primary" id="gRegBtn">${esc(T("shareUnlock", "Freischalten"))}</button></div></div>
+       <div style="grid-column:1/3"><div class="hdr" style="${d ? "" : "margin-top:0"}">${esc(T("shareSection", "Spots teilen"))}</div><p class="sub" id="gShareHint" style="margin:0 0 8px">${esc(T("shareKeyHint", "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Den Schlüssel bekommst du von Nalathan."))}</p>
+       <div id="gKeyState" style="margin:0 0 4px;font-size:14px"></div>
+       <div id="gReg" style="display:flex;gap:8px;align-items:flex-end;margin-top:4px"><label style="flex:1">${esc(T("shareName", "Dein Name für geteilte Spots"))}<input id="gRegName" maxlength="24" autocomplete="off"></label><label>${esc(T("shareCountry", "Land"))}<select id="gRegCc">${SHARE_CC.map(c => `<option value="${c}" ${c === (sk.cc || "DE") ? "selected" : ""}>${esc(ccName(c))}</option>`).join("")}</select></label><button class="btn small primary" id="gRegBtn">${esc(T("shareUnlock", "Freischalten"))}</button></div>
+       <button class="btn small" id="gKeyToggle" style="margin-top:8px"></button>
+       <div id="gKeyBox" style="display:none;gap:8px;align-items:flex-end;margin-top:8px"><label style="flex:1">${esc(T("shareKeyLabel", "Persönlicher Schlüssel"))}<input id="gKey" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></label><button class="btn small" id="gKeyBtn">${esc(T("shareKeySave", "Prüfen und speichern"))}</button></div></div>
        <div style="grid-column:1/3"><div class="hdr">${esc(T("backupSection", "Daten sichern"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("backupHint", "Sichert Fangbuch, Spots, Rezepte, Bilder und Einstellungen in eine Datei. Mit Importieren holst du sie auf einem neuen PC oder Zweitgerät zurück. Vorhandene Einträge bleiben erhalten."))}</p>
        <div style="display:flex;gap:8px"><button class="btn small" id="gExport">${esc(T("backupExport", "Exportieren"))}</button><button class="btn small" id="gImport">${esc(T("backupImport", "Importieren"))}</button><input type="file" id="gImportFile" accept=".zip" style="display:none"></div>
        <div class="sub" id="gBackupState" style="margin-top:6px"></div></div>
@@ -1579,10 +1580,17 @@ const MENU = {
     let cur = sk;
     const keyState = k => {
       cur = k;
-      $("gKeyState").textContent = k.name ? "✓ " + T("shareKeyOk", "Freigeschaltet als {0} ({1})").replace("{0}", k.name).replace("{1}", k.cc) + (k.admin ? " · Admin" : "") : T("shareUnlockHint", "Namen und Land eintragen, dann »Freischalten«. Danach kannst du sofort teilen.");
-      $("gReg").style.display = k.name ? "none" : "flex";
+      const on = !!k.name;
+      $("gShareHint").style.display = on ? "none" : "";
+      $("gKeyState").innerHTML = on ? "✓ " + esc(T("shareUnlockedAs", "Freigeschaltet als {0}")).replace("{0}", "<b>" + esc(k.name) + "</b>") + " · " + esc(ccName(k.cc)) + (k.admin && !/admin/i.test(k.name) ? " · Admin" : "") : "";
+      $("gKeyState").style.display = on ? "" : "none";
+      $("gReg").style.display = on ? "none" : "flex";
+      $("gKeyToggle").textContent = on ? T("shareKeyShow", "Schlüssel anzeigen oder ändern") : T("shareHaveKey", "Ich habe schon einen Schlüssel");
+      $("gKeyBox").style.display = "none";
+      $("gKeyToggle").style.display = "";
       if (k.key !== undefined) $("gKey").value = k.key || "";
     };
+    $("gKeyToggle").onclick = () => { $("gKeyBox").style.display = "flex"; $("gKeyToggle").style.display = "none"; $("gKey").focus(); };
     keyState(sk);
     $("gExport").onclick = async () => {
       $("gExport").disabled = true;
@@ -1608,13 +1616,13 @@ const MENU = {
     $("gRegBtn").onclick = async () => {
       $("gRegBtn").disabled = true;
       try { const k = await api("/api/sharekey/register", { name: $("gRegName").value.trim(), cc: $("gRegCc").value }); INIT.features.share = !!k.name; INIT.features.admin = !!k.admin; keyState(k); loadReports(); }
-      catch (e) { $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
+      catch (e) { $("gKeyState").style.display = ""; $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
       $("gRegBtn").disabled = false;
     };
     $("gKeyBtn").onclick = async () => {
       $("gKeyBtn").disabled = true;
       try { const k = await api("/api/sharekey", { key: $("gKey").value.trim().toUpperCase() }); INIT.features.share = !!k.name; INIT.features.admin = !!k.admin; keyState(k); }
-      catch (e) { $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
+      catch (e) { $("gKeyState").style.display = ""; $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
       $("gKeyBtn").disabled = false;
     };
     $("dlgForm").querySelectorAll("[data-ocr]").forEach(b => b.onclick = async () => { try { await api("/api/ocrinstall", { tag: b.dataset.ocr }); b.textContent = T("ocrRunning", "Wird installiert, danach RF4 Companion neu starten"); b.disabled = true; } catch (e) { $("dlgErr").textContent = errText(e).startsWith("ocrCancelled") ? T("ocrCancelled", "Abgebrochen.") : e.message; } });
