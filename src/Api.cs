@@ -186,7 +186,7 @@ internal sealed class Api
                     Tracker.Process(q["file"], null);
                     return Tracker.Command("status", new Dictionary<string, object>());
                 }
-            case "/api/spot": return SpotDetail(q["key"] ?? "", q["dc"] == "1", q["temp"] ?? "", q["fish"] ?? "");
+            case "/api/spot": return SpotDetail(q["key"] ?? "", q["dc"] == "1", q["temp"] ?? "", q["fish"] ?? "", q["region"] ?? "");
             case "/api/devocr":
                 {
                     if (AppEnv.DevRoot == null) throw new AppError("unknown", path);
@@ -363,7 +363,7 @@ internal sealed class Api
         return r.Fish.Any(f => f.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || GameData.Translate(f, lang).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
-    private object SpotDetail(string key, bool dcOnly, string tempSel, string fishQ)
+    private object SpotDetail(string key, bool dcOnly, string tempSel, string fishQ, string region)
     {
         string lang = Lang;
         Dictionary<string, object> strings = GameData.Strings(lang);
@@ -377,8 +377,8 @@ internal sealed class Api
         List<SpotEvent> evList = new List<SpotEvent>();
         int fetched = 0;
         Dictionary<string, int> dirs = new Dictionary<string, int>();
-        bool filtered = dcOnly || tempSel.Length > 0 || fishQ.Length > 0;
-        List<SpotEvent> spotEvents = filtered ? FilterEvents(s.Events, r => (!dcOnly || IsDc(r)) && (tempSel.Length == 0 || ReportTemp(r) == tempSel) && (fishQ.Length == 0 || FishHit(r, fishQ, lang))) : s.Events;
+        bool filtered = dcOnly || tempSel.Length > 0 || fishQ.Length > 0 || region.Length > 0;
+        List<SpotEvent> spotEvents = filtered ? FilterEvents(s.Events, r => (!dcOnly || IsDc(r)) && RegionHit(r, region) && (tempSel.Length == 0 || ReportTemp(r) == tempSel) && (fishQ.Length == 0 || FishHit(r, fishQ, lang))) : s.Events;
         foreach (SpotEvent e in spotEvents.OrderByDescending(x => x.Last).Take(60))
         {
             List<object> src = new List<object>();
@@ -535,7 +535,8 @@ internal sealed class Api
         bool all = q["all"] == "1";
         bool dc = q["dc"] == "1";
         string tempF = q["temp"] ?? "";
-        bool filtered = dc || tempF.Length > 0 || (q["fish"] ?? "").Length > 0;
+        string region = q["region"] ?? "";
+        bool filtered = dc || tempF.Length > 0 || (q["fish"] ?? "").Length > 0 || region.Length > 0;
         DateTime now = DateTime.UtcNow;
         DateTime since = now.AddHours(-hours);
         List<object> rows = new List<object>();
@@ -543,7 +544,7 @@ internal sealed class Api
         {
             if (s.Last < since) continue;
             if (lakeFilter.Length > 0 && !string.Equals(s.Lake, lakeFilter, StringComparison.OrdinalIgnoreCase)) continue;
-            List<SpotEvent> recent = (filtered ? FilterEvents(s.Events, r => (!dc || IsDc(r)) && (tempF.Length == 0 || ReportTemp(r) == tempF) && (fishFilter.Length == 0 || FishHit(r, fishFilter, lang))) : s.Events).Where(e => e.Last >= since).ToList();
+            List<SpotEvent> recent = (filtered ? FilterEvents(s.Events, r => (!dc || IsDc(r)) && RegionHit(r, region) && (tempF.Length == 0 || ReportTemp(r) == tempF) && (fishFilter.Length == 0 || FishHit(r, fishFilter, lang))) : s.Events).Where(e => e.Last >= since).ToList();
             if (recent.Count == 0) continue;
             List<Report> rr = recent.SelectMany(e => e.Reports).ToList();
             Dictionary<string, int> fish = new Dictionary<string, int>();
@@ -589,6 +590,22 @@ internal sealed class Api
         }
         rows.Sort((a, b) => ((double)((Dictionary<string, object>)a)["hoursAgo"]).CompareTo((double)((Dictionary<string, object>)b)["hoursAgo"]));
         return AppEnv.Obj("hours", hours, "spots", rows, "syncing", Community.Syncing, "synced", Community.Synced == DateTime.MinValue ? "" : Community.Synced.ToString("o", CultureInfo.InvariantCulture));
+    }
+
+    private static string Region(string cc)
+    {
+        switch ((cc ?? "").ToUpperInvariant())
+        {
+            case "DE": case "AT": case "CH": case "LI": case "LU": return "dach";
+            case "RU": case "UA": case "BY": case "KZ": return "ru";
+            case "CN": case "TW": case "HK": return "cn";
+        }
+        return "other";
+    }
+
+    private static bool RegionHit(Report r, string region)
+    {
+        return region.Length == 0 || Region(r.Country) == region;
     }
 
     private static string SourceName(Report r)

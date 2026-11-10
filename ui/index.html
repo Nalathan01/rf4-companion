@@ -344,7 +344,10 @@ dialog.sheet[open] { display: flex; }
           <button data-h="100000" data-t="histAll">Alles</button></div>
           <select id="lakeSel"></select>
           <select id="tempSel" style="display:none"><option value=""></option><option value="cold"></option><option value="normal"></option><option value="warm"></option></select>
+          <select id="regionSel"><option value=""></option><option value="dach"></option><option value="ru"></option><option value="cn"></option><option value="other"></option></select>
           <input class="search" id="actQ" type="search" autocomplete="off" style="flex:1;min-width:140px;margin:0">
+        </div>
+        <div class="filters" style="margin-top:-4px">
           <label class="chk"><input type="checkbox" id="allChk"> <span data-t="includeNoSetup">Auch Fänge ohne Montage</span></label>
           <label class="chk"><input type="checkbox" id="dcChk"> <span data-t="onlyDiscordBot">Nur Discord-Community</span></label>
           <label class="chk logonly"><input type="checkbox" id="ownChk"> <span data-t="ownSpotsLayer">Eigene Spots</span></label>
@@ -800,11 +803,12 @@ function tempOn() { return TEMP_LAKES.includes(LAKE); }
 function tempVis() { $("tempSel").style.display = tempOn() ? "" : "none"; }
 $("lakeSel").onchange = () => { LAKE = $("lakeSel").value; SEL = null; tempVis(); loadActive(); };
 $("tempSel").onchange = () => { DETAIL_KEY = null; loadActive(); };
+$("regionSel").onchange = () => { DETAIL_KEY = null; loadActive(); };
 $("allChk").onchange = () => loadActive();
 $("dcChk").onchange = () => { if ($("dcChk").checked) $("ownChk").checked = false; DETAIL_KEY = null; loadActive(); };
 function actParams() {
   const q = $("actQ").value.trim();
-  return ($("dcChk").checked ? "&dc=1" : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + (q.length >= 2 ? "&fish=" + encodeURIComponent(q) : "");
+  return ($("dcChk").checked ? "&dc=1" : "") + ($("regionSel").value ? "&region=" + $("regionSel").value : "") + (tempOn() && $("tempSel").value ? "&temp=" + $("tempSel").value : "") + (q.length >= 2 ? "&fish=" + encodeURIComponent(q) : "");
 }
 let FISHQ_T = 0;
 function setFishQ(raw) {
@@ -871,6 +875,8 @@ function findStatic() {
   $("actQ").placeholder = T("histSearch", "Fisch suchen");
   const ts = $("tempSel").options;
   ts[0].textContent = T("tempAll", "Alle Temperaturen"); ts[1].textContent = T("temp_cold", "Kalt"); ts[2].textContent = T("temp_normal", "Normal"); ts[3].textContent = T("temp_warm", "Warm");
+  const rs = $("regionSel").options;
+  rs[0].textContent = T("regionAll", "Alle Regionen"); rs[1].textContent = T("regionDach", "Deutschsprachig"); rs[2].textContent = T("regionRu", "Russland und Nachbarn"); rs[3].textContent = T("regionCn", "China"); rs[4].textContent = T("regionOther", "Weitere");
   tempVis();
 }
 async function loadFind() {
