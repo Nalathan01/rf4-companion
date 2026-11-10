@@ -207,6 +207,9 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .tbl select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 2px 6px; min-width: 0; font-size: 12.5px; }
 .pend-wrap { max-height: 260px; overflow-y: auto; }
 .log-split { grid-template-columns: minmax(480px, 1.5fr) minmax(380px, 1fr); }
+.hdr.fold { cursor: pointer; user-select: none; margin-top: 26px; }
+.hdr.fold:hover { color: var(--ink); }
+#logGroups.closed { display: none; }
 .grp { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 15px; }
 .grp-head { display: flex; justify-content: space-between; gap: 10px; cursor: pointer; align-items: baseline; }
 .grp-head b { font-size: 14.5px; }
@@ -363,15 +366,16 @@ dialog.sheet[open] { display: flex; }
           <input class="search" id="logQ" type="search" autocomplete="off" style="flex:1;margin:0;min-width:200px">
           <select id="logLake"></select>
         </div>
+        <div class="hdr" data-t="logMySpots">Meine Spots</div>
+        <div class="mini-cards" id="logSpots"></div>
+        <div class="hdr fold" id="logCatchHead"></div>
         <div class="cards" id="logGroups"></div>
       </div>
       <div class="col">
-        <div class="hdr" style="margin-top:6px" data-t="logStats">Statistik</div>
-        <div id="logStats"></div>
-        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logMySpots">Meine Spots</div><button class="btn" id="addSpot">＋ <span data-t="wizTitle">Spot merken</span></button></div>
-        <div class="mini-cards" id="logSpots" style="margin-top:8px"></div>
-        <div class="title-row" style="margin-top:22px"><div class="hdr" style="margin:0" data-t="logRecipes">Meine Rezepte</div><button class="btn" id="addRecipe">＋ <span data-t="logAddRecipe">Rezept anlegen</span></button></div>
+        <div class="title-row" style="margin-top:6px"><div class="hdr" style="margin:0" data-t="logRecipes">Meine Rezepte</div><button class="btn" id="addRecipe">＋ <span data-t="logAddRecipe">Rezept anlegen</span></button></div>
         <div class="mini-cards" id="logRecipes" style="margin-top:8px"></div>
+        <div class="hdr" style="margin-top:22px" data-t="logStats">Statistik</div>
+        <div id="logStats"></div>
       </div>
     </div>
   </section>
@@ -999,7 +1003,7 @@ function goSpot(lake, key) {
   HOURS = 72; $("hoursSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", +x.dataset.h === 72));
   SEL = key; loadActive();
 }
-let LOG = null, LOGQ = "", LOGLAKE = "", OPEN = new Set(), TRK = null, TRKV = -1;
+let LOG = null, LOGQ = "", LOGLAKE = "", OPEN = new Set(), TRK = null, TRKV = -1, CATCHOPEN = false;
 async function trk(cmd, body) {
   if (!INIT.features.tracker) return;
   try { TRK = await api("/api/tracker/" + cmd, body || {}); } catch (e) { alert(e.message.startsWith("trkNoShot") ? T("trkNoShot", "Der Screenshot dieser Rute ist nicht mehr da.") : e.message); return; }
@@ -1066,8 +1070,9 @@ function renderLog() {
   const L = LOG;
   $("logSub").textContent = (L.spots.length ? T("spotsN", "{0} Spots").replace("{0}", L.spots.length) + " · " : "") + T("logSub", "{0} Fänge an {1} Angeltagen").replace("{0}", L.catches.length).replace("{1}", L.days);
   $("logQ").placeholder = T("logSearch", "Fisch, Köder oder Spot suchen");
-  const lakes = [...new Set(L.catches.map(c => c.lake))];
-  $("logLake").innerHTML = `<option value="">${esc(T("allLakes", "Alle Gewässer"))}</option>` + lakes.map(id => `<option value="${esc(id)}" ${id === LOGLAKE ? "selected" : ""}>${esc((L.catches.find(c => c.lake === id) || {}).lakeName || id)}</option>`).join("");
+  const lakes = [...new Set(L.spots.map(s => s.lake).concat(L.catches.map(c => c.lake)))].filter(Boolean);
+  const lakeName = id => (L.spots.find(s => s.lake === id) || L.catches.find(c => c.lake === id) || {}).lakeName || id;
+  $("logLake").innerHTML = `<option value="">${esc(T("allLakes", "Alle Gewässer"))}</option>` + lakes.map(id => `<option value="${esc(id)}" ${id === LOGLAKE ? "selected" : ""}>${esc(lakeName(id))}</option>`).join("");
   const q = LOGQ.toLowerCase();
   const list = L.catches.filter(c => (!LOGLAKE || c.lake === LOGLAKE) && (!q || [c.fish, c.baits, c.dip, c.pva, c.spotName, c.lakeName, c.notes].join(" ").toLowerCase().includes(q)));
   const groups = new Map();
@@ -1090,13 +1095,19 @@ function renderLog() {
       <div class="line">${fish}${baits}</div>
       <div class="rows"><table class="tbl">${g.items.map(c => `<tr><td>${esc(c.fish)}</td><td class="num">${esc(c.weight)}</td><td>${esc(c.baits)}${c.dip ? `<small>${esc(c.dip)}</small>` : ""}</td><td class="num">${Object.keys(c.images || {}).length ? `<span title="${esc(T("images", "Bilder"))}">📷 ${Object.keys(c.images).length}</span> ` : ""}<button class="act" data-edit="${esc(c.id)}" title="${esc(T("edit", "Bearbeiten"))}">✎</button></td></tr>`).join("")}</table></div>
     </div>`;
-  }).join("") : L.catches.length || L.spots.length ? `<div class="empty">${esc(L.catches.length ? T("logNoMatch", "Nichts gefunden.") : T("logNoCatches", "Noch keine einzelnen Fänge. Die brauchst du nur, wenn du jeden Fisch extra festhalten willst."))}</div>` : `<div class="log-start"><p>${esc(T("logStart", "Du angelst gerade gut? Merk dir den Spot, das Tool führt dich Schritt für Schritt durch."))}</p><button class="btn primary big" id="addSpotEmpty">＋ ${esc(T("wizTitle", "Spot merken"))}</button></div>`;
-  if ($("addSpotEmpty")) $("addSpotEmpty").onclick = () => spotWizard(null);
+  }).join("") : `<div class="empty">${esc(L.catches.length ? T("logNoMatch", "Nichts gefunden.") : T("logNoCatches", "Noch keine einzelnen Fänge. Die brauchst du nur, wenn du jeden Fisch extra festhalten willst."))}</div>`;
+  $("logCatchHead").textContent = (CATCHOPEN ? "▾ " : "▸ ") + T("logCatches", "Einzelne Fänge") + " (" + list.length + ")";
+  $("logCatchHead").style.display = L.catches.length ? "" : "none";
+  $("logCatchHead").onclick = () => { CATCHOPEN = !CATCHOPEN; renderLog(); };
+  $("logGroups").classList.toggle("closed", !CATCHOPEN || !L.catches.length);
   $("logGroups").querySelectorAll(".grp-head").forEach(h => h.onclick = () => { const g = h.parentElement, k = g.dataset.k; OPEN.has(k) ? OPEN.delete(k) : OPEN.add(k); g.classList.toggle("open"); });
   $("logGroups").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => catchDialog(LOG.catches.find(c => c.id === b.dataset.edit)));
-  $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr><th>${esc(T("fish", "Fisch"))}</th><th class="num">${esc(T("count", "Anzahl"))}</th><th class="num">${esc(T("biggest", "Größter"))}</th><th>${esc(T("mostBait", "Meistgenutzter Köder"))}</th></tr>` +
-    L.stats.map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
-  $("logSpots").innerHTML = L.spots.length ? L.spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(spotStats(s))}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div>${Object.keys(s.images || {}).length ? `<div class="thumbs">${IMGK.filter(k => s.images[k[0]]).map(k => `<img src="/img/fb/${esc(s.images[k[0]])}?t=${TOKEN}" title="${esc(T(k[1], k[2]))}" alt="">`).join("")}</div>` : ""}</div>`).join("") : `<div class="empty" style="padding:14px">${esc(T("logNoSpots", "Noch keine eigenen Spots."))}</div>`;
+  $("logStats").innerHTML = L.stats.length ? `<table class="tbl"><tr>${lkTh("logst", 0, T("fish", "Fisch"))}${lkTh("logst", 1, T("count", "Anzahl"), "num")}${lkTh("logst", 2, T("biggest", "Größter"), "num")}${lkTh("logst", 3, T("mostBait", "Meistgenutzter Köder"))}</tr>` +
+    lkSorted("logst", L.stats, [s => s.fish, s => s.n, s => s.max, s => s.bait]).map(s => `<tr><td>${esc(s.fish)}</td><td class="num">${s.n}</td><td class="num">${esc(s.max)}</td><td>${esc(s.bait)}</td></tr>`).join("") + `</table>` : "";
+  lkSortBind("logst", renderLog, $("logStats"));
+  const spots = L.spots.filter(s => (!LOGLAKE || s.lake === LOGLAKE) && (!q || [s.name, s.fish, s.bait, s.bait2, s.dip, s.pva, s.rig, s.lakeName, s.notes].join(" ").toLowerCase().includes(q))).reverse();
+  $("logSpots").innerHTML = spots.length ? spots.map(s => `<div class="mini" data-id="${esc(s.id)}"><div class="top">${esc(s.name || (s.x ? s.x + ":" + s.y : T("logSpotNoName", "Spot")))}<span>${esc(s.lakeName)}${s.x ? " · " + esc(s.x + ":" + s.y) : ""}</span></div><div class="b">${esc([s.bait, s.bait2].filter(Boolean).join(" + "))}${s.dip ? " · " + esc(s.dip) : ""}</div><div class="b" style="color:var(--muted)">${esc(spotStats(s))}${s.nx >= 0 ? ` <button class="act" data-map="${esc(s.id)}" title="${esc(T("showOnMap", "Auf Karte zeigen"))}">⌖</button>` : ""}</div>${Object.keys(s.images || {}).length ? `<div class="thumbs">${IMGK.filter(k => s.images[k[0]]).map(k => `<img src="/img/fb/${esc(s.images[k[0]])}?t=${TOKEN}" title="${esc(T(k[1], k[2]))}" alt="">`).join("")}</div>` : ""}</div>`).join("") : L.spots.length ? `<div class="empty" style="padding:14px">${esc(T("logNoMatch", "Nichts gefunden."))}</div>` : `<div class="log-start"><p>${esc(T("logStart", "Du angelst gerade gut? Merk dir den Spot, das Tool führt dich Schritt für Schritt durch."))}</p><button class="btn primary big" id="addSpotEmpty">＋ ${esc(T("wizTitle", "Spot merken"))}</button></div>`;
+  if ($("addSpotEmpty")) $("addSpotEmpty").onclick = () => spotWizard(null);
   $("logSpots").querySelectorAll(".mini").forEach(m => m.onclick = () => spotWizard(null, LOG.spots.find(s => s.id === m.dataset.id)));
   $("logSpots").querySelectorAll(".thumbs img").forEach(im => im.onclick = e => { e.stopPropagation(); showImg(im.src); });
   $("logSpots").querySelectorAll("[data-map]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = LOG.spots.find(s => s.id === b.dataset.map); showView("active"); $("ownChk").checked = true; LAKE = o.lake; $("lakeSel").value = o.lake; SEL = "own:" + o.id; loadActive(); });
@@ -1444,7 +1455,6 @@ $("dlgCancel").onclick = () => $("dlg").close();
 $("dlgSave").onclick = async () => { try { await DLG.onSave(); $("dlg").close(); if (DLG.keep) return; await loadLog(); if (ownSel()) { DETAIL_KEY = null; drawMap(); loadDetail(); } } catch (e) { $("dlgErr").textContent = errText(e).startsWith("fishMissing") ? T("fishMissing", "Bitte einen Fisch angeben.") : e.message.startsWith("nameMissing") ? T("nameMissing", "Bitte einen Namen angeben.") : e.message; } };
 $("dlgDel").onclick = async () => { if (!confirm(T("confirmDelete", "Wirklich löschen?"))) return; try { await DLG.onDel(); $("dlg").close(); loadLog(); } catch (e) { $("dlgErr").textContent = errText(e); } };
 $("addSpotLog").onclick = () => spotWizard(null);
-$("addSpot").onclick = () => spotWizard(null);
 $("addRecipe").onclick = () => recipeDialog(null);
 $("gear").onclick = e => { e.stopPropagation(); $("menu").classList.toggle("show"); };
 document.addEventListener("click", e => { if (!e.target.closest("#menu")) $("menu").classList.remove("show"); });
@@ -1675,8 +1685,8 @@ function lkTh(id, i, label, cls) {
   const st = LKS[id], on = st && st.i === i;
   return `<th class="sortable ${cls || ""}" data-sid="${id}" data-si="${i}">${esc(label)}${on ? (st.dir > 0 ? " ▲" : " ▼") : ""}</th>`;
 }
-function lkSortBind(id, again) {
-  $("lkBody").querySelectorAll(`th[data-sid="${id}"]`).forEach(h => h.onclick = () => {
+function lkSortBind(id, again, root) {
+  (root || $("lkBody")).querySelectorAll(`th[data-sid="${id}"]`).forEach(h => h.onclick = () => {
     const i = +h.dataset.si, st = LKS[id];
     LKS[id] = st && st.i === i ? { i, dir: -st.dir } : { i, dir: h.classList.contains("num") ? -1 : 1 };
     again();
