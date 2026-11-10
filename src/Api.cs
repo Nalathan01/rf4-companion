@@ -596,11 +596,19 @@ internal sealed class Api
     {
         switch ((cc ?? "").ToUpperInvariant())
         {
-            case "DE": case "AT": case "CH": case "LI": case "LU": return "dach";
-            case "RU": case "UA": case "BY": case "KZ": return "ru";
-            case "CN": case "TW": case "HK": return "cn";
+            case "": return "";
+            case "DE": case "AT": case "CH": case "LI": case "LU": return "DE";
+            case "RU": case "UA": case "BY": case "KZ": case "UZ": case "KG": case "AM": case "AZ": case "GE": case "MD": case "TJ": case "TM": return "RU";
+            case "CN": case "TW": case "HK": case "MO": return "CN";
+            case "FR": case "BE": case "MC": return "FR";
+            case "PL": return "PL";
+            case "JP": return "JP";
+            case "KR": return "KR";
+            case "ID": return "ID";
+            case "US": case "CA": case "MX": case "BR": case "AR": case "CL": case "CO": case "PE": return "US";
+            case "GB": case "IE": case "NL": case "DK": case "SE": case "NO": case "FI": case "IS": case "ES": case "PT": case "IT": case "CZ": case "SK": case "HU": case "RO": case "BG": case "GR": case "HR": case "SI": case "RS": case "BA": case "LT": case "LV": case "EE": case "TR": return "EN";
         }
-        return "other";
+        return "GL";
     }
 
     private static bool RegionHit(Report r, string region)
