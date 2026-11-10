@@ -41,7 +41,12 @@ internal static class Updater
 
     public static string CurrentText
     {
-        get { return Short(Assembly.GetExecutingAssembly().GetName().Version).ToString(); }
+        get { return Text(Mine); }
+    }
+
+    private static Version Mine
+    {
+        get { return Full(Assembly.GetExecutingAssembly().GetName().Version); }
     }
 
     private static string ExePath
@@ -49,9 +54,14 @@ internal static class Updater
         get { return Assembly.GetExecutingAssembly().Location; }
     }
 
-    private static Version Short(Version v)
+    private static Version Full(Version v)
     {
-        return new Version(v.Major, v.Minor, Math.Max(0, v.Build));
+        return new Version(v.Major, v.Minor, Math.Max(0, v.Build), Math.Max(0, v.Revision));
+    }
+
+    private static string Text(Version v)
+    {
+        return v.Revision > 0 ? v.ToString(4) : v.ToString(3);
     }
 
     public static void CleanUp()
@@ -166,9 +176,9 @@ internal static class Updater
         string tag = AppEnv.GetString(rel, "tag_name");
         Version v;
         if (string.IsNullOrEmpty(tag) || !Version.TryParse(tag.TrimStart('v', 'V'), out v)) return;
-        v = Short(v);
-        if (v == Short(Assembly.GetExecutingAssembly().GetName().Version)) currentNotes = AppEnv.GetString(rel, "body");
-        if (v <= Short(Assembly.GetExecutingAssembly().GetName().Version)) return;
+        v = Full(v);
+        if (v == Mine) currentNotes = AppEnv.GetString(rel, "body");
+        if (v <= Mine) return;
         foreach (object o in AppEnv.GetList(rel, "assets"))
         {
             Dictionary<string, object> a = o as Dictionary<string, object>;
@@ -179,7 +189,7 @@ internal static class Updater
             assetUrl = AppEnv.GetString(a, "browser_download_url");
             assetApiUrl = AppEnv.GetString(a, "url");
             notes = AppEnv.GetString(rel, "body");
-            latest = v.ToString();
+            latest = Text(v);
             AppEnv.Log("Update", "Version " + latest + " verfuegbar");
             return;
         }
