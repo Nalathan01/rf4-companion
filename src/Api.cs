@@ -171,6 +171,7 @@ internal sealed class Api
             case "/api/sharekey/register": return Shared.Register(AppEnv.GetString(args, "name"), AppEnv.GetString(args, "cc"));
             case "/api/share/block": return Shared.Block(AppEnv.GetString(args, "id"));
             case "/api/share/report": return Shared.Report(AppEnv.GetString(args, "id"));
+            case "/api/share/rate": return Shared.Rate(AppEnv.GetString(args, "id"), (int)AppEnv.GetDouble(args, "v", 0));
             case "/api/share/remove": return Shared.Remove(AppEnv.GetString(args, "id"));
             case "/api/share/restore": return Shared.Restore(AppEnv.GetString(args, "id"));
             case "/api/share/reports": return Shared.Reports();
@@ -406,7 +407,7 @@ internal sealed class Api
                 if (seenSrc.Add(r.SourceKey))
                 {
                     string[] dc = r.Guild.Length > 0 ? DiscordInfo.ForReport(r) : null;
-                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"), "block", r.Id.StartsWith("adm:", StringComparison.Ordinal) && r.Id.Contains("_") ? r.Id : "", "sid", r.Id.StartsWith("adm:", StringComparison.Ordinal) ? r.Id : "",
+                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"), "block", r.Id.StartsWith("adm:", StringComparison.Ordinal) && r.Id.Contains("_") ? r.Id : "", "sid", r.Id.StartsWith("adm:", StringComparison.Ordinal) ? r.Id : "", "up", (int)AppEnv.GetDouble(r.Raw, "up", 0), "down", (int)AppEnv.GetDouble(r.Raw, "down", 0),
                         "invite", dc != null && dc.Length > 1 ? dc[1] : ""));
                 }
                 string pk = Scans.PostKey(r.Url);

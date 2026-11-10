@@ -130,6 +130,14 @@ internal static class Shared
         return AppEnv.Json.DeserializeObject(Call("report", Key, AppEnv.Obj("id", reportId ?? "")));
     }
 
+    public static object Rate(string reportId, int v)
+    {
+        object r = AppEnv.Json.DeserializeObject(Call("rate", Key, AppEnv.Obj("id", reportId ?? "", "v", v)));
+        lastFetch = DateTime.MinValue;
+        Fetch(true);
+        return r;
+    }
+
     public static object Remove(string reportId)
     {
         object r = AppEnv.Json.DeserializeObject(Call("remove", Key, AppEnv.Obj("id", reportId ?? "")));

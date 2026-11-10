@@ -56,6 +56,9 @@ nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
 
 .btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 14px; cursor: pointer; font-weight: 600; }
 .btn.alert { background: #c0392b; border-color: #c0392b; color: #fff; }
+.rate-bar { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.rate-bar .btn.on { background: var(--accent); border-color: var(--accent); color: #111; }
+.rate-bar .btn span { opacity: 0.8; margin-left: 2px; }
 .adm-bar { margin-top: 10px; padding: 8px 10px; border: 1px dashed #c0392b; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .adm-bar b { color: #e0604f; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; }
 .adm-bar .btn { border-color: #c0392b; }
@@ -679,12 +682,20 @@ async function loadDetail() {
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
       ${(e.setups || []).length > 1 ? e.setups.map((s, n) => `<div class="ev-det"><b>${esc(T("rigL", "Montage"))} ${n + 1}:</b> ${esc(s)} ${e.fromImage ? `<span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}</div>`).join("") : ""}
       ${Object.keys(e.detail).filter(k => k !== "feedUse" && k !== "rig" && !(k === "baitDetail" && (e.setups || []).length > 1)).sort((x, y) => detOrder(x)-detOrder(y)).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
-      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}${INIT.features.admin ? "" : e.sources.filter(s => s.sid).map(s => `<button class="src" data-report="${esc(s.sid)}" ${wasReported(s.sid) ? "disabled" : ""}>⚑ ${esc(wasReported(s.sid) ? T("reported", "Gemeldet") : T("reportSpot", "Melden"))}</button>`).join("")}</div>${INIT.features.admin ? e.sources.filter(s => s.sid).map(s => `<div class="adm-bar"><b>Admin</b><button class="btn small" data-remove="${esc(s.sid)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${s.block ? `<button class="btn small" data-block="${esc(s.block)}" data-name="${esc(s.label)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</div>`).join("") : ""}
+      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
       ${e.postText && e.shared ? `<div class="ev-det"><b>${esc(T("notes", "Notiz"))}:</b> ${esc(e.postText)}</div>` : e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="${esc(e.postLang || "ru")}" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : e.imgs && e.imgs.length ? `<div class="thumbs web">${e.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}
+      ${e.sources.filter(s => s.sid).map(s => shareBar(s)).join("")}
     </div>`).join("");
   document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
-  document.querySelectorAll("#detail .src[data-report]").forEach(b => b.onclick = async () => {
+  document.querySelectorAll("#detail [data-rate]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.rate, v = myVote(id) === +b.dataset.v ? 0 : +b.dataset.v;
+    b.parentElement.querySelectorAll("button[data-rate]").forEach(x => x.disabled = true);
+    try { const r = await api("/api/share/rate", { id, v }); setVote(id, v); const bs = b.parentElement.querySelectorAll("button[data-rate]"); bs[0].querySelector("span").textContent = r.up; bs[1].querySelector("span").textContent = r.down; bs[0].classList.toggle("on", v === 1); bs[1].classList.toggle("on", v === -1); }
+    catch (e) { alert(errText(e)); }
+    b.parentElement.querySelectorAll("button[data-rate]").forEach(x => x.disabled = false);
+  });
+  document.querySelectorAll("#detail [data-report]").forEach(b => b.onclick = async () => {
     if (!confirm(T("reportConfirm", "Diesen Spot als falsch oder unpassend melden?"))) return;
     b.disabled = true;
     try { await api("/api/share/report", { id: b.dataset.report }); markReported(b.dataset.report); b.textContent = "⚑ " + T("reported", "Gemeldet"); alert(T("reportDone", "Danke, der Spot wurde gemeldet.")); }
@@ -865,6 +876,14 @@ $("browserSel").onchange = async () => {
   catch (e) { sel.value = sel.dataset.current; alert(e.message); }
 };
 $("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); histStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); if (HDATA) loadHist(); };
+function myVote(id) { try { return (JSON.parse(localStorage.getItem("votes") || "{}"))[id] || 0; } catch (e) { return 0; } }
+function setVote(id, v) { try { const o = JSON.parse(localStorage.getItem("votes") || "{}"); if (v) o[id] = v; else delete o[id]; localStorage.setItem("votes", JSON.stringify(o)); } catch (e) { } }
+function shareBar(s) {
+  const mv = myVote(s.sid);
+  const user = `<div class="rate-bar"><button class="btn small ${mv === 1 ? "on" : ""}" data-rate="${esc(s.sid)}" data-v="1" title="${esc(T("rateUpHint", "Hier habe ich auch gefangen"))}">👍 ${esc(T("rateUp", "Funktioniert"))} <span>${s.up || 0}</span></button><button class="btn small ${mv === -1 ? "on" : ""}" data-rate="${esc(s.sid)}" data-v="-1" title="${esc(T("rateDownHint", "Hier hat es bei mir nicht geklappt"))}">👎 ${esc(T("rateDown", "Funktioniert nicht"))} <span>${s.down || 0}</span></button>${INIT.features.admin ? "" : `<button class="btn small" data-report="${esc(s.sid)}" ${wasReported(s.sid) ? "disabled" : ""}>⚑ ${esc(wasReported(s.sid) ? T("reported", "Gemeldet") : T("reportSpot", "Melden"))}</button>`}</div>`;
+  const adm = INIT.features.admin ? `<div class="adm-bar"><b>Admin</b><button class="btn small" data-remove="${esc(s.sid)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${s.block ? `<button class="btn small" data-block="${esc(s.block)}" data-name="${esc(s.label)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</div>` : "";
+  return user + adm;
+}
 function wasReported(id) { try { return (JSON.parse(localStorage.getItem("reported") || "[]")).includes(id); } catch (e) { return false; } }
 function markReported(id) { try { const l = JSON.parse(localStorage.getItem("reported") || "[]"); if (!l.includes(id)) l.push(id); localStorage.setItem("reported", JSON.stringify(l.slice(-300))); } catch (e) { } }
 let REPORTS = [];
