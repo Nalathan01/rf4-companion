@@ -56,6 +56,28 @@ internal static class GameData
         return baitSet.Contains(en);
     }
 
+    private static Dictionary<string, string> itemCat;
+
+    public static string ItemCat(string en)
+    {
+        if (string.IsNullOrEmpty(en)) return "";
+        if (itemCat == null)
+        {
+            Dictionary<string, string> m = new Dictionary<string, string>(StringComparer.Ordinal);
+            try
+            {
+                Dictionary<string, object> cats = AppEnv.Json.DeserializeObject(AppEnv.ResourceText("data/itemcats.json") ?? "{}") as Dictionary<string, object>;
+                if (cats != null)
+                    foreach (KeyValuePair<string, object> kv in cats)
+                        foreach (object o in AppEnv.GetList(cats, kv.Key)) if (o != null && !m.ContainsKey(o.ToString())) m[o.ToString()] = kv.Key;
+            }
+            catch (Exception) { }
+            itemCat = m;
+        }
+        string c;
+        return itemCat.TryGetValue(en, out c) ? c : "";
+    }
+
     public static IEnumerable<string> BaitKeys()
     {
         IsBait("x");

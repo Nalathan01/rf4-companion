@@ -336,6 +336,21 @@ internal sealed class Api
         return string.Join(((char)10).ToString(), keep.ToArray()).Trim();
     }
 
+    private static object SeaRig(List<string> parts, string lang)
+    {
+        int p = parts.FindIndex(k => GameData.ItemCat(k) == "pilker");
+        if (p < 0 && !parts.Any(k => GameData.ItemCat(k) == "teaser")) return null;
+        List<string> rest = parts.Skip(p + 1).ToList();
+        int f = rest.FindIndex(k => { string c = GameData.ItemCat(k); return c == "fillet" || c == "deadfish" || c == "seanatural"; });
+        int cut = f >= 0 ? f + 1 : Math.Min(1, rest.Count);
+        List<string> main = rest.Take(cut).ToList();
+        List<string> teasers = new List<string>();
+        foreach (string k in rest.Skip(cut)) if (!main.Contains(k) && !teasers.Contains(k)) teasers.Add(k);
+        Func<IEnumerable<string>, string> join = l => string.Join(" + ", l.Select(k => GameData.Translate(k, lang)).ToArray());
+        if (teasers.Count == 0) return null;
+        return AppEnv.Obj("pilker", p >= 0 ? GameData.Translate(parts[p], lang) : "", "main", join(main), "teasers", join(teasers), "teaserCount", teasers.Count);
+    }
+
     private static bool IsShared(Report r)
     {
         return r.Id.StartsWith("adm:", StringComparison.Ordinal);
@@ -499,6 +514,17 @@ internal sealed class Api
                 if (setups.Count > 0) break;
                 foreach (object o in AppEnv.GetList(r.Raw, "setups")) setups.Add(string.Join(" + ", o.ToString().Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries).Select(k => GameData.Translate(k, lang)).ToArray()));
             }
+            object seaRig = null;
+            if (SeaMarks.IsSea(s.Lake))
+                foreach (Report r in e.Reports)
+                {
+                    List<string> parts = new List<string>();
+                    foreach (object o in AppEnv.GetList(r.Raw, "setups"))
+                        foreach (string k in o.ToString().Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries)) parts.Add(k.Trim());
+                    if (parts.Count == 0) parts.AddRange(r.S("baitDetail").Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries).Select(k => k.Trim()));
+                    seaRig = SeaRig(parts, lang);
+                    if (seaRig != null) break;
+                }
             List<string> fish = new List<string>();
             Dictionary<string, HashSet<string>> evCc = new Dictionary<string, HashSet<string>>();
             foreach (Report r in e.Reports) foreach (string f in r.Fish) { string n = GameData.Translate(f, lang); if (!fish.Contains(n)) fish.Add(n); AddCc(evCc, n, r.Country); }
@@ -509,7 +535,7 @@ internal sealed class Api
             Dictionary<string, object> eo = AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "fishCc", fish.Select(n => (object)Cc(evCc, n)).ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "setups", setups.ToArray(), "postText", StripFooter(postText), "postLang", postLang, "shared", e.Reports.Any(r => r.Id.StartsWith("adm:", StringComparison.Ordinal)), "temp", temp, "fromImage", fromImage, "mixed", mixed,
+                "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "setups", setups.ToArray(), "seaRig", seaRig, "postText", StripFooter(postText), "postLang", postLang, "shared", e.Reports.Any(r => r.Id.StartsWith("adm:", StringComparison.Ordinal)), "temp", temp, "fromImage", fromImage, "mixed", mixed,
                 "record", rec == null ? null : AppEnv.Obj("table", GameData.Ui(lang, "table_" + rec.Table, rec.Table), "region", rec.Region, "date", rec.Date));
             events.Add(eo);
             evObjs.Add(eo);
