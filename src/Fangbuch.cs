@@ -397,8 +397,8 @@ internal static class Fangbuch
     }
 
     private static readonly HashSet<string> BaseItems = new HashSet<string>(new string[] {
-        "Ground Crackers", "Corn flour", "Hempseed flour", "Ground peas", "Oat flakes", "Wheat bran", "Rye bran", "Feed", "Breadcrumbs",
-        "Bread crumbs" }, StringComparer.Ordinal);
+        "Corn flour", "Rape Seed", "Ground peas", "Sunflower seed", "Flaxseed", "Rye bran", "Wheat bran", "Ground Crackers", "Oat flakes",
+        "Hempseed flour", "Feed", "Semolina", "Pearl barley" }, StringComparer.Ordinal);
     private static readonly HashSet<string> AromaItems = new HashSet<string>(new string[] {
         "Honey", "Hempseed Oil", "Linseed Oil", "Anise Oil", "Fish Oil", "Vanilla", "Coriander", "Cinnamon", "Fennel", "Garlic", "Caramel",
         "Sunflower Oil", "Strawberry", "Salmon", "Caviar smell", "Black pepper", "Crab and mussels", "Bitter almond", "Nut mixture", "Cream",
@@ -406,10 +406,10 @@ internal static class Fangbuch
         "Earthworm extract", "Ripe pear", "Tutti Frutti", "Citrus Mix", "Mango", "Pineapple", "Atlantic tuna", "Halibut oil", "Mussel sauce",
         "Red krill", "Smoked sausages", "Blackberry jam", "Mulberry", "Raspberry", "Cranberry & Spices", "Cherry Liquor", "Black currant",
         "Amino acids", "Tiger nut extract", "Coconut cream", "Caramel peach", "Salmon oil", "Strawberry and spice", "Vanilla cream", "Spicy garlic",
-        "Allspice", "Amino acid", "Tuna oil" }, StringComparer.Ordinal);
+        "Allspice", "Amino acid", "Tuna oil", "Spices" }, StringComparer.Ordinal);
     private static readonly HashSet<string> AddItems = new HashSet<string>(new string[] {
-        "Flaxseed", "Sunflower seed", "Casters", "Maggots", "Corn", "Clay", "Peas", "Chopped worm", "Millet Porridge", "Pellets", "Biscuit",
-        "Cookies", "Zebra mussels", "Pumpkin seed", "Rape Seed", "Dried Krill", "Wheat Grains", "Chicken egg", "Rice", "Powdered milk",
+        "Casters", "Maggots", "Corn", "Clay", "Peas", "Chopped worm", "Millet Porridge", "Pellets", "Biscuit",
+        "Cookies", "Zebra mussels", "Pumpkin seed", "Dried Krill", "Wheat Grains", "Chicken egg", "Rice", "Powdered milk",
         "Condensed milk", "Hemp seeds", "Corn seeds", "Wheat seeds", "Shelled peas" }, StringComparer.Ordinal);
 
     public static object ItemNames(string lang)
@@ -446,7 +446,7 @@ internal static class Fangbuch
         HashSet<string> fishNames = new HashSet<string>(fish.Select(f => GameData.Translate(f, lang)), StringComparer.OrdinalIgnoreCase);
         foreach (string k in all)
         {
-            if (dips.Contains(k) || fish.Contains(k) || fishNames.Contains(GameData.Translate(k, lang)) || Regex.IsMatch(k, @"(?i)\breel\b|\bdip\b|^(groundbait|dry mix|ready-made groundbait|bream mix|press cake)$|\(large bag\)")) continue;
+            if (dips.Contains(k) || fish.Contains(k) || fishNames.Contains(GameData.Translate(k, lang)) || Regex.IsMatch(k, @"(?i)\breel\b|\bdip\b|^(groundbait|dry mix|ready-made groundbait|bream mix|press cake|breadcrumbs|bread crumbs)$|\(large bag\)")) continue;
             int slot;
             if (BaseItems.Contains(k)) slot = 0;
             else if (AromaItems.Contains(k)) slot = 2;

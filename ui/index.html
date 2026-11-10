@@ -686,7 +686,7 @@ function acClose() { if (AC) { AC.box.remove(); AC = null; } }
 function acShow(inp) {
   const q = inp.value.trim().toLowerCase();
   const kind = /Base$/.test(inp.id) ? "base" : /Attr$/.test(inp.id) ? "aroma" : "add";
-  const list = ((ITEMS || {})[kind] || []).filter(x => !q || x.toLowerCase().includes(q)).slice(0, 80);
+  const list = ((ITEMS || {})[kind] || []).filter(x => !q || x.toLowerCase().includes(q));
   acClose();
   if (!list.length || (list.length === 1 && list[0].toLowerCase() === q)) return;
   const box = document.createElement("div");
