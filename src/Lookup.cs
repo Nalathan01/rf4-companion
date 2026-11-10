@@ -23,6 +23,23 @@ internal static class Lookup
                 int b;
                 if (f.Length > 0 && w > 0 && GameData.Plausible(f, w) && (!best.TryGetValue(f, out b) || w > b)) best[f] = w;
             }
+        IEnumerable sp = UserStore.Get("spots") as IEnumerable;
+        if (sp != null)
+            foreach (object o in sp)
+            {
+                Dictionary<string, object> s = o as Dictionary<string, object>;
+                IEnumerable net = s != null && s.ContainsKey("net") ? s["net"] as IEnumerable : null;
+                if (net == null) continue;
+                foreach (object n in net)
+                {
+                    Dictionary<string, object> c = n as Dictionary<string, object>;
+                    if (c == null) continue;
+                    string f = AppEnv.GetString(c, "fish");
+                    int w = (int)AppEnv.GetDouble(c, "max", 0);
+                    int b;
+                    if (f.Length > 0 && w > 0 && GameData.Plausible(f, w) && (!best.TryGetValue(f, out b) || w > b)) best[f] = w;
+                }
+            }
         return best;
     }
 
