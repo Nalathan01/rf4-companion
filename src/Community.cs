@@ -119,6 +119,19 @@ internal static class Community
             return;
         }
         SeaMark near = SeaMarks.Nearest(r.Lake, r.X, r.Y);
+        if (near == null)
+        {
+            Match tm = Regex.Match(AppEnv.GetString(raw, "text"), @"(\d{2,3})\s*坑");
+            SeaMark named = tm.Success ? SeaMarks.Pit(int.Parse(tm.Groups[1].Value, CultureInfo.InvariantCulture)) : null;
+            if (named != null)
+            {
+                r.X = (int)Math.Round(named.X);
+                r.Y = (int)Math.Round(named.Y);
+                raw["x"] = r.X;
+                raw["y"] = r.Y;
+                near = named;
+            }
+        }
         if (near != null && c.Length > 0 && c == near.Depth.ToString(CultureInfo.InvariantCulture)) raw["clip"] = null;
     }
 
