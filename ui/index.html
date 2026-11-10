@@ -673,11 +673,17 @@ async function loadDetail() {
       <div class="ev-facts">${e.clip ? `<span>Clip ${esc(e.clip)} m</span>` : ""}${e.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(e.depth)} m</span>` : ""}${e.dir ? `<span>${esc(T("castDir", "Wurfrichtung"))} ${esc(e.dir)}</span>` : ""}${e.temp ? `<span>${esc(T("temperature", "Wassertemperatur"))}: ${esc(e.temp)}</span>` : ""}</div>
       ${(e.setups || []).length > 1 ? e.setups.map((s, n) => `<div class="ev-det"><b>${esc(T("rigL", "Montage"))} ${n + 1}:</b> ${esc(s)} ${e.fromImage ? `<span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}</div>`).join("") : ""}
       ${Object.keys(e.detail).filter(k => k !== "feedUse" && k !== "rig" && !(k === "baitDetail" && (e.setups || []).length > 1)).sort((x, y) => detOrder(x)-detOrder(y)).map(k => `<div class="ev-det"><b>${esc(T(DET[k] || k, k))}:</b> ${esc(e.detail[k])}${e.fromImage && (k === "baitDetail" || k === "dip") ? ` <span class="fromimg">${esc(T("fromImage", "aus Bild"))}</span>` : ""}${e.record && k === "baitDetail" ? ` <span class="fromimg" title="${esc(e.record.table + " · " + e.record.region + " · " + e.record.date)}">${esc(T("fromRecords", "laut Rekordliste"))} · ${esc(e.record.table)} ${esc(e.record.region)}</span>` : ""}</div>`).join("")}
-      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
+      <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}${INIT.features.admin ? e.sources.filter(s => s.block).map(s => `<button class="src" data-block="${esc(s.block)}" data-name="${esc(s.label)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>`).join("") : ""}</div>
       ${e.postText && e.shared ? `<div class="ev-det"><b>${esc(T("notes", "Notiz"))}:</b> ${esc(e.postText)}</div>` : e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="${esc(e.postLang || "ru")}" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : e.imgs && e.imgs.length ? `<div class="thumbs web">${e.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}
     </div>`).join("");
   document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
+  document.querySelectorAll("#detail .src[data-block]").forEach(b => b.onclick = async () => {
+    if (!confirm(T("blockConfirm", "{0} sperren und alle geteilten Spots dieses Nutzers entfernen?").replace("{0}", b.dataset.name))) return;
+    busyOv(-1, T("blocking", "Nutzer wird gesperrt …"));
+    try { const r = await api("/api/share/block", { id: b.dataset.block }); busyOv(null); alert(T("blockDone", "{0} gesperrt, {1} Spots entfernt.").replace("{0}", r.name || b.dataset.name).replace("{1}", r.removed)); DETAIL_KEY = null; loadActive(); }
+    catch (e) { busyOv(null); alert(errText(e)); }
+  });
   document.querySelectorAll("#detail .thumbs.web img").forEach(im => {
     im.onerror = () => im.remove();
     im.onclick = () => { showImg(im.src); };
@@ -840,6 +846,8 @@ $("browserSel").onchange = async () => {
   catch (e) { sel.value = sel.dataset.current; alert(e.message); }
 };
 $("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); histStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); if (HDATA) loadHist(); };
+const SHARE_CC = ["DE", "AT", "CH", "PL", "FR", "BE", "NL", "GB", "IE", "IT", "ES", "PT", "CZ", "SK", "HU", "RO", "SE", "NO", "DK", "FI", "US", "CA", "BR", "RU", "UA", "BY", "KZ", "CN", "TW", "JP", "KR", "ID", "TR"];
+function ccName(c) { try { return new Intl.DisplayNames([INIT.lang], { type: "region" }).of(c); } catch (e) { return c; } }
 function busyOv(pct, text) {
   const host = $("dlg").open ? $("dlg") : document.body;
   let o = $("busyOv");
@@ -1494,7 +1502,8 @@ const MENU = {
        <label class="wide">${esc(T("trackerGameLang", "Spielsprache"))}<select id="gLang">${d.langs.map(l => `<option value="${esc(l)}" ${l === d.lang ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>` : ""}
        <div style="grid-column:1/3"><div class="hdr" style="${d ? "" : "margin-top:0"}">${esc(T("shareSection", "Spots teilen"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("shareKeyHint", "Mit einem persönlichen Schlüssel kannst du eigene Spots für alle Nutzer des Tools teilen. Den Schlüssel bekommst du von Nalathan."))}</p>
        <div style="display:flex;gap:8px;align-items:flex-end"><label style="flex:1">${esc(T("shareKeyLabel", "Persönlicher Schlüssel"))}<input id="gKey" value="${esc(sk.key || "")}" placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></label><button class="btn small" id="gKeyBtn">${esc(T("shareKeySave", "Prüfen und speichern"))}</button></div>
-       <div class="sub" id="gKeyState" style="margin-top:6px"></div><button class="btn small" id="gKeyReq" style="margin-top:6px">${esc(T("shareRequest", "Freischaltung beantragen"))}</button></div>
+       <div class="sub" id="gKeyState" style="margin-top:6px"></div>
+       <div id="gReg" style="display:flex;gap:8px;align-items:flex-end;margin-top:8px"><label style="flex:1">${esc(T("shareName", "Dein Name für geteilte Spots"))}<input id="gRegName" maxlength="24" autocomplete="off"></label><label>${esc(T("shareCountry", "Land"))}<select id="gRegCc">${SHARE_CC.map(c => `<option value="${c}" ${c === (sk.cc || "DE") ? "selected" : ""}>${esc(ccName(c))}</option>`).join("")}</select></label><button class="btn small primary" id="gRegBtn">${esc(T("shareUnlock", "Freischalten"))}</button></div></div>
        <div style="grid-column:1/3"><div class="hdr">${esc(T("backupSection", "Daten sichern"))}</div><p class="sub" style="margin:0 0 8px">${esc(T("backupHint", "Sichert Fangbuch, Spots, Rezepte, Bilder und Einstellungen in eine Datei. Mit Importieren holst du sie auf einem neuen PC oder Zweitgerät zurück. Vorhandene Einträge bleiben erhalten."))}</p>
        <div style="display:flex;gap:8px"><button class="btn small" id="gExport">${esc(T("backupExport", "Exportieren"))}</button><button class="btn small" id="gImport">${esc(T("backupImport", "Importieren"))}</button><input type="file" id="gImportFile" accept=".zip" style="display:none"></div>
        <div class="sub" id="gBackupState" style="margin-top:6px"></div></div>
@@ -1506,9 +1515,8 @@ const MENU = {
     let cur = sk;
     const keyState = k => {
       cur = k;
-      $("gKeyState").textContent = k.name ? "✓ " + T("shareKeyOk", "Freigeschaltet als {0} ({1})").replace("{0}", k.name).replace("{1}", k.cc) : k.code ? T("shareWaiting", "Wartet auf Freischaltung. Sobald Nalathan zugestimmt hat, hier auf »Prüfen und speichern« klicken.") : k.key ? T("shareBadKey", "Schlüssel ungültig oder gesperrt.") : "";
-      $("gKeyReq").style.display = k.name ? "none" : "";
-      $("gKeyReq").textContent = k.code ? T("shareRequestAgain", "Formular erneut öffnen") : T("shareRequest", "Freischaltung beantragen");
+      $("gKeyState").textContent = k.name ? "✓ " + T("shareKeyOk", "Freigeschaltet als {0} ({1})").replace("{0}", k.name).replace("{1}", k.cc) : T("shareUnlockHint", "Namen und Land eintragen, dann »Freischalten«. Danach kannst du sofort teilen.");
+      $("gReg").style.display = k.name ? "none" : "flex";
       if (k.key !== undefined) $("gKey").value = k.key || "";
     };
     keyState(sk);
@@ -1533,14 +1541,15 @@ const MENU = {
       } catch (e) { $("gBackupState").textContent = T(errText(e), errText(e)); }
       $("gImportFile").value = "";
     };
-    $("gKeyReq").onclick = async () => {
-      let k = cur;
-      if (!k.code) { if (!confirm(T("shareRequestConfirm", "Das Tool erzeugt jetzt deinen persönlichen Schlüssel und öffnet ein GitHub Formular. Dafür brauchst du ein kostenloses GitHub Konto. Weiter?"))) return; k = await api("/api/sharekey/new", {}); keyState(k); }
-      if (k.url) api("/api/open", { url: k.url });
+    $("gRegBtn").onclick = async () => {
+      $("gRegBtn").disabled = true;
+      try { const k = await api("/api/sharekey/register", { name: $("gRegName").value.trim(), cc: $("gRegCc").value }); INIT.features.share = !!k.name; INIT.features.admin = !!k.admin; keyState(k); }
+      catch (e) { $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
+      $("gRegBtn").disabled = false;
     };
     $("gKeyBtn").onclick = async () => {
       $("gKeyBtn").disabled = true;
-      try { const k = await api("/api/sharekey", { key: $("gKey").value.trim().toUpperCase() }); INIT.features.share = !!k.name; keyState(k); }
+      try { const k = await api("/api/sharekey", { key: $("gKey").value.trim().toUpperCase() }); INIT.features.share = !!k.name; INIT.features.admin = !!k.admin; keyState(k); }
       catch (e) { $("gKeyState").textContent = T(errText(e).split(":")[0], errText(e)); }
       $("gKeyBtn").disabled = false;
     };

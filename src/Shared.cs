@@ -63,8 +63,6 @@ internal static class Shared
     private static string failedKey;
     private static DateTime failedAt;
 
-    private const string Form = "https://github.com/Nalathan01/rf4-companion/issues/new?template=share-key.yml&code=";
-
     private static string Code(string key)
     {
         if (!System.Text.RegularExpressions.Regex.IsMatch(key, "^[A-Z0-9]{4}(-[A-Z0-9]{4}){4}$")) return "";
@@ -75,7 +73,7 @@ internal static class Shared
     private static object Status(string key, Dictionary<string, object> me)
     {
         string code = Code(key);
-        return AppEnv.Obj("key", key, "name", me != null ? AppEnv.GetString(me, "name") : "", "cc", me != null ? AppEnv.GetString(me, "cc") : "", "code", code, "url", code.Length > 0 ? Form + code : "");
+        return AppEnv.Obj("key", key, "name", me != null ? AppEnv.GetString(me, "name") : "", "cc", me != null ? AppEnv.GetString(me, "cc") : "", "code", code, "admin", me != null && AppEnv.GetBool(me, "admin"));
     }
 
     public static object KeyStatus()
@@ -95,6 +93,36 @@ internal static class Shared
         UserStore.Set("shareKey", sb.ToString());
         lock (gate) { checkedKey = null; checkedMe = null; failedKey = null; }
         return Status(sb.ToString(), null);
+    }
+
+    public static object Register(string name, string cc)
+    {
+        string key = Key;
+        if (Code(key).Length == 0) { NewKey(); key = Key; }
+        Call("register", key, AppEnv.Obj("name", name ?? "", "cc", cc ?? ""));
+        lock (gate) { checkedKey = null; checkedMe = null; failedKey = null; }
+        return Status(key, Me(key));
+    }
+
+    public static bool IsAdmin
+    {
+        get
+        {
+            string key = Key;
+            if (key.Length == 0 || !CanShare) return false;
+            Dictionary<string, object> me = Me(key);
+            return me != null && AppEnv.GetBool(me, "admin");
+        }
+    }
+
+    public static object Block(string reportId)
+    {
+        string key = Key;
+        if (key.Length == 0) throw new AppError("shareBadKey", null);
+        Dictionary<string, object> r = AppEnv.Json.DeserializeObject(Call("block", key, AppEnv.Obj("id", reportId ?? ""))) as Dictionary<string, object>;
+        lastFetch = DateTime.MinValue;
+        Fetch(true);
+        return r;
     }
 
     public static object SetKey(string key)

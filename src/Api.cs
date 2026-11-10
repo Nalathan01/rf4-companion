@@ -169,6 +169,8 @@ internal sealed class Api
             case "/api/myspot/save": { object res = Fangbuch.SaveSpot(args ?? new Dictionary<string, object>(), Lang); string sid = AppEnv.GetString(res as Dictionary<string, object>, "id"); if (Shared.CanShare) ThreadPool.QueueUserWorkItem(delegate { Shared.Refresh(sid); }); return res; }
             case "/api/backup/export": return Backup.Export();
             case "/api/sharekey/new": return Shared.NewKey();
+            case "/api/sharekey/register": return Shared.Register(AppEnv.GetString(args, "name"), AppEnv.GetString(args, "cc"));
+            case "/api/share/block": return Shared.Block(AppEnv.GetString(args, "id"));
             case "/api/sharekey": return args == null ? Shared.KeyStatus() : Shared.SetKey(AppEnv.GetString(args, "key"));
             case "/api/myspot/share": if (!Shared.CanShare) break; return Shared.Set(AppEnv.GetString(args, "id"), AppEnv.GetBool(args, "on"), Lang);
             case "/api/myspot/delete": return Fangbuch.Delete("spots", AppEnv.GetList(args, "ids"));
@@ -396,7 +398,7 @@ internal sealed class Api
                 if (seenSrc.Add(r.SourceKey))
                 {
                     string[] dc = r.Guild.Length > 0 ? DiscordInfo.ForReport(r) : null;
-                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"),
+                    src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"), "block", r.Id.StartsWith("adm:", StringComparison.Ordinal) && r.Id.Contains("_") ? r.Id : "",
                         "invite", dc != null && dc.Length > 1 ? dc[1] : ""));
                 }
                 string pk = Scans.PostKey(r.Url);
@@ -519,7 +521,7 @@ internal sealed class Api
             lakes.Add(AppEnv.Obj("id", l.Id, "name", l.Name(lang), "map", l.HasBounds && l.MapKey.Length > 0 ? "/maps/" + l.MapKey + ".jpg" : "",
                 "b", new double[] { l.XMin, l.XMax, l.YSouth, l.YNorth }));
         }
-        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker, "history", Features.BaitHistory, "overlay", Features.Overlay, "share", Shared.CanShare), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
+        return AppEnv.Obj("version", Updater.CurrentText, "features", AppEnv.Obj("log", Features.Log, "tracker", Features.Tracker, "history", Features.BaitHistory, "overlay", Features.Overlay, "share", Shared.CanShare, "admin", Shared.IsAdmin), "lang", lang, "langs", GameData.Languages(), "strings", GameData.Strings(lang), "lakes", lakes,
             "reports", Community.Count);
     }
 
