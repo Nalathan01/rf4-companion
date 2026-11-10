@@ -1587,9 +1587,9 @@ const MENU = {
       $("gKeyState").innerHTML = on ? "✓ " + esc(T("shareUnlockedAs", "Freigeschaltet als {0}")).replace("{0}", "<b>" + esc(k.name) + "</b>") + " · " + esc(ccName(k.cc)) + (k.admin && !/admin/i.test(k.name) ? " · Admin" : "") : "";
       $("gKeyState").style.display = on ? "" : "none";
       $("gReg").style.display = on ? "none" : "flex";
-      $("gKeyToggle").textContent = on ? T("shareKeyShow", "Schlüssel anzeigen oder ändern") : T("shareHaveKey", "Ich habe schon einen Schlüssel");
+      $("gKeyToggle").textContent = T("shareKeyShow", "Schlüssel anzeigen oder ändern");
       $("gKeyBox").style.display = "none";
-      $("gKeyToggle").style.display = "";
+      $("gKeyToggle").style.display = on ? "" : "none";
       if (k.key !== undefined) $("gKey").value = k.key || "";
     };
     $("gKeyToggle").onclick = () => { $("gKeyBox").style.display = "flex"; $("gKeyToggle").style.display = "none"; $("gKey").focus(); };
