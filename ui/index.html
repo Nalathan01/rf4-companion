@@ -1122,7 +1122,7 @@ async function fillLists(lake) {
   $("dlFish").innerHTML = opt(l.fish); $("dlBait").innerHTML = opt(l.baits); $("dlDip").innerHTML = opt(l.dips); $("dlPva").innerHTML = opt(l.pva); $("dlRig").innerHTML = opt(l.rigs);
 }
 const TECHS = ["float", "bottom", "spin", "marine", "trolling"];
-const IMGK = [["spot", "imgSpot", "Spotbild"], ["net", "imgNet", "Kescherbild"], ["setup", "imgSetup", "Setupbild"], ["feed", "imgFeed", "Futterbild"], ["map", "imgMap", "Kartenbild"], ["other", "imgTrophy", "Trophäe / besonderer Fisch"]];
+const IMGK = [["spot", "imgSpot", "Spotbild"], ["net", "imgNet", "Kescherbild"], ["net2", "imgNet2", "Kescherbild 2"], ["net3", "imgNet3", "Kescherbild 3"], ["setup", "imgSetup", "Setupbild"], ["feed", "imgFeed", "Futterbild"], ["map", "imgMap", "Kartenbild"], ["other", "imgTrophy", "Trophäe / besonderer Fisch"]];
 function feedTypes() { return [["ball", T("feedBall", "Futterbällchen")], ["groundbait", T("groundbaitMix", "Futtermischung")], ["pva", "PVA"]]; }
 function feedType(o) { return o.feedType || (o.pva ? "pva" : ""); }
 function feedFields(p, o) {
@@ -1136,7 +1136,7 @@ let IMGS = {}, IMG_HOOK = null;
 function tempField(id, v, req) { return `<label>${esc(T("temperature", "Temperatur") + (req ? " *" : ""))}<select id="${id}"><option value=""></option>${["cold", "normal", "warm"].map(k => `<option value="${k}" ${k === v ? "selected" : ""}>${esc(T("temp_" + k, k))}</option>`).join("")}</select></label>`; }
 function renderImgs(req) {
   req = req || [];
-  $("fImgs").innerHTML = IMGK.map(k => `<div class="fbimg" data-k="${k[0]}">${IMGS[k[0]] ? `<img src="/img/fb/${esc(IMGS[k[0]])}?t=${TOKEN}" alt=""><button class="x" title="${esc(T("delete", "Löschen"))}">✕</button><button class="rp" title="${esc(T("replace", "Ersetzen"))}">↻</button>` : "+"}<small>${esc(T(k[1], k[2]))}${req.includes(k[0]) ? " *" : ""}</small><input type="file" accept="image/png,image/jpeg,image/webp" hidden></div>`).join("");
+  $("fImgs").innerHTML = IMGK.filter(k => k[0] !== "net2" && k[0] !== "net3" || IMGS[k[0]] || IMGS[k[0] === "net2" ? "net" : "net2"]).map(k => `<div class="fbimg" data-k="${k[0]}">${IMGS[k[0]] ? `<img src="/img/fb/${esc(IMGS[k[0]])}?t=${TOKEN}" alt=""><button class="x" title="${esc(T("delete", "Löschen"))}">✕</button><button class="rp" title="${esc(T("replace", "Ersetzen"))}">↻</button>` : "+"}<small>${esc(T(k[1], k[2]))}${req.includes(k[0]) ? " *" : ""}</small><input type="file" accept="image/png,image/jpeg,image/webp" hidden></div>`).join("");
   $("fImgs").querySelectorAll(".fbimg").forEach(d => {
     const inp = d.querySelector("input"), k = d.dataset.k;
     d.onclick = e => { if (e.target.classList.contains("x")) { delete IMGS[k]; renderImgs(req); return; } if (e.target.tagName === "IMG") { showImg(e.target.src); return; } if (e.target !== inp) inp.click(); };
@@ -1244,8 +1244,8 @@ function wizPrompt() {
   const what = { spot: T("capSpot", "deine Angelstelle, Koordinaten und Temperatur sichtbar"), net: T("capNet", "den Setzkescher öffnen"), setup: T("capSetup", "die Rute im Setup öffnen, ohne eingeblendete Futtermischung"), feed: T("capFeed", "im Setup die Maus über die Futtermischung halten") };
   const why = { net: T("capRetakeNet", "Auf dem letzten Bild war kein Setzkescher zu erkennen."), setup: T("capRetakeSetup", "Die Köder waren nicht lesbar, vermutlich von der Futtermischung verdeckt."), feed: T("capRetakeFeed", "Die Futtermischung war nicht lesbar, vermutlich von den Ködern verdeckt.") };
   el.innerHTML = n
-    ? `<div class="shot-now">📸 ${esc(T("capNow", "Jetzt im Spiel"))}: <b>${esc(what[n.k])}</b>, ${esc(T("capPress", "dann F12 drücken"))}.</div>${n.retake ? `<div class="shot-why">${esc(why[n.k])}</div>` : ""}${n.k === "net" ? `<div class="shot-wait">${esc(T("capNetMarket", "Noch besser: der Fischmarkt mit allen Fischen in der Verkaufsliste, dann wird auch der Erlös erkannt."))}</div>` : ""}${WIZ.watchDir ? `<div class="shot-wait">${esc(T("capWatching", "Das Tool wartet auf den Screenshot in {0}").replace("{0}", WIZ.watchDir))}</div>` : ""}${n.opt ? `<button class="btn small" id="wNoFeed">${esc(T("capNoFeed", "Ich füttere nicht an"))}</button>` : ""}`
-    : `<div class="shot-now">✓ ${esc(T("capDone", "Alle nötigen Bilder sind da. Weiter mit »Weiter«, ein Kartenbild kannst du noch dazulegen."))}</div>${IMGS.other ? "" : `<div class="shot-wait">${esc(T("capTrophyHint", "Besonderer Fisch oder Trophäe dabei? Öffne seine Fangkarte und drück F12."))}</div>`}${IMGS.map ? "" : `<div class="shot-wait">${esc(T("capMapHint", "Für das Kartenbild die Maus auf den grünen Kreis deiner Position halten, dann stehen die Koordinaten mit drauf."))}</div>`}`;
+    ? `<div class="shot-now">📸 ${esc(T("capNow", "Jetzt im Spiel"))}: <b>${esc(what[n.k])}</b>, ${esc(T("capPress", "dann F12 drücken"))}.</div>${n.retake ? `<div class="shot-why">${esc(why[n.k])}</div>` : ""}${n.k === "net" ? `<div class="shot-wait">${esc(T("capNetMarket", "Noch besser: der Fischmarkt mit allen Fischen in der Verkaufsliste, dann wird auch der Erlös erkannt."))}</div>` : ""}${IMGS.net && !IMGS.net3 && (!n || n.k !== "net") ? `<div class="shot-wait">${esc(T("capNetMore", "Mehr Fische als auf ein Bild passen? Im Kescher weiterscrollen und nochmal F12 drücken, doppelte Fische zählen nur einmal."))}</div>` : ""}${WIZ.watchDir ? `<div class="shot-wait">${esc(T("capWatching", "Das Tool wartet auf den Screenshot in {0}").replace("{0}", WIZ.watchDir))}</div>` : ""}${n.opt ? `<button class="btn small" id="wNoFeed">${esc(T("capNoFeed", "Ich füttere nicht an"))}</button>` : ""}`
+    : `<div class="shot-now">✓ ${esc(T("capDone", "Alle nötigen Bilder sind da. Weiter mit »Weiter«, ein Kartenbild kannst du noch dazulegen."))}</div>${IMGS.net && !IMGS.net3 ? `<div class="shot-wait">${esc(T("capNetMore", "Mehr Fische als auf ein Bild passen? Im Kescher weiterscrollen und nochmal F12 drücken, doppelte Fische zählen nur einmal."))}</div>` : ""}${IMGS.other ? "" : `<div class="shot-wait">${esc(T("capTrophyHint", "Besonderer Fisch oder Trophäe dabei? Öffne seine Fangkarte und drück F12."))}</div>`}${IMGS.map ? "" : `<div class="shot-wait">${esc(T("capMapHint", "Für das Kartenbild die Maus auf den grünen Kreis deiner Position halten, dann stehen die Koordinaten mit drauf."))}</div>`}`;
   if ($("wNoFeed")) $("wNoFeed").onclick = () => { WIZ.noFeed = true; wizPrompt(); };
 }
 function wizInfo() {
@@ -1261,7 +1261,7 @@ function wizApply(kind, a) {
     const top = a.fish.slice(0, 3), total = a.fish.reduce((n, f) => n + f.n, 0);
     if (!v.fish || v.fishAuto !== false) { v.fish = top.map(f => f.name).join(", "); v.fishAuto = true; }
     got.push(top.map(f => (f.n > 1 ? f.n + "× " : "") + f.name).join(", ") + (a.fish.length > 3 ? " · " + T("fishTotal", "{0} Fische gesamt").replace("{0}", total) : ""));
-    if (a.minutes) { WIZ.stats = { minutes: a.minutes, count: total, money: a.money || 0 }; got.push(T("fishTime", "Angelzeit") + " " + fmtMinutes(a.minutes)); }
+    if (a.minutes) { const o = /^net/.test(kind) && WIZ.stats || {}; WIZ.stats = { minutes: Math.max(a.minutes, o.minutes || 0), count: Math.max(total, o.count || 0), money: Math.max(a.money || 0, o.money || 0) }; got.push(T("fishTime", "Angelzeit") + " " + fmtMinutes(a.minutes)); }
     if (a.money) got.push(T("revenue", "Erlös") + " " + a.money.toLocaleString(INIT.lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   }
   if (a.x && a.y) { if (!v.x) { v.x = a.x; v.y = a.y; } got.push(a.x + ":" + a.y); }
@@ -1305,7 +1305,8 @@ async function wizPoll() {
       WIZ.busy--;
       if (!res || !WIZ || WIZ.v !== v) continue;
       const need = wizNeed(), kind = res.analysis.kind;
-      const slot = res.analysis.catch ? "other" : kind === "setup" && IMGS.setup && need && need.k === "feed" ? "feed" : SHOT_SLOT[kind] || (!IMGS.spot || (need && need.k === "spot") ? "spot" : "other");
+      const netSlot = !IMGS.net || !WIZ.ana.net || WIZ.ana.net.kind !== "keepnet" ? "net" : !IMGS.net2 ? "net2" : "net3";
+      const slot = res.analysis.catch ? "other" : kind === "keepnet" ? netSlot : kind === "setup" && IMGS.setup && need && need.k === "feed" ? "feed" : SHOT_SLOT[kind] || (!IMGS.spot || (need && need.k === "spot") ? "spot" : "other");
       IMGS[slot] = res.name;
       if ($("fImgs")) renderImgs(IMG_REQ);
       wizApply(slot, res.analysis);

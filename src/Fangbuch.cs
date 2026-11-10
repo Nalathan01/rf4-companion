@@ -10,7 +10,8 @@ internal static class Fangbuch
 {
     private static readonly object gate = new object();
     private static readonly Random rnd = new Random();
-    private static readonly string[] ImgKinds = { "spot", "net", "setup", "feed", "map", "other" };
+    private static readonly string[] ImgKinds = { "spot", "net", "net2", "net3", "setup", "feed", "map", "other" };
+    private static readonly string[] NetKinds = { "net", "net2", "net3" };
     private const int NotesMax = 600;
 
     private static string ImgDir
@@ -198,20 +199,31 @@ internal static class Fangbuch
 
     private static bool FillNet(Dictionary<string, object> s)
     {
-        object nv;
-        Images(s).TryGetValue("net", out nv);
-        string net = (nv ?? "").ToString();
+        Dictionary<string, object> im = Images(s);
+        List<string> files = NetKinds.Where(k => im.ContainsKey(k)).Select(k => im[k].ToString()).ToList();
+        string net = string.Join(",", files.ToArray());
         if (s.ContainsKey("net") && S(s, "netImg") == net) return false;
-        List<object> o = new List<object>();
-        string f = Path.Combine(ImgDir, net);
-        if (net.Length > 0 && File.Exists(f))
+        Dictionary<string, int> seen = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (string name in files)
         {
+            string f = Path.Combine(ImgDir, name);
+            if (!File.Exists(f)) continue;
             try
             {
-                foreach (IGrouping<string, TrackItem> g in Tracker.NetItems(f).GroupBy(i => i.Fish))
-                    o.Add(AppEnv.Obj("fish", g.Key, "n", g.Count(), "max", g.Select(i => i.Weight ?? 0).Where(w => GameData.Plausible(g.Key, w)).DefaultIfEmpty(0).Max()));
+                foreach (IGrouping<string, TrackItem> g in Tracker.NetItems(f).GroupBy(i => i.Fish + "|" + (i.Weight ?? -1).ToString(CultureInfo.InvariantCulture)))
+                {
+                    int had;
+                    seen.TryGetValue(g.Key, out had);
+                    seen[g.Key] = Math.Max(had, g.Count());
+                }
             }
-            catch (Exception ex) { AppEnv.Log("Fangbuch", "Kescherbild " + net + ": " + ex.Message); return false; }
+            catch (Exception ex) { AppEnv.Log("Fangbuch", "Kescherbild " + name + ": " + ex.Message); return false; }
+        }
+        List<object> o = new List<object>();
+        foreach (IGrouping<string, KeyValuePair<string, int>> g in seen.GroupBy(p => p.Key.Substring(0, p.Key.LastIndexOf('|'))))
+        {
+            int max = g.Select(p => int.Parse(p.Key.Substring(p.Key.LastIndexOf('|') + 1), CultureInfo.InvariantCulture)).Where(w => w > 0 && GameData.Plausible(g.Key, w)).DefaultIfEmpty(0).Max();
+            o.Add(AppEnv.Obj("fish", g.Key, "n", g.Sum(p => p.Value), "max", max));
         }
         s["net"] = o.ToArray();
         s["netImg"] = net;
