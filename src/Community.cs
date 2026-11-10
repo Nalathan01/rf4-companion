@@ -103,6 +103,36 @@ internal static class Community
         }
     }
 
+    private static void SeaPit(Report r, Dictionary<string, object> raw)
+    {
+        if (!SeaMarks.IsSea(r.Lake) || r.X <= 0) return;
+        string xs = r.X.ToString(CultureInfo.InvariantCulture), c = AppEnv.GetString(raw, "clip");
+        SeaMark near = SeaMarks.Nearest(r.Lake, r.X, r.Y);
+        if (near != null)
+        {
+            if (c.Length > 0 && c == near.Depth.ToString(CultureInfo.InvariantCulture)) raw["clip"] = null;
+            return;
+        }
+        if (r.X > 300) return;
+        if (r.X != r.Y && c != xs) return;
+        SeaMark pit = SeaMarks.Pit(r.X);
+        if (pit == null) { r.X = -1; r.Y = -1; return; }
+        r.X = (int)Math.Round(pit.X);
+        r.Y = (int)Math.Round(pit.Y);
+        raw["x"] = r.X;
+        raw["y"] = r.Y;
+        if (c == xs) raw["clip"] = null;
+    }
+
+    private static bool MisreadSea(Report r)
+    {
+        if (!SeaMarks.IsSea(r.Lake) || !r.Id.StartsWith("di-", StringComparison.Ordinal) || SeaMarks.Nearest(r.Lake, r.X, r.Y) != null) return false;
+        if (AppEnv.GetList(r.Raw, "bait").Cast<object>().Any() || r.S("lure").Length > 0 || r.S("rig").Length > 0) return false;
+        string bd = r.S("baitDetail");
+        Dictionary<string, object> rec = r.Raw.ContainsKey("mrec") ? r.Raw["mrec"] as Dictionary<string, object> : null;
+        return bd.Length == 0 || (rec != null && AppEnv.GetString(rec, "b") == bd);
+    }
+
     private static Report Wrap(Dictionary<string, object> raw)
     {
         if (raw == null) return null;
@@ -113,6 +143,7 @@ internal static class Community
         r.Lake = AppEnv.GetString(raw, "lake");
         r.X = (int)AppEnv.GetDouble(raw, "x", -1);
         r.Y = (int)AppEnv.GetDouble(raw, "y", -1);
+        SeaPit(r, raw);
         DateTimeOffset dto;
         if (DateTimeOffset.TryParse(AppEnv.GetString(raw, "posted"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out dto)) r.Posted = dto.UtcDateTime;
         r.Url = AppEnv.GetString(raw, "url");
@@ -451,7 +482,7 @@ internal static class Community
         Lake l;
         if (!GameData.LakeById.TryGetValue(r.Lake, out l)) return false;
         if (!l.HasBounds) return true;
-        if (SeaMarks.OnLand(r.Lake, r.X, r.Y)) return false;
+        if (SeaMarks.OnLand(r.Lake, r.X, r.Y) || MisreadSea(r)) return false;
         return r.X >= l.XMin-1 && r.X <= l.XMax + 1 && r.Y >= Math.Min(l.YSouth, l.YNorth)-1 && r.Y <= Math.Max(l.YSouth, l.YNorth) + 1;
     }
 
