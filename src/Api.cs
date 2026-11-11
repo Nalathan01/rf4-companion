@@ -537,7 +537,9 @@ internal sealed class Api
             if (dir.Length > 0) { int n; dirs.TryGetValue(dir, out n); dirs[dir] = n + 1; }
             int imgCount = 0;
             if (imgPost.Length > 0) { string[] im = Scans.Images(imgPost); imgCount = im == null ? -1 : im.Length; }
-            Dictionary<string, object> eo = AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
+            string evPos = string.Join(", ", e.Reports.Select(r => r.X.ToString(CultureInfo.InvariantCulture) + ":" + r.Y.ToString(CultureInfo.InvariantCulture)).Distinct().ToArray());
+            if (evPos == s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture)) evPos = "";
+            Dictionary<string, object> eo = AppEnv.Obj("pos", evPos, "time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "fishCc", fish.Select(n => (object)Cc(evCc, n)).ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
                 "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "setups", setups.ToArray(), "seaRig", seaRig, "rid", rid, "rids", e.Reports.Select(r => (object)Shared.Rid(r.Id)).Distinct().ToArray(), "up", ev[0], "down", ev[1], "postText", StripFooter(postText), "postLang", postLang, "shared", e.Reports.Any(r => r.Id.StartsWith("adm:", StringComparison.Ordinal)), "temp", temp, "fromImage", fromImage, "mixed", mixed,

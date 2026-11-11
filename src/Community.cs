@@ -500,6 +500,11 @@ internal static class Community
         return r.X >= l.XMin-1 && r.X <= l.XMax + 1 && r.Y >= Math.Min(l.YSouth, l.YNorth)-1 && r.Y <= Math.Max(l.YSouth, l.YNorth) + 1;
     }
 
+    private static readonly HashSet<string> BoatWaters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "norwegian_sea", "ladoga_archipelago", "the_amber_lake", "lower_tunguska_river", "yama_river", "ladoga_lake"
+    };
+
     private static List<Spot> BuildSpots(List<Report> all)
     {
         Dictionary<string, List<Report>> byLake = new Dictionary<string, List<Report>>(StringComparer.OrdinalIgnoreCase);
@@ -534,10 +539,11 @@ internal static class Community
             List<List<Report>> groups = new List<List<Report>>(byCoord.Values);
             groups.Sort((a, b) => b.Count.CompareTo(a.Count));
             List<Spot> coordSpots = new List<Spot>();
+            int rad = BoatWaters.Contains(kv.Key) ? 2 : 1;
             foreach (List<Report> g in groups)
             {
                 Spot target = null;
-                foreach (Spot s in coordSpots) if (Math.Abs(s.X-g[0].X) <= 2 && Math.Abs(s.Y-g[0].Y) <= 2) { target = s; break; }
+                foreach (Spot s in coordSpots) if (Math.Abs(s.X-g[0].X) <= rad && Math.Abs(s.Y-g[0].Y) <= rad) { target = s; break; }
                 if (target == null) { target = new Spot(); target.Lake = kv.Key; target.X = g[0].X; target.Y = g[0].Y; coordSpots.Add(target); }
                 target.Reports.AddRange(g);
             }
