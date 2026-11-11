@@ -502,7 +502,7 @@ internal static class Community
 
     private static readonly HashSet<string> BoatWaters = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "norwegian_sea", "ladoga_archipelago", "the_amber_lake", "lower_tunguska_river", "yama_river", "ladoga_lake"
+        "norwegian_sea", "ladoga_archipelago", "lower_tunguska_river", "yama_river", "ladoga_lake"
     };
 
     private static List<Spot> BuildSpots(List<Report> all)
