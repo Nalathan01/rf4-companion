@@ -320,10 +320,74 @@ internal static class Tracker
         OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.89f), 100, false);
         DateTime shot = File.GetLastWriteTime(path);
         List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, shot, times);
+        if (r.Market && r.Total > 0 && r.Total < items.Count)
+        {
+            List<TrackItem> sel = Selected(path, items, r2.F);
+            if (sel != null && sel.Count == r.Total)
+            {
+                foreach (TrackItem it in items.Except(sel).ToList()) times.Remove(it);
+                items = sel;
+            }
+            else AppEnv.Log("Tracker", "Fischmarkt: Auswahl " + r.Total + ", erkannt " + (sel == null ? 0 : sel.Count) + ", alle Fische gezählt");
+        }
         if (times.Count > 0) minutes = (int)Math.Round(shot.Subtract(times.Values.Min()).TotalMinutes);
         minutes = Math.Max(minutes, r2.Lines().Select(l => TrackerParse.AgeMin(l) ?? 0).DefaultIfEmpty(0).Max());
         if (items.Count == 0) items = TrackerParse.Merge(r.Items, TrackerParse.KeepnetItems(r2.Lines(), r2.Boxes, TrackerParse.Lists(code)));
         return items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).ToList();
+    }
+
+    private static bool Green(byte[] px, int i)
+    {
+        int b = px[i], g = px[i + 1], r = px[i + 2];
+        return g > 130 && g-r > 35 && g-b > 70;
+    }
+
+    private static List<TrackItem> Selected(string path, List<TrackItem> items, double f)
+    {
+        byte[] px;
+        int W, H, stride;
+        using (Bitmap src = new Bitmap(path))
+        {
+            W = src.Width; H = src.Height;
+            System.Drawing.Imaging.BitmapData d = src.LockBits(new Rectangle(0, 0, W, H), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            stride = d.Stride;
+            px = new byte[stride * H];
+            System.Runtime.InteropServices.Marshal.Copy(d.Scan0, px, 0, px.Length);
+            src.UnlockBits(d);
+        }
+        int win = Math.Max(8, W / 200), need = win * win * 3 / 10, cell = win;
+        List<Point> ribbons = new List<Point>();
+        HashSet<long> seen = new HashSet<long>();
+        for (int y = (int)(H * 0.1); y < H-win; y += 2)
+            for (int x = (int)(W * 0.14); x < W-win; x += 2)
+            {
+                if (seen.Contains((long)(x / cell) << 32 | (uint)(y / cell)) || !Green(px, y * stride + x * 4)) continue;
+                int n = 0;
+                for (int dy = 0; dy < win; dy++)
+                    for (int dx = 0; dx < win; dx++)
+                        if (Green(px, (y + dy) * stride + (x + dx) * 4)) n++;
+                if (n <= need) continue;
+                ribbons.Add(new Point(x, y));
+                for (int a = -4; a < 6; a++)
+                    for (int b = -4; b < 6; b++)
+                        seen.Add((long)(x / cell + a) << 32 | (uint)(y / cell + b));
+            }
+        int ox = (int)(W * 0.14f), oy = (int)(H * 0.11f);
+        HashSet<TrackItem> sel = new HashSet<TrackItem>();
+        foreach (Point p in ribbons)
+        {
+            TrackItem best = null;
+            double bs = 1e9;
+            foreach (TrackItem it in items)
+            {
+                double sx = ox + it.BX / f, sy = oy + it.BY / f;
+                if (sx >= p.X || sy <= p.Y) continue;
+                double sc = (p.X-sx) + (sy-p.Y);
+                if (sc < bs) { bs = sc; best = it; }
+            }
+            if (best == null || !sel.Add(best)) return null;
+        }
+        return items.Where(sel.Contains).ToList();
     }
 
     public static List<TrackItem> NetItems(string path, Dictionary<TrackItem, DateTime> times, out int total)

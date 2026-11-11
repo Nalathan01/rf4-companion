@@ -8,6 +8,7 @@ internal sealed class TrackItem
 {
     public string Fish;
     public int? Weight;
+    public int BX, BY;
 }
 
 internal sealed class TrackRes
@@ -15,6 +16,7 @@ internal sealed class TrackRes
     public string Kind = "", Fish = "", Dip = "", Pva = "", Rig = "", Tech = "", Lake = "";
     public int? Weight, Total;
     public int X, Y;
+    public bool Market;
     public List<string> Baits = new List<string>();
     public List<TrackItem> Items = new List<TrackItem>();
     public Dictionary<string, object> Recipe;
@@ -546,6 +548,7 @@ internal static class TrackerParse
             List<TrackItem> items = KeepnetItems(lines, geo, lists);
             Match sm = isMarket ? Regex.Match(allText, @"(\d{1,3})\s*(stk|pcs|шт)", I) : Regex.Match(allText, @"(Kapazität|Capacity|Вместимость|Pojemność)\D{0,20}?(\d{1,3})\s*/\s*(\d{2,3})", I);
             if (sm.Success) outR.Total = int.Parse(isMarket ? sm.Groups[1].Value : sm.Groups[2].Value, CultureInfo.InvariantCulture);
+            outR.Market = isMarket;
             if (items.Count > 0) { outR.Kind = "keepnet"; outR.Items = items; return outR; }
         }
         for (int i = 1; i < lines.Length; i++)
@@ -750,7 +753,7 @@ internal static class TrackerParse
                 double sc = (w.Y-a.Y) + dx * 2;
                 if (sc < bs) { bs = sc; age = v; }
             }
-            TrackItem it = new TrackItem { Fish = fish, Weight = grams };
+            TrackItem it = new TrackItem { Fish = fish, Weight = grams, BX = w.X, BY = w.Y };
             if (age != null) times[it] = shot.AddMinutes(-age.Value-0.5);
             cards.Add(it);
         }
