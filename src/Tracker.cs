@@ -378,7 +378,7 @@ internal static class Tracker
                 break;
         }
         int x = r.Kind == "position" ? r.X : 0, y = r.Kind == "position" ? r.Y : 0;
-        if (x == 0)
+        if (x == 0 && r.Kind != "keepnet" && r.Kind != "setup" && r.Kind != "recipe" && r.Kind != "detail")
         {
             int[] hp = TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.925f, 0.87f, 0.055f, 0.075f), 4, false).Lines(), null)
                 ?? TrackerParse.FindPos(Ocr(path, tag, new RectangleF(0.91f, 0.86f, 0.08f, 0.1f), 6, true).Lines(), null);

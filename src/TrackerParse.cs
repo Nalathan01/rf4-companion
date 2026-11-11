@@ -511,10 +511,10 @@ internal static class TrackerParse
         TrackRes outR = new TrackRes();
         string allText = string.Join(" ", lines);
         bool isKeepnetScreen = M(allText, "Setzkescher|Keepnet|Садок|Siatka");
-        bool isDetail = isKeepnetScreen && M(allText, "Fangzeit|Gewässer|Catch time|Waterbody|Время поимки|Водоём");
+        bool isDetail = isKeepnetScreen && M(allText, "Fangzeit|Gewässer|Gefangen|Ort|Catch time|Waterbody|Caught|Location|Время поимки|Водоём|Поймана|Место|Złowion|Lokalizacja|Capturé|Lieu|Capturado|Ubicación|Pescato|Posizione");
         for (int i = 1; i < lines.Length && isDetail; i++)
         {
-            Match m = Regex.Match(lines[i], @"^\s*(Gewicht|Weight|Вес|Waga|Poids|Peso)\s*:\s*([\d\.,]+)\s*(kg|g|кг|г|lb|lbs)", I);
+            Match m = Regex.Match(lines[i], @"^\s*(Gewicht|Masse|Weight|Mass|Вес|Масса|Waga|Masa|Poids|Masse|Peso|Massa)\s*:\s*([\d\.,]+)\s*(kg|g|кг|г|lb|lbs)", I);
             if (!m.Success) continue;
             int? w = Weight(m.Groups[2].Value, m.Groups[3].Value);
             if (w == null) continue;
@@ -699,7 +699,7 @@ internal static class TrackerParse
             if (l.Length < 4 || l.Length > 60 || Regex.IsMatch(l, @"^\d") || M(l, @"\d\s*(kg|g|cm|min)\b")) continue;
             if (MatchLake(l, code).Length > 0) continue;
             NameHit h = Match(l, lists.Items, 0.85);
-            if (h != null && !o.Baits.Contains(h.En)) o.Baits.Add(h.En);
+            if (h != null && h.En != o.Fish && !o.Baits.Contains(h.En)) o.Baits.Add(h.En);
         }
     }
 
