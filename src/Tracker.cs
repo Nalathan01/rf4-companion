@@ -320,15 +320,14 @@ internal static class Tracker
         OcrRead r2 = Ocr(path, tag, new RectangleF(0.14f, 0.11f, 0.845f, 0.89f), 100, false);
         DateTime shot = File.GetLastWriteTime(path);
         List<TrackItem> items = TrackerParse.Cards(r2.Boxes, code, shot, times);
-        if (r.Market && r.Total > 0 && r.Total < items.Count)
+        if (r.Market)
         {
             List<TrackItem> sel = Selected(path, items, r2.F);
-            if (sel != null && sel.Count == r.Total)
-            {
-                foreach (TrackItem it in items.Except(sel).ToList()) times.Remove(it);
-                items = sel;
-            }
-            else AppEnv.Log("Tracker", "Fischmarkt: Auswahl " + r.Total + ", erkannt " + (sel == null ? 0 : sel.Count) + ", alle Fische gezählt");
+            if (r.Total != null && sel.Count != r.Total) AppEnv.Log("Tracker", "Fischmarkt: Auswahl " + r.Total + ", erkannt " + sel.Count);
+            foreach (TrackItem it in items.Except(sel).ToList()) times.Remove(it);
+            items = sel;
+            if (times.Count > 0) minutes = (int)Math.Round(shot.Subtract(times.Values.Min()).TotalMinutes);
+            return items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).ToList();
         }
         if (times.Count > 0) minutes = (int)Math.Round(shot.Subtract(times.Values.Min()).TotalMinutes);
         minutes = Math.Max(minutes, r2.Lines().Select(l => TrackerParse.AgeMin(l) ?? 0).DefaultIfEmpty(0).Max());
