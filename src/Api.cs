@@ -425,7 +425,7 @@ internal sealed class Api
                 {
                     string[] dc = r.Guild.Length > 0 ? DiscordInfo.ForReport(r) : null;
                     src.Add(AppEnv.Obj("label", SourceName(r), "url", r.Linkable || r.Guild.Length > 0 ? r.Url : "", "members", r.SourceKey.StartsWith("dc:"), "block", r.Id.StartsWith("adm:", StringComparison.Ordinal) && r.Id.Contains("_") ? r.Id : "", "sid", r.Id.StartsWith("adm:", StringComparison.Ordinal) ? r.Id : "", "up", (int)AppEnv.GetDouble(r.Raw, "up", 0), "down", (int)AppEnv.GetDouble(r.Raw, "down", 0),
-                        "invite", dc != null && dc.Length > 1 ? dc[1] : ""));
+                        "invite", dc != null && dc.Length > 1 ? dc[1] : "", "fwd", r.S("fwd"), "fwdFrom", FwdFrom(r)));
                 }
                 string pk = Scans.PostKey(r.Url);
                 if (pk.Length > 0)
@@ -679,6 +679,14 @@ internal sealed class Api
                 "imgs", AppEnv.GetList(r.Raw, "imgs").Cast<object>().Take(4).ToArray()));
         }
         return AppEnv.Obj("items", outL.ToArray());
+    }
+
+    private static string FwdFrom(Report r)
+    {
+        string n = r.S("fwdFrom");
+        if (n.Length > 0 || r.S("fwdGuild").Length == 0) return n;
+        string[] w = DiscordInfo.Lookup(r.S("fwdGuild"));
+        return w != null ? w[0] : "";
     }
 
     private static string SourceName(Report r)
