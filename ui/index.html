@@ -479,9 +479,20 @@ async function boot() {
 function fillLakes() {
   $("lakeSel").innerHTML = `<option value="">${esc(T("allLakes", "Alle Gewässer"))}</option>` + INIT.lakes.filter(l => l.map).map(l => `<option value="${l.id}" ${l.id === LAKE ? "selected" : ""}>${esc(l.name)}</option>`).join("");
 }
+let GONE = 0;
+function appGone() {
+  try { window.close(); } catch (e) { }
+  if ($("goneOv")) return;
+  const o = document.createElement("div");
+  o.id = "goneOv";
+  o.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(10,14,18,.92);display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;font-size:18px";
+  o.textContent = T("appEnded", "RF4 Companion wurde beendet. Dieses Fenster kann geschlossen werden.");
+  document.body.appendChild(o);
+}
 async function ping() {
   try {
     const p = await api("/api/ping");
+    GONE = 0;
     if (p.updPct >= 0 && p.updPct < 100) updOverlay(p.updPct, T("updDownloading", "Update wird geladen: {0} %").replace("{0}", p.updPct));
     if (p.updPct >= 100) updOverlay(100, T("updRestarting", "Neustart: Das neue Fenster öffnet sich gleich."));
     if (p.updErr && p.updErr !== UPD_ERR) { UPD_ERR = p.updErr; if ($("updOv")) $("updOv").remove(); alert(T("updFailed", "Update fehlgeschlagen: {0}").replace("{0}", p.updErr)); }
@@ -494,7 +505,7 @@ async function ping() {
     OCRV = p.ocr;
     if (p.tracker !== TRKV) { TRKV = p.tracker; trk("status"); }
     if (p.spot) openSpotKey(p.spot);
-  } catch (e) {}
+  } catch (e) { if (e instanceof TypeError && ++GONE >= 3) appGone(); }
 }
 async function loadActive() {
   if ($("ownChk").checked && !LOG) await loadLog();
