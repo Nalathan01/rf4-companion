@@ -903,10 +903,15 @@ async function loadReports() {
   const b = $("repBtn");
   if (!INIT.features.admin) { b.style.display = "none"; return; }
   try { REPORTS = (await api("/api/share/reports")).items || []; } catch (e) { REPORTS = []; }
-  b.textContent = "⚑ " + T("reportedSpots", "Gemeldete Spots") + " (" + REPORTS.length + ")";
-  b.classList.toggle("alert", REPORTS.length > 0);
+  const n = unseenReports().length;
+  b.textContent = "⚑ " + T("reportedSpots", "Gemeldete Spots") + " (" + n + ")";
+  b.classList.toggle("alert", n > 0);
   b.style.display = "";
 }
+function repSig(r) { return r.id + "|" + (r.n || 0) + "|" + (r.last || "") + "|" + (r.hidden ? 1 : 0); }
+function seenReports() { try { return new Set(JSON.parse(localStorage.getItem("repSeen") || "[]")); } catch (e) { return new Set(); } }
+function unseenReports() { const s = seenReports(); return REPORTS.filter(r => !s.has(repSig(r))); }
+function markReportsSeen() { try { localStorage.setItem("repSeen", JSON.stringify(REPORTS.map(repSig))); } catch (e) { } loadReports(); }
 function reportGroups() {
   const m = new Map();
   for (const r of REPORTS) {
@@ -935,6 +940,8 @@ async function reportsSheet() {
     return `<b>${esc(r.id)}</b>`;
   };
   openSheet(T("reportedSpots", "Gemeldete Spots"), groups.length ? `<table class="tbl" id="repTbl">${groups.map((g, i) => `<tr><td>${title(g)}${detail(g)}${g.ids.length > 1 ? `<small>${esc(T("postsN", "{0} Posts").replace("{0}", g.ids.length))}</small>` : ""}${g.admin ? `<small>${esc(T("removedByAdmin", "von dir gelöscht"))}${g.first.last ? ", " + esc(when(g.first.last)) : ""}</small>` : ""}</td><td>${g.n ? esc(T("reportsN", "{0} Meldungen").replace("{0}", g.n)) : ""}${g.hidden ? (g.n ? " · " : "") + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-gi="${i}" data-act="restore">${esc(T("restoreSpot", "Wieder einblenden"))}</button>${g.admin ? "" : ` <button class="btn small" data-gi="${i}" data-act="remove">🗑 ${esc(T("removeReport", "Meldung löschen"))}</button>`}${g.first.id.includes("_") && g.first.id.startsWith("adm:") ? ` <button class="btn small" data-gi="${i}" data-act="block" data-name="${esc(g.first.author || "")}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
+  if (unseenReports().length) $("sheetBody").insertAdjacentHTML("afterbegin", `<div style="margin-bottom:12px"><button class="btn small primary" id="repSeen">✓ ${esc(T("markSeen", "Alles gesehen"))}</button></div>`);
+  if ($("repSeen")) $("repSeen").onclick = () => { markReportsSeen(); $("repSeen").parentElement.remove(); };
   $("sheetBody").insertAdjacentHTML("beforeend", logHtml);
   $("sheetBody").querySelectorAll("[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
   $("sheetBody").querySelectorAll(".rep-post img").forEach(im => im.onclick = () => showImg(im.src));
