@@ -176,6 +176,7 @@ internal sealed class Api
             case "/api/share/restore": return Shared.Restore(AppEnv.GetString(args, "id"));
             case "/api/share/reports": return Shared.Reports();
             case "/api/share/log": return Shared.AuditLog();
+            case "/api/uistate": return UiState(args);
             case "/api/share/reportinfo": return ReportInfo(args);
             case "/api/sharekey": return args == null ? Shared.KeyStatus() : Shared.SetKey(AppEnv.GetString(args, "key"));
             case "/api/myspot/share": if (!Shared.CanShare) break; return Shared.Set(AppEnv.GetString(args, "id"), AppEnv.GetBool(args, "on"), Lang);
@@ -656,6 +657,26 @@ internal sealed class Api
     private static bool RegionHit(Report r, string region)
     {
         return region.Length == 0 || Region(r.Country) == region;
+    }
+
+    private static readonly object uiGate = new object();
+
+    private static object UiState(Dictionary<string, object> args)
+    {
+        lock (uiGate)
+        {
+            string f = AppEnv.DataPath("ui_state.json");
+            Dictionary<string, object> d = null;
+            try { d = AppEnv.ReadJsonFile(f) as Dictionary<string, object>; } catch (Exception) { }
+            if (d == null) d = new Dictionary<string, object>();
+            string k = AppEnv.GetString(args, "key");
+            if (k.Length > 0 && args != null && args.ContainsKey("value"))
+            {
+                d[k] = args["value"];
+                AppEnv.WriteJsonFile(f, d);
+            }
+            return d;
+        }
     }
 
     private object ReportInfo(Dictionary<string, object> args)
