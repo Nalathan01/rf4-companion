@@ -541,7 +541,8 @@ internal sealed class Api
             evObjs.Add(eo);
             evList.Add(e);
         }
-        return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
+        int[] sv = Shared.Votes("s:" + s.Key);
+        return AppEnv.Obj("rateId", "s:" + s.Key, "up", sv[0], "down", sv[1], "key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
             "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
             "sea", s.Mark != null, "x", s.X, "y", s.Y, "events", events, "totalEvents", spotEvents.Count, "totalReports", filtered ? spotEvents.Sum(x => x.Reports.Count) : s.Reports.Count,
             "dirs", dirs.OrderByDescending(kv => kv.Value).Select(kv => (object)AppEnv.Obj("dir", kv.Key, "n", kv.Value)).ToArray());
@@ -580,6 +581,7 @@ internal sealed class Api
         List<object> rows = new List<object>();
         foreach (Spot s in Community.Spots(all))
         {
+            if (Shared.Hidden(s.Key)) continue;
             if (s.Last < since) continue;
             if (lakeFilter.Length > 0 && !string.Equals(s.Lake, lakeFilter, StringComparison.OrdinalIgnoreCase)) continue;
             List<SpotEvent> recent = (filtered ? FilterEvents(s.Events, r => (!dc || IsDc(r)) && (!sh || IsShared(r)) && RegionHit(r, region) && (tempF.Length == 0 || ReportTemp(r) == tempF) && (fishFilter.Length == 0 || FishHit(r, fishFilter, lang))) : s.Events).Where(e => e.Last >= since).ToList();

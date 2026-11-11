@@ -680,7 +680,7 @@ async function loadDetail() {
   if (SEL !== key) return;
   const dirs = d.dirs.length ? T("castDir", "Wurfrichtung") + ": " + d.dirs.slice(0, 3).map(x => x.dir + (x.n > 1 ? " (" + x.n + ")" : "")).join(", ") : "";
   const sum = T("catchesN", "{0} Fänge").replace("{0}", d.totalEvents) + " · " + T("reportsN", "{0} Meldungen").replace("{0}", d.totalReports);
-  $("detail").innerHTML = `<div class="d-head"><h3>${esc(d.lakeName)} · ${esc(d.name)}</h3><span class="d-sum">${esc(sum)}${dirs ? " · " + esc(dirs) : ""}</span></div>` +
+  $("detail").innerHTML = `<div class="d-head"><h3>${esc(d.lakeName)} · ${esc(d.name)}</h3><span class="d-sum">${esc(sum)}${dirs ? " · " + esc(dirs) : ""}</span></div>${spotBar(d)}` +
     d.events.map((e, i) => `
     <div class="ev">
       <div class="ev-top"><div class="ev-fish">${e.fish.map((n, i) => esc(n) + CC(e.fishCc && e.fishCc[i])).join(", ") || esc((e.mixed ? T("mixedFish", "Verschiedene Fische") : T("unknownFish", "Fisch unbekannt")))}</div><div class="ev-time">${esc(ago(e.hoursAgo))}</div></div>
@@ -691,7 +691,7 @@ async function loadDetail() {
       <div class="ev-src">${e.sources.map(s => s.url ? `<button class="src" data-url="${esc(s.url)}" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""} ↗</button>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}` : `<span class="src off" title="${esc(s.members ? T("discordMembers", "Nur für Mitglieder des Discord-Servers sichtbar") : "")}">${esc(s.label)}${s.members ? " · " + esc(T("membersOnly", "nur Mitglieder")) : ""}</span>${s.invite ? `<button class="src" data-url="${esc(s.invite)}">${esc(T("joinServer", "Server beitreten"))} ↗</button>` : ""}`).join("")}</div>
       ${e.postText && e.shared ? `<div class="ev-det"><b>${esc(T("notes", "Notiz"))}:</b> ${esc(e.postText)}</div>` : e.postText ? `<details class="orig"><summary>${esc(T("origText", "Originaltext"))}</summary><div lang="${esc(e.postLang || "ru")}" translate="yes">${esc(e.postText)}</div><small>${esc(T("translateHint", "Zum Übersetzen Text markieren, Rechtsklick, Übersetzen."))}</small></details>` : ""}
       ${e.imgPost && e.imgCount !== 0 ? `<div class="thumbs" data-post="${esc(e.imgPost)}" data-n="${e.imgCount}"></div>` : e.imgs && e.imgs.length ? `<div class="thumbs web">${e.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}
-      ${e.sources.filter(s => s.sid).map(s => shareBar(s)).join("")}
+      ${INIT.features.admin ? e.sources.filter(s => s.sid).map(s => admBar(s)).join("") : ""}
     </div>`).join("");
   document.querySelectorAll("#detail .src[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
   document.querySelectorAll("#detail [data-rate]").forEach(b => b.onclick = async () => {
@@ -708,7 +708,7 @@ async function loadDetail() {
     catch (e) { b.disabled = false; alert(errText(e)); }
   });
   document.querySelectorAll("#detail [data-remove]").forEach(b => b.onclick = async () => {
-    if (!confirm(T("removeConfirm", "Diesen geteilten Spot für alle löschen?"))) return;
+    if (!confirm(b.dataset.remove.startsWith("s:") ? T("removeSpotConfirm", "Diesen Spot für alle ausblenden?") : T("removeConfirm", "Diesen geteilten Spot für alle löschen?"))) return;
     busyOv(-1, T("removeSpot", "Spot löschen") + " …");
     try { await api("/api/share/remove", { id: b.dataset.remove }); busyOv(null); DETAIL_KEY = null; loadActive(); loadReports(); }
     catch (e) { busyOv(null); alert(errText(e)); }
@@ -884,11 +884,12 @@ $("browserSel").onchange = async () => {
 $("lang").onchange = async () => { ITEMS = null; LOOKUP = null; for (const k in ITEMS_CACHE) delete ITEMS_CACHE[k]; INIT = await api("/api/lang", { lang: $("lang").value }); S = INIT.strings; fillLakes(); applyStrings(); findStatic(); histStatic(); loadActive(); loadFind(); loadLog(); loadBrowsers(); if (HDATA) loadHist(); };
 function myVote(id) { try { return (JSON.parse(localStorage.getItem("votes") || "{}"))[id] || 0; } catch (e) { return 0; } }
 function setVote(id, v) { try { const o = JSON.parse(localStorage.getItem("votes") || "{}"); if (v) o[id] = v; else delete o[id]; localStorage.setItem("votes", JSON.stringify(o)); } catch (e) { } }
-function shareBar(s) {
-  const mv = myVote(s.sid);
-  const user = `<div class="rate-bar"><button class="btn small ${mv === 1 ? "on" : ""}" data-rate="${esc(s.sid)}" data-v="1" title="${esc(T("rateUpHint", "Hier habe ich auch gefangen"))}">👍 ${esc(T("rateUp", "Funktioniert"))} <span>${s.up || 0}</span></button><button class="btn small ${mv === -1 ? "on" : ""}" data-rate="${esc(s.sid)}" data-v="-1" title="${esc(T("rateDownHint", "Hier hat es bei mir nicht geklappt"))}">👎 ${esc(T("rateDown", "Funktioniert nicht"))} <span>${s.down || 0}</span></button>${INIT.features.admin ? "" : `<button class="btn small" data-report="${esc(s.sid)}" ${wasReported(s.sid) ? "disabled" : ""}>⚑ ${esc(wasReported(s.sid) ? T("reported", "Gemeldet") : T("reportSpot", "Melden"))}</button>`}</div>`;
-  const adm = INIT.features.admin ? `<div class="adm-bar"><b>Admin</b><button class="btn small" data-remove="${esc(s.sid)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${s.block ? `<button class="btn small" data-block="${esc(s.block)}" data-name="${esc(s.label)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</div>` : "";
-  return user + adm;
+function admBar(s) {
+  return `<div class="adm-bar"><b>Admin</b><button class="btn small" data-remove="${esc(s.sid)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${s.block ? `<button class="btn small" data-block="${esc(s.block)}" data-name="${esc(s.label)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</div>`;
+}
+function spotBar(d) {
+  const id = d.rateId, mv = myVote(id);
+  return `<div class="rate-bar"><button class="btn small ${mv === 1 ? "on" : ""}" data-rate="${esc(id)}" data-v="1" title="${esc(T("rateUpHint", "Hier habe ich auch gefangen"))}">👍 ${esc(T("rateUp", "Funktioniert"))} <span>${d.up || 0}</span></button><button class="btn small ${mv === -1 ? "on" : ""}" data-rate="${esc(id)}" data-v="-1" title="${esc(T("rateDownHint", "Hier hat es bei mir nicht geklappt"))}">👎 ${esc(T("rateDown", "Funktioniert nicht"))} <span>${d.down || 0}</span></button>${INIT.features.admin ? "" : `<button class="btn small" data-report="${esc(id)}" ${wasReported(id) ? "disabled" : ""}>⚑ ${esc(wasReported(id) ? T("reported", "Gemeldet") : T("reportSpot", "Melden"))}</button>`}</div>${INIT.features.admin ? `<div class="adm-bar"><b>Admin</b><button class="btn small" data-remove="${esc(id)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button></div>` : ""}`;
 }
 function wasReported(id) { try { return (JSON.parse(localStorage.getItem("reported") || "[]")).includes(id); } catch (e) { return false; } }
 function markReported(id) { try { const l = JSON.parse(localStorage.getItem("reported") || "[]"); if (!l.includes(id)) l.push(id); localStorage.setItem("reported", JSON.stringify(l.slice(-300))); } catch (e) { } }
@@ -903,7 +904,8 @@ async function loadReports() {
 }
 function reportsSheet() {
   const lakeName = id => (INIT.lakes.find(l => l.id === id) || {}).name || id;
-  openSheet(T("reportedSpots", "Gemeldete Spots"), REPORTS.length ? `<table class="tbl" id="repTbl">${REPORTS.map(r => `<tr><td><b>${esc(r.author)}</b> ${esc(r.cc)}<small>${esc(lakeName(r.lake) + " · " + r.x + ":" + r.y + (r.fish.length ? " · " + r.fish.join(", ") : ""))}</small>${r.text ? `<small>${esc(r.text)}</small>` : ""}</td><td>${esc(T("reportsN", "{0} Meldungen").replace("{0}", r.n))}${r.hidden ? " · " + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-rr="${esc(r.id)}">${esc(T("restoreSpot", "Wieder einblenden"))}</button> <button class="btn small" data-rd="${esc(r.id)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${r.id.includes("_") ? ` <button class="btn small" data-rb="${esc(r.id)}" data-name="${esc(r.author)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
+  const gidName = r => { const p = r.spot.split(":"); return lakeName(p[0]) + " · " + p.slice(1).join(":"); };
+  openSheet(T("reportedSpots", "Gemeldete Spots"), REPORTS.length ? `<table class="tbl" id="repTbl">${REPORTS.map(r => `<tr><td>${r.spot ? `<b>${esc(gidName(r))}</b>${r.admin ? `<small>${esc(T("removedByAdmin", "von dir gelöscht"))}</small>` : ""}` : `<b>${esc(r.author)}</b> ${esc(r.cc)}<small>${esc(lakeName(r.lake) + " · " + r.x + ":" + r.y + (r.fish.length ? " · " + r.fish.join(", ") : ""))}</small>${r.text ? `<small>${esc(r.text)}</small>` : ""}`}</td><td>${esc(T("reportsN", "{0} Meldungen").replace("{0}", r.n))}${r.hidden ? " · " + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-rr="${esc(r.id)}">${esc(T("restoreSpot", "Wieder einblenden"))}</button> <button class="btn small" data-rd="${esc(r.id)}">🗑 ${esc(T("removeSpot", "Spot löschen"))}</button>${r.id.includes("_") ? ` <button class="btn small" data-rb="${esc(r.id)}" data-name="${esc(r.author)}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
   const act = async (path, id, ask) => {
     if (ask && !confirm(ask)) return;
     busyOv(-1, "…");

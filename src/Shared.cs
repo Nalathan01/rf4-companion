@@ -18,11 +18,47 @@ internal static class Shared
     private static string checkedKey;
     private static Dictionary<string, object> checkedMe;
 
+    private static Dictionary<string, int[]> votes = new Dictionary<string, int[]>(StringComparer.Ordinal);
+    private static HashSet<string> hidden = new HashSet<string>(StringComparer.Ordinal);
+
+    public static bool Hidden(string spotKey)
+    {
+        return hidden.Contains("s:" + spotKey);
+    }
+
+    public static int[] Votes(string id)
+    {
+        int[] v;
+        return votes.TryGetValue(id, out v) ? v : new int[] { 0, 0 };
+    }
+
+    private static void FetchMeta()
+    {
+        try
+        {
+            Dictionary<string, object> d = AppEnv.Json.DeserializeObject(Http.GetString(Worker + "meta?t=" + DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture), 30000)) as Dictionary<string, object>;
+            if (d == null || !AppEnv.GetBool(d, "ok")) return;
+            Dictionary<string, int[]> v = new Dictionary<string, int[]>(StringComparer.Ordinal);
+            Dictionary<string, object> raw = d.ContainsKey("votes") ? d["votes"] as Dictionary<string, object> : null;
+            if (raw != null)
+                foreach (KeyValuePair<string, object> kv in raw)
+                {
+                    object[] a = kv.Value as object[];
+                    if (a != null && a.Length == 2) v[kv.Key] = new int[] { Convert.ToInt32(a[0], CultureInfo.InvariantCulture), Convert.ToInt32(a[1], CultureInfo.InvariantCulture) };
+                }
+            HashSet<string> h = new HashSet<string>(AppEnv.GetList(d, "hidden").Cast<object>().Select(o => (o ?? "").ToString()), StringComparer.Ordinal);
+            votes = v;
+            hidden = h;
+        }
+        catch (Exception ex) { AppEnv.Log("Geteilt", "Bewertungen: " + ex.Message); }
+    }
+
     public static void Fetch(bool force)
     {
         if (!Features.Log) return;
         if (!force && DateTime.UtcNow.Subtract(lastFetch).TotalMinutes < 15) return;
         lastFetch = DateTime.UtcNow;
+        FetchMeta();
         try
         {
             string json = Http.GetString(Raw + "spots.json?t=" + DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture), 30000);
