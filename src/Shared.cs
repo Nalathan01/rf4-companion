@@ -170,9 +170,9 @@ internal static class Shared
         return r;
     }
 
-    public static object Report(string reportId)
+    public static object Report(string reportId, string label, string group)
     {
-        return AppEnv.Json.DeserializeObject(Call("report", Key, AppEnv.Obj("id", reportId ?? "")));
+        return AppEnv.Json.DeserializeObject(Call("report", Key, AppEnv.Obj("id", reportId ?? "", "label", label ?? "", "group", group ?? "")));
     }
 
     public static object Rate(string reportId, int v)
@@ -183,9 +183,9 @@ internal static class Shared
         return r;
     }
 
-    public static object Remove(string reportId)
+    public static object Remove(string reportId, string label, string group)
     {
-        object r = AppEnv.Json.DeserializeObject(Call("remove", Key, AppEnv.Obj("id", reportId ?? "")));
+        object r = AppEnv.Json.DeserializeObject(Call("remove", Key, AppEnv.Obj("id", reportId ?? "", "label", label ?? "", "group", group ?? "")));
         lastFetch = DateTime.MinValue;
         Fetch(true);
         return r;
