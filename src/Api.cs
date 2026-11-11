@@ -175,6 +175,7 @@ internal sealed class Api
             case "/api/share/remove": return Shared.Remove(AppEnv.GetString(args, "id"), AppEnv.GetString(args, "label"), AppEnv.GetString(args, "group"));
             case "/api/share/restore": return Shared.Restore(AppEnv.GetString(args, "id"));
             case "/api/share/reports": return Shared.Reports();
+            case "/api/share/log": return Shared.AuditLog();
             case "/api/share/reportinfo": return ReportInfo(args);
             case "/api/sharekey": return args == null ? Shared.KeyStatus() : Shared.SetKey(AppEnv.GetString(args, "key"));
             case "/api/myspot/share": if (!Shared.CanShare) break; return Shared.Set(AppEnv.GetString(args, "id"), AppEnv.GetBool(args, "on"), Lang);

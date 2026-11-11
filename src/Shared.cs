@@ -164,6 +164,7 @@ internal static class Shared
     {
         string key = Key;
         if (key.Length == 0) throw new AppError("shareBadKey", null);
+        AppEnv.Log("Moderation", "Sperren " + reportId);
         Dictionary<string, object> r = AppEnv.Json.DeserializeObject(Call("block", key, AppEnv.Obj("id", reportId ?? ""))) as Dictionary<string, object>;
         lastFetch = DateTime.MinValue;
         Fetch(true);
@@ -185,6 +186,7 @@ internal static class Shared
 
     public static object Remove(string reportId, string label, string group)
     {
+        AppEnv.Log("Moderation", "Löschen " + reportId + " | " + label);
         object r = AppEnv.Json.DeserializeObject(Call("remove", Key, AppEnv.Obj("id", reportId ?? "", "label", label ?? "", "group", group ?? "")));
         lastFetch = DateTime.MinValue;
         Fetch(true);
@@ -193,10 +195,16 @@ internal static class Shared
 
     public static object Restore(string reportId)
     {
+        AppEnv.Log("Moderation", "Wieder einblenden " + reportId);
         object r = AppEnv.Json.DeserializeObject(Call("restore", Key, AppEnv.Obj("id", reportId ?? "")));
         lastFetch = DateTime.MinValue;
         Fetch(true);
         return r;
+    }
+
+    public static object AuditLog()
+    {
+        return AppEnv.Json.DeserializeObject(Call("log", Key, null));
     }
 
     public static object Reports()

@@ -712,7 +712,8 @@ async function loadDetail() {
     catch (e) { b.disabled = false; alert(errText(e)); }
   });
   document.querySelectorAll("#detail [data-remove]").forEach(b => b.onclick = async () => {
-    if (!confirm(T("removeReportConfirm", "Diese Meldung für alle ausblenden?"))) return;
+    const nPosts = new Set([b.dataset.remove, ...(b.dataset.rids || "").split(" ").filter(Boolean)]).size;
+    if (!confirm(T("removeReportConfirm", "Diese Meldung für alle ausblenden?") + "\n\n" + (b.dataset.label || "") + (nPosts > 1 ? "\n" + T("postsN", "{0} Posts").replace("{0}", nPosts) : ""))) return;
     busyOv(-1, T("removeReport", "Meldung löschen") + " …");
     try { for (const id of new Set([b.dataset.remove, ...(b.dataset.rids || "").split(" ").filter(Boolean)])) await api("/api/share/remove", { id, label: b.dataset.label || "", group: b.dataset.remove }); busyOv(null); DETAIL_KEY = null; loadActive(); loadReports(); }
     catch (e) { busyOv(null); alert(errText(e)); }
@@ -918,11 +919,14 @@ function reportGroups() {
 }
 async function reportsSheet() {
   const lakeName = id => (INIT.lakes.find(l => l.id === id) || {}).name || id;
-  const groups = reportGroups();
-  let info = [];
-  try { info = (await api("/api/share/reportinfo", { ids: groups.flatMap(g => g.ids).filter(id => id.startsWith("r:")) })).items || []; } catch (e) { }
-  const posts = g => info.filter(x => g.ids.includes(x.rid)).sort((x, y) => y.posted.localeCompare(x.posted));
   const when = iso => { const t = new Date(iso); return isNaN(t) ? "" : t.toLocaleString(INIT.lang, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); };
+  const groups = reportGroups();
+  let info = [], log = [];
+  try { info = (await api("/api/share/reportinfo", { ids: groups.flatMap(g => g.ids).filter(id => id.startsWith("r:")) })).items || []; } catch (e) { }
+  try { log = (await api("/api/share/log")).items || []; } catch (e) { }
+  const actName = a => T("audit_" + a, a);
+  const logHtml = `<div class="hdr">${esc(T("auditLog", "Protokoll"))}</div>` + (log.length ? `<table class="tbl">${log.map(x => `<tr><td style="white-space:nowrap">${esc(when(x.t))}</td><td>${esc(actName(x.act))}</td><td>${esc(x.label || x.id)}${x.x ? `<small>${esc(x.x)}</small>` : ""}</td><td>${esc(x.who || "")}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("auditEmpty", "Noch keine Einträge."))}</div>`);
+  const posts = g => info.filter(x => g.ids.includes(x.rid)).sort((x, y) => y.posted.localeCompare(x.posted));
   const detail = g => posts(g).map(x => `<div class="rep-post"><div><b>${esc(x.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}</b> <small>${esc([when(x.posted), x.lake + " " + x.pos, x.source, x.clip ? "Clip " + x.clip + " m" : ""].filter(Boolean).join(" · "))}</small></div>${x.bait ? `<div class="sub">${esc(T("bait", "Köder"))}: ${esc(x.bait)}</div>` : ""}${x.text ? `<div class="sub">${esc(x.text.length > 220 ? x.text.slice(0, 220) + " …" : x.text)}</div>` : ""}${x.imgs.length ? `<div class="thumbs web">${x.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}${x.url ? `<button class="src" data-url="${esc(x.url)}">${esc(T("openSourceShort", "Original"))} ↗</button>` : ""}</div>`).join("");
   const title = g => {
     const r = g.first;
@@ -930,7 +934,8 @@ async function reportsSheet() {
     if (r.author) return `<b>${esc(r.author)}</b> ${esc(r.cc)}<small>${esc(lakeName(r.lake) + " · " + r.x + ":" + r.y + (r.fish && r.fish.length ? " · " + r.fish.join(", ") : ""))}</small>${r.text ? `<small>${esc(r.text)}</small>` : ""}`;
     return `<b>${esc(r.id)}</b>`;
   };
-  openSheet(T("reportedSpots", "Gemeldete Spots"), groups.length ? `<table class="tbl" id="repTbl">${groups.map((g, i) => `<tr><td>${title(g)}${detail(g)}${g.ids.length > 1 ? `<small>${esc(T("postsN", "{0} Posts").replace("{0}", g.ids.length))}</small>` : ""}${g.admin ? `<small>${esc(T("removedByAdmin", "von dir gelöscht"))}</small>` : ""}</td><td>${g.n ? esc(T("reportsN", "{0} Meldungen").replace("{0}", g.n)) : ""}${g.hidden ? (g.n ? " · " : "") + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-gi="${i}" data-act="restore">${esc(T("restoreSpot", "Wieder einblenden"))}</button>${g.admin ? "" : ` <button class="btn small" data-gi="${i}" data-act="remove">🗑 ${esc(T("removeReport", "Meldung löschen"))}</button>`}${g.first.id.includes("_") && g.first.id.startsWith("adm:") ? ` <button class="btn small" data-gi="${i}" data-act="block" data-name="${esc(g.first.author || "")}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
+  openSheet(T("reportedSpots", "Gemeldete Spots"), groups.length ? `<table class="tbl" id="repTbl">${groups.map((g, i) => `<tr><td>${title(g)}${detail(g)}${g.ids.length > 1 ? `<small>${esc(T("postsN", "{0} Posts").replace("{0}", g.ids.length))}</small>` : ""}${g.admin ? `<small>${esc(T("removedByAdmin", "von dir gelöscht"))}${g.first.last ? ", " + esc(when(g.first.last)) : ""}</small>` : ""}</td><td>${g.n ? esc(T("reportsN", "{0} Meldungen").replace("{0}", g.n)) : ""}${g.hidden ? (g.n ? " · " : "") + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-gi="${i}" data-act="restore">${esc(T("restoreSpot", "Wieder einblenden"))}</button>${g.admin ? "" : ` <button class="btn small" data-gi="${i}" data-act="remove">🗑 ${esc(T("removeReport", "Meldung löschen"))}</button>`}${g.first.id.includes("_") && g.first.id.startsWith("adm:") ? ` <button class="btn small" data-gi="${i}" data-act="block" data-name="${esc(g.first.author || "")}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
+  $("sheetBody").insertAdjacentHTML("beforeend", logHtml);
   $("sheetBody").querySelectorAll("[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
   $("sheetBody").querySelectorAll(".rep-post img").forEach(im => im.onclick = () => showImg(im.src));
   $("sheetBody").querySelectorAll("[data-gi]").forEach(b => b.onclick = async () => {
