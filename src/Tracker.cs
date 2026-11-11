@@ -33,7 +33,23 @@ internal static class Tracker
 
     public static string LangTag
     {
-        get { string l = (UserStore.Get("trackerLang") ?? "").ToString(); return l.Length > 0 ? l : "de-DE"; }
+        get { string l = (UserStore.Get("trackerLang") ?? "").ToString(); return l.Length > 0 ? l : DefaultTag(); }
+    }
+
+    private static string DefaultTag()
+    {
+        string ui = (UserStore.Lang ?? "de").ToLowerInvariant();
+        string[] have;
+        try { have = TrackerOcr.Languages(); } catch (Exception) { have = new string[0]; }
+        Func<string, bool> fits = t =>
+        {
+            string x = t.ToLowerInvariant();
+            if (ui == "zh-tw") return x.StartsWith("zh-tw") || x.StartsWith("zh-hant") || x.StartsWith("zh-hk");
+            if (ui == "zh") return x.StartsWith("zh-cn") || x.StartsWith("zh-hans") || x == "zh";
+            return x.Split('-')[0] == ui.Split('-')[0];
+        };
+        string hit = have.FirstOrDefault(fits) ?? have.FirstOrDefault(t => t.StartsWith("en", StringComparison.OrdinalIgnoreCase)) ?? have.FirstOrDefault();
+        return string.IsNullOrEmpty(hit) ? "en-US" : hit;
     }
 
     public static bool On

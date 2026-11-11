@@ -48,7 +48,7 @@ internal static class LiveCatch
 
     public static string Lang
     {
-        get { string l = (UserStore.Get("trackerLang") ?? "").ToString(); return l.Length > 0 ? l : "de-DE"; }
+        get { return Tracker.LangTag; }
     }
 
     private static void Load()
