@@ -57,6 +57,9 @@ nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
 .btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 14px; cursor: pointer; font-weight: 600; }
 .btn.alert { background: #c0392b; border-color: #c0392b; color: #fff; }
 #gBackupState:empty { display: none; }
+.rep-post { margin: 8px 0 4px; padding: 8px 10px; border-left: 3px solid var(--line); background: var(--surface-2); border-radius: 6px; }
+.rep-post small { color: var(--muted); margin-left: 4px; }
+.rep-post .thumbs img { height: 60px; cursor: zoom-in; }
 .rate-bar { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
 .rate-bar .btn.on { background: var(--accent); border-color: var(--accent); color: #111; }
 .rate-bar .btn span { opacity: 0.8; margin-left: 2px; }
@@ -468,6 +471,7 @@ async function boot() {
   if (hv[0] === "find" || hv[0] === "log" || (hv[0] === "hist" && INIT.features.history)) { showView(hv[0]); if (hv[0] === "find" && hv[1]) { FIND.fish = decodeURIComponent(hv[1]); loadFind(); } }
   if (hv[0] === "menu" && MENU[hv[1]]) MENU[hv[1]]();
   if (hv[0] === "share" && !INIT.features.share) shareCtaDlg();
+  if (hv[0] === "reports" && INIT.features.admin) loadReports().then(reportsSheet);
   $("boot").classList.add("hide");
   setTimeout(() => $("boot").remove(), 400);
   setInterval(ping, 5000);
@@ -912,16 +916,23 @@ function reportGroups() {
   }
   return [...m.values()];
 }
-function reportsSheet() {
+async function reportsSheet() {
   const lakeName = id => (INIT.lakes.find(l => l.id === id) || {}).name || id;
   const groups = reportGroups();
+  let info = [];
+  try { info = (await api("/api/share/reportinfo", { ids: groups.flatMap(g => g.ids).filter(id => id.startsWith("r:")) })).items || []; } catch (e) { }
+  const posts = g => info.filter(x => g.ids.includes(x.rid)).sort((x, y) => y.posted.localeCompare(x.posted));
+  const when = iso => { const t = new Date(iso); return isNaN(t) ? "" : t.toLocaleString(INIT.lang, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); };
+  const detail = g => posts(g).map(x => `<div class="rep-post"><div><b>${esc(x.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}</b> <small>${esc([when(x.posted), x.lake + " " + x.pos, x.source, x.clip ? "Clip " + x.clip + " m" : ""].filter(Boolean).join(" · "))}</small></div>${x.bait ? `<div class="sub">${esc(T("bait", "Köder"))}: ${esc(x.bait)}</div>` : ""}${x.text ? `<div class="sub">${esc(x.text.length > 220 ? x.text.slice(0, 220) + " …" : x.text)}</div>` : ""}${x.imgs.length ? `<div class="thumbs web">${x.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}${x.url ? `<button class="src" data-url="${esc(x.url)}">${esc(T("openSourceShort", "Original"))} ↗</button>` : ""}</div>`).join("");
   const title = g => {
     const r = g.first;
     if (g.label) return `<b>${esc(g.label)}</b>`;
     if (r.author) return `<b>${esc(r.author)}</b> ${esc(r.cc)}<small>${esc(lakeName(r.lake) + " · " + r.x + ":" + r.y + (r.fish && r.fish.length ? " · " + r.fish.join(", ") : ""))}</small>${r.text ? `<small>${esc(r.text)}</small>` : ""}`;
     return `<b>${esc(r.id)}</b>`;
   };
-  openSheet(T("reportedSpots", "Gemeldete Spots"), groups.length ? `<table class="tbl" id="repTbl">${groups.map((g, i) => `<tr><td>${title(g)}${g.ids.length > 1 ? `<small>${esc(T("postsN", "{0} Posts").replace("{0}", g.ids.length))}</small>` : ""}${g.admin ? `<small>${esc(T("removedByAdmin", "von dir gelöscht"))}</small>` : ""}</td><td>${g.n ? esc(T("reportsN", "{0} Meldungen").replace("{0}", g.n)) : ""}${g.hidden ? (g.n ? " · " : "") + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-gi="${i}" data-act="restore">${esc(T("restoreSpot", "Wieder einblenden"))}</button>${g.admin ? "" : ` <button class="btn small" data-gi="${i}" data-act="remove">🗑 ${esc(T("removeReport", "Meldung löschen"))}</button>`}${g.first.id.includes("_") && g.first.id.startsWith("adm:") ? ` <button class="btn small" data-gi="${i}" data-act="block" data-name="${esc(g.first.author || "")}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
+  openSheet(T("reportedSpots", "Gemeldete Spots"), groups.length ? `<table class="tbl" id="repTbl">${groups.map((g, i) => `<tr><td>${title(g)}${detail(g)}${g.ids.length > 1 ? `<small>${esc(T("postsN", "{0} Posts").replace("{0}", g.ids.length))}</small>` : ""}${g.admin ? `<small>${esc(T("removedByAdmin", "von dir gelöscht"))}</small>` : ""}</td><td>${g.n ? esc(T("reportsN", "{0} Meldungen").replace("{0}", g.n)) : ""}${g.hidden ? (g.n ? " · " : "") + esc(T("hiddenState", "ausgeblendet")) : ""}</td><td class="num"><button class="btn small" data-gi="${i}" data-act="restore">${esc(T("restoreSpot", "Wieder einblenden"))}</button>${g.admin ? "" : ` <button class="btn small" data-gi="${i}" data-act="remove">🗑 ${esc(T("removeReport", "Meldung löschen"))}</button>`}${g.first.id.includes("_") && g.first.id.startsWith("adm:") ? ` <button class="btn small" data-gi="${i}" data-act="block" data-name="${esc(g.first.author || "")}">⛔ ${esc(T("blockUser", "Nutzer sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("noReports", "Keine gemeldeten Spots."))}</div>`);
+  $("sheetBody").querySelectorAll("[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
+  $("sheetBody").querySelectorAll(".rep-post img").forEach(im => im.onclick = () => showImg(im.src));
   $("sheetBody").querySelectorAll("[data-gi]").forEach(b => b.onclick = async () => {
     const g = groups[+b.dataset.gi], act = b.dataset.act;
     if (act === "remove" && !confirm(T("removeReportConfirm", "Diese Meldung für alle ausblenden?"))) return;

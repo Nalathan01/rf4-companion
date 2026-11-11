@@ -175,6 +175,7 @@ internal sealed class Api
             case "/api/share/remove": return Shared.Remove(AppEnv.GetString(args, "id"), AppEnv.GetString(args, "label"), AppEnv.GetString(args, "group"));
             case "/api/share/restore": return Shared.Restore(AppEnv.GetString(args, "id"));
             case "/api/share/reports": return Shared.Reports();
+            case "/api/share/reportinfo": return ReportInfo(args);
             case "/api/sharekey": return args == null ? Shared.KeyStatus() : Shared.SetKey(AppEnv.GetString(args, "key"));
             case "/api/myspot/share": if (!Shared.CanShare) break; return Shared.Set(AppEnv.GetString(args, "id"), AppEnv.GetBool(args, "on"), Lang);
             case "/api/myspot/delete": return Fangbuch.Delete("spots", AppEnv.GetList(args, "ids"));
@@ -654,6 +655,29 @@ internal sealed class Api
     private static bool RegionHit(Report r, string region)
     {
         return region.Length == 0 || Region(r.Country) == region;
+    }
+
+    private object ReportInfo(Dictionary<string, object> args)
+    {
+        string lang = Lang;
+        HashSet<string> want = new HashSet<string>(AppEnv.GetList(args, "ids").Cast<object>().Select(o => (o ?? "").ToString()), StringComparer.Ordinal);
+        List<object> outL = new List<object>();
+        foreach (Report r in Community.All())
+        {
+            string rid = Shared.Rid(r.Id);
+            if (!want.Contains(rid)) continue;
+            Lake lake;
+            GameData.LakeById.TryGetValue(r.Lake, out lake);
+            string text = r.S("text");
+            string pk = Scans.PostKey(r.Url);
+            if (text.Length == 0 && pk.Length > 0) text = Scans.Text(pk);
+            string bait = string.Join(" + ", r.S("baitDetail").Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries).Select(k => GameData.Translate(k.Trim(), lang)).ToArray());
+            outL.Add(AppEnv.Obj("rid", rid, "posted", r.Posted.ToString("o", CultureInfo.InvariantCulture), "lake", lake != null ? lake.Name(lang) : r.Lake,
+                "pos", r.X.ToString(CultureInfo.InvariantCulture) + ":" + r.Y.ToString(CultureInfo.InvariantCulture), "source", SourceName(r), "url", r.Linkable ? r.Url : "",
+                "fish", r.Fish.Select(f => (object)GameData.Translate(f, lang)).ToArray(), "bait", bait, "clip", r.S("clip"), "text", StripFooter(text),
+                "imgs", AppEnv.GetList(r.Raw, "imgs").Cast<object>().Take(4).ToArray()));
+        }
+        return AppEnv.Obj("items", outL.ToArray());
     }
 
     private static string SourceName(Report r)
