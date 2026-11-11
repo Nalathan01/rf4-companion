@@ -336,12 +336,6 @@ internal static class Tracker
         return items.Where(i => i.Fish != null && !Impossible(i.Fish, i.Weight)).ToList();
     }
 
-    private static bool Green(byte[] px, int i)
-    {
-        int b = px[i], g = px[i + 1], r = px[i + 2];
-        return g > 130 && g-r > 35 && g-b > 70;
-    }
-
     private static List<TrackItem> Selected(string path, List<TrackItem> items, double f)
     {
         byte[] px;
@@ -355,39 +349,25 @@ internal static class Tracker
             System.Runtime.InteropServices.Marshal.Copy(d.Scan0, px, 0, px.Length);
             src.UnlockBits(d);
         }
-        int win = Math.Max(8, W / 200), need = win * win * 3 / 10, cell = win;
-        List<Point> ribbons = new List<Point>();
-        HashSet<long> seen = new HashSet<long>();
-        for (int y = (int)(H * 0.1); y < H-win; y += 2)
-            for (int x = (int)(W * 0.14); x < W-win; x += 2)
-            {
-                if (seen.Contains((long)(x / cell) << 32 | (uint)(y / cell)) || !Green(px, y * stride + x * 4)) continue;
-                int n = 0;
-                for (int dy = 0; dy < win; dy++)
-                    for (int dx = 0; dx < win; dx++)
-                        if (Green(px, (y + dy) * stride + (x + dx) * 4)) n++;
-                if (n <= need) continue;
-                ribbons.Add(new Point(x, y));
-                for (int a = -4; a < 6; a++)
-                    for (int b = -4; b < 6; b++)
-                        seen.Add((long)(x / cell + a) << 32 | (uint)(y / cell + b));
-            }
+        double sc = H / 1392.0;
         int ox = (int)(W * 0.14f), oy = (int)(H * 0.11f);
-        HashSet<TrackItem> sel = new HashSet<TrackItem>();
-        foreach (Point p in ribbons)
+        List<TrackItem> sel = new List<TrackItem>();
+        foreach (TrackItem it in items)
         {
-            TrackItem best = null;
-            double bs = 1e9;
-            foreach (TrackItem it in items)
-            {
-                double sx = ox + it.BX / f, sy = oy + it.BY / f;
-                if (sx >= p.X || sy <= p.Y) continue;
-                double sc = (p.X-sx) + (sy-p.Y);
-                if (sc < bs) { bs = sc; best = it; }
-            }
-            if (best == null || !sel.Add(best)) return null;
+            int sx = (int)(ox + it.BX / f), sy = (int)(oy + it.BY / f);
+            double sum = 0;
+            int n = 0;
+            for (int y = sy-(int)(120 * sc); y < sy-(int)(30 * sc); y++)
+                for (int x = sx-5; x < sx-1; x++)
+                {
+                    if (x < 0 || y < 0 || x >= W || y >= H) continue;
+                    int i = y * stride + x * 4;
+                    sum += (px[i] + px[i + 1] + px[i + 2]) / 3.0;
+                    n++;
+                }
+            if (n > 0 && sum / n > 90) sel.Add(it);
         }
-        return items.Where(sel.Contains).ToList();
+        return sel;
     }
 
     public static List<TrackItem> NetItems(string path, Dictionary<TrackItem, DateTime> times, out int total)
