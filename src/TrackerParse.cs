@@ -472,14 +472,14 @@ internal static class TrackerParse
 
     private static string RodHead(string[] lines, int upto)
     {
-        int from = Array.FindIndex(lines, l => M(l, "EIGENSCHAFTEN|PROPERTIES|ХАРАКТЕРИСТИКИ|WŁAŚCIWOŚCI"));
+        int from = Array.FindIndex(lines, l => M(l, "EIGENSCHAFTEN|PROPERTIES|PARAMETERS|PARAMÈTRES|PARÁMETROS|PARAMETRI|PARAMETRY|PARÂMETROS|PARAMETREN|ПАРАМЕТРЫ|ХАРАКТЕРИСТИКИ|WŁAŚCIWOŚCI"));
         return string.Join(" ", lines.Skip(Math.Max(0, Math.Min(from, upto))).Take(upto + 1-Math.Max(0, Math.Min(from, upto))).Where(l => !M(l, "Meister|Master|Мастер|Rang|Rank|Ранг")).ToArray());
     }
 
     private static TrackRes SingleBaitSetup(string[] lines, TrackLists lists, string allText)
     {
         int rigIdx = Array.FindIndex(lines, l => M(l.Trim(), @"^(Angelmontage|Rig|Монтаж|Zestaw)(\s+(Ändern|Change|Изменить)\W*)?$"));
-        if (rigIdx < 0 || !M(allText, "EIGENSCHAFTEN|PROPERTIES|ХАРАКТЕРИСТИКИ|WŁAŚCIWOŚCI")) return null;
+        if (rigIdx < 0 || !M(allText, "EIGENSCHAFTEN|PROPERTIES|PARAMETERS|PARAMÈTRES|PARÁMETROS|PARAMETRI|PARAMETRY|PARÂMETROS|PARAMETREN|ПАРАМЕТРЫ|ХАРАКТЕРИСТИКИ|WŁAŚCIWOŚCI")) return null;
         TrackRes o = new TrackRes();
         if (rigIdx + 1 < lines.Length && !M(lines[rigIdx + 1], "Ändern|Change|Изменить")) o.Rig = lines[rigIdx + 1].Trim();
         else if (rigIdx + 2 < lines.Length) o.Rig = lines[rigIdx + 2].Trim();
