@@ -21,9 +21,18 @@ internal static class Shared
     private static Dictionary<string, int[]> votes = new Dictionary<string, int[]>(StringComparer.Ordinal);
     private static HashSet<string> hidden = new HashSet<string>(StringComparer.Ordinal);
 
-    public static bool Hidden(string spotKey)
+    public static int MetaVersion;
+
+    public static string Rid(string reportId)
     {
-        return hidden.Contains("s:" + spotKey);
+        if ((reportId ?? "").StartsWith("adm:", StringComparison.Ordinal)) return reportId;
+        string s = System.Text.RegularExpressions.Regex.Replace((reportId ?? "").ToLowerInvariant(), "[^0-9a-z_:\\-]", "-");
+        return "r:" + (s.Length > 90 ? s.Substring(0, 90) : s);
+    }
+
+    public static bool HiddenReport(string reportId)
+    {
+        return hidden.Count > 0 && hidden.Contains(Rid(reportId));
     }
 
     public static int[] Votes(string id)
@@ -48,7 +57,7 @@ internal static class Shared
                 }
             HashSet<string> h = new HashSet<string>(AppEnv.GetList(d, "hidden").Cast<object>().Select(o => (o ?? "").ToString()), StringComparer.Ordinal);
             votes = v;
-            hidden = h;
+            if (!h.SetEquals(hidden)) { hidden = h; MetaVersion++; }
         }
         catch (Exception ex) { AppEnv.Log("Geteilt", "Bewertungen: " + ex.Message); }
     }

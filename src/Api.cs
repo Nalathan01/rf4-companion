@@ -514,6 +514,8 @@ internal sealed class Api
                 if (setups.Count > 0) break;
                 foreach (object o in AppEnv.GetList(r.Raw, "setups")) setups.Add(string.Join(" + ", o.ToString().Split(new string[] { " + " }, StringSplitOptions.RemoveEmptyEntries).Select(k => GameData.Translate(k, lang)).ToArray()));
             }
+            string rid = Shared.Rid((e.Reports.FirstOrDefault(r => r.Id.StartsWith("adm:", StringComparison.Ordinal)) ?? e.Reports[0]).Id);
+            int[] ev = Shared.Votes(rid);
             object seaRig = null;
             if (SeaMarks.IsSea(s.Lake))
                 foreach (Report r in e.Reports)
@@ -535,14 +537,13 @@ internal sealed class Api
             Dictionary<string, object> eo = AppEnv.Obj("time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "fishCc", fish.Select(n => (object)Cc(evCc, n)).ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
                 "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
-                "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "setups", setups.ToArray(), "seaRig", seaRig, "postText", StripFooter(postText), "postLang", postLang, "shared", e.Reports.Any(r => r.Id.StartsWith("adm:", StringComparison.Ordinal)), "temp", temp, "fromImage", fromImage, "mixed", mixed,
+                "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "setups", setups.ToArray(), "seaRig", seaRig, "rid", rid, "rids", e.Reports.Select(r => (object)Shared.Rid(r.Id)).Distinct().ToArray(), "up", ev[0], "down", ev[1], "postText", StripFooter(postText), "postLang", postLang, "shared", e.Reports.Any(r => r.Id.StartsWith("adm:", StringComparison.Ordinal)), "temp", temp, "fromImage", fromImage, "mixed", mixed,
                 "record", rec == null ? null : AppEnv.Obj("table", GameData.Ui(lang, "table_" + rec.Table, rec.Table), "region", rec.Region, "date", rec.Date));
             events.Add(eo);
             evObjs.Add(eo);
             evList.Add(e);
         }
-        int[] sv = Shared.Votes("s:" + s.Key);
-        return AppEnv.Obj("rateId", "s:" + s.Key, "up", sv[0], "down", sv[1], "key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
+        return AppEnv.Obj("key", s.Key, "lake", s.Lake, "lakeName", lake != null ? lake.Name(lang) : s.Lake,
             "name", s.Mark != null ? SeaMarks.Label(s.Mark, strings) : s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture),
             "sea", s.Mark != null, "x", s.X, "y", s.Y, "events", events, "totalEvents", spotEvents.Count, "totalReports", filtered ? spotEvents.Sum(x => x.Reports.Count) : s.Reports.Count,
             "dirs", dirs.OrderByDescending(kv => kv.Value).Select(kv => (object)AppEnv.Obj("dir", kv.Key, "n", kv.Value)).ToArray());
@@ -581,7 +582,6 @@ internal sealed class Api
         List<object> rows = new List<object>();
         foreach (Spot s in Community.Spots(all))
         {
-            if (Shared.Hidden(s.Key)) continue;
             if (s.Last < since) continue;
             if (lakeFilter.Length > 0 && !string.Equals(s.Lake, lakeFilter, StringComparison.OrdinalIgnoreCase)) continue;
             List<SpotEvent> recent = (filtered ? FilterEvents(s.Events, r => (!dc || IsDc(r)) && (!sh || IsShared(r)) && RegionHit(r, region) && (tempF.Length == 0 || ReportTemp(r) == tempF) && (fishFilter.Length == 0 || FishHit(r, fishFilter, lang))) : s.Events).Where(e => e.Last >= since).ToList();
