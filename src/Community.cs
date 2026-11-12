@@ -471,7 +471,7 @@ internal static partial class Community
             Dictionary<string, List<Report>> byCoord = new Dictionary<string, List<Report>>(StringComparer.Ordinal);
             foreach (Report r in kv.Value)
             {
-                SeaMark sm = SeaMarks.Nearest(r.Lake, r.X, r.Y);
+                SeaMark sm = SeaMarks.ForReport(r);
                 if (sm != null)
                 {
                     Spot s;
