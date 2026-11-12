@@ -351,13 +351,13 @@ internal sealed class Api
     {
         parts = parts.Distinct().ToList();
         int p = parts.FindIndex(k => SeaHeads.Contains(GameData.ItemCat(k)));
-        if (p < 0 && !parts.Any(k => GameData.ItemCat(k) == "teaser")) return null;
+        if (p < 0 && !parts.Any(k => GameData.ItemCat(k) == "teaser" || SeaNatural(k))) return null;
         string headCat = p >= 0 ? GameData.ItemCat(parts[p]) : "";
         List<string> rest = parts.Where((k, i) => i != p && GameData.ItemCat(k) != "seahook" && GameData.ItemCat(k) != "attractor").ToList();
         List<string> main = rest.Where(SeaNatural).Take(1).ToList();
         if (main.Count == 0 && p < 0 && rest.Count > 0 && GameData.ItemCat(rest[0]) != "teaser") main.Add(rest[0]);
         List<string> teasers = rest.Where(k => !main.Contains(k)).ToList();
-        if (p < 0 && teasers.Count == 0) return null;
+        if (p < 0 && teasers.Count == 0 && !main.Any(SeaNatural)) return null;
         Func<IEnumerable<string>, string> join = l => string.Join(" + ", l.Select(k => GameData.Translate(k, lang)).ToArray());
         return AppEnv.Obj("pilker", p >= 0 ? GameData.Translate(parts[p], lang) : "", "headCat", headCat, "main", join(main), "teasers", join(teasers), "teaserCount", teasers.Count);
     }
