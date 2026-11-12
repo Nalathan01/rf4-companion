@@ -46,7 +46,7 @@ internal sealed class Spot
     public DateTime Last;
 }
 
-internal static class Community
+internal static partial class Community
 {
     private static readonly object gate = new object();
     private static List<Report> reports = new List<Report>();
@@ -63,11 +63,6 @@ internal static class Community
     public static volatile bool Syncing;
     public static volatile string SyncState = "";
     public static int Version;
-
-    private static readonly string[] Waterbodies = {
-        "Mosquito Lake", "Winding Rivulet", "Kuori Lake", "Old Burg Lake", "Volkhov River", "Ladoga Lake", "Bear Lake",
-        "Sura River", "Akhtuba River", "Belaya River", "Ladoga archipelago", "Norwegian Sea", "Seversky Donets River",
-        "The Amber Lake", "Lower Tunguska River", "Yama River", "Copper Lake", "Elk Lake" };
 
     public static int Count { get { lock (gate) return reports.Count; } }
     public static DateTime Synced { get { lock (gate) return synced; } }
@@ -213,53 +208,6 @@ internal static class Community
         if (r.Id.StartsWith("wx:", StringComparison.Ordinal)) { r.SourceKey = "wx"; r.SourceLabel = "WeChat · rf4.fish"; r.Linkable = true; r.Country = "CN"; return; }
         if (u.Length == 0) { r.SourceKey = "companion:" + r.Id; r.SourceLabel = "RF4 Companion"; r.Linkable = false; return; }
         r.SourceKey = "web:" + u; r.SourceLabel = "Web"; r.Linkable = true;
-    }
-
-    public static void Sync(bool full)
-    {
-        if (Syncing) return;
-        Syncing = true;
-        int added = 0;
-        try
-        {
-            DateTime started = DateTime.UtcNow;
-            int maxAge = 192;
-            DateTime sy = Synced;
-            if (full) maxAge = 0;
-            else if (sy > DateTime.MinValue && Count > 0)
-            {
-                int hours = (int)Math.Ceiling(DateTime.UtcNow.Subtract(sy).TotalHours) + 48;
-                if (hours < 192) maxAge = hours;
-            }
-            string[] lakes = full ? Waterbodies : new string[] { null };
-            for (int li = 0; li < lakes.Length; li++)
-            {
-                int offset = 0;
-                while (true)
-                {
-                    string url = "https://rf4intel.com/api/posts?limit=100&offset=" + offset.ToString(CultureInfo.InvariantCulture);
-                    if (lakes[li] != null) url += "&waterbody=" + Uri.EscapeDataString(lakes[li]);
-                    if (maxAge > 0) url += "&max_age_hours=" + maxAge.ToString(CultureInfo.InvariantCulture);
-                    Dictionary<string, object> page = AppEnv.Json.DeserializeObject(Http.GetString(url, 90000)) as Dictionary<string, object>;
-                    if (page == null) break;
-                    added += Merge(AppEnv.GetList(page, "posts"));
-                    offset += 100;
-                    int total = (int)AppEnv.GetDouble(page, "total", 0);
-                    SyncState = (lakes[li] != null ? lakes[li] + ": " : "") + Math.Min(offset, total).ToString(CultureInfo.InvariantCulture) + "/" + total.ToString(CultureInfo.InvariantCulture);
-                    if (!AppEnv.GetBool(page, "has_more") || offset > 10000) break;
-                }
-            }
-            lock (gate) { if (started > synced) synced = started; }
-            Save();
-            AppEnv.Log("Community", "Abgleich fertig, neu: " + added);
-            SyncState = "";
-        }
-        catch (Exception ex)
-        {
-            AppEnv.Log("Community", "Abgleich: " + ex.Message);
-            SyncState = "error";
-        }
-        finally { Syncing = false; }
     }
 
     private static int Merge(IList posts)
@@ -421,7 +369,7 @@ internal static class Community
             foreach (Report r in reports) raws.Add(r.Raw);
             sy = synced > DateTime.MinValue ? synced.ToString("o", CultureInfo.InvariantCulture) : "";
         }
-        AppEnv.WriteJsonFile(AppEnv.DataPath("community.json"), AppEnv.Obj("v", 2, "synced", sy, "source", "https://rf4intel.com", "reports", raws));
+        AppEnv.WriteJsonFile(AppEnv.DataPath("community.json"), AppEnv.Obj("v", 2, "synced", sy, "reports", raws));
     }
 
 
