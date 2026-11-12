@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web.Script.Serialization;
 
@@ -101,10 +102,56 @@ internal static class AppEnv
         return Encoding.UTF8.GetString(b).TrimStart('﻿');
     }
 
+    private static readonly HashSet<string> Sealed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "community.json", "post_cache.json", "scan_cache.json", "ocr_cache.json", "records_recent.json", "rf4fish_info.json", "wx_setup.json", "discord_servers.json"
+    };
+    private static readonly byte[] SealMagic = Encoding.ASCII.GetBytes("RF4S1");
+    private static readonly byte[] SealSalt = Encoding.ASCII.GetBytes("rf4-companion-cache-v1");
+
+    private static bool ShouldSeal(string path)
+    {
+        return Sealed.Contains(Path.GetFileName(path)) && Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true";
+    }
+
+    private static byte[] SealBytes(string json)
+    {
+        byte[] raw;
+        using (MemoryStream ms = new MemoryStream())
+        {
+            using (GZipStream g = new GZipStream(ms, CompressionLevel.Fastest, true))
+            {
+                byte[] b = Encoding.UTF8.GetBytes(json);
+                g.Write(b, 0, b.Length);
+            }
+            raw = ProtectedData.Protect(ms.ToArray(), SealSalt, DataProtectionScope.CurrentUser);
+        }
+        byte[] outB = new byte[SealMagic.Length + raw.Length];
+        Buffer.BlockCopy(SealMagic, 0, outB, 0, SealMagic.Length);
+        Buffer.BlockCopy(raw, 0, outB, SealMagic.Length, raw.Length);
+        return outB;
+    }
+
+    private static string FileText(string path)
+    {
+        byte[] b = File.ReadAllBytes(path);
+        bool sealedFile = b.Length > SealMagic.Length;
+        for (int i = 0; sealedFile && i < SealMagic.Length; i++) if (b[i] != SealMagic[i]) sealedFile = false;
+        if (!sealedFile) return Encoding.UTF8.GetString(b);
+        byte[] cipher = new byte[b.Length-SealMagic.Length];
+        Buffer.BlockCopy(b, SealMagic.Length, cipher, 0, cipher.Length);
+        byte[] plain;
+        try { plain = ProtectedData.Unprotect(cipher, SealSalt, DataProtectionScope.CurrentUser); }
+        catch (CryptographicException) { Log("Daten", Path.GetFileName(path) + " gehört zu einem anderen Konto oder PC und wird neu geladen"); return ""; }
+        using (MemoryStream ms = new MemoryStream(plain))
+        using (GZipStream g = new GZipStream(ms, CompressionMode.Decompress))
+        using (StreamReader r = new StreamReader(g, Encoding.UTF8)) return r.ReadToEnd();
+    }
+
     public static object ReadJsonFile(string path)
     {
         if (!File.Exists(path)) return null;
-        string t = File.ReadAllText(path, Encoding.UTF8).TrimStart('﻿');
+        string t = FileText(path).TrimStart('﻿');
         if (t.Trim().Length == 0) return null;
         return Json.DeserializeObject(t);
     }
@@ -123,7 +170,8 @@ internal static class AppEnv
     public static void WriteJsonFile(string path, object value)
     {
         string tmp = path + ".tmp";
-        File.WriteAllText(tmp, Json.Serialize(value), new UTF8Encoding(false));
+        if (ShouldSeal(path)) File.WriteAllBytes(tmp, SealBytes(Json.Serialize(value)));
+        else File.WriteAllText(tmp, Json.Serialize(value), new UTF8Encoding(false));
         if (File.Exists(path)) File.Replace(tmp, path, null);
         else File.Move(tmp, path);
     }
