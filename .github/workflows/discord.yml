@@ -82,6 +82,8 @@ jobs:
             git -C $im push -q --force $repo dcimg
             if ($LASTEXITCODE -ne 0) { exit 1 }
             Copy-Item "$out\spots.json.gz" $pub -Force
+            $m = Start-Process -FilePath $exe -ArgumentList "-Mobile", "`"$out\spots.json.gz`"", "`"$pub\mobile_spots.json.gz`"", "-DataDir", "`"$env:RUNNER_TEMP\mobile-data$try`"" -Wait -PassThru
+            if ($m.ExitCode -ne 0) { Write-Host "::warning::mobile export failed" }
             git -C $pub config user.name "rf4-mirror"
             git -C $pub config user.email "rf4-mirror@users.noreply.github.com"
             git -C $pub checkout -q --orphan next

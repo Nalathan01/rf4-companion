@@ -62,4 +62,9 @@ internal static class Mirror
     {
         return -1;
     }
+
+    public static int Mobile(string inPath, string outPath)
+    {
+        return -1;
+    }
 }

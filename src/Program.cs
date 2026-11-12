@@ -18,6 +18,7 @@ internal static class Program
             string dataDir = null;
             string export = null;
             string[] dcMerge = null;
+            string[] mobile = null;
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -28,12 +29,14 @@ internal static class Program
                 else if (a.Equals("-OpenSpot", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) openSpot = args[++i];
                 else if (a.Equals("-DataDir", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) dataDir = args[++i];
                 else if (a.Equals("-Export", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) export = args[++i];
+                else if (a.Equals("-Mobile", StringComparison.OrdinalIgnoreCase) && i + 2 < args.Length) mobile = new string[] { args[++i], args[++i] };
                 else if (a.Equals("-DcMerge", StringComparison.OrdinalIgnoreCase) && i + 3 < args.Length) dcMerge = new string[] { args[++i], args[++i], args[++i] };
             }
             ServicePointManager.DefaultConnectionLimit = 16;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             AppEnv.Init(dev, dataDir);
             if (export != null) return Mirror.Export(export) > 0 ? 0 : 2;
+            if (mobile != null) return Mirror.Mobile(mobile[0], mobile[1]) >= 0 ? 0 : 2;
             if (dcMerge != null) { int n = Mirror.MergeDiscord(dcMerge[0], dcMerge[1], dcMerge[2]); return n > 0 ? 0 : (n == 0 ? 3 : 2); }
             new AppServer().Run(port, noBrowser, urlFile, openSpot);
             return 0;
