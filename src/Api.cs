@@ -458,7 +458,7 @@ internal sealed class Api
                 }
                 foreach (string dk in PlainKeys) if (!detail.ContainsKey(dk) && r.S(dk).Length > 0) detail[dk] = r.S(dk);
                 if (postText.Length == 0 && r.S("text").Length > 0) { postText = r.S("text"); postLang = r.S("textLang"); }
-                foreach (object u in AppEnv.GetList(r.Raw, "imgs")) if (u != null && webImgs.Count < 6 && !webImgs.Contains(u.ToString())) webImgs.Add(u.ToString());
+                foreach (object u in AppEnv.GetList(r.Raw, "imgs")) if (u != null && webImgs.Count < 6 && !webImgs.Contains(Http.Proxied(u.ToString()))) webImgs.Add(Http.Proxied(u.ToString()));
             }
             if (postText.Length > 0)
             {
@@ -699,7 +699,7 @@ internal sealed class Api
             outL.Add(AppEnv.Obj("rid", rid, "posted", r.Posted.ToString("o", CultureInfo.InvariantCulture), "lake", lake != null ? lake.Name(lang) : r.Lake,
                 "pos", r.X.ToString(CultureInfo.InvariantCulture) + ":" + r.Y.ToString(CultureInfo.InvariantCulture), "source", SourceName(r), "url", r.Linkable ? r.Url : "",
                 "fish", r.Fish.Select(f => (object)GameData.Translate(f, lang)).ToArray(), "bait", bait, "clip", r.S("clip"), "text", StripFooter(text),
-                "imgs", AppEnv.GetList(r.Raw, "imgs").Cast<object>().Take(4).ToArray()));
+                "imgs", AppEnv.GetList(r.Raw, "imgs").Cast<object>().Take(4).Select(u => (object)Http.Proxied(u.ToString())).ToArray()));
         }
         return AppEnv.Obj("items", outL.ToArray());
     }

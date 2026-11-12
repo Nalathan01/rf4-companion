@@ -591,6 +591,14 @@ internal static class Community
 
 internal static class Http
 {
+    public const string RawData = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/";
+    public const string DataProxy = "https://rf4-share.rf4-companion.workers.dev/d/";
+
+    public static string Proxied(string url)
+    {
+        return url != null && url.StartsWith(RawData, StringComparison.Ordinal) ? DataProxy + url.Substring(RawData.Length) : url;
+    }
+
     private static HttpWebRequest Create(string url, int timeout)
     {
         HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
@@ -613,6 +621,12 @@ internal static class Http
     {
         string local = Local(url);
         if (local != null) return File.ReadAllText(local, Encoding.UTF8);
+        string px = Proxied(url);
+        if (px != url)
+        {
+            try { return GetString(px, timeout); }
+            catch (WebException) { }
+        }
         HttpWebRequest req = Create(url, timeout);
         req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
         using (WebResponse res = req.GetResponse())
@@ -626,6 +640,12 @@ internal static class Http
     {
         string local = Local(url);
         if (local != null) return File.ReadAllBytes(local);
+        string px = Proxied(url);
+        if (px != url)
+        {
+            try { return GetBytes(px, timeout); }
+            catch (WebException) { }
+        }
         HttpWebRequest req = Create(url, timeout);
         using (WebResponse res = req.GetResponse())
         using (Stream s = res.GetResponseStream())

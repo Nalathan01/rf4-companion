@@ -415,6 +415,13 @@ let OCRV = -1;
 let S = {}, INIT = null, ACTIVE = [], HOURS = 24, LAKE = "", SEL = null, DATAV = -1;
 const $ = id => document.getElementById(id);
 function T(k, fb) { return (S[k] != null && S[k] !== "") ? S[k] : (fb != null ? fb : k); }
+document.addEventListener("error", ev => {
+  const t = ev.target;
+  if (t && t.tagName === "IMG" && !t.dataset.fb && t.src.startsWith("https://rf4-share.rf4-companion.workers.dev/d/")) {
+    t.dataset.fb = "1";
+    t.src = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/" + t.src.slice(46);
+  }
+}, true);
 async function api(path, body) {
   const r = await fetch(path + (path.includes("?") ? "&" : "?") + "t=" + TOKEN + "&pg=" + PAGE, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json();
