@@ -961,7 +961,7 @@ async function reportsSheet() {
   try { info = (await api("/api/share/reportinfo", { ids: groups.flatMap(g => g.ids).filter(id => id.startsWith("r:")) })).items || []; } catch (e) { }
   try { log = (await api("/api/share/log")).items || []; } catch (e) { }
   const actName = a => T("audit_" + a, a);
-  const logHtml = `<div class="hdr">${esc(T("auditLog", "Protokoll"))}</div>` + (log.length ? `<table class="tbl">${log.map(x => `<tr><td style="white-space:nowrap">${esc(when(x.t))}</td><td>${esc(actName(x.act))}</td><td>${esc(x.label || x.id)}${x.x ? `<small>${esc(x.x)}</small>` : ""}</td><td>${esc(x.who || "")}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("auditEmpty", "Noch keine Einträge."))}</div>`);
+  const logHtml = `<div class="hdr">${esc(T("auditLog", "Protokoll"))}</div>` + (log.length ? `<table class="tbl">${log.map(x => `<tr><td style="white-space:nowrap">${esc(when(x.t))}</td><td>${esc(actName(x.act))}</td><td>${esc(x.label || x.id)}${x.x ? `<small>${esc(x.x)}</small>` : ""}</td><td>${esc(x.who || "")}${x.act === "limit" ? ` <button class="btn small" data-iblock="${esc(x.id)}">⛔ ${esc(T("blockInstall", "Installation sperren"))}</button>` : ""}</td></tr>`).join("")}</table>` : `<div class="empty">${esc(T("auditEmpty", "Noch keine Einträge."))}</div>`);
   const posts = g => info.filter(x => g.ids.includes(x.rid)).sort((x, y) => y.posted.localeCompare(x.posted));
   const detail = g => posts(g).map(x => `<div class="rep-post"><div><b>${esc(x.fish.join(", ") || T("unknownFish", "Fisch unbekannt"))}</b> <small>${esc([when(x.posted), x.lake + " " + x.pos, x.source, x.clip ? "Clip " + x.clip + " m" : ""].filter(Boolean).join(" · "))}</small></div>${x.bait ? `<div class="sub">${esc(T("bait", "Köder"))}: ${esc(x.bait)}</div>` : ""}${x.text ? `<div class="sub">${esc(x.text.length > 220 ? x.text.slice(0, 220) + " …" : x.text)}</div>` : ""}${x.imgs.length ? `<div class="thumbs web">${x.imgs.map(u => `<img loading="lazy" src="${esc(u)}">`).join("")}</div>` : ""}${x.url ? `<button class="src" data-url="${esc(x.url)}">${esc(T("openSourceShort", "Original"))} ↗</button>` : ""}</div>`).join("");
   const title = g => {
@@ -974,6 +974,10 @@ async function reportsSheet() {
   if (unseenReports().length) $("sheetBody").insertAdjacentHTML("afterbegin", `<div style="margin-bottom:12px"><button class="btn small primary" id="repSeen">✓ ${esc(T("markSeen", "Alles gesehen"))}</button></div>`);
   if ($("repSeen")) $("repSeen").onclick = () => { markReportsSeen(); $("repSeen").parentElement.remove(); };
   $("sheetBody").insertAdjacentHTML("beforeend", logHtml);
+  $("sheetBody").querySelectorAll("[data-iblock]").forEach(b => b.onclick = async () => {
+    if (!confirm(T("blockInstallConfirm", "Diese Installation sperren? Sie bekommt danach keine Daten mehr."))) return;
+    try { await api("/api/share/iblock", { id: b.dataset.iblock }); b.disabled = true; } catch (e) { alert(errText(e)); }
+  });
   $("sheetBody").querySelectorAll("[data-url]").forEach(b => b.onclick = () => api("/api/open", { url: b.dataset.url }));
   $("sheetBody").querySelectorAll(".rep-post img").forEach(im => im.onclick = () => showImg(im.src));
   $("sheetBody").querySelectorAll("[data-gi]").forEach(b => b.onclick = async () => {

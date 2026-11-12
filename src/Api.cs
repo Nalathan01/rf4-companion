@@ -170,6 +170,7 @@ internal sealed class Api
             case "/api/backup/export": return Backup.Export();
             case "/api/sharekey/register": return Shared.Register(AppEnv.GetString(args, "name"), AppEnv.GetString(args, "cc"));
             case "/api/share/block": return Shared.Block(AppEnv.GetString(args, "id"));
+            case "/api/share/iblock": return Shared.BlockInstall(AppEnv.GetString(args, "id"));
             case "/api/share/report": return Shared.Report(AppEnv.GetString(args, "id"), AppEnv.GetString(args, "label"), AppEnv.GetString(args, "group"));
             case "/api/share/rate": return Shared.Rate(AppEnv.GetString(args, "id"), (int)AppEnv.GetDouble(args, "v", 0));
             case "/api/share/remove": return Shared.Remove(AppEnv.GetString(args, "id"), AppEnv.GetString(args, "label"), AppEnv.GetString(args, "group"));

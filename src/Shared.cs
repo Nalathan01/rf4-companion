@@ -160,6 +160,14 @@ internal static class Shared
         }
     }
 
+    public static object BlockInstall(string id)
+    {
+        string key = Key;
+        if (key.Length == 0) throw new AppError("shareBadKey", null);
+        AppEnv.Log("Moderation", "Installation sperren " + (id ?? "").Substring(0, Math.Min(8, (id ?? "").Length)));
+        return AppEnv.Json.DeserializeObject(Call("iblock", key, AppEnv.Obj("i", id ?? "")));
+    }
+
     public static object Block(string reportId)
     {
         string key = Key;

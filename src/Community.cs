@@ -542,9 +542,49 @@ internal static class Http
     public const string RawData = "https://raw.githubusercontent.com/Nalathan01/rf4-companion-data/";
     public const string DataProxy = "https://rf4-share.rf4-companion.workers.dev/d/";
 
+    private static readonly object instGate = new object();
+    private static string inst;
+    private static DateTime instTried = DateTime.MinValue;
+
+    public static string InstallId()
+    {
+        lock (instGate)
+        {
+            if (!string.IsNullOrEmpty(inst)) return inst;
+            try
+            {
+                string v = AppEnv.GetString(AppEnv.ReadJsonFile(AppEnv.DataPath("install.json")) as Dictionary<string, object>, "i");
+                if (v.Length == 32) return inst = v;
+            }
+            catch (Exception) { }
+            if (DateTime.UtcNow.Subtract(instTried).TotalMinutes < 10) return "";
+            instTried = DateTime.UtcNow;
+            try
+            {
+                HttpWebRequest req = Create(DataProxy.Substring(0, DataProxy.Length-2) + "hello", 15000);
+                req.Method = "POST";
+                req.ContentLength = 0;
+                using (WebResponse res = req.GetResponse())
+                using (StreamReader r = new StreamReader(res.GetResponseStream(), Encoding.UTF8))
+                {
+                    string v = AppEnv.GetString(AppEnv.Json.DeserializeObject(r.ReadToEnd()) as Dictionary<string, object>, "i");
+                    if (v.Length != 32) return "";
+                    AppEnv.WriteJsonFile(AppEnv.DataPath("install.json"), AppEnv.Obj("i", v));
+                    return inst = v;
+                }
+            }
+            catch (Exception ex) { AppEnv.Log("Daten", "Installationsschlüssel: " + ex.Message); }
+            return "";
+        }
+    }
+
     public static string Proxied(string url)
     {
-        return url != null && url.StartsWith(RawData, StringComparison.Ordinal) ? DataProxy + url.Substring(RawData.Length) : url;
+        if (url == null || !url.StartsWith(RawData, StringComparison.Ordinal)) return url;
+        string id = InstallId();
+        if (id.Length == 0) return url;
+        string rest = url.Substring(RawData.Length);
+        return DataProxy + rest + (rest.Contains("?") ? "&" : "?") + "i=" + id;
     }
 
     private static HttpWebRequest Create(string url, int timeout)
