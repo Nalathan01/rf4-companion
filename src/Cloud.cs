@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 
 internal static class Cloud
 {
-    private const string Repo = "Nalathan01/rf4-companion-data";
     private static readonly object gate = new object();
     private static volatile bool running;
     public static volatile string Error = "";
@@ -53,7 +52,7 @@ internal static class Cloud
 
     private static void Run()
     {
-        IList files = AppEnv.Json.DeserializeObject(Http.GetString("https://api.github.com/repos/" + Repo + "/contents/archive", 30000)) as IList;
+        IList files = AppEnv.Json.DeserializeObject(Http.GetString(Http.RawData + "list/archive", 30000)) as IList;
         if (files == null) throw new Exception("Archivliste leer");
         Dictionary<string, object> st = State();
         Dictionary<string, object> shas = st.ContainsKey("shas") ? st["shas"] as Dictionary<string, object> ?? new Dictionary<string, object>() : new Dictionary<string, object>();

@@ -10,7 +10,6 @@ using System.Threading;
 
 internal static class BaitHistory
 {
-    private const string Repo = "Nalathan01/rf4-companion-data";
     private static readonly Regex FileRx = new Regex(@"^baits_(\d{4}-\d{2})\.json\.gz$");
     private static readonly Regex TopRx = new Regex(@"^top_(\d{4})\.json\.gz$");
 
@@ -63,7 +62,7 @@ internal static class BaitHistory
 
     private static void Sync()
     {
-        IList files = AppEnv.Json.DeserializeObject(Http.GetString("https://api.github.com/repos/" + Repo + "/contents/history", 30000)) as IList;
+        IList files = AppEnv.Json.DeserializeObject(Http.GetString(Http.RawData + "list/history", 30000)) as IList;
         if (files == null) throw new Exception("Historie nicht gefunden");
         Directory.CreateDirectory(Dir);
         string stateFile = Path.Combine(Dir, "state.json");

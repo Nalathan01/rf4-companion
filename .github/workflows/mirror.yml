@@ -93,6 +93,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path mirror-data, "$env:RUNNER_TEMP\out" | Out-Null
           $p = Start-Process -FilePath "$env:RUNNER_TEMP\app\RF4 Companion.exe" -ArgumentList "-Export", "`"$env:RUNNER_TEMP\out\spots.json.gz`"", "-DataDir", "`"$PWD\mirror-data`"" -Wait -PassThru
           if ($p.ExitCode -ne 0) { exit 1 }
+          $md = "$env:RUNNER_TEMP\mobile-data"
+          New-Item -ItemType Directory -Force $md | Out-Null
+          if (Test-Path mirror-data\archive) { Copy-Item mirror-data\archive $md -Recurse -Force }
+          if (Test-Path mirror-data\cloud_sync2.json) { Copy-Item mirror-data\cloud_sync2.json $md -Force }
+          $env:RF4_MOBILE_INFO = "$env:RUNNER_TEMP\out\mobile_info.json.gz"
           $m = Start-Process -FilePath "$env:RUNNER_TEMP\app\RF4 Companion.exe" -ArgumentList "-Mobile", "`"$env:RUNNER_TEMP\out\spots.json.gz`"", "`"$env:RUNNER_TEMP\out\mobile_spots.json.gz`"", "-DataDir", "`"$env:RUNNER_TEMP\mobile-data`"" -Wait -PassThru
           if ($m.ExitCode -ne 0) { Write-Host "::warning::mobile export failed" }
       - uses: actions/cache/save@v4
