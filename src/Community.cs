@@ -584,7 +584,15 @@ internal static class Http
         string id = InstallId();
         if (id.Length == 0) return url;
         string rest = url.Substring(RawData.Length);
-        return DataProxy + rest + (rest.Contains("?") ? "&" : "?") + "i=" + id;
+        return DataProxy + rest + (rest.Contains("?") ? "&" : "?") + "i=" + id + "&v=" + Updater.CurrentText;
+    }
+
+    private static bool Upgrade(WebException ex)
+    {
+        HttpWebResponse r = ex.Response as HttpWebResponse;
+        if (r == null || (int)r.StatusCode != 426) return false;
+        Gate.Refused();
+        return true;
     }
 
     private static HttpWebRequest Create(string url, int timeout)
@@ -613,7 +621,7 @@ internal static class Http
         if (px != url)
         {
             try { return GetString(px, timeout); }
-            catch (WebException) { }
+            catch (WebException ex) { if (Upgrade(ex)) throw; }
         }
         HttpWebRequest req = Create(url, timeout);
         req.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
@@ -632,7 +640,7 @@ internal static class Http
         if (px != url)
         {
             try { return GetBytes(px, timeout); }
-            catch (WebException) { }
+            catch (WebException ex) { if (Upgrade(ex)) throw; }
         }
         HttpWebRequest req = Create(url, timeout);
         using (WebResponse res = req.GetResponse())

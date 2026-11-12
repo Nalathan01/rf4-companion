@@ -135,9 +135,15 @@ internal sealed class Api
         if (path == "/api/ping")
         {
             return AppEnv.Obj("ok", true, "ready", ready, "started", started, "step", step, "stepPct", stepPct, "stepInfo", stepInfo, "syncing", Community.Syncing, "syncState", Community.SyncState, "data", Community.Version, "ocr", ImageOcr.Version,
-                "update", Updater.Available, "updPct", Updater.Progress, "updErr", Updater.InstallError, "tracker", Tracker.Version, "spot", server.TakePendingSpot());
+                "update", Updater.Available, "updPct", Updater.Progress, "updErr", Updater.InstallError, "tracker", Tracker.Version, "spot", server.TakePendingSpot(), "blocked", Gate.Blocked, "blockMsg", Gate.Message);
         }
         WaitReady();
+        Gate.Check(false);
+        if (Gate.Blocked)
+        {
+            if (path == "/api/active") return AppEnv.Obj("hours", 0, "spots", new object[0], "syncing", false, "synced", "", "blocked", true);
+            if (path == "/api/find" || path == "/api/spot" || path == "/api/share/reportinfo") throw new AppError("needUpdate", null);
+        }
         if (path.StartsWith("/api/ext/", StringComparison.Ordinal)) return Extensions.Call(path.Substring(9), args);
         if (path == "/api/extensions") return Extensions.Scripts.ToArray();
         if (path.StartsWith("/api/tracker/", StringComparison.Ordinal) && Features.Tracker) return Tracker.Command(path.Substring(13), args ?? new Dictionary<string, object>());
@@ -170,6 +176,7 @@ internal sealed class Api
             case "/api/backup/export": return Backup.Export();
             case "/api/sharekey/register": return Shared.Register(AppEnv.GetString(args, "name"), AppEnv.GetString(args, "cc"));
             case "/api/share/block": return Shared.Block(AppEnv.GetString(args, "id"));
+            case "/api/share/status": if (args == null) return Shared.Status(); Gate.Check(true); return Shared.SetStatus(AppEnv.GetString(args, "min"), AppEnv.GetString(args, "msg"));
             case "/api/share/iblock": return Shared.BlockInstall(AppEnv.GetString(args, "id"));
             case "/api/share/report": return Shared.Report(AppEnv.GetString(args, "id"), AppEnv.GetString(args, "label"), AppEnv.GetString(args, "group"));
             case "/api/share/rate": return Shared.Rate(AppEnv.GetString(args, "id"), (int)AppEnv.GetDouble(args, "v", 0));

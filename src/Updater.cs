@@ -39,6 +39,11 @@ internal static class Updater
         get { return currentNotes ?? ""; }
     }
 
+    public static Version CurrentVersion
+    {
+        get { return Mine; }
+    }
+
     public static string CurrentText
     {
         get { return Text(Mine); }

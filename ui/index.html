@@ -496,6 +496,14 @@ function appGone() {
   o.textContent = T("appEnded", "RF4 Companion wurde beendet. Dieses Fenster kann geschlossen werden.");
   document.body.appendChild(o);
 }
+let BLOCKED = false;
+function blockedNote(msg) {
+  let n = $("blockNote");
+  if (!BLOCKED) { if (n) n.remove(); return; }
+  if (!n) { n = document.createElement("div"); n.id = "blockNote"; n.style.cssText = "position:sticky;top:0;z-index:50;margin:8px;padding:12px 14px;border-radius:10px;background:#5a1e1e;color:#fff;border:1px solid #c44;font-size:14px"; document.body.prepend(n); }
+  n.innerHTML = `<b>${esc(T("needUpdateTitle", "Neue Version nötig"))}</b><br>${esc(T("needUpdate", "Diese Version erhält keine Spotdaten mehr. Bitte aktualisiere auf die neue Version."))}${msg ? `<br><small>${esc(msg)}</small>` : ""} <button class="btn small primary" id="blockUpd">${esc(T("updateNow", "Aktualisieren"))}</button>`;
+  $("blockUpd").onclick = () => MENU.about();
+}
 async function ping() {
   try {
     const p = await api("/api/ping");
@@ -504,6 +512,7 @@ async function ping() {
     if (p.updPct >= 100) updOverlay(100, T("updRestarting", "Neustart: Das neue Fenster öffnet sich gleich."));
     if (p.updErr && p.updErr !== UPD_ERR) { UPD_ERR = p.updErr; if ($("updOv")) $("updOv").remove(); alert(T("updFailed", "Update fehlgeschlagen: {0}").replace("{0}", p.updErr)); }
     if (p.update) { $("upd").classList.add("show"); $("updText").textContent = T("updateAvailable", "Version {0} ist verfügbar").replace("{0}", p.update); }
+    if (p.blocked !== BLOCKED) { BLOCKED = p.blocked; blockedNote(p.blockMsg); if (DATAV !== -1) loadActive(); }
     $("status").classList.toggle("show", !!p.syncing);
     if (p.syncing) $("status").textContent = T("syncing", "Wird abgeglichen") + (p.syncState ? " · " + p.syncState : "");
     if (DATAV !== -1 && p.data !== DATAV) loadActive();
@@ -974,6 +983,14 @@ async function reportsSheet() {
   if (unseenReports().length) $("sheetBody").insertAdjacentHTML("afterbegin", `<div style="margin-bottom:12px"><button class="btn small primary" id="repSeen">✓ ${esc(T("markSeen", "Alles gesehen"))}</button></div>`);
   if ($("repSeen")) $("repSeen").onclick = () => { markReportsSeen(); $("repSeen").parentElement.remove(); };
   $("sheetBody").insertAdjacentHTML("beforeend", logHtml);
+  let st = { min: "", msg: "" };
+  try { st = await api("/api/share/status"); } catch (e) { }
+  $("sheetBody").insertAdjacentHTML("afterbegin", `<div class="hdr">${esc(T("dataAccess", "Datenzugang"))}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><label>${esc(T("minVersion", "Mindestversion"))} <input id="stMin" value="${esc(st.min || "")}" placeholder="${esc(INIT.version)}" style="width:90px"></label><input id="stMsg" value="${esc(st.msg || "")}" placeholder="${esc(T("statusMsg", "Nachricht an ältere Versionen (optional)"))}" style="flex:1;min-width:200px"><button class="btn small primary" id="stSave">${esc(T("save", "Speichern"))}</button></div><small class="sub">${esc(T("minVersionHint", "Leer lassen = alle Versionen bekommen Daten. Ältere Versionen als die Mindestversion bekommen keine Daten mehr und zeigen einen Update-Hinweis."))}</small>`);
+  $("stSave").onclick = async () => {
+    const min = $("stMin").value.trim();
+    if (min && !confirm(T("minVersionConfirm", "Alle Versionen unter {0} bekommen ab sofort keine Daten mehr. Fortfahren?").replace("{0}", min))) return;
+    try { await api("/api/share/status", { min, msg: $("stMsg").value.trim() }); $("stSave").textContent = "✓"; } catch (e) { alert(errText(e)); }
+  };
   $("sheetBody").querySelectorAll("[data-iblock]").forEach(b => b.onclick = async () => {
     if (!confirm(T("blockInstallConfirm", "Diese Installation sperren? Sie bekommt danach keine Daten mehr."))) return;
     try { await api("/api/share/iblock", { id: b.dataset.iblock }); b.disabled = true; } catch (e) { alert(errText(e)); }

@@ -160,6 +160,21 @@ internal static class Shared
         }
     }
 
+    public static object Status()
+    {
+        return AppEnv.Json.DeserializeObject(Http.GetString(Worker + "status", 15000));
+    }
+
+    public static object SetStatus(string min, string msg)
+    {
+        string key = Key;
+        if (key.Length == 0) throw new AppError("shareBadKey", null);
+        AppEnv.Log("Moderation", "Datenzugang: Mindestversion " + (min ?? "") + " " + (msg ?? ""));
+        object r = AppEnv.Json.DeserializeObject(Call("status", key, AppEnv.Obj("min", min ?? "", "msg", msg ?? "")));
+        Gate.Apply(min, msg);
+        return r;
+    }
+
     public static object BlockInstall(string id)
     {
         string key = Key;
