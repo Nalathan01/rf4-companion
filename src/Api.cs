@@ -339,19 +339,27 @@ internal sealed class Api
         return string.Join(((char)10).ToString(), keep.ToArray()).Trim();
     }
 
+    private static readonly string[] SeaHeads = { "pilker", "seasoft", "seasinker" };
+
+    private static bool SeaNatural(string k)
+    {
+        string c = GameData.ItemCat(k);
+        return c == "fillet" || c == "deadfish" || c == "seanatural";
+    }
+
     private static object SeaRig(List<string> parts, string lang)
     {
-        int p = parts.FindIndex(k => GameData.ItemCat(k) == "pilker");
+        parts = parts.Distinct().ToList();
+        int p = parts.FindIndex(k => SeaHeads.Contains(GameData.ItemCat(k)));
         if (p < 0 && !parts.Any(k => GameData.ItemCat(k) == "teaser")) return null;
-        List<string> rest = parts.Skip(p + 1).ToList();
-        int f = rest.FindIndex(k => { string c = GameData.ItemCat(k); return c == "fillet" || c == "deadfish" || c == "seanatural"; });
-        int cut = f >= 0 ? f + 1 : Math.Min(1, rest.Count);
-        List<string> main = rest.Take(cut).ToList();
-        List<string> teasers = new List<string>();
-        foreach (string k in rest.Skip(cut)) if (!main.Contains(k) && !teasers.Contains(k)) teasers.Add(k);
+        string headCat = p >= 0 ? GameData.ItemCat(parts[p]) : "";
+        List<string> rest = parts.Where((k, i) => i != p && GameData.ItemCat(k) != "seahook" && GameData.ItemCat(k) != "attractor").ToList();
+        List<string> main = rest.Where(SeaNatural).Take(1).ToList();
+        if (main.Count == 0 && p < 0 && rest.Count > 0 && GameData.ItemCat(rest[0]) != "teaser") main.Add(rest[0]);
+        List<string> teasers = rest.Where(k => !main.Contains(k)).ToList();
+        if (p < 0 && teasers.Count == 0) return null;
         Func<IEnumerable<string>, string> join = l => string.Join(" + ", l.Select(k => GameData.Translate(k, lang)).ToArray());
-        if (teasers.Count == 0) return null;
-        return AppEnv.Obj("pilker", p >= 0 ? GameData.Translate(parts[p], lang) : "", "main", join(main), "teasers", join(teasers), "teaserCount", teasers.Count);
+        return AppEnv.Obj("pilker", p >= 0 ? GameData.Translate(parts[p], lang) : "", "headCat", headCat, "main", join(main), "teasers", join(teasers), "teaserCount", teasers.Count);
     }
 
     private static bool IsShared(Report r)
