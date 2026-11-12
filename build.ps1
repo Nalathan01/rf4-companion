@@ -1,6 +1,6 @@
-param(
+﻿param(
     [string]$OutFile = (Join-Path $PSScriptRoot "dist\RF4 Companion.exe"),
-    [string]$Version = "2.0.0.0",
+    [string]$Version = "",
     [switch]$Private,
     [switch]$Fangbuch,
     [switch]$Overlay,
@@ -8,6 +8,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if (-not $Version) { $vf = Join-Path $PSScriptRoot "version.txt"; $Version = if (Test-Path $vf) { (Get-Content $vf -Raw).Trim() } else { "2.0.0.0" } }
 
 $fw = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319"
 $csc = Join-Path $fw "csc.exe"
