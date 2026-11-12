@@ -18,6 +18,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Nalathan01/rf4-companion-pipeline
+          ssh-key: ${{ secrets.PIPELINE_DEPLOY_KEY }}
+          path: .pipeline
+      - name: Private part
+        shell: pwsh
+        run: ./.pipeline/overlay.ps1 | Out-Null
       - uses: actions/cache/restore@v4
         with:
           path: dc-data
