@@ -348,7 +348,7 @@ dialog.sheet[open] { display: flex; }
   <section class="view active" id="view-active">
     <div class="split">
       <div class="col">
-        <div class="title-row"><h2 data-t="activeTitle">Aktive Spots</h2><div><button class="btn small" id="repBtn" style="display:none"></button> <button class="btn small" id="syncBtn" data-t="refresh">Aktualisieren</button></div></div>
+        <div class="title-row"><h2 data-t="activeTitle">Aktive Spots</h2><div><button class="btn small" id="repBtn" style="display:none"></button></div></div>
         <p class="sub" id="activeSub"></p>
         <div class="filters">
           <div class="seg" id="hoursSeg">
@@ -896,7 +896,6 @@ function setFishQ(raw) {
 }
 $("actQ").oninput = () => setFishQ($("actQ").value);
 $("ownChk").onchange = () => { if ($("ownChk").checked) $("dcChk").checked = false; loadActive(); };
-$("syncBtn").onclick = () => api("/api/sync", {}).then(ping);
 async function loadBrowsers() {
   try {
     const r = await api("/api/browsers");
