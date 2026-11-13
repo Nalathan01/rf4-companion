@@ -1,0 +1,74 @@
+name: Records
+
+on:
+  schedule:
+    - cron: "7,22,37,52 19-23 * * 0"
+    - cron: "7,37 10-18 * * 0"
+    - cron: "7,22,37,52 0-1 * * 1"
+    - cron: "7,37 2-7 * * 1"
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: records
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Nalathan01/rf4-companion-data
+          ssh-key: ${{ secrets.DATA_DEPLOY_KEY }}
+          path: public
+      - uses: actions/checkout@v4
+        with:
+          repository: Nalathan01/rf4-records-archive
+          ssh-key: ${{ secrets.ARCHIVE_DEPLOY_KEY }}
+          path: src
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r src/requirements.txt > /dev/null
+      - run: python -m playwright install --with-deps chromium > /dev/null 2>&1
+      - name: Collect
+        id: run
+        working-directory: src
+        run: |
+          set +e
+          python collect.py --regions all > /tmp/collect.log 2>&1
+          code=$?
+          tail -n 60 /tmp/collect.log > archive/last_run.log
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+      - name: Commit archive
+        working-directory: src
+        run: |
+          git config user.name "rf4-collector"
+          git config user.email "rf4-collector@users.noreply.github.com"
+          git add -A archive
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "Archiv $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do if git pull -q --rebase -X theirs && git push -q; then exit 0; fi; git rebase --abort 2>/dev/null; sleep 5; done
+          exit 1
+      - name: Publish
+        if: steps.run.outputs.code == '0'
+        working-directory: src
+        env:
+          DATA_SALT: ${{ secrets.DATA_SALT }}
+        run: |
+          python publish.py ../public > /dev/null
+          cd ../public
+          git config user.name "rf4-collector"
+          git config user.email "rf4-collector@users.noreply.github.com"
+          git add -A archive history
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "Daten $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do if git pull -q --rebase -X theirs && git push -q; then exit 0; fi; git rebase --abort 2>/dev/null; sleep 5; done
+          exit 1
+      - name: Result
+        run: exit ${{ steps.run.outputs.code }}
