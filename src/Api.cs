@@ -612,6 +612,7 @@ internal sealed class Api
             Dictionary<string, HashSet<string>> fishCc = new Dictionary<string, HashSet<string>>();
             Dictionary<string, int> baits = new Dictionary<string, int>();
             Dictionary<string, int> clips = new Dictionary<string, int>();
+            Dictionary<string, int> depths = new Dictionary<string, int>();
             HashSet<string> sources = new HashSet<string>();
             List<string> sourceLabels = new List<string>();
             foreach (SpotEvent e in recent)
@@ -622,13 +623,16 @@ internal sealed class Api
                 {
                     foreach (string f in r.Fish) { ef.Add(f); AddCc(fishCc, f, r.Country); }
                     foreach (string b in ReportBaits(r)) eb.Add(b);
-                    string c = r.S("clip");
-                    if (c.Length == 0)
+                    string c = r.S("clip"), dp = r.S("depth");
+                    if (c.Length == 0 || dp.Length == 0)
                     {
                         string pk = Scans.PostKey(r.Url), pc;
-                        if (pk.Length > 0 && PostText.Parse(Scans.Text(pk)).TryGetValue("clip", out pc)) c = pc;
+                        Dictionary<string, string> pi = pk.Length > 0 ? PostText.Parse(Scans.Text(pk)) : null;
+                        if (pi != null && c.Length == 0 && pi.TryGetValue("clip", out pc)) c = pc;
+                        if (pi != null && dp.Length == 0 && pi.TryGetValue("depth", out pc)) dp = pc;
                     }
                     if (c.Length > 0) { int n; clips.TryGetValue(c, out n); clips[c] = n + 1; }
+                    if (dp.Length > 0) { int n; depths.TryGetValue(dp, out n); depths[dp] = n + 1; }
                     if (sources.Add(r.SourceKey)) sourceLabels.Add(SourceName(r));
                 }
                 foreach (string f in ef) { int n; fish.TryGetValue(f, out n); fish[f] = n + 1; }
@@ -647,6 +651,7 @@ internal sealed class Api
                 "catches", recent.Count, "reports", rr.Count, "score", Math.Round(score, 3),
                 "fish", Top(fish, 4, lang, fishCc), "baits", Top(baits, 3, lang, null),
                 "clip", clips.Count > 0 ? clips.OrderByDescending(kv => kv.Value).First().Key : "",
+                "depth", depths.Count > 0 ? depths.OrderByDescending(kv => kv.Value).First().Key : "",
                 "sources", sourceLabels.Distinct().ToArray(), "sourceCount", sources.Count));
         }
         rows.Sort((a, b) => ((double)((Dictionary<string, object>)a)["hoursAgo"]).CompareTo((double)((Dictionary<string, object>)b)["hoursAgo"]));

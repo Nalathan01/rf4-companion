@@ -566,7 +566,7 @@ function renderCards() {
       <div class="where">${esc(s.lakeName)}<small>${esc(s.name)}</small></div>
       <div class="ago">${esc(ago(s.hoursAgo))}</div>
       <div class="line">${s.fish.map(f => `<span class="tag">${esc(f.name)}${CC(f.cc)}</span>`).join("")}${s.baits.map(b => `<span class="tag b">${esc(b.name)}</span>`).join("")}</div>
-      <div class="meta"><span>${esc(T("catchesN", "{0} Fänge").replace("{0}", s.catches))}</span><span>${esc(s.sources.join(", "))}</span>${s.clip ? `<span>Clip ${esc(s.clip)} m</span>` : ""}</div>
+      <div class="meta"><span>${esc(s.catches === 1 ? T("spotReport1", "1 Meldung") : T("spotReportsN", "{0} Meldungen").replace("{0}", s.catches))}</span><span>${esc(s.sources.join(", "))}</span>${s.clip ? `<span>Clip ${esc(s.clip)} m</span>` : ""}${s.depth ? `<span>${esc(T("depth", "Tiefe"))} ${esc(s.depth)} m</span>` : ""}</div>
     </div>`).join("");
   document.querySelectorAll(".card").forEach(c => c.onclick = () => { SEL = c.dataset.key; renderCards(); drawMap(); loadDetail(); });
 }
