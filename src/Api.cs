@@ -615,13 +615,14 @@ internal sealed class Api
             Dictionary<string, int> depths = new Dictionary<string, int>();
             HashSet<string> sources = new HashSet<string>();
             List<string> sourceLabels = new List<string>();
+            SpotEvent newest = recent.OrderByDescending(x => x.Last).First();
             foreach (SpotEvent e in recent)
             {
                 HashSet<string> ef = new HashSet<string>();
                 HashSet<string> eb = new HashSet<string>();
                 foreach (Report r in e.Reports)
                 {
-                    foreach (string f in r.Fish) { ef.Add(f); AddCc(fishCc, f, r.Country); }
+                    foreach (string f in r.Fish) { ef.Add(f); if (e == newest) AddCc(fishCc, f, r.Country); }
                     foreach (string b in ReportBaits(r)) eb.Add(b);
                     string c = r.S("clip"), dp = r.S("depth");
                     if (c.Length == 0 || dp.Length == 0)
@@ -635,6 +636,7 @@ internal sealed class Api
                     if (dp.Length > 0) { int n; depths.TryGetValue(dp, out n); depths[dp] = n + 1; }
                     if (sources.Add(r.SourceKey)) sourceLabels.Add(SourceName(r));
                 }
+                if (e != newest) continue;
                 foreach (string f in ef) { int n; fish.TryGetValue(f, out n); fish[f] = n + 1; }
                 foreach (string b in eb) { int n; baits.TryGetValue(b, out n); baits[b] = n + 1; }
             }
@@ -649,7 +651,7 @@ internal sealed class Api
                 "sea", s.Mark != null, "x", s.X, "y", s.Y, "nx", norm[0], "ny", norm[1],
                 "last", (filtered ? recent.Max(e => e.Last) : s.Last).ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(filtered ? recent.Max(e => e.Last) : s.Last).TotalHours, 1),
                 "catches", recent.Count, "reports", rr.Count, "score", Math.Round(score, 3),
-                "fish", Top(fish, 4, lang, fishCc), "baits", Top(baits, 3, lang, null),
+                "fish", Top(fish, 4, lang, fishCc), "baits", Top(baits, 4, lang, null),
                 "clip", clips.Count > 0 ? clips.OrderByDescending(kv => kv.Value).First().Key : "",
                 "depth", depths.Count > 0 ? depths.OrderByDescending(kv => kv.Value).First().Key : "",
                 "sources", sourceLabels.Distinct().ToArray(), "sourceCount", sources.Count));
