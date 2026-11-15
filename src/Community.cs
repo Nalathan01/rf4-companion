@@ -517,6 +517,11 @@ internal static partial class Community
             string pk0 = Scans.PostKey(r.Url);
             string norm = pk0.Length > 0 ? PostText.NormalizedPost(Scans.Text(pk0)) : "";
             SpotEvent same;
+            if (r.Id.StartsWith("adm:", StringComparison.Ordinal))
+            {
+                hit = new SpotEvent(); hit.First = r.Posted; hit.Last = r.Posted; hit.FishKey = r.FishKey; hit.Reports.Add(r); s.Events.Add(hit);
+                continue;
+            }
             if (norm.Length > 0 && byText.TryGetValue(norm, out same) && r.Posted.Subtract(same.Last).TotalHours <= 72) hit = same;
             if (hit == null) foreach (SpotEvent e in open)
             {
