@@ -94,6 +94,21 @@ jobs:
             Start-Sleep 20
           }
           exit 1
+      - name: Post shared spots
+        if: always()
+        continue-on-error: true
+        shell: pwsh
+        env:
+          KEY: ${{ secrets.DATA_DEPLOY_KEY }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: |
+          $k = Join-Path $env:RUNNER_TEMP "deploy_key_post"
+          [IO.File]::WriteAllText($k, $env:KEY.Replace("`r", "") + "`n")
+          $env:GIT_SSH_COMMAND = "ssh -i `"$k`" -o StrictHostKeyChecking=accept-new"
+          $sh = Join-Path $env:RUNNER_TEMP "shared"
+          git clone -q --depth 1 --filter=blob:none --sparse -b main git@github.com:Nalathan01/rf4-companion-data.git $sh
+          git -C $sh sparse-checkout set shared/admin
+          python tools/dc_post.py "$sh/shared/admin"
       - uses: actions/cache/save@v4
         if: always()
         with:
