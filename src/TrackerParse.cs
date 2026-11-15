@@ -365,7 +365,8 @@ internal static class TrackerParse
     private static Dictionary<string, object> RecipeLines(string[] lines, List<OcrBox> geo, TrackLists lists)
     {
         string name = "";
-        foreach (string l in lines) if (Regex.IsMatch(l, @"\*\*.+\*\*") && !M(l, "Anzahl|Amount|Количество") && l.Trim().Length > name.Length) name = l.Trim();
+        foreach (string l in lines) if (Regex.IsMatch(l, @"\*\*\s*\S") && !M(l, "Anzahl|Amount|Количество") && l.Trim().Length > name.Length) name = l.Trim();
+        if (name.Length > 0 && Regex.Matches(name, @"\*\*").Count % 2 == 1) name += " **";
         if (name.Length == 0) for (int i = 1; i < lines.Length; i++) if (M(lines[i], @"^(Typ|Type|Тип)\s*:\s*(Trockenmischung|Futtermischung|PVA|Dry mix|Groundbait|Сухая|Прикормка|ПВА)")) { name = lines[i-1].Trim(); break; }
         if (name.Length == 0) for (int i = 1; i < lines.Length; i++) if (M(lines[i], @"^(Typ|Type|Тип|Anzahl|Amount|Количество)\s*:")) { name = lines[i-1].Trim(); break; }
         if (name.Length == 0) return null;
@@ -402,8 +403,12 @@ internal static class TrackerParse
         List<string> gc;
         string ga;
         object gs = GeoComposition(geo, lists, out gc, out ga);
-        if ("incomplete".Equals(gs)) return null;
-        if (gs != null) { comp = gc; aroma = ga; }
+        if ("incomplete".Equals(gs))
+        {
+            if (comp.Count == 0) return null;
+            if (aroma.Length == 0 && comp.Count >= 2 && lines.Any(x => M(x.Trim(), "^(Aroma|Flavou?r|Аромат)$"))) { aroma = comp[comp.Count-1]; comp.RemoveAt(comp.Count-1); }
+        }
+        else if (gs != null) { comp = gc; aroma = ga; }
         if (comp.Count == 0 && aroma.Length == 0) return null;
         return AppEnv.Obj("name", name, "type", type, "base", comp.Count > 0 ? comp[0] : "", "additives", comp.Skip(1).ToArray(), "attractant", aroma);
     }
@@ -489,6 +494,8 @@ internal static class TrackerParse
         for (int i = rigIdx + 1; i < lines.Length; i++)
         {
             if (!end.IsMatch(lines[i])) continue;
+            string nx = i + 1 < lines.Length ? lines[i + 1] : "", nx2 = i + 2 < lines.Length ? lines[i + 2] : "";
+            if (M(nx, "Anzahl|Amount|Количество") && M(nx + " " + nx2, "Qualität|Quality|Качество")) { o.Pva = end.Replace(lines[i], "").Trim(); continue; }
             string[] words = end.Replace(lines[i], "").Trim().Split(' ');
             NameHit h = null;
             for (int skip = 0; skip < words.Length && skip < 3 && h == null; skip++) h = Match(string.Join(" ", words, skip, words.Length-skip), lists.Items, 0.85);
