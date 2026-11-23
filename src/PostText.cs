@@ -238,6 +238,11 @@ internal static class PostText
             string cl;
             if (o.TryGetValue("clip", out cl) && cl == m.Groups[1].Value) o.Remove("clip");
         }
+        else if ((m = Regex.Match(t, @"(?i)глубин[а-я]*\s*" + Dash + @"?\s*(глубок|мелк|средн)")).Success)
+        {
+            string v = m.Groups[1].Value.ToLowerInvariant();
+            o["depth"] = v == "глубок" ? "deep" : v == "мелк" ? "shallow" : "medium";
+        }
         m = Regex.Match(t, @"(?i)скорост[а-я]*(?:\s*проводки)?\s*" + Dash + @"?\s*(\d{1,3})");
         if (m.Success) o["reelSpeed"] = m.Groups[1].Value;
         m = Regex.Match(t, @"(?i)температур[а-я]*(?:\s*воды)?\s*" + Dash + @"?\s*(холодн|нормальн|тепл)");
@@ -269,6 +274,7 @@ internal static class PostText
             if (cand.Count > 0 && cand.Count * 2 >= total) baitTxt = sp[0];
             if (sp.Length > 1) gbTxt = sp[1];
         }
+        if (comment.Trim().Length > 0) o["comment"] = comment.Trim();
         int tt;
         if (baitTxt.Length > 0)
         {

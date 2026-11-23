@@ -494,10 +494,10 @@ internal static class Fangbuch
         }
     }
 
-    private static readonly HashSet<string> BaseItems = new HashSet<string>(new string[] {
+    internal static readonly HashSet<string> BaseItems = new HashSet<string>(new string[] {
         "Corn flour", "Rape Seed", "Ground peas", "Sunflower seed", "Flaxseed", "Rye bran", "Wheat bran", "Ground Crackers", "Oat flakes",
         "Hempseed flour", "Feed", "Semolina", "Pearl barley" }, StringComparer.Ordinal);
-    private static readonly HashSet<string> AromaItems = new HashSet<string>(new string[] {
+    internal static readonly HashSet<string> AromaItems = new HashSet<string>(new string[] {
         "Honey", "Hempseed Oil", "Linseed Oil", "Anise Oil", "Fish Oil", "Vanilla", "Coriander", "Cinnamon", "Fennel", "Garlic", "Caramel",
         "Sunflower Oil", "Strawberry", "Salmon", "Caviar smell", "Black pepper", "Crab and mussels", "Bitter almond", "Nut mixture", "Cream",
         "Banana", "Mint", "White chocolate", "Coconut", "Red plum", "Apricot", "Squid", "Freshly cut grass", "Corn liquor", "Bloodworm Extract",
@@ -505,7 +505,7 @@ internal static class Fangbuch
         "Red krill", "Smoked sausages", "Blackberry jam", "Mulberry", "Raspberry", "Cranberry & Spices", "Cherry Liquor", "Black currant",
         "Amino acids", "Tiger nut extract", "Coconut cream", "Caramel peach", "Salmon oil", "Strawberry and spice", "Vanilla cream", "Spicy garlic",
         "Allspice", "Amino acid", "Tuna oil", "Spices" }, StringComparer.Ordinal);
-    private static readonly HashSet<string> AddItems = new HashSet<string>(new string[] {
+    internal static readonly HashSet<string> AddItems = new HashSet<string>(new string[] {
         "Casters", "Maggots", "Corn", "Clay", "Peas", "Chopped worm", "Millet Porridge", "Pellets", "Biscuit",
         "Cookies", "Zebra mussels", "Pumpkin seed", "Dried Krill", "Wheat Grains", "Chicken egg", "Rice", "Powdered milk",
         "Condensed milk", "Hemp seeds", "Corn seeds", "Wheat seeds", "Shelled peas" }, StringComparer.Ordinal);

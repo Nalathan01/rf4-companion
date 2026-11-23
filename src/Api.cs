@@ -318,6 +318,12 @@ internal sealed class Api
     private static readonly string[] DetailKeys = { "baitDetail", "lure", "rig", "dip", "groundbait", "dryMix", "pva", "reelSpeed" };
     private static readonly string[] PlainKeys = { "baitRaw" };
 
+    private static string DepthText(string d, string lang)
+    {
+        if (string.IsNullOrEmpty(d) || Char.IsDigit(d[0])) return d ?? "";
+        return GameData.Ui(lang, "depth_" + d, d);
+    }
+
     private static string CleanDetail(string t)
     {
         if (string.IsNullOrEmpty(t)) return "";
@@ -432,8 +438,8 @@ internal sealed class Api
             double deg = -1;
             double weight = 0;
             Dictionary<string, string> detail = new Dictionary<string, string>();
-            string clip = "", depth = "", method = "", postText = "", temp = "", postLang = "ru";
-            List<object> webImgs = new List<object>();
+            string clip = "", depth = "", method = "", postText = "", temp = "", postLang = "ru", comment = "";
+            List<object> webImgs = new List<object>(), imgIdx = new List<object>();
             bool fromImage = false, mixedRaw = false;
             RecordHit rec = null;
             foreach (Report r in e.Reports)
@@ -466,6 +472,8 @@ internal sealed class Api
                 if (clip.Length == 0) clip = r.S("clip");
                 if (depth.Length == 0) depth = r.S("depth");
                 if (method.Length == 0) method = r.S("method");
+                if (comment.Length == 0) comment = r.S("comment");
+                if (imgIdx.Count == 0 && Scans.PostKey(r.Url) == imgPost) imgIdx.AddRange(AppEnv.GetList(r.Raw, "imgi").Cast<object>());
                 foreach (string dk in DetailKeys)
                 {
                     if (detail.ContainsKey(dk)) continue;
@@ -482,6 +490,7 @@ internal sealed class Api
                 string pv;
                 if (clip.Length == 0 && info.TryGetValue("clip", out pv)) clip = pv;
                 if (depth.Length == 0 && info.TryGetValue("depth", out pv)) depth = pv;
+                if (comment.Length == 0 && info.TryGetValue("comment", out pv)) comment = pv;
                 if (info.TryGetValue("temp", out pv)) temp = GameData.Ui(lang, "temp_" + pv, pv);
                 foreach (string dk in new string[] { "baitDetail", "dip", "groundbait", "pva", "reelSpeed" })
                 {
@@ -557,7 +566,7 @@ internal sealed class Api
             if (evPos == s.X.ToString(CultureInfo.InvariantCulture) + ":" + s.Y.ToString(CultureInfo.InvariantCulture)) evPos = "";
             Dictionary<string, object> eo = AppEnv.Obj("pos", evPos, "time", e.Last.ToString("o", CultureInfo.InvariantCulture), "hoursAgo", Math.Round(now.Subtract(e.Last).TotalHours, 1),
                 "fish", fish.ToArray(), "fishCc", fish.Select(n => (object)Cc(evCc, n)).ToArray(), "weight", weight > 0 ? GameData.FormatWeight(weight * 1000, lang) : "",
-                "clip", clip, "depth", depth, "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(),
+                "clip", clip, "depth", DepthText(depth, lang), "method", method, "dir", dir, "detail", detail, "sources", src.ToArray(), "comment", comment, "imgIdx", imgIdx.ToArray(),
                 "imgPost", imgPost, "imgCount", imgCount, "imgs", webImgs.ToArray(), "reports", e.Reports.Count, "setups", setups.ToArray(), "seaRig", seaRig, "rid", rid, "rids", e.Reports.Select(r => (object)Shared.Rid(r.Id)).Distinct().ToArray(), "up", ev[0], "down", ev[1], "postText", StripFooter(postText), "postLang", postLang, "shared", e.Reports.Any(r => r.Id.StartsWith("adm:", StringComparison.Ordinal)), "temp", temp, "fromImage", fromImage, "mixed", mixed,
                 "record", rec == null ? null : AppEnv.Obj("table", GameData.Ui(lang, "table_" + rec.Table, rec.Table), "region", rec.Region, "date", rec.Date));
             events.Add(eo);
@@ -653,7 +662,7 @@ internal sealed class Api
                 "catches", recent.Count, "reports", rr.Count, "score", Math.Round(score, 3),
                 "fish", Top(fish, 4, lang, fishCc), "baits", Top(baits, 4, lang, null),
                 "clip", clips.Count > 0 ? clips.OrderByDescending(kv => kv.Value).First().Key : "",
-                "depth", depths.Count > 0 ? depths.OrderByDescending(kv => kv.Value).First().Key : "",
+                "depth", depths.Count > 0 ? DepthText(depths.OrderByDescending(kv => kv.Value).First().Key, lang) : "",
                 "sources", sourceLabels.Distinct().ToArray(), "sourceCount", sources.Count));
         }
         rows.Sort((a, b) => ((double)((Dictionary<string, object>)a)["hoursAgo"]).CompareTo((double)((Dictionary<string, object>)b)["hoursAgo"]));
