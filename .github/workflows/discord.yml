@@ -108,7 +108,10 @@ jobs:
           $sh = Join-Path $env:RUNNER_TEMP "shared"
           git clone -q --depth 1 --filter=blob:none --sparse -b main git@github.com:Nalathan01/rf4-companion-data.git $sh
           git -C $sh sparse-checkout set shared/admin
-          python tools/dc_post.py "$sh/shared/admin"
+          $mi = Join-Path $env:RUNNER_TEMP "mobile_ready"
+          git clone -q --depth 1 --filter=blob:none --sparse -b mirror git@github.com:Nalathan01/rf4-companion-data.git $mi
+          git -C $mi sparse-checkout set --no-cone /mobile_spots.json.gz
+          python tools/dc_post.py "$sh/shared/admin" "--ready=$mi/mobile_spots.json.gz"
       - uses: actions/cache/save@v4
         if: always()
         with:
